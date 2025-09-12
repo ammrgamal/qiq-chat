@@ -1,58 +1,33 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>QIQ Chat</title>
-  <style>
-    body{font-family:system-ui,Segoe UI,Arial;background:#f7f9fc;margin:0}
-    .wrap{max-width:980px;margin:32px auto;padding:16px;background:#fff;border:1px solid #e5e7eb;border-radius:14px}
-    #qiq-window{min-height:260px;border:1px solid #e5e7eb;padding:12px;background:#fafafa;border-radius:10px;overflow:auto}
-    .row{display:flex;gap:8px;margin-top:10px}
-    input[type=text]{flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:10px}
-    button{border:0;border-radius:10px;padding:10px 14px;cursor:pointer;background:#111827;color:#fff}
-    #err{background:#fee;border:1px solid #f99;color:#900;padding:10px;border-radius:10px;margin-top:12px;display:none;white-space:pre-wrap}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div id="qiq-window">…</div>
-    <div class="row">
-      <input id="msg" type="text" placeholder="اكتب سؤالك…" />
-      <button id="send">Send</button>
-    </div>
-    <div id="err"></div>
-  </div>
+<script>
+  async function sendMessage() {
+    const input = document.getElementById('msg');
+    const msg = input.value.trim();
+    if (!msg) return;
 
-  <script>
-    // أي خطأ عالمي يظهر بدل ما الصفحة تفضى
-    window.addEventListener('error', e => {
-      const box = document.getElementById('err');
-      box.style.display='block';
-      box.textContent = 'JS Error: ' + (e.error && e.error.stack ? e.error.stack : e.message);
-    });
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: msg }] })
+      });
 
-    const win = document.getElementById('qiq-window');
-    const msg = document.getElementById('msg');
-    const send= document.getElementById('send');
+      // حاول تقرا JSON، ولو فشل اقرأ نص عادي
+      let payload;
+      const text = await r.text();
+      try { payload = JSON.parse(text); } catch { payload = { error: text }; }
 
-    function add(role, text){
-      const p=document.createElement('div');
-      p.textContent = (role==='user'?'You: ':'Bot: ') + text;
-      win.appendChild(p); win.scrollTop = win.scrollHeight;
-    }
-
-    send.onclick = async () => {
-      const text = msg.value.trim(); if(!text) return;
-      add('user', text); msg.value='';
-      try{
-        const r = await fetch('/api/chat', {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({messages:[{role:'user', content:text}]})});
-        const j = await r.json();
-        add('bot', j.reply || JSON.stringify(j));
-      }catch(err){
-        const box=document.getElementById('err'); box.style.display='block'; box.textContent = 'Request Error: ' + err.message;
+      if (!r.ok) {
+        throw new Error(payload?.error || 'Request failed');
       }
-    };
-  </script>
-</body>
-</html>
+
+      // OpenAI payload -> payload.choices[0].message.content
+      const reply = payload?.choices?.[0]?.message?.content || '(no content)';
+      appendToChat('assistant', reply);
+
+    } catch (e) {
+      appendToChat('error', e.message);
+    } finally {
+      input.value = '';
+    }
+  }
+</script>
