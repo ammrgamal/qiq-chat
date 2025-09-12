@@ -1,25 +1,60 @@
 // /public/js/quote-form.js
 (function () {
-  const form = document.getElementById("quote-form");
-  const status = document.getElementById("quote-status");
+  "use strict";
 
+  // ============ DOM ============
+  const form = document.getElementById("quote-form");
+  const statusEl = document.getElementById("quote-status");
+  const companyEl = document.getElementById("company");
+  const emailEl = document.getElementById("email");
+  const phoneEl = document.getElementById("phone");
+  const detailsEl = document.getElementById("details");
+
+  // ============ Helpers ============
+  const getToken = () => localStorage.getItem("qiq_token") || "";
+  const setStatus = (msg, type = "info") => {
+    statusEl.textContent = msg || "";
+    statusEl.style.color = type === "error" ? "#b91c1c" : type === "success" ? "#065f46" : "#6b7280";
+  };
+
+  async function postJSON(path, body) {
+    const headers = { "content-type": "application/json" };
+    const token = getToken();
+    if (token) headers["authorization"] = `Bearer ${token}`;
+    const res = await fetch(path, { method: "POST", headers, body: JSON.stringify(body) });
+    let data = null;
+    try { data = await res.json(); } catch { /* ignore */ }
+    if (!res.ok) {
+      const msg = (data && (data.error || data.message)) || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+    return data;
+  }
+
+  // ============ Submit ============
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    status.textContent = "جارٍ الإرسال…";
+    const company = companyEl.value.trim();
+    const email = emailEl.value.trim();
+    const phone = phoneEl.value.trim();
+    const details = detailsEl.value.trim();
 
-    const data = Object.fromEntries(new FormData(form).entries());
-    data.users = Number(data.users || 0);
+    if (!company || !email || !phone) {
+      setStatus("من فضلك املأ الحقول المطلوبة (الشركة، البريد، الهاتف).", "error");
+      return;
+    }
 
+    setStatus("جاري إرسال الطلب…");
     try {
-      const res = await API.submitQuote(data);
-      if (res.ok) {
-        status.textContent = "تم استلام الطلب. سنتواصل معك قريباً.";
-        form.reset();
-      } else {
-        status.textContent = res.error || "تعذّر إرسال الطلب.";
-      }
+      const payload = { company, email, phone, details, source: "custom-form" };
+      // Endpoint المتوقع عندك: /api/quote
+      const data = await postJSON("/api/quote", payload);
+
+      // نجاح
+      setStatus(data.message || "تم إرسال طلب عرض السعر بنجاح. سنتواصل معك قريبًا.", "success");
+      form.reset();
     } catch (err) {
-      status.textContent = err.message || "تعذّر إرسال الطلب.";
+      setStatus(`حصل خطأ: ${err.message}`, "error");
     }
   });
 })();
