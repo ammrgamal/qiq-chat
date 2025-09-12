@@ -1,255 +1,31 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>QIQ Chat + Algolia Agent</title>
-    <style>
-      :root {
-        --bg:#f6f7fb;
-        --card:#ffffff;
-        --border:#e5e7eb;
-        --text:#111827;
-        --muted:#6b7280;
-        --primary:#0ea5e9;
-        --send:#111827;
-      }
-      body {
-        margin:0; font-family:Inter, system-ui, -apple-system, "Segoe UI", Arial;
-        background:var(--bg); color:var(--text);
-      }
-      .wrap {
-        max-width: 980px; margin: 24px auto; padding: 0 12px;
-      }
-      .card {
-        background:var(--card); border:1px solid var(--border);
-        border-radius:14px; overflow:hidden;
-      }
-      .window {
-        min-height: 440px; max-height: 560px; overflow:auto;
-        background:#f8fafc; padding:16px;
-      }
-      .msg { margin:10px 0; line-height:1.55; }
-      .bubble {
-        display:inline-block; padding:10px 12px; border-radius:12px;
-        max-width:95%; white-space:pre-wrap; word-break:break-word;
-        background:#fff; border:1px solid var(--border);
-      }
-      .msg.user { text-align:left; } /* لأننا RTL، خليه يبان يسار */
-      .msg.user .bubble { background:#2563eb; border-color:#2563eb; color:#fff; }
-      .form {
-        display:flex; gap:8px; border-top:1px solid var(--border);
-        padding:10px; background:#fff; align-items:center;
-      }
-      .input {
-        flex:1; border:1px solid var(--border); border-radius:10px; padding:10px;
-      }
-      .btn, .send {
-        border:0; border-radius:10px; padding:10px 14px; cursor:pointer; color:#fff;
-      }
-      .btn { background:#0ea5e9; }
-      .send { background:var(--send); }
-      .muted { color:var(--muted); font-size:12px; margin-top:6px; }
-      .results {
-        margin:12px 0 4px;
-        background:#fff; border:1px dashed var(--border); border-radius:12px; padding:12px;
-      }
-      .result {
-        display:grid; grid-template-columns: 72px 1fr auto; gap:12px; align-items:center;
-        border-bottom:1px solid #eef2f7; padding:10px 0;
-      }
-      .result:last-child { border-bottom:0; }
-      .thumb {
-        width:64px; height:64px; object-fit:contain; border:1px solid #eee; border-radius:8px; background:#fff;
-      }
-      .link { color:#2563eb; text-decoration:none; }
-      .price { font-weight:600; white-space:nowrap; }
-      .loading {
-        display:inline-block; width:14px; height:14px; border:2px solid #cbd5e1;
-        border-top-color:#0ea5e9; border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:-2px;
-      }
-      @keyframes spin { to { transform: rotate(360deg) } }
-    </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <div class="card">
-        <div id="win" class="window" aria-live="polite"></div>
-
-        <form id="form" class="form" autocomplete="off">
-          <input id="inp" class="input" type="text"
-                 placeholder="اكتب سؤالك… مثلاً: Kaspersky لمدة سنتين لـ 120 مستخدم" required />
-          <button class="btn" type="button" id="btnSearch">ابحث عن منتجات</button>
-          <button class="send" type="submit">إرسال</button>
-        </form>
-      </div>
-
-      <div class="muted">
-        ملاحظة: زر “ابحث عن منتجات” بيستخدم Algolia Agent Studio عبر الراوت <code>/api/search</code>.
-      </div>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>QIQ – Chat & Search</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+  <div class="bar">
+    <h1>QuickITQuote</h1>
+    <div>
+      <a class="btn" href="quote.html">طلب عرض مخصص</a>
+      <a class="btn" href="account.html">حسابي</a>
     </div>
+  </div>
 
-    <script>
-      // عناصر DOM
-      const win  = document.getElementById('win');
-      const form = document.getElementById('form');
-      const inp  = document.getElementById('inp');
-      const btnSearch = document.getElementById('btnSearch');
+  <div class="wrap">
+    <div id="win" class="window"></div>
+    <form id="frm" class="form" autocomplete="off">
+      <button id="searchBtn" class="btn primary" type="button">ابحث عن منتجات</button>
+      <input id="inp" class="input" type="text" placeholder="اكتب: Kaspersky EDR لـ 120 مستخدم" required />
+      <button class="btn" type="submit">إرسال</button>
+    </form>
+  </div>
 
-      // مساعدات واجهة الشات
-      function addMsg(role, html, asHtml=false) {
-        const wrap = document.createElement('div');
-        wrap.className = 'msg ' + (role === 'user' ? 'user' : 'bot');
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        bubble.dir = 'auto';
-        if (asHtml) bubble.innerHTML = html;
-        else bubble.textContent = html;
-        wrap.appendChild(bubble);
-        win.appendChild(wrap);
-        win.scrollTop = win.scrollHeight;
-        return bubble;
-      }
-      function esc(s){ return (s ?? '').toString().replace(/[&<>"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+  <div class="note">البحث يعمل عبر /api/search (Algolia Index).</div>
 
-      // رسالة ترحيب
-      addMsg('bot', 'أهلاً بك في QuickITQuote 👋\nاسأل عن منتج أو رخصة، أو استخدم زر “ابحث عن منتجات”.');
-
-      // ============ استدعاء Agent عبر /api/search ============
-      async function agentSearch(query) {
-        // نبعث request إلى الراوت السيرفري (اللي بيكلّم Agent Studio)
-        const r = await fetch('/api/search', {
-          method: 'POST',
-          headers: { 'content-type':'application/json' },
-          body: JSON.stringify({ query })
-        });
-
-        if (!r.ok) {
-          let errText = await r.text().catch(()=> '');
-          throw new Error(`Search API error ${r.status}: ${errText || r.statusText}`);
-        }
-        return r.json();
-      }
-
-      // رسم نتائج المنتجات (بسيط)
-      function renderAgentResults(agentResponse) {
-        // شكل الـ response من Agent Studio ممكن يختلف حسب الإعدادات.
-        // أبسط سيناريو: نعرض نص الرد ولو فيه روابط منتجات نعرضها كرتم.
-        const container = document.createElement('div');
-        container.className = 'results';
-
-        // 1) النص العام للرد لو موجود
-        const text = agentResponse?.answer
-                  || agentResponse?.output_text
-                  || agentResponse?.content
-                  || '';
-
-        if (text) {
-          const p = document.createElement('p');
-          p.style.margin = '8px 0 12px';
-          p.textContent = text;
-          container.appendChild(p);
-        }
-
-        // 2) نحاول نقرأ Products من payload الشائع (لو الـ Agent مولّد Cards)
-        //  - بعض الإعدادات ترجّعها في tools/steps/… أو في field مثل products/cards.
-        //  - هنحاول نلاقي مصفوفة objects فيها name/link/price/image
-        const candidates = [];
-
-        // مساعدة صغيرة لاستخراج مصفوفات من أماكن محتملة
-        function collectArrays(obj) {
-          if (!obj || typeof obj !== 'object') return;
-          for (const k of Object.keys(obj)) {
-            const v = obj[k];
-            if (Array.isArray(v)) candidates.push(v);
-            if (v && typeof v === 'object') collectArrays(v);
-          }
-        }
-        collectArrays(agentResponse);
-
-        // نحاول نلاقي عناصر شكلها Products
-        let products = null;
-        for (const arr of candidates) {
-          const looksLikeProducts =
-            arr.length && arr.every(x =>
-              x && typeof x === 'object' && (
-                 x.name || x.title || x.productTitle || x.product_name
-              )
-            );
-          if (looksLikeProducts) { products = arr; break; }
-        }
-
-        if (products && products.length) {
-          products.slice(0, 5).forEach(p => {
-            const name  = p.name || p.title || p.productTitle || p.product_name || '(بدون اسم)';
-            const link  = p.link || p.url || p.permalink || '';
-            const img   = p.image || p.image_url || p.thumbnail || '';
-            const price = p.price || p.list_price || p.unit_price || '';
-
-            const row = document.createElement('div');
-            row.className = 'result';
-
-            const im = document.createElement('img');
-            im.className = 'thumb';
-            im.src = img || 'https://via.placeholder.com/68?text=IMG';
-            im.alt = name;
-            row.appendChild(im);
-
-            const info = document.createElement('div');
-            const title = document.createElement('div');
-            if (link) {
-              title.innerHTML = `<a class="link" target="_blank" rel="noopener" href="${esc(link)}">${esc(name)}</a>`;
-            } else {
-              title.textContent = name;
-            }
-            info.appendChild(title);
-            row.appendChild(info);
-
-            const pr = document.createElement('div');
-            pr.className = 'price';
-            pr.textContent = price ? String(price) : '';
-            row.appendChild(pr);
-
-            container.appendChild(row);
-          });
-        } else {
-          // لو مفيش Products واضحة، نعرض ملاحظة بسيطة
-          const hint = document.createElement('div');
-          hint.style.color = '#6b7280';
-          hint.textContent = 'لم نجد بطاقات منتجات صريحة في رد الـ Agent — تم عرض النص فقط.';
-          container.appendChild(hint);
-        }
-
-        return container.outerHTML;
-      }
-
-      // إرسال سؤال عام (لو عندك /api/chat ممكن تستخدمه. هنا بنعرض echo بسيط)
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const q = (inp.value || '').trim(); if (!q) return;
-        inp.value = '';
-        addMsg('user', q);
-
-        // رد بسيط محلي—لو عندك /api/chat اربطه هنا
-        const b = addMsg('bot', 'جاري المعالجة… ');
-        b.innerHTML = 'تم الإرسال. لو حابب تشوف منتجات قريبة من طلبك اضغط زر “ابحث عن منتجات”.';
-      });
-
-      // زر البحث عن منتجات عبر Agent
-      btnSearch.addEventListener('click', async () => {
-        const q = (inp.value || '').trim();
-        if (!q) { inp.focus(); return; }
-
-        const bubble = addMsg('bot', `بحث: ${q} <span class="loading"></span>`, true);
-        try {
-          const resp = await agentSearch(q);
-          const html = renderAgentResults(resp);
-          bubble.innerHTML = html || 'لا يوجد نتائج.';
-        } catch (err) {
-          console.error(err);
-          bubble.textContent = 'حصل خطأ أثناء الاتصال بالبحث.';
-        }
-      });
-    </script>
-  </body>
+  <script type="module" src="js/ui-chat.js"></script>
+</body>
 </html>
