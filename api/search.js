@@ -1,6 +1,6 @@
-// /api/search.js
+// /api/chat.js
 export default async function handler(req, res) {
-  // CORS
+  // CORS (لو هتطلب من دومين خارجي زي موقعك الووردبريس)
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -14,30 +14,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { query, hitsPerPage = 5 } =
-      typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+    const messages = Array.isArray(body?.messages) ? body.messages : [];
 
-    const appId  = process.env.ALGOLIA_APP_ID;
-    const apiKey = process.env.ALGOLIA_API_KEY; // Search-Only أو Admin (Search-Only كفاية)
-    const index  = process.env.ALGOLIA_INDEX;
-
-    const idxUrl = `https://${appId}-dsn.algolia.net/1/indexes/${encodeURIComponent(index)}/query`;
-    const r = await fetch(idxUrl, {
+    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
-        "X-Algolia-API-Key": apiKey,
-        "X-Algolia-Application-Id": appId,
       },
-      body: JSON.stringify({ query, hitsPerPage }),
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages,
+        temperature: 0.3,
+      }),
     });
 
-    const json = await r.json();
+    // نرجّع النص الخام زي ما هو؛ الواجهة عندك فيها extractAssistantText
+    const raw = await resp.text();
     res.setHeader("Access-Control-Allow-Origin", "*");
-    return res.status(r.status).json(json);
-
-  } catch (e) {
+    return res.status(resp.status).send(raw);
+  } catch (err) {
     res.setHeader("Access-Control-Allow-Origin", "*");
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: err.message });
   }
 }
