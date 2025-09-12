@@ -1,27 +1,88 @@
-<script>
-async function sendMessage() {
-  const input = document.getElementById('msg');
-  const msg = input.value.trim();
-  if (!msg) return;
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QIQ Chat</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto; background:#f6f7f9; margin:0; padding:32px;}
+    .card{max-width:920px; margin:0 auto; background:#fff; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.08); padding:20px;}
+    .log{height:420px; overflow:auto; border:1px solid #e6e7eb; border-radius:12px; padding:12px; background:#fafbfc}
+    .msg{margin:8px 0; line-height:1.5}
+    .role{font-weight:600; color:#1f2937}
+    .inputRow{display:flex; gap:8px; margin-top:10px}
+    input{flex:1; padding:12px 14px; border:1px solid #d1d5db; border-radius:10px; font-size:15px}
+    button{padding:12px 18px; border:none; border-radius:10px; background:#111827; color:#fff; font-weight:600; cursor:pointer}
+    button:disabled{opacity:.6; cursor:not-allowed}
+    .error{margin-top:12px; background:#fee2e2; color:#991b1b; padding:10px 12px; border-radius:10px; font-size:14px}
+    .hint{color:#6b7280; font-size:13px; margin-top:6px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div id="log" class="log"></div>
+    <div class="inputRow">
+      <input id="msg" placeholder="اكتب سؤالك هنا…" />
+      <button id="sendBtn" onclick="sendMessage()">Send</button>
+    </div>
+    <div id="err" class="error" style="display:none"></div>
+    <div class="hint">ملاحظة: فتح <code>/api/chat</code> مباشرة من المتصفح هيظهر "Method not allowed" وده طبيعي.</div>
+  </div>
 
-  try {
-    const r = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: [{ role: 'user', content: msg }] })
-    });
+  <script>
+    const logEl = document.getElementById('log');
+    const inputEl = document.getElementById('msg');
+    const btnEl = document.getElementById('sendBtn');
+    const errEl = document.getElementById('err');
 
-    const text = await r.text();
-    let payload;
-    try { payload = JSON.parse(text); }
-    catch { throw new Error('Bad JSON from server: ' + text); }
+    function append(role, content){
+      const div = document.createElement('div');
+      div.className = 'msg';
+      div.innerHTML = `<span class="role">${role === 'user' ? 'You' : 'AI'}:</span> ${content}`;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
 
-    if (!r.ok) throw new Error(payload?.error || text);
+    function showError(text){
+      errEl.style.display = 'block';
+      errEl.textContent = text;
+    }
+    function clearError(){ errEl.style.display = 'none'; errEl.textContent = '' }
 
-    const reply = payload.choices?.[0]?.message?.content ?? '(no reply)';
-    appendToChat('assistant', reply);
-  } catch (e) {
-    showError(e.message);
-  }
-}
-</script>
+    async function sendMessage(){
+      clearError();
+
+      const msg = inputEl.value.trim();
+      if(!msg) return;
+      append('user', msg);
+      inputEl.value = '';
+      btnEl.disabled = true;
+
+      try{
+        const r = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [{ role: 'user', content: msg }] })
+        });
+
+        const text = await r.text();         // دايمًا خدها نص الأول
+        let data;
+        try { data = JSON.parse(text) } catch { data = null }
+
+        if(!r.ok){
+          const msg = data?.error || text || 'Request failed';
+          showError(msg);
+          return;
+        }
+
+        const reply = data?.choices?.[0]?.message?.content || '(no content)';
+        append('assistant', reply);
+      } catch (e){
+        showError(e.message || 'Network error');
+      } finally {
+        btnEl.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
