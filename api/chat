@@ -3,8 +3,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  // تأكيد وجود مفتاح OpenAI
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ error: "Missing OPENAI_API_KEY on server" });
+  }
+
   try {
-    // بعض بيئات Vercel ترسل body كـ string
+    // في بعض بيئات Vercel الـ body بييجي string
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const messages = Array.isArray(body?.messages) ? body.messages : [];
 
@@ -21,15 +26,14 @@ export default async function handler(req, res) {
       })
     });
 
+    // لو OpenAI رجّع خطأ، رجّعه للعميل عشان يظهر في الواجهة
+    const text = await resp.text();
     if (!resp.ok) {
-      const errTxt = await resp.text();
-      return res.status(resp.status).json({ error: errTxt });
+      return res.status(resp.status).json({ error: text });
     }
 
-    const data = await resp.json();
+    const data = JSON.parse(text);
     const content = data?.choices?.[0]?.message?.content || "No reply";
     return res.status(200).json({ choices: [{ message: { content } }] });
   } catch (e) {
-    return res.status(500).json({ error: e.message || "Server error" });
-  }
-}
+    return res.status(500).jso
