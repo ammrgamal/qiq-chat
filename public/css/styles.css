@@ -1,0 +1,25 @@
+body{margin:0;background:#f5f7fb;font-family:Inter,system-ui,Segoe UI,Arial}
+.wrap{max-width:980px;margin:20px auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
+.window{min-height:460px;max-height:66vh;overflow:auto;background:#f8fafc;padding:16px}
+.msg{margin:10px 0;line-height:1.55}
+.msg.user{text-align:right}
+.bubble{display:inline-block;padding:10px 12px;border-radius:12px;max-width:95%;white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #e5e7eb}
+.msg.user .bubble{background:#2563eb;border-color:#2563eb;color:#fff}
+.form{display:flex;gap:8px;border-top:1px solid #e5e7eb;padding:10px;background:#fff;align-items:center}
+.input, .input, input, textarea{border:1px solid #e5e7eb;border-radius:10px;padding:10px}
+.input{flex:1}
+.btn{border:0;border-radius:10px;padding:10px 14px;cursor:pointer;color:#fff;background:#374151}
+.btn.primary{background:#0ea5e9}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:8px}
+.card{border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:10px}
+.card img{width:100%;height:140px;object-fit:contain;border:1px solid #eee;border-radius:10px;background:#fff}
+.card .name{font-weight:600;margin:8px 0 6px}
+.muted{color:#6b7280;font-size:12px}
+.price{margin-top:6px;font-weight:600}
+.bar{display:flex;gap:8px;justify-content:space-between;align-items:center;padding:10px}
+h1{font-size:18px;margin:0}
+.note{max-width:980px;margin:8px auto 0;color:#6b7280;font-size:12px;text-align:center}
+.form-col{max-width:680px;margin:16px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+.row{display:flex;gap:12px;margin-bottom:10px}
+.row > *{flex:1}
