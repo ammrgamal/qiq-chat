@@ -1,33 +1,38 @@
-<script>
-  async function sendMessage() {
-    const input = document.getElementById('msg');
-    const msg = input.value.trim();
-    if (!msg) return;
-
-    try {
-      const r = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: msg }] })
-      });
-
-      // حاول تقرا JSON، ولو فشل اقرأ نص عادي
-      let payload;
-      const text = await r.text();
-      try { payload = JSON.parse(text); } catch { payload = { error: text }; }
-
-      if (!r.ok) {
-        throw new Error(payload?.error || 'Request failed');
-      }
-
-      // OpenAI payload -> payload.choices[0].message.content
-      const reply = payload?.choices?.[0]?.message?.content || '(no content)';
-      appendToChat('assistant', reply);
-
-    } catch (e) {
-      appendToChat('error', e.message);
-    } finally {
-      input.value = '';
-    }
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    res.setHeader("Allow", ["POST"]);
+    return res.status(405).json({ error: "Method not allowed" });
   }
-</script>
+
+  try {
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+    const messages = Array.isArray(body?.messages) ? body.messages : [];
+
+    const upstream = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages,
+        temperature: 0.3,
+      }),
+    });
+
+    const raw = await upstream.text();
+
+    // لو OpenAI رجّع خطأ، رجّعه كـ JSON بدل ما نرجع Response فاضي
+    if (!upstream.ok) {
+      return res.status(upstream.status).json({ error: "upstream", raw });
+    }
+
+    // تأكد إننا بنرجّع JSON صالح دايمًا
+    const data = JSON.parse(raw);
+    return res.status(200).json(data);
+
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+}
