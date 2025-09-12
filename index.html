@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QIQ Chat</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <script src="https://cdn.jsdelivr.net/npm/algoliasearch/dist/algoliasearch-lite.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f5f5f5; }
+    .qiq { max-width: 900px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 8px; }
+    .qiq-window { min-height: 400px; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; overflow-y: auto; }
+    .qiq-actions { margin-top: 10px; }
+    .qiq-btn { padding: 10px 15px; margin-right: 10px; border: none; border-radius: 4px; cursor: pointer; }
+    .qiq-primary { background: #0070f3; color: white; }
+  </style>
+</head>
+<body>
+  <div id="qiq-chat" class="qiq">
+    <div id="qiq-window" class="qiq-window"></div>
+    <form id="qiq-form" autocomplete="off">
+      <input id="qiq-input" type="text" placeholder="اكتب سؤالك هنا…" required />
+      <div class="qiq-actions">
+        <button class="qiq-btn qiq-primary" type="submit">Send</button>
+        <button class="qiq-btn" type="button" id="qiq-import">Import BOQ (Excel)</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('qiq-form');
+    const input = document.getElementById('qiq-input');
+    const windowEl = document.getElementById('qiq-window');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userMsg = input.value.trim();
+      if (!userMsg) return;
+      windowEl.innerHTML += `<div><b>You:</b> ${userMsg}</div>`;
+      input.value = '';
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: userMsg }] })
+      });
+      const data = await res.json();
+      const reply = data.choices?.[0]?.message?.content || 'No reply';
+      windowEl.innerHTML += `<div><b>AI:</b> ${reply}</div>`;
+      windowEl.scrollTop = windowEl.scrollHeight;
+    });
+  </script>
+</body>
+</html>
