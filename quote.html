@@ -1,29 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quote Review</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-    .container { max-width: 900px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background: #0070f3; color: white; }
-  </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>طلب عرض مخصص</title>
+  <link rel="stylesheet" href="css/styles.css"/>
 </head>
 <body>
-  <div class="container">
-    <h1>Quote Review</h1>
-    <p>This page will display the reviewed items from your BOQ.</p>
-    <table>
-      <thead>
-        <tr><th>Item</th><th>Description</th><th>Price</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Example</td><td>Kaspersky EDR 120 users</td><td>EGP 50,000</td></tr>
-      </tbody>
-    </table>
+  <div class="bar">
+    <h1>طلب عرض مخصص</h1>
+    <div>
+      <a class="btn" href="index.html">الصفحة الرئيسية</a>
+      <a class="btn" href="account.html">حسابي</a>
+    </div>
   </div>
+
+  <form id="quoteForm" class="form-col" autocomplete="off">
+    <div class="row">
+      <input id="qName" placeholder="الاسم *" required/>
+      <input id="qEmail" placeholder="الإيميل *" type="email" required/>
+    </div>
+    <div class="row">
+      <input id="qPhone" placeholder="التليفون"/>
+      <input id="qCompany" placeholder="الشركة"/>
+    </div>
+    <div class="row">
+      <textarea id="qReq" rows="6" placeholder="المتطلبات/الوصف (مثال: 120 مستخدم EDR لمدة سنتين، دعم 24/7...)"></textarea>
+    </div>
+    <div class="row">
+      <button class="btn primary" type="submit">إرسال الطلب</button>
+    </div>
+    <div id="qout" class="muted"></div>
+  </form>
+
+  <script type="module" src="js/quote-form.js"></script>
 </body>
 </html>
