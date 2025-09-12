@@ -1,88 +1,284 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="auto">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- ===== QIQ Chat (Front) ===== -->
   <title>QIQ Chat</title>
+
+  <!-- Excel export (نفس المكتبة اللي بتستخدمها) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto; background:#f6f7f9; margin:0; padding:32px;}
-    .card{max-width:920px; margin:0 auto; background:#fff; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.08); padding:20px;}
-    .log{height:420px; overflow:auto; border:1px solid #e6e7eb; border-radius:12px; padding:12px; background:#fafbfc}
-    .msg{margin:8px 0; line-height:1.5}
-    .role{font-weight:600; color:#1f2937}
-    .inputRow{display:flex; gap:8px; margin-top:10px}
-    input{flex:1; padding:12px 14px; border:1px solid #d1d5db; border-radius:10px; font-size:15px}
-    button{padding:12px 18px; border:none; border-radius:10px; background:#111827; color:#fff; font-weight:600; cursor:pointer}
-    button:disabled{opacity:.6; cursor:not-allowed}
-    .error{margin-top:12px; background:#fee2e2; color:#991b1b; padding:10px 12px; border-radius:10px; font-size:14px}
-    .hint{color:#6b7280; font-size:13px; margin-top:6px}
+    /* نفس الستايلات بتاعتك */
+    .qiq{max-width:980px;margin:16px auto;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;font-family:Inter,system-ui,Segoe UI,Arial;background:#fff}
+    .qiq-window{min-height:420px;max-height:560px;overflow:auto;background:#f8fafc;padding:16px}
+    .qiq-msg{margin:10px 0;line-height:1.55}
+    .qiq-msg.user{text-align:right}
+    .qiq-bubble{display:inline-block;padding:10px 12px;border-radius:12px;max-width:95%;white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #e5e7eb}
+    .qiq-msg.user .qiq-bubble{background:#2563eb;border-color:#2563eb;color:#fff}
+    .qiq-form{display:flex;gap:8px;border-top:1px solid #e5e7eb;padding:10px;background:#fff;align-items:center}
+    .qiq-input{flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:10px}
+    .qiq-actions{display:flex;gap:8px}
+    .qiq-btn,.qiq-send{border:0;border-radius:10px;padding:10px 14px;cursor:pointer;background:#374151;color:#fff}
+    .qiq-send{background:#111827}
+    .qiq-btn:disabled,.qiq-send:disabled{opacity:.6;cursor:not-allowed}
+    .qiq-primary{background:#0ea5e9}
+    .qiq-success{background:#059669}
+    .qiq-right{display:flex;gap:8px;align-items:center}
+    .qiq-status{font-size:12px;color:#6b7280;margin-left:8px}
+
+    .qiq-toast{position:fixed;right:16px;bottom:16px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+    .qiq-toast .item{background:#111827;color:#fff;padding:12px 14px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px}
+    .qiq-toast .item a{color:#93c5fd;text-decoration:underline}
+    .qiq-toast .close{margin-left:8px;background:transparent;border:0;color:#fff;cursor:pointer;font-size:16px}
+
+    .qiq-boq{max-width:980px;margin:16px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:block}
+    .qiq-boq-top{display:flex;justify-content:space-between;align-items:center;margin:6px 4px 12px}
+    .qiq-table-wrap{overflow:auto;max-height:520px;border-top:1px dashed #e5e7eb;will-change:contents}
+    .qiq-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
+    .qiq-table th,.qiq-table td{padding:10px;border-bottom:1px solid #eef2f7;vertical-align:top}
+    .qiq-img{width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid #eee;background:#fff}
+    .qiq-actions-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .qiq-qty{width:70px;padding:8px;border:1px solid #d1d5db;border-radius:8px}
+    .qiq-link{color:#2563eb;text-decoration:none}
+    .qiq-chip{display:inline-block;background:#eef2ff;border:1px solid #dbe1ff;border-radius:8px;padding:2px 8px;margin-top:6px;font-size:12px}
+
+    .qiq-section-title{margin:8px 0 6px;font-weight:700}
+    .qiq-inline-wrap{margin-top:6px}
+    .qiq-inline-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
+    .qiq-inline-table th,.qiq-inline-table td{border:1px solid #e5e7eb;padding:8px;vertical-align:top}
+    .qiq-inline-img{width:58px;height:58px;object-fit:contain;border:1px solid #eee;border-radius:8px}
+    .qiq-inline-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .qiq-mini{border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;background:#fff;cursor:pointer}
+    .qiq-mini.primary{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
+    .qiq-mini.success{background:#059669;color:#fff;border-color:#059669}
+
+    .qiq-modal{position:fixed;inset:0;z-index:9998;display:none}
+    .qiq-modal.active{display:block}
+    .qiq-modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+    .qiq-modal__dialog{position:absolute;inset:40px;max-width:1200px;margin:auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);overflow:hidden}
+    .qiq-modal__close{position:absolute;right:8px;top:8px;width:36px;height:36px;border-radius:50%;border:0;background:#111827;color:#fff;font-size:20px;cursor:pointer;z-index:1}
+    #qiq-modal-frame{width:100%;height:100%;border:0}
   </style>
 </head>
 <body>
-  <div class="card">
-    <div id="log" class="log"></div>
-    <div class="inputRow">
-      <input id="msg" placeholder="اكتب سؤالك هنا…" />
-      <button id="sendBtn" onclick="sendMessage()">Send</button>
-    </div>
-    <div id="err" class="error" style="display:none"></div>
-    <div class="hint">ملاحظة: فتح <code>/api/chat</code> مباشرة من المتصفح هيظهر "Method not allowed" وده طبيعي.</div>
+  <div id="qiq-chat" class="qiq">
+    <div class="qiq-window" id="qiq-window"></div>
+
+    <form id="qiq-form" class="qiq-form" autocomplete="off">
+      <input id="qiq-input" class="qiq-input" type="text"
+             placeholder="اكتب سؤالك أو ابدأ.. مثلا: عايز Kaspersky EDR لـ 120 مستخدم لمدة سنتين" required />
+      <div class="qiq-actions">
+        <button class="qiq-btn qiq-primary" type="button" id="qiq-import-btn">Import BOQ (Excel)</button>
+        <button class="qiq-send" type="submit">Send</button>
+        <input type="file" id="qiq-file" accept=".xlsx,.xls,.csv" hidden />
+      </div>
+    </form>
   </div>
 
-  <script>
-    const logEl = document.getElementById('log');
-    const inputEl = document.getElementById('msg');
-    const btnEl = document.getElementById('sendBtn');
-    const errEl = document.getElementById('err');
+  <div id="qiq-boq-wrap" class="qiq-boq">
+    <div class="qiq-boq-top">
+      <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>Add all matched</button>
+      <div class="qiq-right">
+        <button id="qiq-export-csv"  class="qiq-btn" type="button">Export CSV</button>
+        <button id="qiq-export-xlsx" class="qiq-btn" type="button">Export XLSX</button>
+        <span id="qiq-status" class="qiq-status"></span>
+      </div>
+    </div>
+    <div class="qiq-table-wrap">
+      <table class="qiq-table" aria-label="Staged items">
+        <thead>
+          <tr>
+            <th style="width:76px">Image</th>
+            <th>Description / PN / SKU</th>
+            <th style="width:120px">Unit price</th>
+            <th style="width:140px">Line total</th>
+            <th style="width:270px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="qiq-body"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" style="text-align:right"><strong>Grand total:</strong></td>
+            <td id="qiq-grand" colspan="2"><strong>-</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
 
-    function append(role, content){
-      const div = document.createElement('div');
-      div.className = 'msg';
-      div.innerHTML = `<span class="role">${role === 'user' ? 'You' : 'AI'}:</span> ${content}`;
-      logEl.appendChild(div);
-      logEl.scrollTop = logEl.scrollHeight;
+  <!-- Modal -->
+  <div id="qiq-modal" class="qiq-modal" aria-hidden="true" role="dialog" aria-label="Product details">
+    <div class="qiq-modal__backdrop"></div>
+    <div class="qiq-modal__dialog">
+      <button class="qiq-modal__close" aria-label="Close" type="button">×</button>
+      <iframe id="qiq-modal-frame" src="" loading="lazy"></iframe>
+    </div>
+  </div>
+
+<script>
+(() => {
+  /* ====== CONFIG ====== */
+  // لو هتستخدمه من دومين تاني (ووردبرس)، غيّر API_BASE إلى دومين مشروعك على Vercel
+  const API_BASE = ""; // مثال: "https://qiq-chat.vercel.app" أو سيبه فاضي لو نفس الدومين
+
+  // قيم Algolia (للعرض/المعلومات فقط؛ البحث هيتم عبر /api/search)
+  const ALGOLIA_INDEX = "woocommerce_products";
+
+  const IMAGE_FIELDS = ["Image URL","image","image_url","image uri","thumbnail","images","img"];
+  const PRICE_FIELDS = ["List Price","price","Price","list_price","price_usd","priceUSD"];
+  const PN_FIELDS    = ["Part Number","part_number","pn","PN","sku","SKU","product_code","item","code","رقم","كود","موديل"];
+  const LINK_FIELDS  = ["link","product_url","url","permalink"];
+
+  const CHAT_HITS_PER_SEARCH = 5;
+  const IMPORT_HITS_PER_ROW  = 1;
+  const PLACEHOLDER_IMG = "https://via.placeholder.com/68?text=IMG";
+  const QUOTE_PAGE_URL = "/get-quote/";
+
+  /* ====== DOM ====== */
+  const win    = document.getElementById("qiq-window");
+  const form   = document.getElementById("qiq-form");
+  const input  = document.getElementById("qiq-input");
+  const sendBtn= form.querySelector(".qiq-send");
+  const importBtn = document.getElementById("qiq-import-btn");
+  const fileInput = document.getElementById("qiq-file");
+  const tbody  = document.getElementById("qiq-body");
+  const addAllBtn = document.getElementById("qiq-add-all");
+  const statusEl  = document.getElementById("qiq-status");
+  const grandCell = document.getElementById("qiq-grand");
+  const exportCsvBtn  = document.getElementById("qiq-export-csv");
+  const exportXlsxBtn = document.getElementById("qiq-export-xlsx");
+  const modal = document.getElementById("qiq-modal");
+  const modalClose = modal.querySelector(".qiq-modal__close");
+  const modalFrame = document.getElementById("qiq-modal-frame");
+
+  /* ====== Toast ====== */
+  const toast = (() => {
+    const box = document.createElement("div");
+    box.className = "qiq-toast"; document.body.appendChild(box);
+    return (html) => {
+      const el = document.createElement("div");
+      el.className = "item";
+      el.innerHTML = html + '<button class="close" aria-label="Close" type="button">×</button>';
+      box.appendChild(el);
+      el.querySelector(".close").addEventListener("click", (ev)=>{ev.preventDefault();ev.stopPropagation(); el.remove();});
+      setTimeout(() => el.remove(), 6000);
+    };
+  })();
+
+  /* ====== Chat UI ====== */
+  const messages = [{
+    role:"system",
+    content:"You are QuickITQuote Intake Bot. In Arabic + English, collect step-by-step: company name, industry, users count, priority (Security/Cloud/Collaboration/Network), budget range, email, phone. Ask one question at a time. When done, summarize and ask to confirm sending for quotation. Keep answers concise."
+  }];
+  function addMsg(role, html, asHtml=false) {
+    const wrap = document.createElement("div");
+    wrap.className = "qiq-msg " + (role === "user" ? "user" : "bot");
+    const bubble = document.createElement("div");
+    bubble.className = "qiq-bubble"; bubble.dir = "auto";
+    if (asHtml) bubble.innerHTML = html; else bubble.textContent = html;
+    wrap.appendChild(bubble); win.appendChild(wrap);
+    win.scrollTop = win.scrollHeight; return bubble;
+  }
+  addMsg("bot","أهلاً بك في QuickITQuote 👋\\nهنسألك كام سؤال بسيط ونجهّز لك عرض مبدئي. ما اسم شركتك؟ / Welcome! What’s your company name?");
+
+  /* ====== Helpers ====== */
+  const first=(obj,fields)=>{ for(const k of fields){ const v=obj?.[k]; if(typeof v==="string"&&v.trim()) return v.trim(); if(Array.isArray(v)&&v.length){const s=String(v[0]||"").trim(); if(s) return s;} } return ""; };
+  const imageFromHit=h=>first(h,IMAGE_FIELDS);
+  const priceFromHit=h=>first(h,PRICE_FIELDS);
+  const pnFromHit   =h=>first(h,PN_FIELDS);
+  const linkFromHit =h=>first(h,LINK_FIELDS);
+
+  const fmtUSD=v=>{ const n=Number(String(v||"").replace(/[^\d.]/g,"")); if(!isFinite(n)) return "-"; try{return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);}catch{return `$${n.toFixed(2)}`;} };
+  const numFromPrice=v=> Number(String(v||"").replace(/[^\d.]/g,"")) || 0;
+
+  function arToEnDigits(s){ return String(s||"").replace(/[\\u0660-\\u0669]/g, d => String(d.charCodeAt(0)-0x0660)); }
+  function extractDesiredQty(text){
+    const t = arToEnDigits(String(text||"").toLowerCase());
+    const rx1 = /(\\d{1,7})\\s*(?:users?|مستخدم(?:ين)?|seat?s?|موظف(?:ين)?)/i;
+    const m1 = t.match(rx1); if(m1) return Math.max(1, parseInt(m1[1],10));
+    const tNoRanges = t.replace(/\\d+\\s*-\\s*\\d+/g, " "); const m2 = tNoRanges.match(/(\\d{1,7})/);
+    return m2 ? Math.max(1, parseInt(m2[1],10)) : 1;
+  }
+  function desiredYearsFromText(text){
+    const t = arToEnDigits(String(text||""));
+    const m = t.match(/(\\d+)\\s*(?:year|yr|سنة|سنين|سنوات)/i);
+    return m ? parseInt(m[1],10) : null;
+  }
+
+  function parseRangeInfo(name){
+    const s = arToEnDigits(String(name||""));
+    let min=null,max=null,years=null;
+    let m = s.match(/(\\d+)\\s*\\+\\s*(?:user|seat|license)/i);
+    if(m){ min=parseInt(m[1],10); max=Number.POSITIVE_INFINITY; }
+    m = s.match(/(\\d+)\\s*-\\s*(\\d+)\\s*(?:user|seat|license)/i);
+    if(m){ min=parseInt(m[1],10); max=parseInt(m[2],10); }
+    m = s.match(/(\\d+)\\s*(?:year|yr|سنة|سنين|سنوات)/i);
+    if(m){ years=parseInt(m[1],10); }
+    return {min, max, years};
+  }
+  function scoreHitForQtyAndYears(hit, qty, wantYears){
+    const name = hit?.name || hit?.title || hit?.Description || "";
+    const {min, max, years} = parseRangeInfo(name);
+    let score = 0;
+    if(min!=null){
+      if(max===Infinity && qty>=min) score += 1000;
+      else if(max!=null && qty>=min && qty<=max) score += 1000;
+      else if(max!=null){ const closest = qty < min ? (min-qty) : (qty-max); score += Math.max(0, 300 - closest); }
     }
+    if(wantYears==null){ if(years===1) score += 40; }
+    else{ if(years===wantYears) score += 60; else if(years!=null) score += Math.max(0, 40 - Math.abs(years - wantYears)*10); }
+    const priceNum = numFromPrice(priceFromHit(hit)); if(priceNum>0) score += Math.max(0, 50 - Math.log10(priceNum+1)*10);
+    return -score;
+  }
 
-    function showError(text){
-      errEl.style.display = 'block';
-      errEl.textContent = text;
+  // ===== البحث عبر السيرفر بدلاً من المتصفح
+  async function aSearch(query, hits=5){
+    try{
+      const r = await fetch(`${API_BASE}/api/search`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ query, hitsPerPage: hits })
+      });
+      const j = await r.json();
+      return Array.isArray(j?.hits) ? j.hits : [];
+    }catch(e){
+      console.warn("Algolia error:", e?.message||e);
+      return [];
     }
-    function clearError(){ errEl.style.display = 'none'; errEl.textContent = '' }
+  }
 
-    async function sendMessage(){
-      clearError();
-
-      const msg = inputEl.value.trim();
-      if(!msg) return;
-      append('user', msg);
-      inputEl.value = '';
-      btnEl.disabled = true;
-
-      try{
-        const r = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [{ role: 'user', content: msg }] })
-        });
-
-        const text = await r.text();         // دايمًا خدها نص الأول
-        let data;
-        try { data = JSON.parse(text) } catch { data = null }
-
-        if(!r.ok){
-          const msg = data?.error || text || 'Request failed';
-          showError(msg);
-          return;
-        }
-
-        const reply = data?.choices?.[0]?.message?.content || '(no content)';
-        append('assistant', reply);
-      } catch (e){
-        showError(e.message || 'Network error');
-      } finally {
-        btnEl.disabled = false;
-      }
+  /* ====== تنظيف رد الخادم ====== */
+  function decodeUnicodeEscapes(str) {
+    let out = "", i = 0;
+    while (i < str.length) {
+      if (str[i] === "\\" && str[i+1] === "u" && /^[0-9a-fA-F]{4}/.test(str.slice(i+2, i+6))) {
+        const h1 = parseInt(str.slice(i+2, i+6), 16);
+        if (h1 >= 0xD800 && h1 <= 0xDBFF && str[i+6] === "\\" && str[i+7] === "u" && /^[0-9a-fA-F]{4}/.test(str.slice(i+8, i+12))) {
+          const h2 = parseInt(str.slice(i+8, i+12), 16);
+          out += String.fromCodePoint(0x10000 + ((h1 - 0xD800) << 10) + (h2 - 0xDC00));
+          i += 12;
+        } else { out += String.fromCharCode(h1); i += 6; }
+      } else { out += str[i++]; }
     }
-  </script>
-</body>
-</html>
+    return out;
+  }
+  function stripDigitNoise(s){ return s.replace(/(?:[0-9\\u0660-\\u0669]\\s*){8,}/g," ").replace(/\\s{2,}/g," ").trim(); }
+  function extractByLines(raw) {
+    let out = "";
+    raw.split(/\\r?\\n/).forEach(line => {
+      const t = line.trim();
+      if (/^f:?\\s*\\{/.test(t) && /"messageId"|finishReason|usage/.test(t)) return;
+      const m = t.match(/:\\s*"((?:\\\\.|[^"\\\\])*)"\\s*[,}]?$/);
+      if (m) out += decodeUnicodeEscapes(m[1]);
+    });
+    return out.trim();
+  }
+  function extractAssistantText(rawText) {
+    try { const maybe = JSON.parse(rawText); if (typeof maybe === "string") rawText = maybe; } catch {}
+    const decoded = decodeUnicodeEscapes(rawText);
+    try {
+      const data = JSON.parse(decoded);
+      const t = data?.body
