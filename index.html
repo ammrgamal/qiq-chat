@@ -3,15 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-
-  <!-- ===== QIQ Chat (Front) ===== -->
   <title>QIQ Chat</title>
-
-  <!-- Excel export (نفس المكتبة اللي بتستخدمها) -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
   <style>
-    /* نفس الستايلات بتاعتك */
+    /* === نفس الستايلات الأساسية عندك === */
     .qiq{max-width:980px;margin:16px auto;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;font-family:Inter,system-ui,Segoe UI,Arial;background:#fff}
     .qiq-window{min-height:420px;max-height:560px;overflow:auto;background:#f8fafc;padding:16px}
     .qiq-msg{margin:10px 0;line-height:1.55}
@@ -28,12 +24,10 @@
     .qiq-success{background:#059669}
     .qiq-right{display:flex;gap:8px;align-items:center}
     .qiq-status{font-size:12px;color:#6b7280;margin-left:8px}
-
     .qiq-toast{position:fixed;right:16px;bottom:16px;z-index:9999;display:flex;flex-direction:column;gap:8px}
     .qiq-toast .item{background:#111827;color:#fff;padding:12px 14px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px}
     .qiq-toast .item a{color:#93c5fd;text-decoration:underline}
     .qiq-toast .close{margin-left:8px;background:transparent;border:0;color:#fff;cursor:pointer;font-size:16px}
-
     .qiq-boq{max-width:980px;margin:16px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:block}
     .qiq-boq-top{display:flex;justify-content:space-between;align-items:center;margin:6px 4px 12px}
     .qiq-table-wrap{overflow:auto;max-height:520px;border-top:1px dashed #e5e7eb;will-change:contents}
@@ -44,7 +38,6 @@
     .qiq-qty{width:70px;padding:8px;border:1px solid #d1d5db;border-radius:8px}
     .qiq-link{color:#2563eb;text-decoration:none}
     .qiq-chip{display:inline-block;background:#eef2ff;border:1px solid #dbe1ff;border-radius:8px;padding:2px 8px;margin-top:6px;font-size:12px}
-
     .qiq-section-title{margin:8px 0 6px;font-weight:700}
     .qiq-inline-wrap{margin-top:6px}
     .qiq-inline-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
@@ -54,19 +47,11 @@
     .qiq-mini{border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;background:#fff;cursor:pointer}
     .qiq-mini.primary{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
     .qiq-mini.success{background:#059669;color:#fff;border-color:#059669}
-
-    .qiq-modal{position:fixed;inset:0;z-index:9998;display:none}
-    .qiq-modal.active{display:block}
-    .qiq-modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
-    .qiq-modal__dialog{position:absolute;inset:40px;max-width:1200px;margin:auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);overflow:hidden}
-    .qiq-modal__close{position:absolute;right:8px;top:8px;width:36px;height:36px;border-radius:50%;border:0;background:#111827;color:#fff;font-size:20px;cursor:pointer;z-index:1}
-    #qiq-modal-frame{width:100%;height:100%;border:0}
   </style>
 </head>
 <body>
   <div id="qiq-chat" class="qiq">
     <div class="qiq-window" id="qiq-window"></div>
-
     <form id="qiq-form" class="qiq-form" autocomplete="off">
       <input id="qiq-input" class="qiq-input" type="text"
              placeholder="اكتب سؤالك أو ابدأ.. مثلا: عايز Kaspersky EDR لـ 120 مستخدم لمدة سنتين" required />
@@ -109,176 +94,342 @@
     </div>
   </div>
 
-  <!-- Modal -->
-  <div id="qiq-modal" class="qiq-modal" aria-hidden="true" role="dialog" aria-label="Product details">
-    <div class="qiq-modal__backdrop"></div>
-    <div class="qiq-modal__dialog">
-      <button class="qiq-modal__close" aria-label="Close" type="button">×</button>
-      <iframe id="qiq-modal-frame" src="" loading="lazy"></iframe>
-    </div>
-  </div>
+  <script>
+  (() => {
+    /* ======== Helpers أساسية من كودك ======== */
+    const PLACEHOLDER_IMG = "https://via.placeholder.com/68?text=IMG";
+    const IMAGE_FIELDS = ["Image URL","image","image_url","image uri","thumbnail","images","img"];
+    const PRICE_FIELDS = ["List Price","price","Price","list_price","price_usd","priceUSD"];
+    const PN_FIELDS    = ["Part Number","part_number","pn","PN","sku","SKU","product_code","item","code","رقم","كود","موديل"];
+    const LINK_FIELDS  = ["link","product_url","url","permalink"];
+    const CHAT_HITS_PER_SEARCH = 5;
+    const IMPORT_HITS_PER_ROW  = 1;
 
-<script>
-(() => {
-  /* ====== CONFIG ====== */
-  // لو هتستخدمه من دومين تاني (ووردبرس)، غيّر API_BASE إلى دومين مشروعك على Vercel
-  const API_BASE = ""; // مثال: "https://qiq-chat.vercel.app" أو سيبه فاضي لو نفس الدومين
+    const win    = document.getElementById("qiq-window");
+    const form   = document.getElementById("qiq-form");
+    const input  = document.getElementById("qiq-input");
+    const sendBtn= form.querySelector(".qiq-send");
+    const importBtn = document.getElementById("qiq-import-btn");
+    const fileInput = document.getElementById("qiq-file");
+    const tbody  = document.getElementById("qiq-body");
+    const addAllBtn = document.getElementById("qiq-add-all");
+    const statusEl  = document.getElementById("qiq-status");
+    const grandCell = document.getElementById("qiq-grand");
+    const exportCsvBtn  = document.getElementById("qiq-export-csv");
+    const exportXlsxBtn = document.getElementById("qiq-export-xlsx");
 
-  // قيم Algolia (للعرض/المعلومات فقط؛ البحث هيتم عبر /api/search)
-  const ALGOLIA_INDEX = "woocommerce_products";
+    const toast = (() => {
+      const box = document.createElement("div");
+      box.className = "qiq-toast"; document.body.appendChild(box);
+      return (html) => {
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = html + '<button class="close" aria-label="Close" type="button">×</button>';
+        box.appendChild(el);
+        el.querySelector(".close").addEventListener("click", (ev)=>{ev.preventDefault();ev.stopPropagation(); el.remove();});
+        setTimeout(() => el.remove(), 6000);
+      };
+    })();
 
-  const IMAGE_FIELDS = ["Image URL","image","image_url","image uri","thumbnail","images","img"];
-  const PRICE_FIELDS = ["List Price","price","Price","list_price","price_usd","priceUSD"];
-  const PN_FIELDS    = ["Part Number","part_number","pn","PN","sku","SKU","product_code","item","code","رقم","كود","موديل"];
-  const LINK_FIELDS  = ["link","product_url","url","permalink"];
-
-  const CHAT_HITS_PER_SEARCH = 5;
-  const IMPORT_HITS_PER_ROW  = 1;
-  const PLACEHOLDER_IMG = "https://via.placeholder.com/68?text=IMG";
-  const QUOTE_PAGE_URL = "/get-quote/";
-
-  /* ====== DOM ====== */
-  const win    = document.getElementById("qiq-window");
-  const form   = document.getElementById("qiq-form");
-  const input  = document.getElementById("qiq-input");
-  const sendBtn= form.querySelector(".qiq-send");
-  const importBtn = document.getElementById("qiq-import-btn");
-  const fileInput = document.getElementById("qiq-file");
-  const tbody  = document.getElementById("qiq-body");
-  const addAllBtn = document.getElementById("qiq-add-all");
-  const statusEl  = document.getElementById("qiq-status");
-  const grandCell = document.getElementById("qiq-grand");
-  const exportCsvBtn  = document.getElementById("qiq-export-csv");
-  const exportXlsxBtn = document.getElementById("qiq-export-xlsx");
-  const modal = document.getElementById("qiq-modal");
-  const modalClose = modal.querySelector(".qiq-modal__close");
-  const modalFrame = document.getElementById("qiq-modal-frame");
-
-  /* ====== Toast ====== */
-  const toast = (() => {
-    const box = document.createElement("div");
-    box.className = "qiq-toast"; document.body.appendChild(box);
-    return (html) => {
-      const el = document.createElement("div");
-      el.className = "item";
-      el.innerHTML = html + '<button class="close" aria-label="Close" type="button">×</button>';
-      box.appendChild(el);
-      el.querySelector(".close").addEventListener("click", (ev)=>{ev.preventDefault();ev.stopPropagation(); el.remove();});
-      setTimeout(() => el.remove(), 6000);
-    };
-  })();
-
-  /* ====== Chat UI ====== */
-  const messages = [{
-    role:"system",
-    content:"You are QuickITQuote Intake Bot. In Arabic + English, collect step-by-step: company name, industry, users count, priority (Security/Cloud/Collaboration/Network), budget range, email, phone. Ask one question at a time. When done, summarize and ask to confirm sending for quotation. Keep answers concise."
-  }];
-  function addMsg(role, html, asHtml=false) {
-    const wrap = document.createElement("div");
-    wrap.className = "qiq-msg " + (role === "user" ? "user" : "bot");
-    const bubble = document.createElement("div");
-    bubble.className = "qiq-bubble"; bubble.dir = "auto";
-    if (asHtml) bubble.innerHTML = html; else bubble.textContent = html;
-    wrap.appendChild(bubble); win.appendChild(wrap);
-    win.scrollTop = win.scrollHeight; return bubble;
-  }
-  addMsg("bot","أهلاً بك في QuickITQuote 👋\\nهنسألك كام سؤال بسيط ونجهّز لك عرض مبدئي. ما اسم شركتك؟ / Welcome! What’s your company name?");
-
-  /* ====== Helpers ====== */
-  const first=(obj,fields)=>{ for(const k of fields){ const v=obj?.[k]; if(typeof v==="string"&&v.trim()) return v.trim(); if(Array.isArray(v)&&v.length){const s=String(v[0]||"").trim(); if(s) return s;} } return ""; };
-  const imageFromHit=h=>first(h,IMAGE_FIELDS);
-  const priceFromHit=h=>first(h,PRICE_FIELDS);
-  const pnFromHit   =h=>first(h,PN_FIELDS);
-  const linkFromHit =h=>first(h,LINK_FIELDS);
-
-  const fmtUSD=v=>{ const n=Number(String(v||"").replace(/[^\d.]/g,"")); if(!isFinite(n)) return "-"; try{return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);}catch{return `$${n.toFixed(2)}`;} };
-  const numFromPrice=v=> Number(String(v||"").replace(/[^\d.]/g,"")) || 0;
-
-  function arToEnDigits(s){ return String(s||"").replace(/[\\u0660-\\u0669]/g, d => String(d.charCodeAt(0)-0x0660)); }
-  function extractDesiredQty(text){
-    const t = arToEnDigits(String(text||"").toLowerCase());
-    const rx1 = /(\\d{1,7})\\s*(?:users?|مستخدم(?:ين)?|seat?s?|موظف(?:ين)?)/i;
-    const m1 = t.match(rx1); if(m1) return Math.max(1, parseInt(m1[1],10));
-    const tNoRanges = t.replace(/\\d+\\s*-\\s*\\d+/g, " "); const m2 = tNoRanges.match(/(\\d{1,7})/);
-    return m2 ? Math.max(1, parseInt(m2[1],10)) : 1;
-  }
-  function desiredYearsFromText(text){
-    const t = arToEnDigits(String(text||""));
-    const m = t.match(/(\\d+)\\s*(?:year|yr|سنة|سنين|سنوات)/i);
-    return m ? parseInt(m[1],10) : null;
-  }
-
-  function parseRangeInfo(name){
-    const s = arToEnDigits(String(name||""));
-    let min=null,max=null,years=null;
-    let m = s.match(/(\\d+)\\s*\\+\\s*(?:user|seat|license)/i);
-    if(m){ min=parseInt(m[1],10); max=Number.POSITIVE_INFINITY; }
-    m = s.match(/(\\d+)\\s*-\\s*(\\d+)\\s*(?:user|seat|license)/i);
-    if(m){ min=parseInt(m[1],10); max=parseInt(m[2],10); }
-    m = s.match(/(\\d+)\\s*(?:year|yr|سنة|سنين|سنوات)/i);
-    if(m){ years=parseInt(m[1],10); }
-    return {min, max, years};
-  }
-  function scoreHitForQtyAndYears(hit, qty, wantYears){
-    const name = hit?.name || hit?.title || hit?.Description || "";
-    const {min, max, years} = parseRangeInfo(name);
-    let score = 0;
-    if(min!=null){
-      if(max===Infinity && qty>=min) score += 1000;
-      else if(max!=null && qty>=min && qty<=max) score += 1000;
-      else if(max!=null){ const closest = qty < min ? (min-qty) : (qty-max); score += Math.max(0, 300 - closest); }
+    function addMsg(role, html, asHtml=false) {
+      const wrap = document.createElement("div");
+      wrap.className = "qiq-msg " + (role === "user" ? "user" : "bot");
+      const bubble = document.createElement("div");
+      bubble.className = "qiq-bubble"; bubble.dir = "auto";
+      if (asHtml) bubble.innerHTML = html; else bubble.textContent = html;
+      wrap.appendChild(bubble); win.appendChild(wrap);
+      win.scrollTop = win.scrollHeight; return bubble;
     }
-    if(wantYears==null){ if(years===1) score += 40; }
-    else{ if(years===wantYears) score += 60; else if(years!=null) score += Math.max(0, 40 - Math.abs(years - wantYears)*10); }
-    const priceNum = numFromPrice(priceFromHit(hit)); if(priceNum>0) score += Math.max(0, 50 - Math.log10(priceNum+1)*10);
-    return -score;
-  }
+    addMsg("bot","أهلاً بك في QuickITQuote 👋\nهنسألك كام سؤال بسيط ونجهّز لك عرض مبدئي. ما اسم شركتك؟ / Welcome! What’s your company name?");
 
-  // ===== البحث عبر السيرفر بدلاً من المتصفح
-  async function aSearch(query, hits=5){
-    try{
-      const r = await fetch(`${API_BASE}/api/search`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query, hitsPerPage: hits })
+    const esc=s=> (s??"").toString().replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+    function mdToHtml(md){
+      if(!md) return "";
+      md = md.replace(/\\n/g, '\n');
+      const linkify = (t)=> esc(t)
+        .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g,'<em>$1</em>')
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+      const lines = md.split(/\r?\n/); let html="", inOl=false, inUl=false;
+      const close = ()=>{ if(inOl){html+="</ol>";inOl=false} if(inUl){html+="</ul>";inUl=false} };
+      for (const line of lines){
+        if (/^\s*\d+\.\s+/.test(line)){ const it=line.replace(/^\s*\d+\.\s+/, ''); if(!inOl){close(); html+="<ol>"; inOl=true} html+=`<li>${linkify(it)}</li>`; }
+        else if (/^\s*[-*]\s+/.test(line)){ const it=line.replace(/^\s*[-*]\s+/, ''); if(!inUl){close(); html+="<ul>"; inUl=true} html+=`<li>${linkify(it)}</li>`; }
+        else if (!line.trim()){ close(); }
+        else { close(); html+=`<p>${linkify(line)}</p>`; }
+      }
+      close(); return html;
+    }
+
+    // نفس منطق الاستخراج (مختصر لكن بنفس الفكرة)
+    function decodeUnicodeEscapes(str) {
+      let out = "", i = 0;
+      while (i < str.length) {
+        if (str[i] === "\\" && str[i+1] === "u" && /^[0-9a-fA-F]{4}/.test(str.slice(i+2, i+6))) {
+          const h1 = parseInt(str.slice(i+2, i+6), 16);
+          if (h1 >= 0xD800 && h1 <= 0xDBFF && str[i+6] === "\\" && str[i+7] === "u" && /^[0-9a-fA-F]{4}/.test(str.slice(i+8, i+12))) {
+            const h2 = parseInt(str.slice(i+8, i+12), 16);
+            out += String.fromCodePoint(0x10000 + ((h1 - 0xD800) << 10) + (h2 - 0xDC00));
+            i += 12;
+          } else { out += String.fromCharCode(h1); i += 6; }
+        } else { out += str[i++]; }
+      }
+      return out;
+    }
+    function stripDigitNoise(s){ return s.replace(/(?:[0-9\u0660-\u0669]\s*){8,}/g," ").replace(/\s{2,}/g," ").trim(); }
+    function extractAssistantText(rawText) {
+      try { const maybe = JSON.parse(rawText); if (typeof maybe === "string") rawText = maybe; } catch {}
+      const decoded = decodeUnicodeEscapes(rawText);
+      try {
+        const data = JSON.parse(decoded);
+        const t = data?.choices?.[0]?.message?.content
+               ?? data?.choices?.[0]?.delta?.content
+               ?? data?.body?.choices?.[0]?.message?.content
+               ?? data?.body?.choices?.[0]?.delta?.content;
+        if (typeof t === "string" && t.trim()) return stripDigitNoise(t.trim());
+      } catch {}
+      let out = "";
+      const reFields = /"(delta|text|content|output_text)"\s*:\s*"((?:\\.|[^"\\])*)"/g;
+      let m; while ((m = reFields.exec(decoded))) out += decodeUnicodeEscapes(m[2]);
+      if (out) return stripDigitNoise(out);
+      const reChars = /"\d+"\s*:\s*"((?:\\.|[^"\\])*)"/g;
+      let seg; while ((seg = reChars.exec(decoded))) out += decodeUnicodeEscapes(seg[1]);
+      if (out) return stripDigitNoise(out);
+      return stripDigitNoise(decoded);
+    }
+
+    /* ==== تحويل hit -> شكل موحّد ==== */
+    const first=(obj,fields)=>{ for(const k of fields){ const v=obj?.[k]; if(typeof v==="string"&&v.trim()) return v.trim(); if(Array.isArray(v)&&v.length){const s=String(v[0]||"").trim(); if(s) return s;} } return ""; };
+    const imageFromHit=h=>first(h,IMAGE_FIELDS);
+    const priceFromHit=h=>first(h,PRICE_FIELDS);
+    const pnFromHit   =h=>first(h,PN_FIELDS);
+    const linkFromHit =h=>first(h,LINK_FIELDS);
+    const fmtUSD=v=>{ const n=Number(String(v||"").replace(/[^\d.]/g,"")); if(!isFinite(n)) return "-"; try{return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);}catch{return `$${n.toFixed(2)}`;} };
+    const numFromPrice=v=> Number(String(v||"").replace(/[^\d.]/g,"")) || 0;
+
+    function toCanon(h){
+      return {
+        __canon:true,
+        name: h?.name || h?.title || h?.Description || "—",
+        price: priceFromHit(h) || "",
+        image: imageFromHit(h) || "",
+        pn:    pnFromHit(h) || (h?.sku||h?.SKU||""),
+        sku:  (h?.sku||h?.SKU||pnFromHit(h)||"").toString().trim(),
+        link:  linkFromHit(h) || "",
+        avail: h?.Availability || h?.status || ""
+      };
+    }
+
+    /* ===== البحث عبر السيرفر ===== */
+    async function aSearch(query, hits = CHAT_HITS_PER_SEARCH) {
+      try {
+        const r = await fetch(`/api/search`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ query, hitsPerPage: hits }),
+        });
+        const json = await r.json();
+        return Array.isArray(json?.hits) ? json.hits : [];
+      } catch (e) {
+        console.warn("Algolia error:", e?.message || e);
+        return [];
+      }
+    }
+
+    /* ==== بناء صف جدول staging (مختصر) ==== */
+    const rowsByKey = new Map();
+    function buildStagingRow(hitLike, sourceTag, defaultQty){
+      const c = hitLike.__canon ? hitLike : toCanon(hitLike);
+      const key = (c.sku || c.pn || "").toUpperCase();
+      if(!key || rowsByKey.has(key)) return null;
+
+      const img=c.image||PLACEHOLDER_IMG, desc=c.name||"(No name)";
+      const unitPrice=c.price||"", unitNum=numFromPrice(unitPrice);
+      const pn=c.pn||key;
+      const qty0=Math.max(1,parseInt(defaultQty||1,10));
+
+      const tr=document.createElement("tr");
+      tr.dataset.source=sourceTag||"Search"; tr.dataset.unit=unitPrice||"";
+      tr.innerHTML=`
+        <td><img class="qiq-img" src="${esc(img)}" alt="${esc(desc)}" onerror="this.src='${PLACEHOLDER_IMG}'"></td>
+        <td>
+          ${c.link?`<a class="qiq-link" target="_blank" rel="noopener" href="${esc(c.link)}"><strong>${esc(desc)}</strong></a>`:`<strong>${esc(desc)}</strong>`}
+          ${pn?`<div class="qiq-chip">PN/SKU: ${esc(pn)}</div>`:""}
+          ${c.avail?`<div class="qiq-chip" style="background:#eef7ee;border-color:#d6f0d6">Availability: ${esc(c.avail)}</div>`:""}
+          <div class="qiq-chip" style="background:#f5f5f5;border-color:#e5e7eb">Source: ${esc(tr.dataset.source)}</div>
+        </td>
+        <td>${unitPrice?fmtUSD(unitPrice):"-"}</td>
+        <td class="qiq-line">${unitNum?fmtUSD(unitNum*qty0):"-"}</td>
+        <td>
+          <div class="qiq-actions-row">
+            <input type="number" min="1" step="1" value="${qty0}" class="qiq-qty">
+            <button class="qiq-btn qiq-primary" type="button" data-sku="${esc(c.sku || pn)}">Add to quotation</button>
+          </div>
+        </td>
+      `;
+      tr.querySelector(".qiq-qty").addEventListener("input", scheduleTotals);
+      tr.querySelector('[data-sku]').addEventListener('click', async (ev)=>{
+        ev.preventDefault();
+        const btn=ev.currentTarget;
+        btn.disabled=true; const old=btn.textContent; btn.textContent="Added ✓";
+        setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },1000);
       });
-      const j = await r.json();
-      return Array.isArray(j?.hits) ? j.hits : [];
-    }catch(e){
-      console.warn("Algolia error:", e?.message||e);
-      return [];
+      rowsByKey.set(key,tr); return tr;
     }
-  }
+    const tbodyEl = tbody;
+    let raf=null;
+    function scheduleTotals(){
+      if(raf) cancelAnimationFrame(raf);
+      raf=requestAnimationFrame(updateStatusAndTotals);
+    }
+    function updateStatusAndTotals(){
+      raf=null;
+      const total = tbodyEl.children.length;
+      const addable = tbodyEl.querySelectorAll("button[data-sku]:not(:disabled)").length;
+      statusEl.textContent = `${total} item(s) listed. ${addable} can be added.`;
+      let grand=0;
+      tbodyEl.querySelectorAll("tr").forEach(tr=>{
+        const unit=numFromPrice(tr.dataset.unit||"");
+        const qty =Math.max(1,parseInt(tr.querySelector(".qiq-qty")?.value||"1",10));
+        const line=unit*qty; const cell=tr.querySelector(".qiq-line");
+        if(cell) cell.textContent=unit?fmtUSD(line):"-"; grand+=line;
+      });
+      grandCell.textContent=grand?fmtUSD(grand):"-";
+      addAllBtn.disabled = addable===0;
+    }
+    function renderStagingBatch(hitsOrCanon, sourceTag, defaultQty){
+      if(!hitsOrCanon || !hitsOrCanon.length) return;
+      const frag=document.createDocumentFragment(); let added=0;
+      for(const h of hitsOrCanon){ const tr=buildStagingRow(h, sourceTag, defaultQty); if(tr){ frag.appendChild(tr); added++; } }
+      if(added){
+        requestAnimationFrame(() => {
+          tbodyEl.appendChild(frag);
+          scheduleTotals();
+        });
+      }
+    }
 
-  /* ====== تنظيف رد الخادم ====== */
-  function decodeUnicodeEscapes(str) {
-    let out = "", i = 0;
-    while (i < str.length) {
-      if (str[i] === "\\" && str[i+1] === "u" && /^[0-9a-fA-F]{4}/.test(str.slice(i+2, i+6))) {
-        const h1 = parseInt(str.slice(i+2, i+6), 16);
-        if (h1 >= 0xD800 && h1 <= 0xDBFF && str[i+6] === "\\" && str[i+7] === "u" && /^[0-9a-fA-F]{4}/.test(str.slice(i+8, i+12))) {
-          const h2 = parseInt(str.slice(i+8, i+12), 16);
-          out += String.fromCodePoint(0x10000 + ((h1 - 0xD800) << 10) + (h2 - 0xDC00));
-          i += 12;
-        } else { out += String.fromCharCode(h1); i += 6; }
-      } else { out += str[i++]; }
-    }
-    return out;
-  }
-  function stripDigitNoise(s){ return s.replace(/(?:[0-9\\u0660-\\u0669]\\s*){8,}/g," ").replace(/\\s{2,}/g," ").trim(); }
-  function extractByLines(raw) {
-    let out = "";
-    raw.split(/\\r?\\n/).forEach(line => {
-      const t = line.trim();
-      if (/^f:?\\s*\\{/.test(t) && /"messageId"|finishReason|usage/.test(t)) return;
-      const m = t.match(/:\\s*"((?:\\\\.|[^"\\\\])*)"\\s*[,}]?$/);
-      if (m) out += decodeUnicodeEscapes(m[1]);
+    /* ====== الشات يضرب السيرفر ====== */
+    const messages = [{
+      role:"system",
+      content:"You are QuickITQuote Intake Bot. In Arabic + English, collect step-by-step: company name, industry, users count, priority (Security/Cloud/Collaboration/Network), budget range, email, phone. Ask one question at a time. When done, summarize and ask to confirm sending for quotation. Keep answers concise."
+    }];
+
+    form.addEventListener("keydown", (e)=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); form.dispatchEvent(new Event("qiq-send")); }});
+    form.addEventListener("submit", (e)=>{ e.preventDefault(); form.dispatchEvent(new Event("qiq-send")); });
+
+    form.addEventListener("qiq-send", async ()=>{
+      const userText=(input.value||"").trim(); if(!userText) return;
+      input.value=""; addMsg("user", userText); messages.push({role:"user",content:userText});
+
+      const bubble = addMsg("bot","…"); sendBtn.disabled=true;
+      try{
+        const r = await fetch(`/api/chat`, {
+          method: "POST",
+          headers: { "content-type":"application/json" },
+          body: JSON.stringify({ messages }),
+        });
+        const raw = await r.text();
+        const reply = extractAssistantText(raw) || raw;
+        bubble.innerHTML = mdToHtml(reply) || esc(reply);
+      }catch(err){
+        bubble.textContent=`حصل خطأ أثناء الاتصال بالخادم: ${err.message}`;
+      }finally{
+        sendBtn.disabled=false; win.scrollTop=win.scrollHeight;
+      }
+
+      // بحث ذكي مبسّط: نجرب نص المستخدم كما هو
+      const hits = await aSearch(userText, CHAT_HITS_PER_SEARCH);
+      if (hits.length) {
+        // اعرض أول 3 في الرسالة + نزّلهم للـ staging
+        const canon = hits.map(toCanon).slice(0,3);
+        let html = '<div class="qiq-section-title">Matches & alternatives</div><div class="qiq-inline-wrap"><table class="qiq-inline-table"><thead><tr><th>Image</th><th>Description / PN</th><th>Unit price</th><th>Actions</th></tr></thead><tbody>';
+        for (const c of canon) {
+          html += `
+            <tr>
+              <td><img class="qiq-inline-img" src="${esc(c.image||PLACEHOLDER_IMG)}" onerror="this.src='${PLACEHOLDER_IMG}'"></td>
+              <td><strong>${esc(c.name)}</strong>${c.pn?`<div class="qiq-chip">PN/SKU: ${esc(c.pn)}</div>`:""}</td>
+              <td>${c.price?fmtUSD(c.price):"-"}</td>
+              <td><button class="qiq-mini success" type="button" data-stage="${esc(c.sku||c.pn)}">Stage ↓</button></td>
+            </tr>`;
+        }
+        html += '</tbody></table></div>';
+        const block = addMsg("bot", html, true);
+
+        block.addEventListener("click", (e) => {
+          const btn = e.target.closest("[data-stage]");
+          if (!btn) return;
+          const sku = btn.getAttribute("data-stage");
+          const found = canon.find(x => (x.sku||x.pn) === sku);
+          if (found) {
+            renderStagingBatch([found], "Chat", 1);
+            btn.textContent = "Staged ✓";
+            btn.disabled = true;
+          }
+        });
+      } else {
+        addMsg("bot","ملقيناش تطابق حرفي، جرب توضّح أكتر أو ارفع BOQ من الزر تحت.",true);
+      }
     });
-    return out.trim();
-  }
-  function extractAssistantText(rawText) {
-    try { const maybe = JSON.parse(rawText); if (typeof maybe === "string") rawText = maybe; } catch {}
-    const decoded = decodeUnicodeEscapes(rawText);
-    try {
-      const data = JSON.parse(decoded);
-      const t = data?.body
+
+    /* ====== استيراد BOQ ====== */
+    importBtn.addEventListener("click", (e)=>{ e.preventDefault(); fileInput.click(); });
+    fileInput.addEventListener("change", async (e)=>{
+      const f=e.target.files?.[0]; if(!f) return; statusEl.textContent="Parsing file…";
+      try{
+        const data=await f.arrayBuffer(); const wb=XLSX.read(data,{type:"array"}); const ws=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:""}); if(!rows.length){ statusEl.textContent="Empty sheet."; return; }
+        const header=Object.keys(rows[0]).map(String);
+        const lc=s=>String(s).toLowerCase();
+        const pnKey=header.find(h=>["part number","part_number","pn","sku","product_code","item","code","رقم","كود","موديل"].includes(lc(h)));
+        const descKey=header.find(h=>/desc|وصف/i.test(h)) || header[0];
+        statusEl.textContent="Matching items…"; let matched=0; const collected=[];
+        for(const r of rows){
+          const want=String(pnKey? r[pnKey]:"").trim(); const fallback=String(r[descKey]||"").trim();
+          const q=want||fallback; if(!q) continue; const hits=await aSearch(q, IMPORT_HITS_PER_ROW); if(hits[0]){ matched++; collected.push(toCanon(hits[0])); }
+        }
+        renderStagingBatch(collected, "BOQ", 1);
+        statusEl.textContent=`Done. Matched ${matched} / ${rows.length}.`; toast("BOQ imported.");
+      }catch(err){ console.error(err); statusEl.textContent="Failed to read file."; toast("Failed to import file."); }
+      finally{ fileInput.value=""; }
+    });
+
+    /* ====== تصدير ====== */
+    function collectTableData(){
+      const data=[]; let grand=0;
+      tbodyEl.querySelectorAll("tr").forEach(tr=>{
+        const img=tr.querySelector("img")?.src||""; const name=tr.querySelector("strong")?.textContent||"";
+        const pn=(tr.querySelector(".qiq-chip")?.textContent||"").replace(/^\s*PN\/SKU:\s*/i,"").trim();
+        const unitPrice=tr.dataset.unit||""; const unitNum=numFromPrice(unitPrice);
+        const qty=Math.max(1,parseInt(tr.querySelector(".qiq-qty")?.value||"1",10));
+        const link=tr.querySelector(".qiq-link")?.href||""; const source=tr.dataset.source||"";
+        const line=unitNum*qty; grand+=line;
+        data.push({Image:img,Name:name,PN_SKU:pn,UnitPrice:unitPrice,Qty:qty,LineTotal:line?fmtUSD(line):"-",Link:link,Source:source});
+      });
+      return {rows:data, grand};
+    }
+    function downloadBlob(filename, blob){
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1000);
+    }
+    function ts(){ const d=new Date(); const p=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
+
+    exportCsvBtn.addEventListener("click", (e)=>{
+      e.preventDefault();
+      const {rows,grand}=collectTableData(); if(!rows.length){ toast("No rows to export."); return; }
+      const headers=Object.keys(rows[0]); const body=rows.map(r=>headers.map(h=>`"${String(r[h]).replace(/"/g,'""')}"`).join(",")).join("\r\n");
+      const footer=`\r\n"","","Grand total","",,"${fmtUSD(grand)}","",`; const csv=[headers.join(","),body,footer].join("\r\n");
+      downloadBlob(`qiq-staged-${ts()}.csv`, new Blob([csv],{type:"text/csv;charset=utf-8"}));
+    });
+    exportXlsxBtn.addEventListener("click", (e)=>{
+      e.preventDefault();
+      const {rows,grand}=collectTableData(); if(!rows.length){ toast("No rows to export."); return; }
+      const ws=XLSX.utils.json_to_sheet(rows); const last=rows.length+2;
+      XLSX.utils.sheet_add_aoa(ws,[["Grand total","","","", "", fmtUSD(grand)]],{origin:`A${last}`});
+      const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"QIQ Staged");
+      const out=XLSX.write(wb,{bookType:"xlsx",type:"array"}); downloadBlob(`qiq-staged-${ts()}.xlsx`, new Blob([out],{type:"application/octet-stream"}));
+    });
+  })();
+  </script>
+</body>
+</html>
