@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>الحساب الشخصي - QuickITQuote</title>
+  <title>طلب عرض سعر مخصص - QuickITQuote</title>
   <link rel="stylesheet" href="/public/css/styles.css" />
 </head>
 <body>
   <header class="qiq-topbar">
     <div class="qiq-container" style="display:flex;justify-content:space-between;align-items:center">
-      <div><strong>QuickITQuote</strong> — حسابي</div>
+      <div><strong>QuickITQuote</strong> — طلب عرض سعر</div>
       <nav class="links">
         <a href="/index.html">الشات</a>
         <a href="/quote.html">طلب عرض سعر</a>
@@ -19,39 +19,22 @@
   </header>
 
   <main class="qiq-container" style="padding:16px 12px">
-    <h2>إدارة الحساب</h2>
+    <h2>طلب عرض سعر مخصص</h2>
+    <p>املأ البيانات التالية لنجهّز لك عرض سعر مناسب:</p>
 
-    <!-- تسجيل دخول -->
-    <section>
-      <h3>تسجيل الدخول</h3>
-      <form id="login-form" class="qiq-form">
-        <input type="email" id="login-email" placeholder="البريد الإلكتروني" required />
-        <input type="password" id="login-password" placeholder="كلمة المرور" required />
-        <div class="qiq-actions">
-          <button class="qiq-btn qiq-primary" type="submit">دخول</button>
-        </div>
-      </form>
-    </section>
+    <form id="quote-form" class="qiq-form" autocomplete="off">
+      <input type="text" id="company" placeholder="اسم الشركة" required />
+      <input type="email" id="email" placeholder="البريد الإلكتروني" required />
+      <input type="tel" id="phone" placeholder="رقم الهاتف" required />
+      <textarea id="details" placeholder="تفاصيل الطلب أو المنتجات المطلوبة" rows="5"></textarea>
+      <div class="qiq-actions">
+        <button class="qiq-btn qiq-primary" type="submit">إرسال الطلب</button>
+      </div>
+    </form>
 
-    <hr />
-
-    <!-- تسجيل جديد -->
-    <section>
-      <h3>تسجيل حساب جديد</h3>
-      <form id="register-form" class="qiq-form">
-        <input type="text" id="register-company" placeholder="اسم الشركة" required />
-        <input type="email" id="register-email" placeholder="البريد الإلكتروني" required />
-        <input type="tel" id="register-phone" placeholder="رقم الهاتف" />
-        <input type="password" id="register-password" placeholder="كلمة المرور" required />
-        <div class="qiq-actions">
-          <button class="qiq-btn qiq-success" type="submit">تسجيل</button>
-        </div>
-      </form>
-    </section>
-
-    <div id="account-status" class="qiq-status"></div>
+    <div id="quote-status" class="qiq-status"></div>
   </main>
 
-  <script src="/public/js/account.js"></script>
+  <script src="/public/js/quote-form.js"></script>
 </body>
 </html>
