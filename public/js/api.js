@@ -1,39 +1,56 @@
-// /public/js/api.js
-(function () {
-  async function postJSON(url, payload) {
-    const r = await fetch(url, {
+// public/js/api.js
+
+/**
+ * استدعاء البحث من الباك إند (/api/search) وإرجاع hits جاهزة.
+ * @param {string} query - نص البحث
+ * @param {number} hits - عدد النتائج المطلوبة (اختياري)
+ * @returns {Promise<Array>} مصفوفة النتائج أو []
+ */
+export async function aSearch(query, hits = 10) {
+  const endpoint = "/api/search";
+
+  // تنظيف الكويري سريعًا
+  const q = (query || "").toString().trim();
+  if (!q) return [];
+
+  try {
+    const res = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload || {})
+      headers: {
+        "content-type": "application/json",
+        "accept": "application/json",
+      },
+      body: JSON.stringify({ query: q, hitsPerPage: hits }),
+      cache: "no-store",
     });
-    if (!r.ok) {
-      const t = await r.text().catch(() => "");
-      throw new Error(`HTTP ${r.status}: ${t || "Request failed"}`);
+
+    // لو رجع 4xx/5xx نطبع الرسالة ونرجّع []
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try {
+        const errJson = await res.json();
+        if (errJson?.error) msg += ` - ${errJson.error}`;
+      } catch {}
+      console.warn("Algolia /api/search error:", msg);
+      return [];
     }
-    return r.json();
-  }
 
-  async function searchProducts(query, hitsPerPage = 5) {
-    return postJSON("/api/search", { query, hitsPerPage });
+    const json = await res.json();
+    // شكل استجابة Algolia: { hits: [...], ... }
+    const out = Array.isArray(json?.hits) ? json.hits : [];
+    return out;
+  } catch (e) {
+    console.warn("Algolia fetch failed:", e?.message || e);
+    return [];
   }
+}
 
-  async function submitQuote(formData) {
-    return postJSON("/api/quote", formData);
-  }
-
-  async function registerUser({ name, email, password }) {
-    return postJSON("/api/users/register", { name, email, password });
-  }
-
-  async function loginUser({ email, password }) {
-    return postJSON("/api/users/login", { email, password });
-  }
-
-  window.API = {
-    postJSON,
-    searchProducts,
-    submitQuote,
-    registerUser,
-    loginUser,
-  };
-})();
+/**
+ * مثال بسيط لو عايز دالة مريحة بترجع أول نتيجة فقط.
+ * @param {string} query
+ * @returns {Promise<Object|null>}
+ */
+export async function aSearchFirst(query) {
+  const hits = await aSearch(query, 1);
+  return hits[0] || null;
+}
