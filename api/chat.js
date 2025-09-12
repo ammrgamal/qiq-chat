@@ -1,13 +1,23 @@
+// /api/chat.js
 export default async function handler(req, res) {
+  // CORS (لو هتطلب من دومين خارجي زي WordPress)
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "content-type");
+    return res.status(204).end();
+  }
+
   if (req.method !== "POST") {
+    res.setHeader("Access-Control-Allow-Origin", "*");
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
     const messages = Array.isArray(body?.messages) ? body.messages : [];
 
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -20,15 +30,12 @@ export default async function handler(req, res) {
       }),
     });
 
-    if (!resp.ok) {
-      const errTxt = await resp.text();
-      return res.status(resp.status).json({ error: errTxt });
-    }
+    const rawText = await r.text();         // نرجّع نص خام عشان الدالة extractAssistantText عندك تشتغل زي ما هي
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    return res.status(r.status).send(rawText);
 
-    const data = await resp.json();
-    return res.status(200).json(data);
-
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    return res.status(500).json({ error: err.message });
   }
 }
