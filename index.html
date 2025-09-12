@@ -221,20 +221,34 @@
     }
 
     /* ===== البحث عبر السيرفر ===== */
-    async function aSearch(query, hits = CHAT_HITS_PER_SEARCH) {
-      try {
-        const r = await fetch(`/api/search`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ query, hitsPerPage: hits }),
-        });
-        const json = await r.json();
-        return Array.isArray(json?.hits) ? json.hits : [];
-      } catch (e) {
-        console.warn("Algolia error:", e?.message || e);
+<script>
+  // … بقية سكربتاتك كما هي
+
+  async function aSearch(query, hits = 5) {
+    try {
+      const r = await fetch("/api/search", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ q: query, sessionId: sessionStorage.getItem("qiq_sid") || "" }),
+      });
+      const j = await r.json();
+
+      // لو الـ Agent رجّع نص فقط، نعرضه كتعقيب
+      if (j?.text && (!j?.hits || !j.hits.length)) {
+        addMsg("bot", j.text);
         return [];
       }
+
+      // رجّع أوّل N hits (الكود الباقي بيتعامل معها)
+      return Array.isArray(j?.hits) ? j.hits.slice(0, hits) : [];
+    } catch (e) {
+      console.warn("Agent search error:", e);
+      return [];
     }
+  }
+
+  // … بقية الكود كما هو
+</script>
 
     /* ==== بناء صف جدول staging (مختصر) ==== */
     const rowsByKey = new Map();
