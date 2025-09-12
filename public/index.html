@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QuickITQuote Chat</title>
+
+  <!-- الأسلوب العام -->
+  <link rel="stylesheet" href="/public/css/styles.css" />
+
+  <!-- مكتبة XLSX (مطلوبة لزر Import/Export في واجهة الشات) -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+
+  <!-- أيقونات بسيطة (اختياري) -->
+  <style>
+    /* شريط علوي بسيط */
+    .qiq-topbar{display:flex;gap:12px;justify-content:space-between;align-items:center;padding:10px 14px;background:#0f172a;color:#fff}
+    .qiq-topbar a{color:#bfdbfe;text-decoration:none}
+    .qiq-topbar .links{display:flex;gap:10px;align-items:center}
+    .qiq-container{max-width:1100px;margin:0 auto}
+  </style>
+</head>
+<body>
+
+  <!-- شريط علوي -->
+  <header class="qiq-topbar">
+    <div class="qiq-container" style="display:flex;justify-content:space-between;align-items:center">
+      <div><strong>QuickITQuote</strong> — المساعد الذكي</div>
+      <nav class="links">
+        <a href="/index.html">الشات</a>
+        <a href="/quote.html">طلب عرض سعر مخصص</a>
+        <a href="/account.html">حسابي</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="qiq-container" style="padding:16px 12px">
+    <!-- =========== واجهة الشات =========== -->
+    <section id="qiq-chat" class="qiq">
+      <div class="qiq-window" id="qiq-window" aria-live="polite"></div>
+
+      <form id="qiq-form" class="qiq-form" autocomplete="off">
+        <input id="qiq-input" class="qiq-input" type="text"
+               placeholder="اكتب سؤالك أو ابدأ.. مثلا: عايز Kaspersky EDR لـ 120 مستخدم لمدة سنتين" required />
+        <div class="qiq-actions">
+          <button class="qiq-btn qiq-primary" type="button" id="qiq-import-btn" title="استيراد BOQ (Excel)">Import BOQ (Excel)</button>
+          <button class="qiq-send" type="submit">إرسال</button>
+          <input type="file" id="qiq-file" accept=".xlsx,.xls,.csv" hidden />
+        </div>
+      </form>
+    </section>
+
+    <!-- =========== جدول التجهيز/الترتيب =========== -->
+    <section id="qiq-boq-wrap" class="qiq-boq">
+      <div class="qiq-boq-top">
+        <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>Add all matched</button>
+        <div class="qiq-right">
+          <button id="qiq-export-csv"  class="qiq-btn" type="button">Export CSV</button>
+          <button id="qiq-export-xlsx" class="qiq-btn" type="button">Export XLSX</button>
+          <span id="qiq-status" class="qiq-status"></span>
+        </div>
+      </div>
+
+      <div class="qiq-table-wrap">
+        <table class="qiq-table" aria-label="Staged items">
+          <thead>
+            <tr>
+              <th style="width:76px">Image</th>
+              <th>Description / PN / SKU</th>
+              <th style="width:120px">Unit price</th>
+              <th style="width:140px">Line total</th>
+              <th style="width:270px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="qiq-body"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" style="text-align:right"><strong>Grand total:</strong></td>
+              <td id="qiq-grand" colspan="2"><strong>-</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- نافذة تفاصيل المنتج -->
+  <div id="qiq-modal" class="qiq-modal" aria-hidden="true" role="dialog" aria-label="Product details">
+    <div class="qiq-modal__backdrop"></div>
+    <div class="qiq-modal__dialog">
+      <button class="qiq-modal__close" aria-label="Close" type="button">×</button>
+      <iframe id="qiq-modal-frame" src="" loading="lazy"></iframe>
+    </div>
+  </div>
+
+  <!-- سكربتات الواجهة -->
+  <script src="/public/js/api.js"></script>
+  <script src="/public/js/ui-chat.js"></script>
+</body>
+</html>
