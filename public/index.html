@@ -1,37 +1,35 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>QuickITQuote Chat</title>
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="/public/css/styles.css" />
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/styles.css" />
 
   <!-- Vendor (XLSX لرفع BOQ) -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+
+  <!-- App JS -->
+  <script src="/js/ui-chat.js" defer></script>
 </head>
 <body>
-  <!-- ======== شريط أعلى بسيط ======== -->
-  <div class="qiq-topbar">
-    <div class="qiq-topbar__inner">
-      <a class="brand" href="/">QuickITQuote</a>
-      <nav class="nav">
-        <a href="/quote.html">طلب عرض سعر مخصص</a>
-        <a href="/account.html">حسابي</a>
-      </nav>
-    </div>
+  <!-- ====== شريط علوي بسيط ====== -->
+  <div style="max-width:980px;margin:12px auto 0;padding:8px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#0f172a;color:#fff;text-align:center">
+    <a href="/" style="color:#fff;text-decoration:none;font-weight:700">QuickITQuote</a>
+    — <a href="/quote.html" style="color:#93c5fd">طلب عرض سعر مخصص</a>
+    — <a href="/account.html" style="color:#93c5fd">حسابي</a>
   </div>
 
-  <!-- ======== Chat ======== -->
+  <!-- ====== نافذة الشات ====== -->
   <section id="qiq-chat" class="qiq">
     <div class="qiq-window" id="qiq-window" aria-live="polite"></div>
 
     <form id="qiq-form" class="qiq-form" autocomplete="off">
       <input id="qiq-input" class="qiq-input" type="text"
-             placeholder="اكتب سؤالك أو ابدأ.. مثلا: عايز Kaspersky EDR لـ 120 مستخدم لمدة سنتين"
-             required />
+             placeholder="اكتب سؤالك أو ابدأ.. مثلا: عايز Kaspersky EDR لـ 120 مستخدم لمدة سنتين" required />
       <div class="qiq-actions">
         <button class="qiq-btn qiq-primary" type="button" id="qiq-import-btn" title="استيراد BOQ (Excel)">Import BOQ (Excel)</button>
         <button class="qiq-send" type="submit">إرسال</button>
@@ -40,40 +38,39 @@
     </form>
   </section>
 
-  <!-- ======== BOQ / الجدول ======== -->
-  <section id="qiq-boq-wrap" class="qiq-boq">
+  <!-- ====== جدول التجهيز ====== -->
+  <div id="qiq-boq-wrap" class="qiq-boq">
     <div class="qiq-boq-top">
       <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>Add all matched</button>
       <div class="qiq-right">
-        <button id="qiq-export-xlsx" class="qiq-btn" type="button">Export XLSX</button>
         <button id="qiq-export-csv"  class="qiq-btn" type="button">Export CSV</button>
+        <button id="qiq-export-xlsx" class="qiq-btn" type="button">Export XLSX</button>
         <span id="qiq-status" class="qiq-status"></span>
       </div>
     </div>
-
     <div class="qiq-table-wrap">
       <table class="qiq-table" aria-label="Staged items">
         <thead>
-        <tr>
-          <th style="width:76px">Image</th>
-          <th>Description / PN / SKU</th>
-          <th style="width:120px">Unit price</th>
-          <th style="width:140px">Line total</th>
-          <th style="width:270px">Actions</th>
-        </tr>
+          <tr>
+            <th style="width:76px">Image</th>
+            <th>Description / PN / SKU</th>
+            <th style="width:120px">Unit price</th>
+            <th style="width:140px">Line total</th>
+            <th style="width:270px">Actions</th>
+          </tr>
         </thead>
         <tbody id="qiq-body"></tbody>
         <tfoot>
-        <tr>
-          <td colspan="3" style="text-align:right"><strong>Grand total:</strong></td>
-          <td id="qiq-grand" colspan="2"><strong>-</strong></td>
-        </tr>
+          <tr>
+            <td colspan="3" style="text-align:right"><strong>Grand total:</strong></td>
+            <td id="qiq-grand" colspan="2"><strong>-</strong></td>
+          </tr>
         </tfoot>
       </table>
     </div>
-  </section>
+  </div>
 
-  <!-- ======== Modal ======== -->
+  <!-- ====== Modal تفاصيل المنتج ====== -->
   <div id="qiq-modal" class="qiq-modal" aria-hidden="true" role="dialog" aria-label="Product details">
     <div class="qiq-modal__backdrop"></div>
     <div class="qiq-modal__dialog">
@@ -81,8 +78,5 @@
       <iframe id="qiq-modal-frame" src="" loading="lazy"></iframe>
     </div>
   </div>
-
-  <!-- JS الخاص بالواجهة (نفس منطق الكود القديم) -->
-  <script src="/public/js/ui-chat.js" defer></script>
 </body>
 </html>
