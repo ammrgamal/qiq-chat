@@ -157,7 +157,20 @@
     sendBtn && (sendBtn.disabled = true);
     try {
       const reply = await runChat(messages);
-      thinking.textContent = reply;
+      let showReply = reply;
+      // إذا كان الرد JSON أو يحتوي على hits، تجاهله
+      try {
+        const parsed = JSON.parse(reply);
+        if (parsed && (parsed.hits || parsed.reply)) {
+          showReply = parsed.reply || "";
+        }
+      } catch {}
+      // إذا كان الرد نفسه JSON أو طويل وغير مفهوم، لا تعرضه
+      if (showReply && showReply.length < 400 && !showReply.startsWith("{")) {
+        thinking.textContent = showReply;
+      } else {
+        thinking.remove();
+      }
     } finally {
       sendBtn && (sendBtn.disabled = false);
     }
