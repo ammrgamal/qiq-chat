@@ -1,5 +1,3 @@
-<!-- public/js/quote-actions.js -->
-<script>
 /* ========= Helpers ========= */
 (function () {
   const tbody     = document.getElementById("qiq-body");     // جدول البنود
@@ -144,6 +142,10 @@
       }
 
       buildRow(payload);
+      // تمرير تلقائي إلى جدول البنود بعد الإضافة
+      if (tbody) {
+        tbody.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       // مِسچ بسيط
       // eslint-disable-next-line no-alert
       alert("تمت إضافة البند إلى عرض السعر.");
@@ -154,4 +156,3 @@
     }
   };
 })();
-</script>
