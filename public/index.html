@@ -12,8 +12,9 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 
-  <!-- App JS -->
-  <script src="/js/ui-chat.js" defer></script>
+  <!-- App JS: يجب تحميل quote-actions.js أولاً -->
+  <script src="js/quote-actions.js" defer></script>
+  <script src="js/ui-chat.js" defer></script>
 </head>
 <body>
   <!-- ====== شريط علوي بسيط ====== -->
@@ -37,7 +38,7 @@
       </div>
     </form>
   </section>
-
+ <!-- ====== جدول التجهيز ====== -->
   <!-- ====== جدول التجهيز ====== -->
   <div id="qiq-boq-wrap" class="qiq-boq">
     <div class="qiq-boq-top">
@@ -78,6 +79,7 @@
       <iframe id="qiq-modal-frame" src="" loading="lazy"></iframe>
     </div>
   </div>
+
 </body>
 </html>
-<script src="/public/js/quote-actions.js" defer></script>
+[]
