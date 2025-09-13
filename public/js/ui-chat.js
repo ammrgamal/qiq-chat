@@ -1,179 +1,193 @@
-/* =========================================================================
-   QIQ Chat UI – unified NL chat + product search rendering
-   Works with /api/chat (الملف اللي ادّتهولك قبل كده)
-   يعتمد إن في الصفحة DOM elements:
-   - #qiq-window لعرض الرسائل
-   - form#qiq-form وفيه input#qiq-input وزر submit
-   ويقبل وجود دوال اختيارية:
-   - window.qiqAddToQuote(sku, qty, slug?)    // لإضافة المنتج للعرض
-   - window.qiqStage(hitLike, defaultQty)     // لعمل staging في الجدول
-   ========================================================================= */
+/* =========================
+   QIQ – Chat + Product UI
+   (uses /api/chat and /api/search)
+   ========================= */
+
+/** نقاط تكامل أساسية
+ *  - الزر "Add" في كروت النتائج يستدعي AddToQuote(this)
+ *  - لازم يكون ملف public/js/quote-actions.js محمّل قبله وفيه الدالة AddToQuote
+ */
 
 (() => {
-  /* ===== DOM ===== */
-  const win    = document.getElementById("qiq-window");
-  const form   = document.getElementById("qiq-form");
-  const input  = document.getElementById("qiq-input");
-  const sendBtn= form?.querySelector("button[type='submit']") || form?.querySelector(".qiq-send");
+  /* ---- DOM ---- */
+  const win   = document.getElementById("qiq-window");          // مساحة الرسائل
+  const form  = document.getElementById("qiq-form");             // فورم الإدخال
+  const input = document.getElementById("qiq-input");            // حقل الإدخال
+  const sendBtn = form?.querySelector(".qiq-send");              // زر الإرسال (لو موجود)
 
-  if (!win || !form || !input) {
-    console.warn("[QIQ] Missing base DOM elements (#qiq-window, #qiq-form, #qiq-input).");
-    return;
-  }
-
-  /* ===== Helpers ===== */
-  const esc = s => (s??"").toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-  const mdToHtml = (md) => {
-    if (!md) return "";
-    md = String(md).replace(/\\n/g, "\n");
-    const linkify = (t) => esc(t)
-      .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
-      .replace(/\*([^*]+)\*/g,'<em>$1</em>')
-      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
-    const lines = md.split(/\r?\n/); let html="", inOl=false, inUl=false;
-    const close=()=>{ if(inOl){html+="</ol>";inOl=false} if(inUl){html+="</ul>";inUl=false} };
-    for(const line of lines){
-      if (/^\s*\d+\.\s+/.test(line)){ const it=line.replace(/^\s*\d+\.\s+/, ''); if(!inOl){close(); html+="<ol>"; inOl=true} html+=`<li>${linkify(it)}</li>`; }
-      else if (/^\s*[-*]\s+/.test(line)){ const it=line.replace(/^\s*[-*]\s+/, ''); if(!inUl){close(); html+="<ul>"; inUl=true} html+=`<li>${linkify(it)}</li>`; }
-      else if (!line.trim()){ close(); }
-      else { close(); html+=`<p>${linkify(line)}</p>`; }
-    }
-    close(); return html;
-  };
+  /* ---- Helpers ---- */
+  const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c] || c));
+  const PLACEHOLDER_IMG = "https://via.placeholder.com/68?text=IMG";
 
   function addMsg(role, html, asHtml=false) {
     const wrap = document.createElement("div");
     wrap.className = "qiq-msg " + (role === "user" ? "user" : "bot");
     const bubble = document.createElement("div");
-    bubble.className = "qiq-bubble"; bubble.dir = "auto";
+    bubble.className = "qiq-bubble";
+    bubble.dir = "auto";
     if (asHtml) bubble.innerHTML = html; else bubble.textContent = html;
-    wrap.appendChild(bubble); win.appendChild(wrap);
-    win.scrollTop = win.scrollHeight; 
+    wrap.appendChild(bubble);
+    win.appendChild(wrap);
+    win.scrollTop = win.scrollHeight;
     return bubble;
   }
 
-  /* ===== البداية ===== */
-  const messages = [{
-    role: "system",
-    content: "أنت QuickITQuote Intake & Shopping Assistant."
-  }];
+  // رسالة ترحيب
+  addMsg("bot", "أهلاً بك في QuickITQuote 👋\nاسأل عن منتج أو رخصة، أو استخدم زر \"البحث عن منتجات\".");
 
-  addMsg("bot",
-    "أهلاً بك في QuickITQuote 👋\nاسأل عن منتج أو رخصة، أو استخدم زر “Import BOQ”.", false
-  );
+  /* ---- بناء كارت نتيجة واحدة ---- */
+  function hitToCard(hit) {
+    // محاولة استخراج أهم الحقول الشائعة
+    const name  = hit?.name || hit?.title || hit?.Description || "(No name)";
+    const price = hit?.price || hit?.Price || hit?.list_price || hit?.ListPrice || "";
+    const sku   = hit?.sku || hit?.SKU || hit?.pn || hit?.PN || hit?.part_number || hit?.PartNumber || "";
+    const img   = hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || "";
+    const link  = hit?.link || hit?.url || hit?.product_url || hit?.permalink || "";
 
-  /* ===== ريندر النتائج (Hits) ===== */
-  function renderHits(hits) {
-    if (!Array.isArray(hits) || !hits.length) return;
+    const safeName = esc(String(name));
+    const safePrice = esc(String(price));
+    const safeSku = esc(String(sku));
+    const safeImg = esc(img || PLACEHOLDER_IMG);
+    const safeLink = esc(link);
 
-    const rows = hits.slice(0, 5).map(h => {
-      const name  = h.name || h.title || h.Description || "-";
-      const img   = h.image || h["Image URL"] || h.thumbnail || "";
-      const sku   = h.sku || h.SKU || h.pn || h["Part Number"] || "";
-      const price = h.price ?? h.Price ?? h["List Price"] ?? "";
-      const link  = h.link || h.product_url || h.url || h.permalink || "";
-
-      return `
-        <div class="qiq-inline" style="display:flex;gap:10px;align-items:flex-start;margin:8px 0;padding:8px;border:1px solid #eee;border-radius:10px;">
-          <img src="${esc(img)}" alt="" style="width:58px;height:58px;object-fit:contain;border:1px solid #eee;border-radius:8px;background:#fff" onerror="this.style.display='none'">
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700">${esc(name)}</div>
-            ${sku ? `<div class="qiq-chip" style="display:inline-block;background:#eef2ff;border:1px solid #dbe1ff;border-radius:8px;padding:2px 8px;margin-top:6px;font-size:12px">PN/SKU: ${esc(sku)}</div>` : ""}
-            ${price ? `<div class="qiq-chip" style="display:inline-block;background:#f5f5f5;border:1px solid #e5e7eb;border-radius:8px;padding:2px 8px;margin-top:6px;font-size:12px">Price: ${esc(price)}</div>` : ""}
-            ${link ? `<div style="margin-top:6px"><a class="qiq-link" target="_blank" rel="noopener" href="${esc(link)}">Open product</a></div>` : ""}
-          </div>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <button class="qiq-mini primary" type="button" data-sku="${esc(sku)}" data-link="${esc(link)}">Add</button>
-            <button class="qiq-mini" type="button" data-stage='${esc(JSON.stringify(h))}'>Stage</button>
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    addMsg("bot", `<div class="qiq-section-title">Matches</div>${rows}`, true);
+    return `
+      <div class="qiq-inline-wrap" style="margin:10px 0">
+        <table class="qiq-inline-table">
+          <tbody>
+            <tr>
+              <td style="width:68px">
+                <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
+              </td>
+              <td>
+                <div style="font-weight:700">${safeName}</div>
+                ${safeSku ? `<div class="qiq-chip">PN/SKU: ${safeSku}</div>` : ""}
+                ${safeLink ? `<div style="margin-top:4px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener">Open product</a></div>` : ""}
+              </td>
+              <td style="width:140px">${safePrice || "-"}</td>
+              <td style="width:220px">
+                <div class="qiq-inline-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                  <button class="qiq-mini primary" type="button"
+                    data-name="${safeName}"
+                    data-price="${safePrice}"
+                    data-sku="${safeSku}"
+                    data-image="${safeImg}"
+                    data-link="${safeLink}"
+                    data-source="Search"
+                    onclick="AddToQuote(this)">
+                    Add
+                  </button>
+                  <button class="qiq-mini" type="button"
+                    onclick="window.open('${safeLink || '#'}','_blank','noopener')">
+                    Shop
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
   }
 
-  // أحداث أزرار Add/Stage داخل نتائج الهتس
-  win.addEventListener("click", async (e) => {
-    const addBtn = e.target.closest("button.qiq-mini.primary[data-sku]");
-    const stageBtn = e.target.closest("button.qiq-mini[data-stage]");
+  /* ---- تجميع مجموعة كروت ---- */
+  function renderHitsBlock(title, hits) {
+    if (!hits || !hits.length) return "";
+    const cards = hits.map(hitToCard).join("");
+    return `
+      <div class="qiq-section-title">${esc(title)}</div>
+      ${cards}
+    `;
+  }
 
-    if (addBtn) {
-      e.preventDefault();
-      const sku  = addBtn.getAttribute("data-sku") || "";
-      const link = addBtn.getAttribute("data-link") || "";
-      if (typeof window.qiqAddToQuote === "function" && sku) {
-        addBtn.disabled = true; const old = addBtn.textContent; addBtn.textContent = "Adding…";
-        try { await window.qiqAddToQuote(sku, 1, link ? (new URL(link, location.origin).pathname.split("/").filter(Boolean).pop()||"") : ""); }
-        catch {}
-        addBtn.textContent = "Added ✓"; setTimeout(()=>{ addBtn.textContent = old; addBtn.disabled=false; }, 700);
-      } else {
-        alert("AddToQuote غير مفعّل في هذه الصفحة.");
-      }
-    }
-
-    if (stageBtn) {
-      e.preventDefault();
-      try {
-        const hit = JSON.parse(stageBtn.getAttribute("data-stage")||"{}");
-        if (typeof window.qiqStage === "function") {
-          stageBtn.disabled = true; const old = stageBtn.textContent; stageBtn.textContent="Staging…";
-          await window.qiqStage(hit, 1);
-          stageBtn.textContent="Staged ✓"; setTimeout(()=>{ stageBtn.textContent=old; stageBtn.disabled=false; }, 700);
-        } else {
-          alert("Staging غير مفعّل في هذه الصفحة.");
-        }
-      } catch {}
-    }
-  });
-
-  /* ===== إرسال الرسالة إلى /api/chat ===== */
-  async function sendChat(userText) {
-    const bubble = addMsg("bot", "…");
-    sendBtn && (sendBtn.disabled = true);
-
+  /* ---- استدعاء /api/search ---- */
+  async function runSearch(query, hitsPerPage = 5) {
     try {
-      messages.push({ role: "user", content: userText });
+      const r = await fetch("/api/search", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ query, hitsPerPage })
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const json = await r.json();
+      return Array.isArray(json?.hits) ? json.hits : [];
+    } catch (e) {
+      console.warn("Search error:", e);
+      return [];
+    }
+  }
 
+  /* ---- استدعاء /api/chat (نفس الموجود قبل كده) ---- */
+  async function runChat(messages) {
+    try {
       const r = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ messages })
       });
-      const data = await r.json();
-
-      const reply = data?.reply || "تم.";
-      bubble.innerHTML = mdToHtml(reply) || esc(reply);
-
-      // خزّن ردّ المساعد في التاريخ
-      messages.push({ role: "assistant", content: reply });
-
-      // لو فيه hits، اعرضها
-      if (Array.isArray(data?.hits) && data.hits.length) {
-        renderHits(data.hits);
-      }
-    } catch (err) {
-      bubble.textContent = `حصل خطأ أثناء الاتصال بالخادم: ${err?.message || err}`;
-    } finally {
-      sendBtn && (sendBtn.disabled = false);
-      win.scrollTop = win.scrollHeight;
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const text = await r.text();
+      return text || "";
+    } catch (e) {
+      console.warn("Chat error:", e);
+      return "حصل خطأ أثناء الاتصال بالخادم.";
     }
   }
 
-  /* ===== Events ===== */
-  form.addEventListener("submit", (e) => {
+  /* ---- المنطق: لو المستخدم كتب كلمة/منتج → نبحث ونظهر كروت بداخلها زر AddToQuote ---- */
+  const messages = [
+    {
+      role: "system",
+      content:
+        "أنت QuickITQuote Intake Bot. بالعربي + الإنجليزي: اجمع بيانات العميل خطوة بخطوة، واسأله إن كان يريد اقتراحات من الكتالوج. عندما يكتب اسم منتج أو موديل، سنعرض نتائج بحث أسفل رسالتك."
+    }
+  ];
+
+  // إرسال الرسالة
+  form?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const txt = (input.value || "").trim();
-    if (!txt) return;
+    const userText = (input?.value || "").trim();
+    if (!userText) return;
+
     input.value = "";
-    addMsg("user", txt);
-    sendChat(txt);
+    addMsg("user", userText);
+    messages.push({ role: "user", content: userText });
+
+    // 1) رد الشات
+    const thinking = addMsg("bot", "…");
+    sendBtn && (sendBtn.disabled = true);
+    try {
+      const reply = await runChat(messages);
+      thinking.textContent = reply;
+    } finally {
+      sendBtn && (sendBtn.disabled = false);
+    }
+
+    // 2) نتائج البحث (نفس النص) – نعرض كروت فيها زر AddToQuote
+    const hits = await runSearch(userText, 6);
+    if (hits.length) {
+      const html = renderHitsBlock("Matches & alternatives", hits);
+      addMsg("bot", html, true);
+    } else {
+      addMsg("bot", "ملقيناش تطابق مباشر. حاول تكتب اسم المنتج/الموديل بدقة أكبر أو جرّب رفع BOQ.", true);
+    }
   });
 
-  form.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      form.dispatchEvent(new Event("submit"));
+  /* ---- لو عندك زر مستقل للبحث عن المنتجات (اختياري) اربطه هنا ----
+     مثال: زر id="qiq-search-btn" يقرأ من input ويعرض النتائج فقط
+  */
+  const searchBtn = document.getElementById("qiq-search-btn");
+  searchBtn?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const q = (input?.value || "").trim();
+    if (!q) return;
+    addMsg("user", q);
+
+    const results = await runSearch(q, 8);
+    if (results.length) {
+      const html = renderHitsBlock("Search results", results);
+      addMsg("bot", html, true);
+    } else {
+      addMsg("bot", "لا توجد نتائج مطابقة.", true);
     }
   });
 })();
