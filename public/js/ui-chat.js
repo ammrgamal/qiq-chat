@@ -279,6 +279,11 @@
 
   /* ---- API Calls ---- */
   async function runSearch(query, hitsPerPage = 5) {
+    // Use mock function if available (for testing)
+    if (typeof window.runSearch === 'function' && window.runSearch !== runSearch) {
+      return await window.runSearch(query, hitsPerPage);
+    }
+    
     try {
       const r = await fetch("/api/search", {
         method: "POST",
@@ -295,6 +300,11 @@
   }
 
   async function runChat(messages) {
+    // Use mock function if available (for testing)
+    if (typeof window.runChat === 'function' && window.runChat !== runChat) {
+      return await window.runChat(messages);
+    }
+    
     try {
       const r = await fetch("/api/chat", {
         method: "POST",
