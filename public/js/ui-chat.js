@@ -35,44 +35,44 @@
   // رسالة ترحيب
   addMsg("bot", "أهلاً بك في QuickITQuote 👋\nاسأل عن منتج أو رخصة، أو استخدم زر \"البحث عن منتجات\".");
 
-  // عرض مثال على التصميم الجديد
+  // عرض مثال على التصميم الجديد المدمج
   setTimeout(() => {
     const mockHits = [
       {
         name: "Kaspersky Endpoint Security for Business - Advanced",
         price: "$45.99",
         sku: "KL4867AAFTS",
-        image: "https://via.placeholder.com/40x40?text=KAS",
+        image: "https://via.placeholder.com/32x32?text=KAS",
         link: "#"
       },
       {
         name: "Kaspersky EDR Optimum",
         price: "$89.99", 
         sku: "KL4906AAFTS",
-        image: "https://via.placeholder.com/40x40?text=EDR",
+        image: "https://via.placeholder.com/32x32?text=EDR",
         link: "#"
       },
       {
         name: "Cisco ASA 5506-X Firewall",
         price: "$750.00",
         sku: "ASA5506-K9",
-        image: "https://via.placeholder.com/40x40?text=CISCO",
+        image: "https://via.placeholder.com/32x32?text=CISCO",
         link: "#"
       },
       {
         name: "Microsoft 365 Business Premium",
         price: "$22.00",
         sku: "CFQ7TTC0LH18",
-        image: "https://via.placeholder.com/40x40?text=M365",
+        image: "https://via.placeholder.com/32x32?text=M365",
         link: "#"
       }
     ];
-    const html = renderHitsBlock("مثال على العرض الجديد", mockHits);
+    const html = renderHitsBlock("مثال على العرض المدمج الجديد", mockHits);
     addMsg("bot", html, true);
   }, 1000);
 
-  /* ---- بناء كارت نتيجة واحدة (نمط مدمج) ---- */
-  function hitToCard(hit) {
+  /* ---- بناء كارت نتيجة واحدة (نمط خط مدمج) ---- */
+  function hitToLineItem(hit) {
     // محاولة استخراج أهم الحقول الشائعة
     const name  = hit?.name || hit?.title || hit?.Description || "(No name)";
     const price = hit?.price || hit?.Price || hit?.list_price || hit?.ListPrice || "";
@@ -87,15 +87,15 @@
     const safeLink = esc(link);
 
     return `
-      <div class="qiq-compact-item">
-        <img class="qiq-compact-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
-        <div class="qiq-compact-content">
-          <div class="qiq-compact-name">${safeName}</div>
-          ${safeSku ? `<div class="qiq-compact-sku">SKU: ${safeSku}</div>` : ""}
-          <div class="qiq-compact-price">${safePrice || "السعر عند الطلب"}</div>
+      <div class="qiq-line-item">
+        <img class="qiq-line-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
+        <div class="qiq-line-content">
+          <div class="qiq-line-name">${safeName}</div>
+          ${safeSku ? `<div class="qiq-line-sku">${safeSku}</div>` : `<div class="qiq-line-sku">-</div>`}
+          <div class="qiq-line-price">${safePrice || "عند الطلب"}</div>
         </div>
-        <div class="qiq-compact-actions">
-          <button class="qiq-compact-btn qiq-compact-add" type="button"
+        <div class="qiq-line-actions">
+          <button class="qiq-line-btn qiq-line-add" type="button"
             data-name="${safeName}"
             data-price="${safePrice}"
             data-sku="${safeSku}"
@@ -105,7 +105,7 @@
             onclick="AddToQuote(this)">
             إضافة
           </button>
-          ${safeLink ? `<button class="qiq-compact-btn qiq-compact-view" type="button"
+          ${safeLink ? `<button class="qiq-line-btn qiq-line-view" type="button"
             onclick="window.open('${safeLink}','_blank','noopener')">
             عرض
           </button>` : ""}
@@ -114,26 +114,30 @@
     `;
   }
 
-  /* ---- تصنيف المنتجات حسب الفئة ---- */
+  /* ---- تصنيف المنتجات حسب الفئة مع تحسينات ---- */
   function categorizeHits(hits) {
     const categories = new Map();
     
     hits.forEach(hit => {
       const name = (hit?.name || hit?.title || hit?.Description || "").toLowerCase();
+      const description = (hit?.description || hit?.Description || "").toLowerCase();
+      const fullText = (name + " " + description).toLowerCase();
+      
       let category = "منتجات عامة"; // Default category
       
-      // تصنيف حسب كلمات مفتاحية
-      if (name.includes("kaspersky") || name.includes("endpoint") || name.includes("edr") || 
-          name.includes("antivirus") || name.includes("security") || name.includes("protection")) {
+      // تصنيف محسن حسب كلمات مفتاحية
+      if (fullText.includes("kaspersky") || fullText.includes("endpoint") || fullText.includes("edr") || 
+          fullText.includes("antivirus") || fullText.includes("security") || fullText.includes("protection") ||
+          fullText.includes("malware") || fullText.includes("threat") || fullText.includes("defend")) {
         category = "Category: Endpoint Security Solution";
-      } else if (name.includes("cisco") || name.includes("network") || name.includes("switch") || 
-                 name.includes("router") || name.includes("firewall")) {
+      } else if (fullText.includes("cisco") || fullText.includes("network") || fullText.includes("switch") || 
+                 fullText.includes("router") || fullText.includes("firewall") || fullText.includes("infrastructure")) {
         category = "Category: Network Infrastructure";
-      } else if (name.includes("microsoft") || name.includes("office") || name.includes("windows") || 
-                 name.includes("azure") || name.includes("cloud")) {
+      } else if (fullText.includes("microsoft") || fullText.includes("office") || fullText.includes("windows") || 
+                 fullText.includes("azure") || fullText.includes("cloud") || fullText.includes("365")) {
         category = "Category: Cloud & Productivity Solutions";
-      } else if (name.includes("server") || name.includes("storage") || name.includes("backup") || 
-                 name.includes("datacenter")) {
+      } else if (fullText.includes("server") || fullText.includes("storage") || fullText.includes("backup") || 
+                 fullText.includes("datacenter") || fullText.includes("dell") || fullText.includes("hp")) {
         category = "Category: Infrastructure & Storage";
       }
       
@@ -146,7 +150,7 @@
     return categories;
   }
 
-  /* ---- تجميع مجموعة كروت مع عناوين الفئات ---- */
+  /* ---- تجميع مجموعة كروت مع عناوين الفئات (نمط خط مدمج) ---- */
   function renderHitsBlock(title, hits) {
     if (!hits || !hits.length) return "";
     
@@ -155,9 +159,9 @@
     
     categories.forEach((categoryHits, categoryName) => {
       html += `<div class="qiq-category-header">${esc(categoryName)}</div>`;
-      html += `<div class="qiq-compact-grid">`;
+      html += `<div class="qiq-line-style">`;
       categoryHits.forEach(hit => {
-        html += hitToCard(hit);
+        html += hitToLineItem(hit);
       });
       html += `</div>`;
     });
