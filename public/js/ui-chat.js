@@ -76,49 +76,51 @@
 
     limitedHits.forEach(hit => {
       const name = hit?.name || hit?.title || hit?.Description || "(No name)";
-      const price = hit?.price || hit?.Price || hit?.list_price || hit?.ListPrice || "";
+      const price = hit?.price || hit?.Price || hit?.list_price || hit?.ListPrice || 0;
       const sku = hit?.sku || hit?.SKU || hit?.pn || hit?.PN || hit?.part_number || hit?.PartNumber || "";
       const img = hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || "";
       const link = hit?.link || hit?.url || hit?.product_url || hit?.permalink || "";
 
-      const priceNum = window.QuoteStorage ? window.QuoteStorage.formatPrice(price, false) : '0';
-      const displayPrice = priceNum === '0' ? 'Price on request' : `$${priceNum}`;
+      // Parse price properly
+      const numPrice = parseFloat(price) || 0;
+      const displayPrice = numPrice === 0 ? 'Price on request' : `$${numPrice.toFixed(2)}`;
 
       const tr = document.createElement('tr');
       tr.className = 'result-row';
       tr.dataset.sku = sku;
       tr.dataset.name = name;
-      tr.dataset.price = price;
+      tr.dataset.price = numPrice;
       tr.dataset.image = img || PLACEHOLDER_IMG;
       tr.dataset.link = link;
 
       tr.innerHTML = `
-        <td style="text-align: center;">
-          <img class="product-img" src="${esc(img || PLACEHOLDER_IMG)}" alt="${esc(name)}" 
+        <td style="text-align: center; padding: 8px;">
+          <img class="qiq-img" src="${esc(img || PLACEHOLDER_IMG)}" alt="${esc(name)}" 
+               style="width: 64px; height: 64px; object-fit: contain; border-radius: 4px;"
                onerror="this.src='${PLACEHOLDER_IMG}'" />
         </td>
-        <td>
-          <div style="font-weight: bold; margin-bottom: 4px;">${esc(name)}</div>
-          ${sku ? `<div style="color: #6b7280; font-size: 12px;">PN/SKU: ${esc(sku)}</div>` : ''}
+        <td style="padding: 8px;">
+          <div style="font-weight: bold; margin-bottom: 4px; font-size: 14px;">${esc(name)}</div>
+          ${sku ? `<div class="qiq-chip" style="display: inline-block; background: #f3f4f6; color: #374151; padding: 2px 6px; border-radius: 4px; font-size: 11px;">PN/SKU: ${esc(sku)}</div>` : ''}
         </td>
-        <td style="text-align: center;">
+        <td style="text-align: center; padding: 8px; font-weight: 500;">
           ${displayPrice}
         </td>
-        <td style="text-align: center;">
+        <td style="text-align: center; padding: 8px; color: #6b7280;">
           –
         </td>
-        <td>
-          <div style="display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap;">
+        <td style="padding: 8px;">
+          <div style="display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: wrap;">
             <button class="qiq-btn qiq-primary add-to-quotation" type="button" 
                     title="Add this item to quotation"
                     aria-label="Add ${esc(name)} to quotation"
-                    style="background: #2563eb; color: white; padding: 8px 12px;">
+                    style="padding: 6px 12px; font-size: 12px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">
               Add to quotation
             </button>
             <button class="qiq-btn item-details" type="button"
                     title="${!link ? 'No details available' : 'Open product page in new tab'}"
                     aria-label="View details for ${esc(name)}"
-                    style="background: transparent; border: 1px solid #d1d5db; color: #374151; padding: 8px 12px;"
+                    style="padding: 6px 12px; font-size: 12px; background: transparent; color: #374151; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer;"
                     ${!link ? 'disabled' : ''}>
               Item details
             </button>
@@ -129,27 +131,41 @@
       resultsBody.appendChild(tr);
     });
 
-    // Add event listeners to buttons
-    resultsBody.querySelectorAll('.add-to-quotation').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const row = this.closest('tr');
-        const item = {
-          sku: row.dataset.sku,
-          name: row.dataset.name,
-          price: row.dataset.price,
-          image: row.dataset.image,
-          link: row.dataset.link,
-          qty: 1
-        };
+  // Add event listeners to buttons
+  resultsBody.querySelectorAll('.add-to-quotation').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const row = this.closest('tr');
+      const item = {
+        sku: row.dataset.sku || 'NO-SKU-' + Date.now(),
+        name: row.dataset.name,
+        price: parseFloat(row.dataset.price) || 0,
+        image: row.dataset.image,
+        link: row.dataset.link,
+        qty: 1
+      };
 
-        if (window.QuoteStorage && window.QuoteStorage.addItem(item)) {
-          // Navigate to quote page
+      if (window.QuoteStorage && window.QuoteStorage.addItem(item)) {
+        // Show brief success message
+        const originalText = this.textContent;
+        this.textContent = 'Added!';
+        this.style.background = '#16a34a';
+        setTimeout(() => {
+          this.textContent = originalText;
+          this.style.background = '#2563eb';
+        }, 1000);
+
+        // Update grand total
+        updateGrandTotal();
+        
+        // Navigate to quote page after brief delay
+        setTimeout(() => {
           window.location.href = '/quote.html';
-        } else {
-          alert('Failed to add item to quotation');
-        }
-      });
+        }, 1200);
+      } else {
+        alert('Failed to add item to quotation');
+      }
     });
+  });
 
     resultsBody.querySelectorAll('.item-details').forEach(btn => {
       btn.addEventListener('click', function() {
@@ -319,12 +335,13 @@
     try {
       const chatResponse = await runChat(messages);
       
-      // Show bot reply in chat (text only)
-      if (chatResponse.reply && chatResponse.reply.length < 400 && !chatResponse.reply.startsWith("{")) {
+      // Show bot reply in chat (text only)  
+      if (chatResponse.reply && chatResponse.reply.trim()) {
         thinking.textContent = chatResponse.reply;
         messages.push({ role: "assistant", content: chatResponse.reply });
       } else {
-        thinking.remove();
+        thinking.textContent = "I found some results for you. Check the table below.";
+        messages.push({ role: "assistant", content: "I found some results for you. Check the table below." });
       }
 
       // 2) Render search results in table below (not in chat)

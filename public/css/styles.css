@@ -37,6 +37,37 @@
 .qiq-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
 .qiq-table th,.qiq-table td{padding:8px;border-bottom:1px solid #eef2f7;vertical-align:middle;text-align:right}
 .qiq-img{width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid #eee;background:#fff}
+
+/* Enhanced button styles for better contrast */
+.qiq-btn.qiq-primary {
+  background: #2563eb !important;
+  color: white !important;
+  border: 1px solid #2563eb !important;
+}
+
+.qiq-btn.qiq-danger {
+  background: #dc2626 !important;
+  color: white !important;
+  border: 1px solid #dc2626 !important;
+}
+
+.qiq-btn.qiq-success {
+  background: #16a34a !important;
+  color: white !important;
+  border: 1px solid #16a34a !important;
+}
+
+.qiq-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+.qiq-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
 .qiq-actions-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .qiq-qty{width:70px;padding:8px;border:1px solid #d1d5db;border-radius:8px}
 .qiq-link{color:#2563eb;text-decoration:none}
@@ -74,6 +105,48 @@
 /* Results table rows */
 .qiq-table tbody tr.result-row:hover {
   background: #f0f8ff;
+}
+
+/* Better button styling for actions */
+.qiq-btn.qiq-primary {
+  background: #2563eb !important;
+  color: white !important;
+  border: 1px solid #2563eb;
+}
+
+.qiq-btn.qiq-primary:hover {
+  background: #1d4ed8 !important;
+}
+
+.qiq-btn.qiq-secondary {
+  background: transparent;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.qiq-btn.qiq-secondary:hover {
+  background: #f3f4f6;
+}
+
+.qiq-btn.qiq-danger {
+  background: #dc2626 !important;
+  color: white !important;
+  border: 1px solid #dc2626;
+}
+
+.qiq-btn.qiq-danger:hover {
+  background: #b91c1c !important;
+}
+
+.qiq-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Compact table spacing */
+.qiq-table th, .qiq-table td {
+  padding: 6px 8px;
+  font-size: 14px;
 }
 
 /* ===== Quote page styling ===== */

@@ -21,8 +21,7 @@
     <div class="qiq-boq-top">
       <h1 style="margin: 0; font-size: 24px; color: #111827;">Quotation</h1>
       <div class="qiq-right">
-        <button id="clear-quotation" class="qiq-btn" type="button" 
-                style="background: #dc2626; color: white;"
+        <button id="clear-quotation" class="qiq-btn qiq-danger" type="button" 
                 title="Clear all items from quotation">
           Clear quotation
         </button>
@@ -177,8 +176,8 @@
               ${price === 0 ? 'Price on request' : window.QuoteStorage.formatPrice(price * item.qty)}
             </td>
             <td style="text-align: center;">
-              <button class="qiq-btn remove-item" type="button" 
-                      style="background: #dc2626; color: white; padding: 6px 12px;"
+              <button class="qiq-btn qiq-danger remove-item" type="button" 
+                      style="padding: 6px 12px;"
                       title="Remove ${item.name} from quotation"
                       aria-label="Remove ${item.name} from quotation">
                 Remove
