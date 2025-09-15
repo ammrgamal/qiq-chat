@@ -51,7 +51,7 @@
     const safeLink = esc(link);
 
     return `
-      <div class="qiq-inline-wrap" style="margin:10px 0">
+      <div class="qiq-inline-wrap" style="margin:2px 0">
         <table class="qiq-inline-table">
           <tbody>
             <tr>
