@@ -38,7 +38,7 @@
 .qiq-table th,.qiq-table td{padding:10px;border-bottom:1px solid #eef2f7;vertical-align:top;text-align:right}
 .qiq-img{width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid #eee;background:#fff}
 .qiq-actions-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.qiq-qty{width:70px;padding:8px;border:1px solid #d1d5db;border-radius:8px}
+.qiq-qty{width:70px;padding:8px;border:1px solid #d1d5db;border-radius:8px;text-align:center}
 .qiq-link{color:#2563eb;text-decoration:none}
 .qiq-chip{display:inline-block;background:#eef2ff;border:1px solid #dbe1ff;border-radius:8px;padding:2px 8px;margin-top:6px;font-size:12px}
 

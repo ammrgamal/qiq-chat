@@ -64,11 +64,11 @@
         ${pn? `<div class="qiq-chip">PN/SKU: ${pn}</div>` : ""}
         <div class="qiq-chip" style="background:#f5f5f5;border-color:#e5e7eb">Source: ${source}</div>
       </td>
+      <td><input type="number" min="1" step="1" value="1" class="qiq-qty"></td>
       <td>${price? fmtUSD(price) : "-"}</td>
       <td class="qiq-line">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
       <td>
         <div class="qiq-actions-row">
-          <input type="number" min="1" step="1" value="1" class="qiq-qty">
           <button class="qiq-btn" type="button" data-detail-sku="${sku}">Product details</button>
           <button class="qiq-btn qiq-primary" type="button" data-sku="${sku}" data-slug="">Add to quotation</button>
         </div>
@@ -155,4 +155,156 @@
       console.warn(e);
     }
   };
+
+  /* ========= Export Functionality ========= */
+  function exportToCSV() {
+    const rows = [...(tbody?.querySelectorAll("tr") || [])];
+    if (!rows.length) {
+      alert("No data to export");
+      return;
+    }
+
+    const headers = ["Item", "Description", "PN/SKU", "Qty", "Unit Price", "Line Total"];
+    let csvContent = headers.join(",") + "\n";
+
+    rows.forEach((tr, index) => {
+      const img = tr.querySelector(".qiq-img")?.alt || "";
+      const name = tr.querySelector("strong")?.textContent || "";
+      const pnElement = tr.querySelector(".qiq-chip");
+      const pn = pnElement ? pnElement.textContent.replace("PN/SKU: ", "") : "";
+      const qty = tr.querySelector(".qiq-qty")?.value || "1";
+      const unitPrice = tr.dataset.unit || "";
+      const lineTotal = tr.querySelector(".qiq-line")?.textContent || "";
+      
+      const row = [
+        `"${index + 1}"`,
+        `"${name.replace(/"/g, '""')}"`,
+        `"${pn.replace(/"/g, '""')}"`,
+        qty,
+        `"${unitPrice}"`,
+        `"${lineTotal}"`
+      ];
+      csvContent += row.join(",") + "\n";
+    });
+
+    // Add grand total
+    const grandTotal = document.getElementById("qiq-grand")?.textContent || "-";
+    csvContent += `,,,,Grand Total,"${grandTotal}"\n`;
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `quote_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  }
+
+  function exportToXLSX() {
+    const rows = [...(tbody?.querySelectorAll("tr") || [])];
+    if (!rows.length) {
+      alert("No data to export");
+      return;
+    }
+
+    if (typeof XLSX === 'undefined') {
+      alert("XLSX library not loaded. Please refresh the page.");
+      return;
+    }
+
+    const headers = ["Item", "Description", "PN/SKU", "Qty", "Unit Price", "Line Total"];
+    const data = [headers];
+
+    rows.forEach((tr, index) => {
+      const img = tr.querySelector(".qiq-img")?.alt || "";
+      const name = tr.querySelector("strong")?.textContent || "";
+      const pnElement = tr.querySelector(".qiq-chip");
+      const pn = pnElement ? pnElement.textContent.replace("PN/SKU: ", "") : "";
+      const qty = parseInt(tr.querySelector(".qiq-qty")?.value || "1");
+      const unitPrice = tr.dataset.unit || "";
+      const lineTotal = tr.querySelector(".qiq-line")?.textContent || "";
+      
+      data.push([
+        index + 1,
+        name,
+        pn,
+        qty,
+        unitPrice,
+        lineTotal
+      ]);
+    });
+
+    // Add empty row and grand total
+    const grandTotal = document.getElementById("qiq-grand")?.textContent || "-";
+    data.push([]);
+    data.push(["", "", "", "", "Grand Total", grandTotal]);
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Quote");
+    XLSX.writeFile(wb, `quote_${new Date().toISOString().split('T')[0]}.xlsx`);
+  }
+
+  /* ========= Add All Matched Functionality ========= */
+  function addAllMatched() {
+    const searchResults = document.querySelectorAll('.qiq-inline-actions button[onclick*="AddToQuote"]');
+    let addedCount = 0;
+    
+    searchResults.forEach(btn => {
+      if (!btn.disabled) {
+        try {
+          // Simulate clicking the Add button
+          AddToQuote(btn);
+          addedCount++;
+        } catch (e) {
+          console.warn("Error adding item:", e);
+        }
+      }
+    });
+
+    if (addedCount > 0) {
+      alert(`تمت إضافة ${addedCount} عنصر إلى عرض السعر`);
+    } else {
+      alert("لا توجد عناصر جديدة لإضافتها");
+    }
+  }
+
+  /* ========= Event Listeners ========= */
+  // Export CSV
+  document.getElementById("qiq-export-csv")?.addEventListener("click", exportToCSV);
+  
+  // Export XLSX
+  document.getElementById("qiq-export-xlsx")?.addEventListener("click", exportToXLSX);
+  
+  // Add all matched
+  document.getElementById("qiq-add-all")?.addEventListener("click", addAllMatched);
+
+  /* ========= Add Placeholder Data for Demo ========= */
+  function addPlaceholderData() {
+    const sampleItems = [
+      {
+        name: "Kaspersky Endpoint Security",
+        price: "$45.99",
+        sku: "KES-2024-50U",
+        image: "https://via.placeholder.com/68?text=KES",
+        link: "#",
+        source: "Sample"
+      },
+      {
+        name: "Microsoft Office 365 Business",
+        price: "$12.50",
+        sku: "O365-BIZ-1Y",
+        image: "https://via.placeholder.com/68?text=O365",
+        link: "#",
+        source: "Sample"
+      }
+    ];
+
+    sampleItems.forEach(item => buildRow(item));
+  }
+
+  // Add placeholder data if table is empty and it's been 2 seconds since page load
+  setTimeout(() => {
+    if (!tbody?.children?.length) {
+      addPlaceholderData();
+    }
+  }, 2000);
 })();

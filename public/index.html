@@ -15,6 +15,68 @@
   <!-- App JS: يجب تحميل quote-actions.js أولاً -->
   <script src="js/quote-actions.js" defer></script>
   <script src="js/ui-chat.js" defer></script>
+  <script>
+    // Simple language toggle
+    document.addEventListener('DOMContentLoaded', function() {
+      const langToggle = document.getElementById('lang-toggle');
+      const html = document.documentElement;
+      
+      const translations = {
+        ar: {
+          'Add all matched': 'إضافة جميع النتائج',
+          'Export CSV': 'تصدير CSV',
+          'Export XLSX': 'تصدير XLSX', 
+          'Image': 'الصورة',
+          'Description / PN / SKU': 'الوصف / رقم القطعة / SKU',
+          'Qty': 'الكمية',
+          'Unit price': 'سعر الوحدة',
+          'Line total': 'إجمالي السطر',
+          'Actions': 'الإجراءات',
+          'Grand total:': 'الإجمالي العام:',
+          'Product details': 'تفاصيل المنتج',
+          'Add to quotation': 'إضافة للعرض'
+        },
+        en: {
+          'إضافة جميع النتائج': 'Add all matched',
+          'تصدير CSV': 'Export CSV',
+          'تصدير XLSX': 'Export XLSX',
+          'الصورة': 'Image',
+          'الوصف / رقم القطعة / SKU': 'Description / PN / SKU',
+          'الكمية': 'Qty',
+          'سعر الوحدة': 'Unit price',
+          'إجمالي السطر': 'Line total',
+          'الإجراءات': 'Actions',
+          'الإجمالي العام:': 'Grand total:',
+          'تفاصيل المنتج': 'Product details',
+          'إضافة للعرض': 'Add to quotation'
+        }
+      };
+      
+      function toggleLanguage() {
+        const currentLang = html.getAttribute('lang');
+        const newLang = currentLang === 'ar' ? 'en' : 'ar';
+        const newDir = newLang === 'ar' ? 'rtl' : 'ltr';
+        
+        html.setAttribute('lang', newLang);
+        html.setAttribute('dir', newDir);
+        langToggle.textContent = newLang === 'ar' ? 'EN' : 'ع';
+        
+        // Update UI text
+        const dict = translations[newLang];
+        Object.keys(dict).forEach(key => {
+          document.querySelectorAll('*').forEach(el => {
+            if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
+              if (el.textContent.trim() === key) {
+                el.textContent = dict[key];
+              }
+            }
+          });
+        });
+      }
+      
+      langToggle?.addEventListener('click', toggleLanguage);
+    });
+  </script>
 </head>
 <body>
   <!-- ====== شريط علوي بسيط ====== -->
@@ -22,6 +84,7 @@
     <a href="/" style="color:#fff;text-decoration:none;font-weight:700">QuickITQuote</a>
     — <a href="/quote.html" style="color:#93c5fd">طلب عرض سعر مخصص</a>
     — <a href="/account.html" style="color:#93c5fd">حسابي</a>
+    — <button id="lang-toggle" style="background:none;border:1px solid #93c5fd;color:#93c5fd;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:12px">EN</button>
   </div>
 
   <!-- ====== نافذة الشات ====== -->
@@ -55,6 +118,7 @@
           <tr>
             <th style="width:76px">Image</th>
             <th>Description / PN / SKU</th>
+            <th style="width:80px">Qty</th>
             <th style="width:120px">Unit price</th>
             <th style="width:140px">Line total</th>
             <th style="width:270px">Actions</th>
@@ -63,7 +127,7 @@
         <tbody id="qiq-body"></tbody>
         <tfoot>
           <tr>
-            <td colspan="3" style="text-align:right"><strong>Grand total:</strong></td>
+            <td colspan="4" style="text-align:right"><strong>Grand total:</strong></td>
             <td id="qiq-grand" colspan="2"><strong>-</strong></td>
           </tr>
         </tfoot>
