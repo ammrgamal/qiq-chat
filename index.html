@@ -32,13 +32,14 @@
   <section id="qiq-boq-wrap" class="qiq-boq">
     <div class="qiq-boq-top">
       <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>إضافة الكل للعرض</button>
+      <button id="qiq-add-all-to-quotation" class="qiq-btn qiq-primary" type="button">Add all to the quotation</button>
       <div class="qiq-right">
-        <button id="qiq-export-csv"  class="qiq-btn" type="button">تصدير CSV</button>
-        <button id="qiq-export-xlsx" class="qiq-btn" type="button">تصدير XLSX</button>
+        <button id="qiq-export-csv"  class="qiq-btn" type="button">Export CSV</button>
+        <button id="qiq-export-xlsx" class="qiq-btn" type="button">Export XLSX</button>
         <span id="qiq-status" class="qiq-status"></span>
       </div>
     </div>
-    <div class="qiq-table-wrap">
+    <div class="qiq-table-wrap qiq-quote-table-wrap">
       <table class="qiq-table" aria-label="Staged items">
         <thead>
           <tr>
@@ -126,6 +127,20 @@
     <div class="qiq-modal__dialog">
       <button class="qiq-modal__close" aria-label="إغلاق" type="button">×</button>
       <iframe id="qiq-modal-frame" src="" loading="lazy"></iframe>
+    </div>
+  </div>
+
+  <!-- ======== Modal تحذير التكرار ======== -->
+  <div id="qiq-duplicate-modal" class="qiq-modal" aria-hidden="true" role="dialog" aria-label="Duplicate item">
+    <div class="qiq-modal__backdrop"></div>
+    <div class="qiq-modal__dialog qiq-duplicate-dialog">
+      <h3>Duplicate item</h3>
+      <p>This item already exists. Choose an action:</p>
+      <div class="qiq-duplicate-actions">
+        <button id="qiq-increase-qty" class="qiq-btn qiq-primary" type="button">Increase quantity</button>
+        <button id="qiq-add-duplicate" class="qiq-btn" type="button">Add as duplicate</button>
+        <button id="qiq-cancel-duplicate" class="qiq-btn" type="button">Cancel</button>
+      </div>
     </div>
   </div>
 
