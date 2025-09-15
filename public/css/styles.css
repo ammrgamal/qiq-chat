@@ -49,17 +49,30 @@
 .qiq-inline-table th,.qiq-inline-table td{border:1px solid #e5e7eb;padding:8px;vertical-align:top;text-align:right}
 .qiq-inline-img{width:58px;height:58px;object-fit:contain;border:1px solid #eee;border-radius:8px}
 
-/* ===== Chat table formatting ===== */
-.qiq-chat-table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin:8px 0}
-.qiq-chat-table-wrap .qiq-table{margin-top:8px}
+/* ===== Chat table formatting - Enhanced to match main BOQ table ===== */
+.qiq-chat-table-wrap{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  margin:12px 0;
+  overflow:hidden;
+}
 .qiq-chat-table-wrap .qiq-section-title{
   font-weight: 700;
   color: #1f2937;
-  margin-bottom: 8px;
-  padding: 4px 8px;
+  margin: 0;
+  padding: 12px 16px;
   background: #f8fafc;
-  border-radius: 6px;
+  border-bottom: 1px solid #e5e7eb;
   border-left: 4px solid #2563eb;
+}
+.qiq-chat-table-wrap .qiq-table-wrap {
+  overflow: auto;
+  max-height: 400px;
+}
+.qiq-chat-table-wrap .qiq-table{
+  margin: 0;
+  border-radius: 0;
 }
 
 /* Enhanced category chip styling */

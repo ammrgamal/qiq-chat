@@ -93,26 +93,38 @@
     `;
   }
 
-  /* ---- توليد عنوان ذكي للمنتج ---- */
+  /* ---- توليد عنوان ذكي للمنتج مع تحسينات ---- */
   function generateSmartTitle(productName) {
     const name = (productName || "").toLowerCase();
     
-    // قاموس للمطابقات الذكية
+    // قاموس للمطابقات الذكية مرتب حسب الأولوية
     const categoryMap = {
+      'kaspersky edr': 'Endpoint Detection & Response',
+      'kaspersky endpoint': 'Endpoint Security Solution',
       'kaspersky': 'Endpoint Security Solution',
+      'edr expert': 'Endpoint Detection & Response',
       'edr': 'Endpoint Detection & Response', 
+      'endpoint security': 'Endpoint Security Solution',
+      'endpoint detection': 'Endpoint Detection & Response',
+      'endpoint protection': 'Endpoint Security Solution',
       'endpoint': 'Endpoint Security Solution',
       'antivirus': 'Antivirus Protection',
+      'defender': 'Security Protection',
       'firewall': 'Network Security Firewall',
       'vpn': 'Virtual Private Network',
       'backup': 'Data Backup Solution',
+      'office 365': 'Productivity Suite',
       'office': 'Productivity Suite',
+      'windows server': 'Server Operating System',
       'windows': 'Operating System License',
+      'adobe creative': 'Creative Software Suite',
       'adobe': 'Creative Software Suite',
+      'vmware vsphere': 'Virtualization Platform',
       'vmware': 'Virtualization Platform',
+      'cisco catalyst': 'Network Infrastructure',
       'cisco': 'Network Infrastructure',
+      'microsoft 365': 'Productivity Suite',
       'microsoft': 'Enterprise Software',
-      'defender': 'Security Protection',
       'server': 'Server Infrastructure',
       'storage': 'Data Storage Solution',
       'cloud': 'Cloud Computing Service',
@@ -121,10 +133,11 @@
       'subscription': 'Software Subscription'
     };
 
-    // البحث عن مطابقة في اسم المنتج
-    for (const [keyword, title] of Object.entries(categoryMap)) {
+    // البحث عن مطابقة في اسم المنتج (البحث عن المطابقات الأطول أولاً)
+    const sortedKeys = Object.keys(categoryMap).sort((a, b) => b.length - a.length);
+    for (const keyword of sortedKeys) {
       if (name.includes(keyword)) {
-        return title;
+        return categoryMap[keyword];
       }
     }
 
@@ -132,13 +145,44 @@
     return 'IT Solution';
   }
 
-  /* ---- توليد صورة نص بسيطة للعنوان ---- */
+  /* ---- توليد صورة نص بسيطة للعنوان مع تحسينات ---- */
   function generateTitleImage(title) {
-    // استخدام خدمة مجانية لتوليد صورة نص
-    const encodedTitle = encodeURIComponent(title.split(' ').map(word => word.charAt(0)).join(''));
-    const bgColor = '2563eb'; // أزرق
-    const textColor = 'ffffff'; // أبيض
-    return `https://via.placeholder.com/64x64/${bgColor}/${textColor}?text=${encodedTitle}`;
+    // استخدام أول حرفين من العنوان أو اختصار ذكي
+    const words = title.split(' ');
+    let initials = '';
+    
+    if (words.length >= 2) {
+      initials = words[0].charAt(0) + words[1].charAt(0);
+    } else if (words.length === 1) {
+      const word = words[0];
+      initials = word.length >= 2 ? word.substring(0, 2) : word.charAt(0);
+    } else {
+      initials = 'IT';
+    }
+    
+    // اختيار ألوان مناسبة للفئة
+    const colorMap = {
+      'Security': { bg: '059669', text: 'ffffff' }, // أخضر للأمان
+      'Endpoint': { bg: 'dc2626', text: 'ffffff' }, // أحمر للحماية
+      'Network': { bg: '2563eb', text: 'ffffff' }, // أزرق للشبكات
+      'Cloud': { bg: '7c3aed', text: 'ffffff' }, // بنفسجي للسحابة
+      'Productivity': { bg: 'ea580c', text: 'ffffff' }, // برتقالي للإنتاجية
+      'Virtualization': { bg: '0891b2', text: 'ffffff' }, // أزرق فاتح للافتراضية
+      'Creative': { bg: 'e11d48', text: 'ffffff' }, // وردي للإبداع
+      'Operating': { bg: '374151', text: 'ffffff' }, // رمادي لأنظمة التشغيل
+    };
+    
+    // البحث عن لون مناسب بناء على العنوان
+    let colors = { bg: '2563eb', text: 'ffffff' }; // افتراضي أزرق
+    for (const [keyword, color] of Object.entries(colorMap)) {
+      if (title.includes(keyword)) {
+        colors = color;
+        break;
+      }
+    }
+    
+    const encodedInitials = encodeURIComponent(initials.toUpperCase());
+    return `https://via.placeholder.com/64x64/${colors.bg}/${colors.text}?text=${encodedInitials}`;
   }
 
   /* ---- تجميع مجموعة كروت ---- */

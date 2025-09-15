@@ -6,3 +6,15 @@ dist/
 build/
 *.log
 .DS_Store
+
+# Browser debugging and temporary files
+/tmp/playwright-logs/
+tmp/
+temp/
+.tmp/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
