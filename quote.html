@@ -3,37 +3,288 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>طلب عرض مخصص</title>
-  <link rel="stylesheet" href="css/styles.css"/>
+  <title>Quote - QuickITQuote</title>
+  <link rel="stylesheet" href="/public/css/styles.css"/>
 </head>
 <body>
-  <div class="bar">
-    <h1>طلب عرض مخصص</h1>
-    <div>
-      <a class="btn" href="index.html">الصفحة الرئيسية</a>
-      <a class="btn" href="account.html">حسابي</a>
+  <div class="qiq-topbar">
+    <div class="qiq-topbar__inner">
+      <a href="/index.html" class="brand">QuickITQuote</a>
+      <nav class="nav">
+        <a href="/index.html">الصفحة الرئيسية</a>
+        <a href="/public/account.html">حسابي</a>
+      </nav>
     </div>
   </div>
 
-  <form id="quoteForm" class="form-col" autocomplete="off">
-    <div class="row">
-      <input id="qName" placeholder="الاسم *" required/>
-      <input id="qEmail" placeholder="الإيميل *" type="email" required/>
+  <section class="qiq-boq" style="margin-top: 24px;">
+    <div class="qiq-boq-top">
+      <h1 style="margin: 0; font-size: 24px; color: #111827;">Quotation</h1>
+      <div class="qiq-right">
+        <button id="clear-quotation" class="qiq-btn" type="button" 
+                style="background: #dc2626; color: white;"
+                title="Clear all items from quotation">
+          Clear quotation
+        </button>
+        <a href="/index.html" class="qiq-btn" style="text-decoration: none; display: inline-block;">
+          Continue shopping
+        </a>
+      </div>
     </div>
-    <div class="row">
-      <input id="qPhone" placeholder="التليفون"/>
-      <input id="qCompany" placeholder="الشركة"/>
+    
+    <div class="qiq-table-wrap">
+      <table class="qiq-table" aria-label="Quotation items">
+        <thead>
+          <tr>
+            <th style="width:76px">Image</th>
+            <th>Description / PN / SKU</th>
+            <th style="width:100px">Unit Price</th>
+            <th style="width:120px">Quantity</th>
+            <th style="width:120px">Line Total</th>
+            <th style="width:140px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="quote-items-body">
+          <!-- Items will be populated here by JavaScript -->
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" style="text-align:left"><strong>Grand Total:</strong></td>
+            <td id="quote-grand-total" colspan="2"><strong>$0.00</strong></td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
-    <div class="row">
-      <textarea id="qReq" rows="6" placeholder="المتطلبات/الوصف (مثال: 120 مستخدم EDR لمدة سنتين، دعم 24/7...)"></textarea>
-    </div>
-    <div class="row">
-      <button class="btn primary" type="submit">إرسال الطلب</button>
-    </div>
-    <div id="qout" class="muted"></div>
-  </form>
 
-  <script type="module" src="js/quote-form.js"></script>
+    <!-- Empty state message -->
+    <div id="empty-quote" class="qiq-card" style="display: none; text-align: center; padding: 40px; margin-top: 20px;">
+      <h3 style="color: #6b7280; margin-bottom: 16px;">Your quotation is empty</h3>
+      <p style="color: #9ca3af; margin-bottom: 24px;">Add some items to your quotation to get started.</p>
+      <a href="/index.html" class="qiq-btn qiq-primary">Start Shopping</a>
+    </div>
+  </section>
+
+  <!-- Storage helpers -->
+  <script src="/public/js/quote-storage.js"></script>
+  
+  <!-- Quote page functionality -->
+  <script>
+    (() => {
+      const quoteBody = document.getElementById('quote-items-body');
+      const grandTotalEl = document.getElementById('quote-grand-total');
+      const clearBtn = document.getElementById('clear-quotation');
+      const emptyState = document.getElementById('empty-quote');
+
+      // Update grand total display
+      function updateGrandTotal() {
+        const total = window.QuoteStorage ? window.QuoteStorage.total() : 0;
+        const formatted = window.QuoteStorage ? window.QuoteStorage.formatPrice(total) : '$0.00';
+        if (grandTotalEl) {
+          grandTotalEl.innerHTML = `<strong>${formatted}</strong>`;
+        }
+      }
+
+      // Update line total for a specific row
+      function updateLineTotal(row) {
+        const priceCell = row.querySelector('.unit-price');
+        const qtyInput = row.querySelector('.qty-input');
+        const lineTotalCell = row.querySelector('.line-total');
+        
+        if (!priceCell || !qtyInput || !lineTotalCell) return;
+
+        const price = parseFloat(priceCell.dataset.price) || 0;
+        const qty = parseInt(qtyInput.value) || 1;
+        const lineTotal = price * qty;
+
+        if (price === 0) {
+          lineTotalCell.textContent = 'Price on request';
+        } else {
+          const formatted = window.QuoteStorage ? window.QuoteStorage.formatPrice(lineTotal) : `$${lineTotal.toFixed(2)}`;
+          lineTotalCell.textContent = formatted;
+        }
+      }
+
+      // Handle quantity change
+      function handleQuantityChange(row, newQty) {
+        const sku = row.dataset.sku;
+        const qty = Math.max(1, Math.min(9999, parseInt(newQty) || 1));
+        
+        if (window.QuoteStorage && window.QuoteStorage.updateQuantity(sku, qty)) {
+          const qtyInput = row.querySelector('.qty-input');
+          if (qtyInput) qtyInput.value = qty;
+          updateLineTotal(row);
+          updateGrandTotal();
+          return true;
+        }
+        return false;
+      }
+
+      // Remove item from quotation
+      function removeItem(sku) {
+        if (window.QuoteStorage && window.QuoteStorage.remove(sku)) {
+          renderQuoteItems();
+          updateGrandTotal();
+          return true;
+        }
+        return false;
+      }
+
+      // Render quote items table
+      function renderQuoteItems() {
+        if (!window.QuoteStorage || !quoteBody) return;
+
+        const items = window.QuoteStorage.load();
+        
+        if (items.length === 0) {
+          quoteBody.innerHTML = '';
+          emptyState.style.display = 'block';
+          document.querySelector('.qiq-table-wrap').style.display = 'none';
+          return;
+        }
+
+        emptyState.style.display = 'none';
+        document.querySelector('.qiq-table-wrap').style.display = 'block';
+
+        quoteBody.innerHTML = '';
+
+        items.forEach(item => {
+          const price = parseFloat(item.price) || 0;
+          const displayPrice = price === 0 ? 'Price on request' : window.QuoteStorage.formatPrice(price);
+          
+          const tr = document.createElement('tr');
+          tr.dataset.sku = item.sku;
+          tr.innerHTML = `
+            <td style="text-align: center;">
+              <img class="qiq-img" src="${item.image || 'https://via.placeholder.com/68?text=IMG'}" 
+                   alt="${item.name}" onerror="this.src='https://via.placeholder.com/68?text=IMG'" />
+            </td>
+            <td>
+              <div style="font-weight: bold; margin-bottom: 4px;">${item.name}</div>
+              ${item.sku ? `<div class="qiq-chip">PN/SKU: ${item.sku}</div>` : ''}
+            </td>
+            <td class="unit-price" data-price="${price}" style="text-align: center;">
+              ${displayPrice}
+            </td>
+            <td style="text-align: center;">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                <button class="qty-btn qty-minus" type="button" aria-label="Decrease quantity">-</button>
+                <input type="number" class="qty-input" value="${item.qty}" min="1" max="9999" 
+                       style="width: 60px; text-align: center;" aria-label="Quantity for ${item.name}">
+                <button class="qty-btn qty-plus" type="button" aria-label="Increase quantity">+</button>
+              </div>
+            </td>
+            <td class="line-total" style="text-align: center;">
+              ${price === 0 ? 'Price on request' : window.QuoteStorage.formatPrice(price * item.qty)}
+            </td>
+            <td style="text-align: center;">
+              <button class="qiq-btn remove-item" type="button" 
+                      style="background: #dc2626; color: white; padding: 6px 12px;"
+                      title="Remove ${item.name} from quotation"
+                      aria-label="Remove ${item.name} from quotation">
+                Remove
+              </button>
+            </td>
+          `;
+
+          quoteBody.appendChild(tr);
+
+          // Add event listeners for this row
+          const qtyInput = tr.querySelector('.qty-input');
+          const minusBtn = tr.querySelector('.qty-minus');
+          const plusBtn = tr.querySelector('.qty-plus');
+          const removeBtn = tr.querySelector('.remove-item');
+
+          // Quantity input change
+          qtyInput.addEventListener('input', function() {
+            const value = this.value;
+            if (value === '' || isNaN(value) || value < 1) {
+              this.value = item.qty; // Revert to current value
+              return;
+            }
+            handleQuantityChange(tr, value);
+          });
+
+          qtyInput.addEventListener('blur', function() {
+            if (this.value === '' || isNaN(this.value) || this.value < 1) {
+              this.value = item.qty; // Revert to current value
+            }
+          });
+
+          // Quantity buttons
+          minusBtn.addEventListener('click', function() {
+            const currentQty = parseInt(qtyInput.value) || 1;
+            if (currentQty > 1) {
+              handleQuantityChange(tr, currentQty - 1);
+            }
+          });
+
+          plusBtn.addEventListener('click', function() {
+            const currentQty = parseInt(qtyInput.value) || 1;
+            if (currentQty < 9999) {
+              handleQuantityChange(tr, currentQty + 1);
+            }
+          });
+
+          // Remove button
+          removeBtn.addEventListener('click', function() {
+            if (confirm(`Remove "${item.name}" from quotation?`)) {
+              removeItem(item.sku);
+            }
+          });
+        });
+      }
+
+      // Clear quotation
+      if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+          if (confirm('Are you sure you want to clear all items from your quotation? This action cannot be undone.')) {
+            if (window.QuoteStorage && window.QuoteStorage.clear()) {
+              renderQuoteItems();
+              updateGrandTotal();
+            }
+          }
+        });
+      }
+
+      // Initialize page
+      renderQuoteItems();
+      updateGrandTotal();
+
+      // Add CSS for quantity buttons
+      const style = document.createElement('style');
+      style.textContent = `
+        .qty-btn {
+          background: #f3f4f6;
+          border: 1px solid #d1d5db;
+          color: #374151;
+          cursor: pointer;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 14px;
+          min-width: 24px;
+        }
+        .qty-btn:hover {
+          background: #e5e7eb;
+        }
+        .qty-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .qty-input {
+          border: 1px solid #d1d5db;
+          border-radius: 4px;
+          padding: 4px 8px;
+          font-size: 14px;
+        }
+        .qty-input:focus {
+          outline: none;
+          border-color: #2563eb;
+          box-shadow: 0 0 0 1px #2563eb;
+        }
+      `;
+      document.head.appendChild(style);
+    })();
+  </script>
 </body>
 </html>
 

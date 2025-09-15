@@ -31,7 +31,7 @@
   <!-- ======== BOQ / Staging ======== -->
   <section id="qiq-boq-wrap" class="qiq-boq">
     <div class="qiq-boq-top">
-      <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>إضافة الكل للعرض</button>
+      <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>Add all to quotation</button>
       <div class="qiq-right">
         <button id="qiq-export-csv"  class="qiq-btn" type="button">تصدير CSV</button>
         <button id="qiq-export-xlsx" class="qiq-btn" type="button">تصدير XLSX</button>
@@ -130,6 +130,8 @@
   </div>
 
   <!-- ======== Bundles (Front-end) ======== -->
+  <!-- quote-storage.js: Storage helpers for quote items -->
+  <script src="/public/js/quote-storage.js"></script>
   <!-- api.js: دوال الفetch للباك إند (/api/search, /api/chat, /api/quote, /api/users/...) -->
   <script src="/public/js/api.js"></script>
   <!-- ui-chat.js: واجهة الشات + الBOQ + المنطق الذكي للبحث عبر /api/search -->
@@ -138,6 +140,31 @@
   <script src="/public/js/quote-form.js"></script>
   <!-- account.js: تسجيل/دخول/خروج (JWT) عبر /api/users/... -->
   <script src="/public/js/account.js"></script>
+
+  <!-- Simple handlers for export buttons -->
+  <script>
+    (() => {
+      // Handle export buttons (placeholder functionality)
+      const exportCsv = document.getElementById('qiq-export-csv');
+      const exportXlsx = document.getElementById('qiq-export-xlsx');
+      
+      if (exportCsv) {
+        exportCsv.addEventListener('click', () => {
+          // For now, just show an alert. In a real implementation,
+          // this would export the quote items to CSV
+          alert('CSV export functionality would be implemented here');
+        });
+      }
+      
+      if (exportXlsx) {
+        exportXlsx.addEventListener('click', () => {
+          // For now, just show an alert. In a real implementation,
+          // this would export the quote items to XLSX
+          alert('XLSX export functionality would be implemented here');
+        });
+      }
+    })();
+  </script>
 
   <!-- ملاحظة: طالما بنستخدم /api/search على السيرفر، مش محتاجين Algolia keys في الفرونت إطلاقًا -->
 </body>
