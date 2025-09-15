@@ -25,10 +25,18 @@
 .qiq-status{font-size:12px;color:#6b7280;margin-inline-start:8px}
 
 /* ===== Toast ===== */
-.qiq-toast{position:fixed;right:16px;bottom:16px;z-index:9999;display:flex;flex-direction:column;gap:8px}
-.qiq-toast .item{background:#111827;color:#fff;padding:12px 14px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px}
+.qiq-toast{position:fixed;right:16px;bottom:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;max-width:350px}
+.qiq-toast-item{background:#111827;color:#fff;padding:12px 14px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px;animation:slideIn 0.3s ease-out}
+.qiq-toast-success{background:#059669;color:#fff}
+.qiq-toast-error{background:#dc2626;color:#fff}
+.qiq-toast-info{background:#2563eb;color:#fff}
 .qiq-toast .item a{color:#93c5fd;text-decoration:underline}
 .qiq-toast .close{margin-inline-start:8px;background:transparent;border:0;color:#fff;cursor:pointer;font-size:16px}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
 
 /* ===== BOQ table ===== */
 .qiq-boq{max-width:980px;margin:16px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:block}
@@ -60,32 +68,42 @@
 .qiq-modal__dialog{position:absolute;inset:40px;max-width:1200px;margin:auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);overflow:hidden}
 .qiq-modal__close{position:absolute;right:8px;top:8px;width:36px;height:36px;border-radius:50%;border:0;background:#111827;color:#fff;font-size:20px;cursor:pointer;z-index:1}
 #qiq-modal-frame{width:100%;height:100%;border:0}
-/* جدول رفيع مع صورة المنتج */
-.slim-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-  background: #fff;
-  margin-bottom: 2em;
-}
-.slim-table th, .slim-table td {
-  border: 1px solid #e0e0e0;
-  padding: 6px 8px;
-  text-align: center;
-  vertical-align: middle;
-}
-.slim-table th {
-  background: #f5f7fa;
-  font-weight: bold;
-}
-.product-img {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  border-radius: 4px;
-  background: #fafafa;
-  border: 1px solid #eee;
-}
-.slim-table tr:hover {
-  background: #f0f8ff;
+/* ===== Results table (index.html) ===== */
+.qiq-results-table{width:100%;border-collapse:collapse;background:#fff;margin:16px 0;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden}
+.qiq-results-table th,.qiq-results-table td{padding:12px;border-bottom:1px solid #eef2f7;vertical-align:middle;text-align:right}
+.qiq-results-table th{background:#f8fafc;font-weight:600;color:#374151}
+.qiq-results-table img{width:40px;height:40px;object-fit:contain;border-radius:6px;border:1px solid #e5e7eb}
+.qiq-results-table .qty-input{width:60px;padding:6px;border:1px solid #d1d5db;border-radius:6px;text-align:center}
+.qiq-results-table .actions{display:flex;gap:6px;align-items:center}
+.qiq-results-table .btn-add{background:#059669;color:#fff;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px}
+.qiq-results-table .btn-details{background:#6b7280;color:#fff;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px}
+.qiq-results-table .btn-add:hover{background:#047857}
+.qiq-results-table .btn-details:hover{background:#4b5563}
+.qiq-results-table .product-badge{display:inline-block;background:#eef2ff;border:1px solid #dbe1ff;border-radius:6px;padding:2px 6px;font-size:11px;margin-top:4px}
+.qiq-results-table .price-cell{text-align:center;font-weight:600}
+.qiq-results-table .line-total{text-align:center;color:#6b7280}
+
+/* Bottom action buttons */
+.qiq-bottom-actions{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:16px 0;padding:16px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px}
+.qiq-bottom-actions .btn-add-all{background:#059669;color:#fff;border:0;padding:12px 20px;border-radius:8px;cursor:pointer;font-weight:600}
+.qiq-bottom-actions .btn-show-quote{background:#6b7280;color:#fff;border:0;padding:12px 20px;border-radius:8px;cursor:pointer}
+.qiq-bottom-actions .btn-add-all:hover{background:#047857}
+.qiq-bottom-actions .btn-show-quote:hover{background:#4b5563}
+.qiq-bottom-actions .btn-add-all:disabled{background:#d1d5db;cursor:not-allowed}
+
+/* Clarification dialog */
+.qiq-clarification{background:#fef3c7;border:1px solid #fbbf24;border-radius:12px;padding:16px;margin:16px 0}
+.qiq-clarification h3{margin:0 0 8px;color:#92400e}
+.qiq-clarification p{margin:0 0 12px;color:#92400e}
+.qiq-clarification .filter-buttons{display:flex;gap:8px;flex-wrap:wrap}
+.qiq-clarification .filter-btn{background:#fbbf24;color:#92400e;border:0;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:14px}
+.qiq-clarification .filter-btn:hover{background:#f59e0b}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .qiq-results-table {font-size:14px}
+  .qiq-results-table th,.qiq-results-table td {padding:8px}
+  .qiq-results-table img {width:32px;height:32px}
+  .qiq-bottom-actions {flex-direction:column;gap:8px}
+  .qiq-bottom-actions .btn-add-all,.qiq-bottom-actions .btn-show-quote {width:100%}
 }

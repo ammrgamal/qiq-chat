@@ -28,35 +28,49 @@
     </form>
   </section>
 
-  <!-- ======== BOQ / Staging ======== -->
-  <section id="qiq-boq-wrap" class="qiq-boq">
-    <div class="qiq-boq-top">
-      <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>إضافة الكل للعرض</button>
-      <div class="qiq-right">
-        <button id="qiq-export-csv"  class="qiq-btn" type="button">تصدير CSV</button>
-        <button id="qiq-export-xlsx" class="qiq-btn" type="button">تصدير XLSX</button>
-        <span id="qiq-status" class="qiq-status"></span>
-      </div>
+  <!-- ======== Search Results Table (max 5 items) ======== -->
+  <section id="qiq-results-wrap" class="qiq-boq" style="display:none">
+    <div class="qiq-section-title">نتائج البحث</div>
+    
+    <!-- Clarification dialog for many results -->
+    <div id="qiq-clarification" class="qiq-clarification" style="display:none">
+      <h3>نتائج كثيرة - هل يمكنك توضيح طلبك؟</h3>
+      <p>وجدنا عدد كبير من النتائج. استخدم الأزرار التالية لتصفية البحث:</p>
+      <div class="filter-buttons" id="qiq-filter-buttons"></div>
     </div>
+
     <div class="qiq-table-wrap">
-      <table class="qiq-table" aria-label="Staged items">
+      <table class="qiq-results-table" aria-label="Search results">
         <thead>
           <tr>
-            <th style="width:76px">صورة</th>
+            <th style="width:50px">صورة</th>
             <th>الوصف / PN / SKU</th>
+            <th style="width:80px">الكمية</th>
             <th style="width:120px">سعر الوحدة</th>
-            <th style="width:140px">الإجمالي</th>
-            <th style="width:270px">إجراءات</th>
+            <th style="width:100px">الإجمالي</th>
+            <th style="width:140px">إجراءات</th>
           </tr>
         </thead>
-        <tbody id="qiq-body"></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="3" style="text-align:left"><strong>الإجمالي الكلي:</strong></td>
-            <td id="qiq-grand" colspan="2"><strong>-</strong></td>
-          </tr>
-        </tfoot>
+        <tbody id="qiq-results-body"></tbody>
       </table>
+    </div>
+
+    <!-- Bottom action buttons -->
+    <div class="qiq-bottom-actions">
+      <div>
+        <button id="qiq-add-all-results" class="btn-add-all" type="button" disabled 
+                aria-label="Add all search results to quotation" title="إضافة جميع النتائج للعرض">
+          Add all to quotation
+        </button>
+        <button id="qiq-show-quote" class="btn-show-quote" type="button"
+                aria-label="Show the quote page" title="عرض صفحة العرض">
+          Show the quote
+        </button>
+      </div>
+      <div class="qiq-right">
+        <span id="qiq-results-status" class="qiq-status"></span>
+        <strong>الإجمالي الكلي: <span id="qiq-grand-total">-</span></strong>
+      </div>
     </div>
   </section>
 
@@ -130,6 +144,8 @@
   </div>
 
   <!-- ======== Bundles (Front-end) ======== -->
+  <!-- qiq-basket.js: basket management utilities -->
+  <script src="/public/js/qiq-basket.js"></script>
   <!-- api.js: دوال الفetch للباك إند (/api/search, /api/chat, /api/quote, /api/users/...) -->
   <script src="/public/js/api.js"></script>
   <!-- ui-chat.js: واجهة الشات + الBOQ + المنطق الذكي للبحث عبر /api/search -->
