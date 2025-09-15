@@ -42,16 +42,21 @@
 .qiq-link{color:#2563eb;text-decoration:none}
 .qiq-chip{display:inline-block;background:#eef2ff;border:1px solid #dbe1ff;border-radius:8px;padding:2px 8px;margin-top:6px;font-size:12px}
 
-/* ===== Inline blocks ===== */
-.qiq-section-title{margin:8px 0 6px;font-weight:700}
-.qiq-inline-wrap{margin-top:6px}
-.qiq-inline-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
-.qiq-inline-table th,.qiq-inline-table td{border:1px solid #e5e7eb;padding:8px;vertical-align:top;text-align:right}
-.qiq-inline-img{width:58px;height:58px;object-fit:contain;border:1px solid #eee;border-radius:8px}
-.qiq-inline-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.qiq-mini{border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;background:#fff;cursor:pointer}
+/* ===== Inline blocks (Chat Results) ===== */
+.qiq-section-title{margin:6px 0 2px;font-weight:700;font-size:13px;color:#374151}
+.qiq-inline-wrap{margin:0 0 8px 0}
+.qiq-inline-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed;font-size:11px;border:1px solid #e5e7eb;border-radius:6px;overflow:hidden}
+.qiq-inline-table th,.qiq-inline-table td{border:none;border-bottom:1px solid #f3f4f6;padding:6px 8px;vertical-align:middle;text-align:right}
+.qiq-inline-table tr:last-child td{border-bottom:none}
+.qiq-inline-table tr:hover{background:#f9fafb}
+.qiq-inline-img{width:40px;height:40px;object-fit:contain;border:1px solid #e5e7eb;border-radius:6px;background:#fff}
+.qiq-inline-actions{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.qiq-mini{border:1px solid #d1d5db;border-radius:4px;padding:3px 8px;background:#fff;cursor:pointer;font-size:10px;font-weight:500}
 .qiq-mini.primary{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
 .qiq-mini.success{background:#059669;color:#fff;border-color:#059669}
+.qiq-mini:hover{opacity:0.9}
+/* Compact text styling in chat results */
+.qiq-inline-table .qiq-chip{margin-top:2px;padding:1px 4px;font-size:9px;background:#f1f5f9;border-color:#e2e8f0}
 
 /* ===== Modal ===== */
 .qiq-modal{position:fixed;inset:0;z-index:9998;display:none}

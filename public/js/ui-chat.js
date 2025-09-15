@@ -51,51 +51,51 @@
     const safeLink = esc(link);
 
     return `
-      <div class="qiq-inline-wrap" style="margin:10px 0">
-        <table class="qiq-inline-table">
-          <tbody>
-            <tr>
-              <td style="width:68px">
-                <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
-              </td>
-              <td>
-                <div style="font-weight:700">${safeName}</div>
-                ${safeSku ? `<div class="qiq-chip">PN/SKU: ${safeSku}</div>` : ""}
-                ${safeLink ? `<div style="margin-top:4px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener">Open product</a></div>` : ""}
-              </td>
-              <td style="width:140px">${safePrice || "-"}</td>
-              <td style="width:220px">
-                <div class="qiq-inline-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                  <button class="qiq-mini primary" type="button"
-                    data-name="${safeName}"
-                    data-price="${safePrice}"
-                    data-sku="${safeSku}"
-                    data-image="${safeImg}"
-                    data-link="${safeLink}"
-                    data-source="Search"
-                    onclick="AddToQuote(this)">
-                    Add
-                  </button>
-                  <button class="qiq-mini" type="button"
-                    onclick="window.open('${safeLink || '#'}','_blank','noopener')">
-                    Shop
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <tr>
+        <td style="width:45px">
+          <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
+        </td>
+        <td>
+          <div style="font-weight:600;font-size:11px;line-height:1.2;margin-bottom:2px">${safeName}</div>
+          ${safeSku ? `<div class="qiq-chip">PN/SKU: ${safeSku}</div>` : ""}
+          ${safeLink ? `<div style="margin-top:2px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener" style="font-size:9px">View details</a></div>` : ""}
+        </td>
+        <td style="width:75px;font-size:11px;font-weight:500">${safePrice || "-"}</td>
+        <td style="width:110px">
+          <div class="qiq-inline-actions">
+            <button class="qiq-mini primary" type="button"
+              data-name="${safeName}"
+              data-price="${safePrice}"
+              data-sku="${safeSku}"
+              data-image="${safeImg}"
+              data-link="${safeLink}"
+              data-source="Search"
+              onclick="AddToQuote(this)">
+              Add
+            </button>
+            <button class="qiq-mini" type="button"
+              onclick="window.open('${safeLink || '#'}','_blank','noopener')">
+              Shop
+            </button>
+          </div>
+        </td>
+      </tr>
     `;
   }
 
   /* ---- تجميع مجموعة كروت ---- */
   function renderHitsBlock(title, hits) {
     if (!hits || !hits.length) return "";
-    const cards = hits.map(hitToCard).join("");
+    const rows = hits.map(hitToCard).join("");
     return `
       <div class="qiq-section-title">${esc(title)}</div>
-      ${cards}
+      <div class="qiq-inline-wrap">
+        <table class="qiq-inline-table">
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
     `;
   }
 

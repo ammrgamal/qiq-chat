@@ -155,4 +155,131 @@
       console.warn(e);
     }
   };
+
+  /* ========= Export Functions ========= */
+  
+  // Export to CSV
+  function exportToCSV() {
+    if (!tbody) {
+      alert("لا توجد بيانات للتصدير");
+      return;
+    }
+    
+    const rows = [...tbody.querySelectorAll("tr")];
+    if (rows.length === 0) {
+      alert("لا توجد بنود في الجدول للتصدير");
+      return;
+    }
+    
+    // CSV headers
+    const headers = ["الوصف", "PN/SKU", "سعر الوحدة", "الكمية", "الإجمالي"];
+    let csvContent = headers.join(",") + "\n";
+    
+    // Add data rows
+    rows.forEach(row => {
+      const name = row.querySelector("strong")?.textContent || "";
+      const pnElement = row.querySelector(".qiq-chip");
+      const pn = pnElement ? pnElement.textContent.replace("PN/SKU: ", "") : "";
+      const unitPrice = row.dataset.unit || "";
+      const qty = row.querySelector(".qiq-qty")?.value || "1";
+      const lineTotal = row.querySelector(".qiq-line")?.textContent || "";
+      
+      // Escape commas and quotes in CSV
+      const escapeCsv = (str) => {
+        str = str.toString().replace(/"/g, '""');
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          str = `"${str}"`;
+        }
+        return str;
+      };
+      
+      const rowData = [
+        escapeCsv(name),
+        escapeCsv(pn),
+        escapeCsv(unitPrice),
+        escapeCsv(qty),
+        escapeCsv(lineTotal)
+      ];
+      
+      csvContent += rowData.join(",") + "\n";
+    });
+    
+    // Add grand total
+    const grandTotal = grandCell?.textContent || "-";
+    csvContent += `"الإجمالي الكلي","","","","${grandTotal}"\n`;
+    
+    // Download CSV
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `qiq-quote-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+  
+  // Export to XLSX
+  function exportToXLSX() {
+    if (!tbody) {
+      alert("لا توجد بيانات للتصدير");
+      return;
+    }
+    
+    const rows = [...tbody.querySelectorAll("tr")];
+    if (rows.length === 0) {
+      alert("لا توجد بنود في الجدول للتصدير");
+      return;
+    }
+    
+    // Check if XLSX library is available
+    if (typeof XLSX === 'undefined') {
+      alert("مكتبة XLSX غير متوفرة. تأكد من تحميلها.");
+      return;
+    }
+    
+    // Prepare data for XLSX
+    const data = [];
+    
+    // Headers
+    data.push(["الوصف", "PN/SKU", "سعر الوحدة", "الكمية", "الإجمالي"]);
+    
+    // Add data rows
+    rows.forEach(row => {
+      const name = row.querySelector("strong")?.textContent || "";
+      const pnElement = row.querySelector(".qiq-chip");
+      const pn = pnElement ? pnElement.textContent.replace("PN/SKU: ", "") : "";
+      const unitPrice = row.dataset.unit || "";
+      const qty = row.querySelector(".qiq-qty")?.value || "1";
+      const lineTotal = row.querySelector(".qiq-line")?.textContent || "";
+      
+      data.push([name, pn, unitPrice, qty, lineTotal]);
+    });
+    
+    // Add grand total
+    const grandTotal = grandCell?.textContent || "-";
+    data.push(["الإجمالي الكلي", "", "", "", grandTotal]);
+    
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, "Quote");
+    
+    // Download XLSX
+    XLSX.writeFile(wb, `qiq-quote-${new Date().toISOString().split('T')[0]}.xlsx`);
+  }
+  
+  // Event listeners for export buttons
+  document.addEventListener('DOMContentLoaded', function() {
+    const csvBtn = document.getElementById('qiq-export-csv');
+    const xlsxBtn = document.getElementById('qiq-export-xlsx');
+    
+    if (csvBtn) {
+      csvBtn.addEventListener('click', exportToCSV);
+    }
+    
+    if (xlsxBtn) {
+      xlsxBtn.addEventListener('click', exportToXLSX);
+    }
+  });
 })();
