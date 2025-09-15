@@ -3,37 +3,112 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>طلب عرض مخصص</title>
-  <link rel="stylesheet" href="css/styles.css"/>
+  <title>طلب عرض سعر - QuickITQuote</title>
+  <link rel="stylesheet" href="/public/css/styles.css"/>
 </head>
 <body>
-  <div class="bar">
-    <h1>طلب عرض مخصص</h1>
-    <div>
-      <a class="btn" href="index.html">الصفحة الرئيسية</a>
-      <a class="btn" href="account.html">حسابي</a>
+  <div class="qiq-topbar">
+    <div class="qiq-topbar__inner">
+      <a href="index.html" class="brand">QuickITQuote</a>
+      <nav class="nav">
+        <a href="index.html">الصفحة الرئيسية</a>
+        <a href="quote.html">طلب عرض سعر</a>
+      </nav>
     </div>
   </div>
 
-  <form id="quoteForm" class="form-col" autocomplete="off">
-    <div class="row">
-      <input id="qName" placeholder="الاسم *" required/>
-      <input id="qEmail" placeholder="الإيميل *" type="email" required/>
+  <!-- ======== Staged Items Table ======== -->
+  <section id="qiq-staged-wrap" class="qiq-staged">
+    <div class="qiq-staged-top">
+      <h2>عناصر العرض المحفوظة</h2>
+      <div class="qiq-right">
+        <button id="qiq-clear-all" class="qiq-btn qiq-danger" type="button">مسح جميع العناصر</button>
+        <span id="qiq-items-count" class="qiq-status">0 عنصر</span>
+      </div>
     </div>
-    <div class="row">
-      <input id="qPhone" placeholder="التليفون"/>
-      <input id="qCompany" placeholder="الشركة"/>
+    <div class="qiq-table-wrap">
+      <table class="qiq-table" aria-label="Staged quotation items">
+        <thead>
+          <tr>
+            <th style="width:40px">صورة</th>
+            <th>الوصف / PN / SKU</th>
+            <th style="width:80px">الكمية</th>
+            <th style="width:120px">سعر الوحدة</th>
+            <th style="width:120px">إجمالي السطر</th>
+            <th style="width:100px">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="qiq-staged-body">
+          <tr>
+            <td colspan="6" style="text-align:center;padding:40px;color:#6b7280;">
+              لا توجد عناصر محفوظة. ارجع إلى <a href="index.html" style="color:#2563eb;">الصفحة الرئيسية</a> لإضافة منتجات.
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" style="text-align:left;font-weight:600;color:#374151;">الإجمالي الكلي:</td>
+            <td id="qiq-staged-grand" style="font-weight:600;color:#374151;">-</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
-    <div class="row">
-      <textarea id="qReq" rows="6" placeholder="المتطلبات/الوصف (مثال: 120 مستخدم EDR لمدة سنتين، دعم 24/7...)"></textarea>
-    </div>
-    <div class="row">
-      <button class="btn primary" type="submit">إرسال الطلب</button>
-    </div>
-    <div id="qout" class="muted"></div>
-  </form>
+  </section>
 
-  <script type="module" src="js/quote-form.js"></script>
+  <!-- ======== Custom Quote Form ======== -->
+  <section id="qiq-quote" class="qiq-card" aria-labelledby="quote-title">
+    <h2 id="quote-title">طلب عرض سعر مخصوص</h2>
+    <form id="quote-form" class="qiq-form-vertical" autocomplete="off">
+      <div class="row">
+        <label>اسم الشركة</label>
+        <input type="text" name="company" required />
+      </div>
+      <div class="row">
+        <label>مجال النشاط</label>
+        <input type="text" name="industry" />
+      </div>
+      <div class="row">
+        <label>عدد المستخدمين</label>
+        <input type="number" name="users" min="1" required />
+      </div>
+      <div class="row">
+        <label>الأولوية</label>
+        <select name="priority">
+          <option value="Security">Security</option>
+          <option value="Cloud">Cloud</option>
+          <option value="Collaboration">Collaboration</option>
+          <option value="Network">Network</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>الميزانية التقريبية (USD)</label>
+        <input type="number" name="budget_usd" min="0" />
+      </div>
+      <div class="row">
+        <label>البريد الإلكتروني</label>
+        <input type="email" name="email" required />
+      </div>
+      <div class="row">
+        <label>رقم الموبايل</label>
+        <input type="tel" name="phone" required />
+      </div>
+      <div class="row">
+        <label>تفاصيل إضافية</label>
+        <textarea name="notes" rows="3" placeholder="اذكر المنتجات أو المواصفات المطلوبة…"></textarea>
+      </div>
+
+      <div class="row actions">
+        <button type="submit" class="qiq-btn qiq-primary">إرسال الطلب</button>
+        <span id="quote-status" class="qiq-status"></span>
+      </div>
+    </form>
+  </section>
+
+  <!-- ======== Scripts ======== -->
+  <script src="/public/js/qiq-basket.js"></script>
+  <script src="/public/js/quote-staged.js"></script>
+  <script src="/public/js/quote-form.js"></script>
 </body>
 </html>
 

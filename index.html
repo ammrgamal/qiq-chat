@@ -28,35 +28,35 @@
     </form>
   </section>
 
-  <!-- ======== BOQ / Staging ======== -->
-  <section id="qiq-boq-wrap" class="qiq-boq">
-    <div class="qiq-boq-top">
-      <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>إضافة الكل للعرض</button>
+  <!-- ======== Search Results Table (Max 5 items) ======== -->
+  <section id="qiq-results-wrap" class="qiq-results" style="display:none">
+    <div class="qiq-results-top">
+      <h3>نتائج البحث</h3>
       <div class="qiq-right">
-        <button id="qiq-export-csv"  class="qiq-btn" type="button">تصدير CSV</button>
-        <button id="qiq-export-xlsx" class="qiq-btn" type="button">تصدير XLSX</button>
-        <span id="qiq-status" class="qiq-status"></span>
+        <span id="qiq-results-count" class="qiq-status"></span>
       </div>
     </div>
     <div class="qiq-table-wrap">
-      <table class="qiq-table" aria-label="Staged items">
+      <table class="qiq-table" aria-label="Search results">
         <thead>
           <tr>
-            <th style="width:76px">صورة</th>
+            <th style="width:40px">صورة</th>
             <th>الوصف / PN / SKU</th>
+            <th style="width:80px">الكمية</th>
             <th style="width:120px">سعر الوحدة</th>
-            <th style="width:140px">الإجمالي</th>
-            <th style="width:270px">إجراءات</th>
+            <th style="width:120px">إجمالي السطر</th>
+            <th style="width:200px">إجراءات</th>
           </tr>
         </thead>
-        <tbody id="qiq-body"></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="3" style="text-align:left"><strong>الإجمالي الكلي:</strong></td>
-            <td id="qiq-grand" colspan="2"><strong>-</strong></td>
-          </tr>
-        </tfoot>
+        <tbody id="qiq-results-body"></tbody>
       </table>
+    </div>
+    <div class="qiq-results-actions">
+      <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>Add all to quotation</button>
+      <button id="qiq-show-quote" class="qiq-btn" type="button">Show the quote</button>
+      <div class="qiq-grand-total">
+        <strong>Grand Total: <span id="qiq-grand-total">-</span></strong>
+      </div>
     </div>
   </section>
 
@@ -130,9 +130,11 @@
   </div>
 
   <!-- ======== Bundles (Front-end) ======== -->
+  <!-- qiq-basket.js: Unified localStorage management for basket/quote system -->
+  <script src="/public/js/qiq-basket.js"></script>
   <!-- api.js: دوال الفetch للباك إند (/api/search, /api/chat, /api/quote, /api/users/...) -->
   <script src="/public/js/api.js"></script>
-  <!-- ui-chat.js: واجهة الشات + الBOQ + المنطق الذكي للبحث عبر /api/search -->
+  <!-- ui-chat.js: واجهة الشات + النتائج + المنطق الذكي للبحث عبر /api/search -->
   <script src="/public/js/ui-chat.js"></script>
   <!-- quote-form.js: إرسال فورم العرض المخصص إلى /api/quote -->
   <script src="/public/js/quote-form.js"></script>
