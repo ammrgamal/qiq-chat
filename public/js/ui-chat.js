@@ -75,8 +75,8 @@
                     data-image="${safeImg}"
                     data-link="${safeLink}"
                     data-source="Search"
-                    onclick="AddToQuote(this)"
-                    title="Add this product to quotation"
+                    onclick="addToQuotationDirect(this)"
+                    title="Add product to quotation"
                     style="background: #2563eb; color: white; border-color: #2563eb;">
                     Add
                   </button>
@@ -87,7 +87,7 @@
                     Shop
                   </button>
                   <button class="qiq-mini qiq-quote-btn" type="button"
-                    onclick="window.location.href='${safeLink && safeLink !== '#' ? '/public/quote.html?product=' + encodeURIComponent(safeName) : '/public/quote.html'}'"
+                    onclick="addToQuotationForm('${safeName}', '${formattedPrice}', '${safeSku}')"
                     title="Add to quotation form"
                     style="background: #ea580c; color: white; border-color: #ea580c;">
                     Add quotation
@@ -119,7 +119,7 @@
           Add all matched
         </button>
       </div>
-      <div id="${blockId}" class="matched-products-container">
+      <div id="${blockId}" class="qiq-hits-container">
         ${cards}
       </div>
     `;
