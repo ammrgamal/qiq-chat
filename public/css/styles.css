@@ -49,9 +49,84 @@
 .qiq-inline-table th,.qiq-inline-table td{border:1px solid #e5e7eb;padding:8px;vertical-align:top;text-align:right}
 .qiq-inline-img{width:58px;height:58px;object-fit:contain;border:1px solid #eee;border-radius:8px}
 .qiq-inline-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.qiq-mini{border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;background:#fff;cursor:pointer}
+.qiq-mini{border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;background:#fff;cursor:pointer;font-size:14px;transition:all 0.2s ease;}
+.qiq-mini:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,0.1);}
 .qiq-mini.primary{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
 .qiq-mini.success{background:#059669;color:#fff;border-color:#059669}
+
+/* ===== Product Cards ===== */
+.product-card {
+  margin: 5px 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  padding: 12px;
+  transition: all 0.2s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #d1d5db;
+}
+
+.matched-products-container {
+  margin-bottom: 16px;
+}
+
+/* ===== Button Styling ===== */
+.qiq-add-btn {
+  background: #2563eb !important;
+  color: white !important;
+  border-color: #2563eb !important;
+}
+
+.qiq-shop-btn {
+  background: #059669 !important;
+  color: white !important;
+  border-color: #059669 !important;
+}
+
+.qiq-quote-btn {
+  background: #ea580c !important;
+  color: white !important;
+  border-color: #ea580c !important;
+}
+
+.qiq-add-btn:hover,
+.qiq-shop-btn:hover,
+.qiq-quote-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 768px) {
+  .product-card {
+    padding: 8px;
+  }
+  
+  .product-card table {
+    font-size: 14px;
+  }
+  
+  .qiq-inline-actions {
+    flex-direction: column;
+    gap: 4px;
+    align-items: stretch;
+  }
+  
+  .qiq-mini {
+    padding: 8px;
+    text-align: center;
+  }
+  
+  .qiq-section-title {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+}
 
 /* ===== Modal ===== */
 .qiq-modal{position:fixed;inset:0;z-index:9998;display:none}

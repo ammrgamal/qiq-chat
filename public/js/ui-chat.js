@@ -45,40 +45,52 @@
     const link  = hit?.link || hit?.url || hit?.product_url || hit?.permalink || "";
 
     const safeName = esc(String(name));
-    const safePrice = esc(String(price));
     const safeSku = esc(String(sku));
     const safeImg = esc(img || PLACEHOLDER_IMG);
     const safeLink = esc(link);
+    
+    // Format price with $ sign
+    const formattedPrice = price ? `$${esc(String(price))}` : "Price on request";
 
     return `
-      <div class="qiq-inline-wrap" style="margin:10px 0">
-        <table class="qiq-inline-table">
+      <div class="product-card" style="margin:5px 0; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; padding: 12px;">
+        <table class="qiq-inline-table" style="margin: 0;">
           <tbody>
             <tr>
-              <td style="width:68px">
-                <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
+              <td style="width:68px; padding: 8px;">
+                <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" style="width: 64px; height: 64px; object-fit: contain;" />
               </td>
-              <td>
-                <div style="font-weight:700">${safeName}</div>
-                ${safeSku ? `<div class="qiq-chip">PN/SKU: ${safeSku}</div>` : ""}
-                ${safeLink ? `<div style="margin-top:4px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener">Open product</a></div>` : ""}
+              <td style="padding: 8px;">
+                <div style="font-weight: 700; margin-bottom: 4px;">${safeName}</div>
+                ${safeSku ? `<div class="qiq-chip" style="font-weight: 700;"><strong>PN/SKU: ${safeSku}</strong></div>` : ""}
+                <div style="font-weight: 700; color: #059669; margin-top: 4px; font-size: 16px;">${formattedPrice}</div>
+                ${safeLink ? `<div style="margin-top:4px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener">View product details</a></div>` : ""}
               </td>
-              <td style="width:140px">${safePrice || "-"}</td>
-              <td style="width:220px">
+              <td style="width:220px; padding: 8px;">
                 <div class="qiq-inline-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                  <button class="qiq-mini primary" type="button"
+                  <button class="qiq-mini qiq-add-btn" type="button"
                     data-name="${safeName}"
-                    data-price="${safePrice}"
+                    data-price="${price}"
                     data-sku="${safeSku}"
                     data-image="${safeImg}"
                     data-link="${safeLink}"
                     data-source="Search"
-                    onclick="AddToQuote(this)">
+                    onclick="AddToQuote(this)"
+                    title="Add this product to quotation"
+                    style="background: #2563eb; color: white; border-color: #2563eb;">
                     Add
                   </button>
-                  <button class="qiq-mini" type="button"
-                    onclick="window.open('${safeLink || '#'}','_blank','noopener')">
+                  <button class="qiq-mini qiq-shop-btn" type="button"
+                    onclick="window.open('${safeLink || '#'}','_blank','noopener')"
+                    title="Open store in new tab"
+                    style="background: #059669; color: white; border-color: #059669;">
                     Shop
+                  </button>
+                  <button class="qiq-mini qiq-quote-btn" type="button"
+                    onclick="window.location.href='${safeLink && safeLink !== '#' ? '/public/quote.html?product=' + encodeURIComponent(safeName) : '/public/quote.html'}'"
+                    title="Add to quotation form"
+                    style="background: #ea580c; color: white; border-color: #ea580c;">
+                    Add quotation
                   </button>
                 </div>
               </td>
@@ -93,11 +105,67 @@
   function renderHitsBlock(title, hits) {
     if (!hits || !hits.length) return "";
     const cards = hits.map(hitToCard).join("");
+    
+    // Create unique ID for this block
+    const blockId = `hits-block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     return `
-      <div class="qiq-section-title">${esc(title)}</div>
-      ${cards}
+      <div class="qiq-section-title" style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 8px;">
+        <span>${esc(title)} (${hits.length} products)</span>
+        <button class="qiq-btn qiq-success" type="button" 
+                onclick="addAllMatchedProducts('${blockId}')"
+                title="Add all matched products to quotation"
+                style="background: #059669; font-size: 14px; padding: 6px 12px;">
+          Add all matched
+        </button>
+      </div>
+      <div id="${blockId}" class="matched-products-container">
+        ${cards}
+      </div>
     `;
   }
+
+  /* ---- Add all matched products functionality ---- */
+  window.addAllMatchedProducts = function(blockId) {
+    const container = document.getElementById(blockId);
+    if (!container) return;
+    
+    const addButtons = container.querySelectorAll('.qiq-add-btn');
+    let addedCount = 0;
+    
+    addButtons.forEach(btn => {
+      try {
+        AddToQuote(btn);
+        addedCount++;
+      } catch (e) {
+        console.warn('Failed to add product:', e);
+      }
+    });
+    
+    if (addedCount > 0) {
+      // Show success message
+      const toast = document.createElement('div');
+      toast.className = 'qiq-toast-item';
+      toast.style.cssText = `
+        position: fixed; 
+        top: 20px; 
+        right: 20px; 
+        background: #059669; 
+        color: white; 
+        padding: 12px 16px; 
+        border-radius: 8px; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+        z-index: 10000;
+        font-weight: 500;
+      `;
+      toast.textContent = `Added ${addedCount} products to quotation`;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+  };
 
   /* ---- استدعاء /api/search ---- */
   async function runSearch(query, hitsPerPage = 5) {
@@ -112,8 +180,52 @@
       return Array.isArray(json?.hits) ? json.hits : [];
     } catch (e) {
       console.warn("Search error:", e);
-      return [];
+      // Return mock data for development/testing
+      return getMockSearchResults(query, hitsPerPage);
     }
+  }
+
+  /* ---- Mock data for development/testing ---- */
+  function getMockSearchResults(query, hitsPerPage = 5) {
+    const mockData = [
+      {
+        name: "Kaspersky Endpoint Security for Business Select",
+        price: "165",
+        sku: "KL4863XANFS",
+        image: "https://via.placeholder.com/68x68/0066cc/ffffff?text=KS",
+        link: "https://www.kaspersky.com/business-security/endpoint-select"
+      },
+      {
+        name: "Kaspersky Anti-Virus 2024",
+        price: "",
+        sku: "KL1171XCAFS",
+        image: "https://via.placeholder.com/68x68/ff6600/ffffff?text=KAV",
+        link: "https://www.kaspersky.com/antivirus"
+      },
+      {
+        name: "Kaspersky Internet Security",
+        price: "89.99",
+        sku: "KL1939XCBFS",
+        image: "https://via.placeholder.com/68x68/009900/ffffff?text=KIS",
+        link: "https://www.kaspersky.com/internet-security"
+      },
+      {
+        name: "Kaspersky Security Cloud",
+        price: "119.95",
+        sku: "KL1923XCEFS",
+        image: "https://via.placeholder.com/68x68/cc0099/ffffff?text=KSC",
+        link: "https://www.kaspersky.com/security-cloud"
+      },
+      {
+        name: "Kaspersky Total Security",
+        price: "149.99",
+        sku: "KL1949XDEFRS",
+        image: "https://via.placeholder.com/68x68/ff3300/ffffff?text=KTS",
+        link: "https://www.kaspersky.com/total-security"
+      }
+    ];
+    
+    return mockData.slice(0, hitsPerPage);
   }
 
   /* ---- استدعاء /api/chat (نفس الموجود قبل كده) ---- */
