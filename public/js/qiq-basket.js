@@ -7,7 +7,10 @@
 const STORAGE_KEY = 'qiq_staged_items';
 
 // Toast notification utility
-function showToast(message, type = 'info') {
+function showToast(messageEn, messageAr = '', type = 'info') {
+  // Use bilingual format: English / Arabic
+  const message = messageAr ? `${messageEn} / ${messageAr}` : messageEn;
+  
   const toast = document.createElement('div');
   toast.className = `qiq-toast-item qiq-toast-${type}`;
   toast.textContent = message;
@@ -154,12 +157,12 @@ class QiqBasket {
         const existing = this.items[existingIndex];
         existing.updateQuantity(existing.qty + newItem.qty);
         console.log(`Merged ${newItem.qty} more of ${key}, total: ${existing.qty}`);
-        showToast(`تم دمج الكمية: ${existing.name} (${existing.qty})`, 'success');
+        showToast(`Quantity merged: ${existing.name} (${existing.qty})`, `تم دمج الكمية: ${existing.name} (${existing.qty})`, 'success');
       } else {
         // Add new item
         this.items.push(newItem);
         console.log(`Added new item: ${key}, qty: ${newItem.qty}`);
-        showToast(`تم إضافة: ${newItem.name}`, 'success');
+        showToast(`Added: ${newItem.name}`, `تم إضافة: ${newItem.name}`, 'success');
       }
 
       this.saveItems();
@@ -167,7 +170,7 @@ class QiqBasket {
       return true;
     } catch (error) {
       console.error('Failed to add item:', error);
-      showToast('فشل في إضافة العنصر', 'error');
+      showToast('Failed to add item', 'فشل في إضافة العنصر', 'error');
       return false;
     }
   }
@@ -179,7 +182,7 @@ class QiqBasket {
       if (index >= 0) {
         const removed = this.items.splice(index, 1)[0];
         console.log(`Removed item: ${key}`);
-        showToast(`تم حذف: ${removed.name}`, 'info');
+        showToast(`Removed: ${removed.name}`, `تم حذف: ${removed.name}`, 'info');
         this.saveItems();
         this.updateUI();
         return true;
@@ -215,7 +218,7 @@ class QiqBasket {
       this.items = [];
       localStorage.removeItem(STORAGE_KEY);
       console.log('Basket cleared');
-      showToast('تم تفريغ السلة', 'info');
+      showToast('Basket cleared', 'تم تفريغ السلة', 'info');
       this.updateUI();
       return true;
     } catch (error) {
@@ -293,13 +296,13 @@ class QiqBasket {
       });
       
       if (addedCount > 0) {
-        showToast(`تم إضافة ${addedCount} عنصر للسلة`, 'success');
+        showToast(`Added ${addedCount} items to basket`, `تم إضافة ${addedCount} عنصر للسلة`, 'success');
       }
       
       return addedCount;
     } catch (error) {
       console.error('Failed to import items:', error);
-      showToast('فشل في استيراد العناصر', 'error');
+      showToast('Failed to import items', 'فشل في استيراد العناصر', 'error');
       return 0;
     }
   }

@@ -81,7 +81,158 @@
 .qiq-left-actions{display:flex;gap:12px;align-items:center}
 .qiq-right-info{display:flex;gap:16px;align-items:center;font-size:14px}
 
-/* ===== Inline blocks ===== */
+/* Enhanced button styles */
+.qiq-btn.qiq-success {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #fff;
+  border: 0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
+}
+
+.qiq-btn.qiq-success:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);
+  transform: translateY(-1px);
+}
+
+.qiq-btn.qiq-secondary {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: #fff;
+  border: 0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);
+}
+
+.qiq-btn.qiq-secondary:hover {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ===== Mobile Responsiveness ===== */
+@media (max-width: 768px) {
+  .qiq {
+    margin: 8px;
+    border-radius: 12px;
+  }
+  
+  .qiq-bottom-actions {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .qiq-left-actions {
+    justify-content: center;
+  }
+  
+  .qiq-right-info {
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .qiq-table th,
+  .qiq-table td {
+    padding: 8px 6px;
+    font-size: 14px;
+  }
+  
+  .qty-input {
+    width: 50px !important;
+    padding: 4px !important;
+  }
+  
+  .btn-add, .btn-details {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+  
+  .qiq-results-table .actions {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .qiq-section-title {
+    font-size: 16px;
+  }
+}
+
+/* ===== Enhanced Accessibility ===== */
+.qiq-table th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  z-index: 10;
+}
+
+.qty-input:focus {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+  border-color: #059669;
+}
+
+.btn-add:focus,
+.btn-details:focus,
+.qiq-btn:focus {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+/* ===== Improved Price Alignment ===== */
+.price-cell,
+.line-total {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+}
+
+/* ===== Enhanced Image Styling ===== */
+.qiq-img,
+.qiq-results-table img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  transition: all 0.2s ease;
+}
+
+.qiq-results-table img:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Status Messages Enhancement ===== */
+.qiq-status {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  padding: 4px 8px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+/* ===== Grand Total Styling ===== */
+#qiq-grand-total {
+  font-weight: 700;
+  color: #059669;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+}
 .qiq-section-title{margin:8px 0 6px;font-weight:700}
 .qiq-inline-wrap{margin-top:6px}
 .qiq-inline-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
