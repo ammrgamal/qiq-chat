@@ -30,6 +30,33 @@
 .qiq-toast .item a{color:#93c5fd;text-decoration:underline}
 .qiq-toast .close{margin-inline-start:8px;background:transparent;border:0;color:#fff;cursor:pointer;font-size:16px}
 
+/* ===== Search Results Section ===== */
+.qiq-results{max-width:980px;margin:16px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:block}
+.qiq-results-top{display:flex;justify-content:space-between;align-items:center;margin:6px 4px 12px}
+.qiq-results-top h3{margin:0;color:#374151;font-size:18px}
+.qiq-results-actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:12px 0;border-top:1px solid #e5e7eb}
+.qiq-grand-total{font-size:16px;color:#374151}
+.qiq-results-img{border:1px solid #e5e7eb;background:#f9fafb}
+
+/* ===== Staged Items Section ===== */
+.qiq-staged{max-width:980px;margin:16px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:block}
+.qiq-staged-top{display:flex;justify-content:space-between;align-items:center;margin:6px 4px 12px}
+.qiq-staged-top h2{margin:0;color:#374151;font-size:20px}
+
+/* ===== Form styling ===== */
+.qiq-card{max-width:980px;margin:16px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px}
+.qiq-form-vertical .row{margin:12px 0}
+.qiq-form-vertical label{display:block;margin-bottom:4px;font-weight:600;color:#374151}
+.qiq-form-vertical input,.qiq-form-vertical select,.qiq-form-vertical textarea{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px}
+.qiq-form-vertical textarea{resize:vertical;min-height:80px}
+.qiq-form-vertical .actions{display:flex;align-items:center;gap:12px;margin-top:20px}
+
+/* ===== Button variants ===== */
+.qiq-danger{background:#dc2626;border-color:#dc2626;color:#fff}
+.qiq-danger:hover{background:#b91c1c}
+.qiq-mini.qiq-danger{background:#dc2626;color:#fff;border-color:#dc2626}
+.qiq-mini{padding:6px 10px;font-size:12px}
+
 /* ===== BOQ table ===== */
 .qiq-boq{max-width:980px;margin:16px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:block}
 .qiq-boq-top{display:flex;justify-content:space-between;align-items:center;margin:6px 4px 12px}
