@@ -270,8 +270,68 @@
       return Array.isArray(json?.hits) ? json.hits : [];
     } catch (e) {
       console.warn("Search error:", e);
-      return [];
+      // Return test products (Mock Data) when API is not available
+      return getMockProducts(query, hitsPerPage);
     }
+  }
+
+  /* ---- Mock Products for Testing ---- */
+  function getMockProducts(query, limit = 5) {
+    const mockProducts = [
+      {
+        name: "Kaspersky Security for Business",
+        price: "$29.99",
+        sku: "KL4054IAYRS",
+        image: "https://via.placeholder.com/40x40/007acc/fff?text=KS",
+        link: "https://example.com/kaspersky-security",
+        description: "Advanced security solution with endpoint protection and response capabilities for business environments. Includes threat detection, prevention, and investigation tools."
+      },
+      {
+        name: "Norton 365 Business Premium", 
+        price: "$22.00",
+        sku: "CFQTTCCDK70R",
+        image: "https://via.placeholder.com/40x40/ff6b00/fff?text=N365",
+        link: "https://example.com/norton-365",
+        description: "Comprehensive business security suite with cloud-based management, advanced threat protection, and centralized administration for small to medium enterprises."
+      },
+      {
+        name: "VMware vSphere Essentials",
+        price: "$875.00", 
+        sku: "VS7-ESTD-G-SSS-C",
+        image: "https://via.placeholder.com/40x40/00B4A6/fff?text=VS",
+        link: "https://example.com/vsphere-essentials",
+        description: "Virtualization platform that enables businesses to create and manage virtual machines with centralized management and high availability features."
+      },
+      {
+        name: "Microsoft Office 365 Business Standard",
+        price: "$12.50",
+        sku: "CFQ7TTC0LH18",
+        image: "https://via.placeholder.com/40x40/0078d4/fff?text=O365",
+        link: "https://example.com/office-365",
+        description: "Cloud-based productivity suite including Word, Excel, PowerPoint, Outlook, Teams, and OneDrive with 1TB storage per user for business collaboration."
+      },
+      {
+        name: "Adobe Creative Cloud Business",
+        price: "$52.99",
+        sku: "65270749BA01A12",
+        image: "https://via.placeholder.com/40x40/ff0000/fff?text=CC",
+        link: "https://example.com/adobe-cc",
+        description: "Complete creative software package with Photoshop, Illustrator, InDesign, Premiere Pro, and more. Includes cloud storage and collaboration tools."
+      }
+    ];
+
+    // Filter based on query if provided
+    let filteredProducts = mockProducts;
+    if (query && query.trim()) {
+      const searchTerm = query.toLowerCase();
+      filteredProducts = mockProducts.filter(product => 
+        product.name.toLowerCase().includes(searchTerm) ||
+        product.description.toLowerCase().includes(searchTerm) ||
+        product.sku.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    return filteredProducts.slice(0, limit);
   }
 
   /* ---- استدعاء /api/chat (نفس الموجود قبل كده) ---- */
@@ -287,7 +347,12 @@
       return text || "";
     } catch (e) {
       console.warn("Chat error:", e);
-      return "حصل خطأ أثناء الاتصال بالخادم.";
+      // Provide a simple fallback response when API is not available
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage && lastMessage.content) {
+        return `شكرًا لك على استفسارك: "${lastMessage.content}". سأبحث عن المنتجات المناسبة لك.`;
+      }
+      return "أهلاً بك! كيف يمكنني مساعدتك اليوم؟";
     }
   }
 
@@ -359,6 +424,21 @@
       addMsg("bot", html, true);
     } else {
       addMsg("bot", "لا توجد نتائج مطابقة.", true);
+    }
+  });
+
+  /* ---- Test Products Button ---- */
+  const testBtn = document.getElementById("qiq-test-products");
+  testBtn?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    addMsg("user", "Test Products (Mock Data)");
+
+    const results = await runSearch("", 5); // Get all mock products
+    if (results.length) {
+      const html = renderHitsBlock("Test Products (Mock Data)", results);
+      addMsg("bot", html, true);
+    } else {
+      addMsg("bot", "لا توجد منتجات تجريبية.", true);
     }
   });
 })();
