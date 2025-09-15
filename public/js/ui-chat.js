@@ -17,7 +17,7 @@
 
   /* ---- Helpers ---- */
   const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c] || c));
-  const PLACEHOLDER_IMG = "https://via.placeholder.com/68?text=IMG";
+  const PLACEHOLDER_IMG = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTgiIGhlaWdodD0iNTgiIHZpZXdCb3g9IjAgMCA1OCA1OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjU4IiBoZWlnaHQ9IjU4IiBmaWxsPSIjRjVGNUY1IiBzdHJva2U9IiNFNUU3RUIiLz4KPHRleHQgeD0iMjkiIHk9IjMzIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iOSIgZmlsbD0iIzk5OSI+SU1HPC90ZXh0Pgo8L3N2Zz4K';
 
   function addMsg(role, html, asHtml=false) {
     const wrap = document.createElement("div");
@@ -47,7 +47,7 @@
     const safeName = esc(String(name));
     const safePrice = esc(String(price));
     const safeSku = esc(String(sku));
-    const safeImg = esc(img || PLACEHOLDER_IMG);
+    const safeImg = img && img.startsWith('http') && !img.includes('placeholder') ? esc(img) : PLACEHOLDER_IMG;
     const safeLink = esc(link);
 
     return `
@@ -56,7 +56,13 @@
           <tbody>
             <tr>
               <td style="width:68px">
-                <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
+                <img class="qiq-inline-img" 
+                     src="${safeImg}" 
+                     alt="${safeName}" 
+                     loading="lazy"
+                     onload="this.style.opacity='1'" 
+                     onerror="if(this.src!=='${PLACEHOLDER_IMG}'){this.src='${PLACEHOLDER_IMG}';this.style.opacity='0.7'}" 
+                     style="opacity:0.8;transition:opacity 0.3s ease" />
               </td>
               <td>
                 <div style="font-weight:700">${safeName}</div>

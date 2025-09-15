@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Test Mock - QIQ Chat</title>
+    <link rel="stylesheet" href="/public/css/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+    <style>
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-button {
+            margin: 10px;
+            padding: 10px 20px;
+            background: #007cba;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .mock-search-results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Page for QIQ Chat Issues</h1>
+    
+    <div class="test-section">
+        <h2>Test Image Flickering Issue</h2>
+        <button class="test-button" onclick="addMockProducts()">Add Mock Products to Table</button>
+        <button class="test-button" onclick="simulateDataUpdate()">Simulate Data Update (Test Flickering)</button>
+    </div>
+
+    <!-- Copy the main table structure -->
+    <section id="qiq-boq-wrap" class="qiq-boq">
+        <div class="qiq-boq-top">
+            <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>إضافة الكل للعرض</button>
+            <div class="qiq-right">
+                <button id="qiq-export-csv" class="qiq-btn" type="button">تصدير CSV</button>
+                <button id="qiq-export-xlsx" class="qiq-btn" type="button">تصدير XLSX</button>
+                <span id="qiq-status" class="qiq-status"></span>
+            </div>
+        </div>
+        <div class="qiq-table-wrap">
+            <table class="qiq-table" aria-label="Staged items">
+                <thead>
+                    <tr>
+                        <th style="width:76px">صورة</th>
+                        <th>الوصف / PN / SKU</th>
+                        <th style="width:120px">سعر الوحدة</th>
+                        <th style="width:140px">الإجمالي</th>
+                        <th style="width:270px">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="qiq-body"></tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" style="text-align:left"><strong>الإجمالي الكلي:</strong></td>
+                        <td id="qiq-grand" colspan="2"><strong>-</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+
+    <div class="test-section">
+        <h2>Mock Search Results (Test Add All Matched)</h2>
+        <div id="mock-search-results" class="mock-search-results">
+            <!-- Will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Load the JavaScript files -->
+    <script src="/public/js/quote-actions.js"></script>
+    
+    <script>
+        // Mock data for testing
+        const mockProducts = [
+            {
+                name: "Kaspersky Endpoint Security",
+                price: "$45.99", 
+                sku: "KES-100",
+                pn: "KES-100-USERS",
+                image: "https://picsum.photos/68/68?random=1",
+                link: "https://example.com/kaspersky",
+                source: "Mock"
+            },
+            {
+                name: "Microsoft Office 365",
+                price: "$8.25",
+                sku: "O365-E3", 
+                pn: "O365-E3-MONTHLY",
+                image: "https://picsum.photos/68/68?random=2",
+                link: "https://example.com/office365",
+                source: "Mock"
+            },
+            {
+                name: "Adobe Acrobat Pro",
+                price: "$14.99",
+                sku: "AAP-2024",
+                pn: "AAP-2024-ANNUAL", 
+                image: "https://picsum.photos/68/68?random=3",
+                link: "https://example.com/adobe",
+                source: "Mock"
+            }
+        ];
+
+        function addMockProducts() {
+            mockProducts.forEach(product => {
+                AddToQuote(product);
+            });
+        }
+
+        function simulateDataUpdate() {
+            // Simulate rapid updates that might cause flickering
+            const tbody = document.getElementById("qiq-body");
+            const images = tbody.querySelectorAll("img");
+            
+            images.forEach((img, index) => {
+                setTimeout(() => {
+                    // Change image source to simulate updates
+                    img.src = `https://picsum.photos/68/68?random=${Date.now()}-${index}`;
+                }, index * 100);
+            });
+        }
+
+        function createMockSearchResults() {
+            const container = document.getElementById("mock-search-results");
+            const mockResults = [
+                {
+                    name: "Trend Micro Apex One",
+                    price: "$52.00",
+                    sku: "TMI-APEX1",
+                    image: "https://picsum.photos/68/68?random=4"
+                },
+                {
+                    name: "Symantec Endpoint Protection", 
+                    price: "$38.75",
+                    sku: "SYM-SEP14",
+                    image: "https://picsum.photos/68/68?random=5"
+                }
+            ];
+
+            container.innerHTML = `
+                <h3>Mock Search Results</h3>
+                ${mockResults.map(item => `
+                    <div class="qiq-inline-wrap" style="margin:10px 0">
+                        <table class="qiq-inline-table">
+                            <tbody>
+                                <tr>
+                                    <td style="width:68px">
+                                        <img class="qiq-inline-img" 
+                                             src="${item.image}" 
+                                             alt="${item.name}" 
+                                             loading="lazy"
+                                             onload="this.style.opacity='1'" 
+                                             onerror="this.src='https://via.placeholder.com/68?text=IMG';this.style.opacity='0.7'" 
+                                             style="opacity:0.5;transition:opacity 0.3s ease" />
+                                    </td>
+                                    <td>
+                                        <div style="font-weight:700">${item.name}</div>
+                                        <div class="qiq-chip">PN/SKU: ${item.sku}</div>
+                                    </td>
+                                    <td style="width:140px">${item.price}</td>
+                                    <td style="width:220px">
+                                        <div class="qiq-inline-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                                            <button class="qiq-mini primary" type="button"
+                                                data-name="${item.name}"
+                                                data-price="${item.price}"
+                                                data-sku="${item.sku}"
+                                                data-image="${item.image}"
+                                                data-link=""
+                                                data-source="Search"
+                                                onclick="AddToQuote(this)">
+                                                Add
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // Initialize mock search results when page loads
+        document.addEventListener('DOMContentLoaded', createMockSearchResults);
+    </script>
+</body>
+</html>

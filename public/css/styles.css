@@ -36,7 +36,30 @@
 .qiq-table-wrap{overflow:auto;max-height:520px;border-top:1px dashed #e5e7eb;will-change:contents}
 .qiq-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
 .qiq-table th,.qiq-table td{padding:10px;border-bottom:1px solid #eef2f7;vertical-align:top;text-align:right}
-.qiq-img{width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid #eee;background:#fff}
+.qiq-img{
+  width:64px;
+  height:64px;
+  object-fit:contain;
+  border-radius:8px;
+  border:1px solid #eee;
+  background:#fff;
+  transition:opacity 0.3s ease;
+  display:block;
+}
+.qiq-img:not([src]),.qiq-img[src=""]{
+  opacity:0.5;
+  background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="%23f5f5f5" stroke="%23e5e7eb"/><text x="32" y="32" text-anchor="middle" dy="0.3em" font-family="Arial" font-size="10" fill="%23999">IMG</text></svg>') center/contain no-repeat;
+}
+.qiq-img.loading{
+  opacity:0.7;
+  background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" fill="%23f5f5f5" stroke="%23e5e7eb"/><text x="32" y="32" text-anchor="middle" dy="0.3em" font-family="Arial" font-size="8" fill="%23999">Loading...</text></svg>') center/contain no-repeat;
+}
+/* Improve image loading performance */
+.qiq-img {
+  image-rendering: auto;
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+}
 .qiq-actions-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .qiq-qty{width:70px;padding:8px;border:1px solid #d1d5db;border-radius:8px}
 .qiq-link{color:#2563eb;text-decoration:none}
@@ -47,9 +70,32 @@
 .qiq-inline-wrap{margin-top:6px}
 .qiq-inline-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
 .qiq-inline-table th,.qiq-inline-table td{border:1px solid #e5e7eb;padding:8px;vertical-align:top;text-align:right}
-.qiq-inline-img{width:58px;height:58px;object-fit:contain;border:1px solid #eee;border-radius:8px}
+.qiq-inline-img{
+  width:58px;
+  height:58px;
+  object-fit:contain;
+  border:1px solid #eee;
+  border-radius:8px;
+  transition:opacity 0.3s ease;
+  display:block;
+  background:#fafafa;
+}
+.qiq-inline-img:not([src]),.qiq-inline-img[src=""]{
+  opacity:0.5;
+  background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="58" height="58" viewBox="0 0 58 58"><rect width="58" height="58" fill="%23f5f5f5" stroke="%23e5e7eb"/><text x="29" y="29" text-anchor="middle" dy="0.3em" font-family="Arial" font-size="9" fill="%23999">IMG</text></svg>') center/contain no-repeat;
+}
+.qiq-inline-img.loading{
+  opacity:0.7;
+}
+/* Improve inline image loading performance */
+.qiq-inline-img {
+  image-rendering: auto;
+  image-rendering: crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+}
 .qiq-inline-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.qiq-mini{border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;background:#fff;cursor:pointer}
+.qiq-mini{border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;background:#fff;cursor:pointer;transition:all 0.2s ease}
+.qiq-mini:hover{transform:translateY(-1px);box-shadow:0 2px 4px rgba(0,0,0,0.1)}
 .qiq-mini.primary{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
 .qiq-mini.success{background:#059669;color:#fff;border-color:#059669}
 

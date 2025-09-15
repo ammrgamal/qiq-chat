@@ -57,8 +57,42 @@
     tr.dataset.key  = key;
     tr.setAttribute("data-key", key);
 
+    // Create image element with proper loading handling
+    const imgElement = document.createElement("img");
+    imgElement.className = "qiq-img";
+    imgElement.alt = name;
+    imgElement.style.opacity = "0.8";
+    
+    // Use a local placeholder or data URL instead of external URL
+    const localPlaceholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjgiIGhlaWdodD0iNjgiIHZpZXdCb3g9IjAgMCA2OCA2OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY4IiBoZWlnaHQ9IjY4IiBmaWxsPSIjRjVGNUY1IiBzdHJva2U9IiNFNUU3RUIiLz4KPHRleHQgeD0iMzQiIHk9IjM4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTAiIGZpbGw9IiM5OTkiPklNRzwvdGV4dD4KPC9zdmc+';
+    
+    // Set up loading states to prevent flickering
+    imgElement.onload = function() {
+      if (this.src !== localPlaceholder) {
+        this.style.opacity = "1";
+      }
+    };
+    
+    imgElement.onerror = function() {
+      // Only set placeholder if it's not already set to prevent infinite loops
+      if (this.src !== localPlaceholder) {
+        this.src = localPlaceholder;
+        this.style.opacity = "0.7";
+      }
+    };
+    
+    // Set source after setting up handlers, but validate URL first
+    if (img && img.startsWith('http') && !img.includes('placeholder')) {
+      imgElement.src = img;
+    } else {
+      imgElement.src = localPlaceholder;
+    }
+
+    const imgCell = document.createElement("td");
+    imgCell.appendChild(imgElement);
+
     tr.innerHTML = `
-      <td><img class="qiq-img" src="${img}" alt="${name}" onerror="this.src='https://via.placeholder.com/68?text=IMG'"></td>
+      <td class="img-cell"></td>
       <td>
         ${link?`<a class="qiq-link" target="_blank" rel="noopener" href="${link}"><strong>${name}</strong></a>`:`<strong>${name}</strong>`}
         ${pn? `<div class="qiq-chip">PN/SKU: ${pn}</div>` : ""}
@@ -74,6 +108,9 @@
         </div>
       </td>
     `;
+
+    // Replace the empty img cell with our properly configured one
+    tr.querySelector(".img-cell").replaceWith(imgCell);
 
     tr.querySelector(".qiq-qty").addEventListener("input", recalcTotals);
 
@@ -155,4 +192,160 @@
       console.warn(e);
     }
   };
+
+  /* ========= Export Functions ========= */
+  
+  // Helper function to get table data for export
+  function getTableData() {
+    const data = [];
+    const rows = tbody?.querySelectorAll("tr") || [];
+    
+    rows.forEach(row => {
+      const cells = row.querySelectorAll("td");
+      if (cells.length >= 4) {
+        const imgSrc = cells[0].querySelector("img")?.src || "";
+        const description = cells[1].textContent.trim();
+        const unitPrice = cells[2].textContent.trim();
+        const qty = row.querySelector(".qiq-qty")?.value || "1";
+        const total = cells[3].textContent.trim();
+        
+        data.push({
+          image: imgSrc,
+          description: description,
+          unitPrice: unitPrice,
+          quantity: qty,
+          total: total
+        });
+      }
+    });
+    
+    return data;
+  }
+
+  // Export to CSV
+  function exportToCSV() {
+    const data = getTableData();
+    if (data.length === 0) {
+      alert("لا توجد بيانات للتصدير");
+      return;
+    }
+
+    const headers = ["الوصف", "سعر الوحدة", "الكمية", "الإجمالي"];
+    const csvContent = [
+      headers.join(","),
+      ...data.map(row => [
+        `"${row.description.replace(/"/g, '""')}"`,
+        `"${row.unitPrice}"`,
+        `"${row.quantity}"`,
+        `"${row.total}"`
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `quote_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  // Export to XLSX
+  function exportToXLSX() {
+    const data = getTableData();
+    if (data.length === 0) {
+      alert("لا توجد بيانات للتصدير");
+      return;
+    }
+
+    // Check if XLSX library is loaded
+    if (typeof XLSX === 'undefined') {
+      alert("مكتبة XLSX غير محملة. يرجى إعادة تحميل الصفحة.");
+      return;
+    }
+
+    const worksheetData = [
+      ["الوصف", "سعر الوحدة", "الكمية", "الإجمالي"],
+      ...data.map(row => [
+        row.description,
+        row.unitPrice,
+        row.quantity,
+        row.total
+      ])
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Quote");
+
+    // Auto-size columns
+    const maxWidth = worksheetData.reduce((acc, row) => {
+      return row.map((cell, i) => Math.max(acc[i] || 0, String(cell).length));
+    }, []);
+    worksheet['!cols'] = maxWidth.map(w => ({ width: Math.min(w + 2, 50) }));
+
+    XLSX.writeFile(workbook, `quote_${new Date().toISOString().split('T')[0]}.xlsx`);
+  }
+
+  // Add all matched items function  
+  function addAllMatched() {
+    // Look for "Add" buttons in the chat results area
+    const addButtons = document.querySelectorAll('.qiq-mini.primary[onclick*="AddToQuote"]');
+    
+    if (addButtons.length === 0) {
+      alert("لا توجد عناصر متطابقة للإضافة");
+      return;
+    }
+
+    let addedCount = 0;
+    const startingRows = tbody?.children?.length || 0;
+    
+    addButtons.forEach(button => {
+      try {
+        // Simulate clicking the button to add the item
+        if (!button.disabled) {
+          button.click();
+          addedCount++;
+        }
+      } catch (e) {
+        console.warn("Failed to add item:", e);
+      }
+    });
+
+    // Wait a bit and check if items were actually added
+    setTimeout(() => {
+      const endingRows = tbody?.children?.length || 0;
+      const actuallyAdded = endingRows - startingRows;
+      
+      if (actuallyAdded > 0) {
+        alert(`تمت إضافة ${actuallyAdded} عنصر للعرض`);
+        // Scroll to the table to show the new items
+        if (tbody) {
+          tbody.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      } else if (addedCount > 0) {
+        alert("تم محاولة الإضافة ولكن قد تكون العناصر موجودة مسبقاً");
+      } else {
+        alert("لم يتم إضافة أي عناصر");
+      }
+    }, 500);
+  }
+
+  /* ========= Event Listeners ========= */
+  
+  // Export CSV button
+  const exportCSVBtn = document.getElementById("qiq-export-csv");
+  if (exportCSVBtn) {
+    exportCSVBtn.addEventListener("click", exportToCSV);
+  }
+
+  // Export XLSX button  
+  const exportXLSXBtn = document.getElementById("qiq-export-xlsx");
+  if (exportXLSXBtn) {
+    exportXLSXBtn.addEventListener("click", exportToXLSX);
+  }
+
+  // Add all matched button
+  if (addAllBtn) {
+    addAllBtn.addEventListener("click", addAllMatched);
+  }
 })();
