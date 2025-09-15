@@ -6,7 +6,7 @@
   <title>QuickITQuote Chat</title>
 
   <!-- Styles -->
-  <link rel="stylesheet" href="/public/css/styles.css" />
+  <link rel="stylesheet" href="public/css/styles.css" />
 
   <!-- Vendor (XLSX فقط للـ BOQ) -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -29,7 +29,7 @@
   </section>
 
   <!-- ======== Search Results Table (max 5 items) ======== -->
-  <section id="qiq-results-wrap" class="qiq-boq" style="display:none">
+  <section id="qiq-results-wrap" class="qiq-results-section" style="display:none">
     <div class="qiq-section-title">نتائج البحث</div>
     
     <!-- Clarification dialog for many results -->
@@ -43,12 +43,12 @@
       <table class="qiq-results-table" aria-label="Search results">
         <thead>
           <tr>
-            <th style="width:50px">صورة</th>
-            <th>الوصف / PN / SKU</th>
-            <th style="width:80px">الكمية</th>
-            <th style="width:120px">سعر الوحدة</th>
-            <th style="width:100px">الإجمالي</th>
-            <th style="width:140px">إجراءات</th>
+            <th style="width:50px">Image</th>
+            <th>Description/PN/SKU</th>
+            <th style="width:80px">Qty</th>
+            <th style="width:120px">Unit price</th>
+            <th style="width:100px">Line total</th>
+            <th style="width:140px">Actions</th>
           </tr>
         </thead>
         <tbody id="qiq-results-body"></tbody>
@@ -57,19 +57,19 @@
 
     <!-- Bottom action buttons -->
     <div class="qiq-bottom-actions">
-      <div>
-        <button id="qiq-add-all-results" class="btn-add-all" type="button" disabled 
+      <div class="qiq-left-actions">
+        <button id="qiq-add-all-results" class="qiq-btn qiq-success" type="button" disabled 
                 aria-label="Add all search results to quotation" title="إضافة جميع النتائج للعرض">
           Add all to quotation
         </button>
-        <button id="qiq-show-quote" class="btn-show-quote" type="button"
+        <button id="qiq-show-quote" class="qiq-btn qiq-secondary" type="button"
                 aria-label="Show the quote page" title="عرض صفحة العرض">
           Show the quote
         </button>
       </div>
-      <div class="qiq-right">
+      <div class="qiq-right-info">
         <span id="qiq-results-status" class="qiq-status"></span>
-        <strong>الإجمالي الكلي: <span id="qiq-grand-total">-</span></strong>
+        <strong>Grand total: <span id="qiq-grand-total">-</span></strong>
       </div>
     </div>
   </section>
@@ -145,15 +145,15 @@
 
   <!-- ======== Bundles (Front-end) ======== -->
   <!-- qiq-basket.js: basket management utilities -->
-  <script src="/public/js/qiq-basket.js"></script>
+  <script src="public/js/qiq-basket.js"></script>
   <!-- api.js: دوال الفetch للباك إند (/api/search, /api/chat, /api/quote, /api/users/...) -->
-  <script src="/public/js/api.js"></script>
+  <script src="public/js/api.js"></script>
   <!-- ui-chat.js: واجهة الشات + الBOQ + المنطق الذكي للبحث عبر /api/search -->
-  <script src="/public/js/ui-chat.js"></script>
+  <script src="public/js/ui-chat.js"></script>
   <!-- quote-form.js: إرسال فورم العرض المخصص إلى /api/quote -->
-  <script src="/public/js/quote-form.js"></script>
+  <script src="public/js/quote-form.js"></script>
   <!-- account.js: تسجيل/دخول/خروج (JWT) عبر /api/users/... -->
-  <script src="/public/js/account.js"></script>
+  <script src="public/js/account.js"></script>
 
   <!-- ملاحظة: طالما بنستخدم /api/search على السيرفر، مش محتاجين Algolia keys في الفرونت إطلاقًا -->
 </body>

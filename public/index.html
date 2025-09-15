@@ -6,15 +6,16 @@
   <title>QuickITQuote Chat</title>
 
   <!-- Styles -->
-  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/public/css/styles.css" />
 
   <!-- Vendor (XLSX لرفع BOQ) -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 
   <!-- App JS: يجب تحميل quote-actions.js أولاً -->
-  <script src="js/quote-actions.js" defer></script>
-  <script src="js/ui-chat.js" defer></script>
+  <script src="/public/js/qiq-basket.js" defer></script>
+  <script src="/public/js/quote-actions.js" defer></script>
+  <script src="/public/js/ui-chat.js" defer></script>
 </head>
 <body>
   <!-- ====== شريط علوي بسيط ====== -->
@@ -38,36 +39,52 @@
       </div>
     </form>
   </section>
- <!-- ====== جدول التجهيز ====== -->
-  <!-- ====== جدول التجهيز ====== -->
-  <div id="qiq-boq-wrap" class="qiq-boq">
-    <div class="qiq-boq-top">
-      <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>Add all matched</button>
-      <div class="qiq-right">
-        <button id="qiq-export-csv"  class="qiq-btn" type="button">Export CSV</button>
-        <button id="qiq-export-xlsx" class="qiq-btn" type="button">Export XLSX</button>
-        <span id="qiq-status" class="qiq-status"></span>
+  <!-- ====== نتائج البحث ====== -->
+  <div id="qiq-results-wrap" class="qiq-boq" style="display:none">
+    <div class="qiq-section-title">Search Results (Max 5 items)</div>
+    
+    <!-- Clarification dialog -->
+    <div id="qiq-clarification" class="qiq-clarification" style="display:none">
+      <div class="qiq-clarification-content">
+        <h4>نتائج كثيرة! يرجى تحديد البحث / Too many results! Please refine your search:</h4>
+        <div id="qiq-filter-buttons" class="qiq-filter-buttons"></div>
       </div>
     </div>
+
     <div class="qiq-table-wrap">
-      <table class="qiq-table" aria-label="Staged items">
+      <table class="qiq-table" aria-label="Search results">
         <thead>
           <tr>
-            <th style="width:76px">Image</th>
+            <th style="width:60px">Image</th>
             <th>Description / PN / SKU</th>
+            <th style="width:80px">Qty</th>
             <th style="width:120px">Unit price</th>
-            <th style="width:140px">Line total</th>
-            <th style="width:270px">Actions</th>
+            <th style="width:120px">Line total</th>
+            <th style="width:200px">Actions</th>
           </tr>
         </thead>
-        <tbody id="qiq-body"></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="3" style="text-align:right"><strong>Grand total:</strong></td>
-            <td id="qiq-grand" colspan="2"><strong>-</strong></td>
-          </tr>
-        </tfoot>
+        <tbody id="qiq-results-body"></tbody>
       </table>
+    </div>
+    
+    <!-- Bottom action buttons -->
+    <div class="qiq-bottom-actions">
+      <div class="qiq-left-actions">
+        <button id="qiq-add-all-results" class="qiq-btn qiq-success" type="button" disabled
+                aria-label="Add all items to quotation" title="إضافة جميع العناصر للعرض">
+          Add all to quotation
+        </button>
+        <button id="qiq-show-quote" class="qiq-btn qiq-secondary" type="button"
+                aria-label="Show quote page" title="عرض صفحة الأسعار">
+          Show the quote
+        </button>
+      </div>
+      <div class="qiq-right-info">
+        <span id="qiq-results-status" class="qiq-status"></span>
+        <div style="font-weight:600">
+          Grand total from basket: <span id="qiq-grand-total">-</span>
+        </div>
+      </div>
     </div>
   </div>
 

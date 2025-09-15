@@ -251,23 +251,29 @@ class QiqBasket {
 
   // Update UI elements if they exist
   updateUI() {
-    // Update grand total display
-    const grandTotalEl = document.getElementById('qiq-grand');
+    // Update grand total display on index page
+    const grandTotalEl = document.getElementById('qiq-grand-total');
     if (grandTotalEl) {
-      grandTotalEl.innerHTML = `<strong>${this.formatGrandTotal()}</strong>`;
+      grandTotalEl.textContent = this.formatGrandTotal();
+    }
+
+    // Update legacy grand total element
+    const legacyGrandTotalEl = document.getElementById('qiq-grand');
+    if (legacyGrandTotalEl) {
+      legacyGrandTotalEl.innerHTML = `<strong>${this.formatGrandTotal()}</strong>`;
     }
 
     // Update "Add all" button state
-    const addAllBtn = document.getElementById('qiq-add-all');
+    const addAllBtn = document.getElementById('qiq-add-all-results') || document.getElementById('qiq-add-all');
     if (addAllBtn) {
       addAllBtn.disabled = this.items.length === 0;
     }
 
     // Update item count in UI
-    const statusEl = document.getElementById('qiq-status');
+    const statusEl = document.getElementById('qiq-status') || document.getElementById('qiq-results-status');
     if (statusEl) {
       const count = this.getItemCount();
-      statusEl.textContent = count > 0 ? `${count} items staged` : '';
+      statusEl.textContent = count > 0 ? `${count} items in basket` : '';
     }
   }
 

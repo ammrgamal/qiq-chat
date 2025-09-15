@@ -4,6 +4,11 @@
    ========================= */
 
 (() => {
+  // Initialize global basket instance
+  if (typeof QiqBasket !== 'undefined') {
+    window.qiqBasket = new QiqBasket();
+  }
+
   /* ---- DOM Elements ---- */
   const win = document.getElementById("qiq-window");
   const form = document.getElementById("qiq-form");
@@ -94,30 +99,34 @@
     tr.dataset.price = numericPrice;
     tr.innerHTML = `
       <td>
-        <img src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
+        <img src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" 
+             style="width:40px;height:40px;object-fit:contain;border-radius:6px;border:1px solid #e5e7eb" />
       </td>
       <td>
-        <div style="font-weight:600">${safeName}</div>
+        <div class="product-info">${safeName}</div>
         ${safeSku ? `<div class="product-badge">SKU: ${safeSku}</div>` : ""}
         ${safeLink ? `<div style="margin-top:4px"><a href="${safeLink}" target="_blank" rel="noopener" style="color:#2563eb;font-size:12px">View details</a></div>` : ""}
       </td>
       <td>
-        <input type="number" class="qty-input" min="1" max="9999" value="${defaultQty}" data-index="${index}" />
+        <input type="number" class="qty-input" min="1" max="9999" value="${defaultQty}" data-index="${index}" 
+               style="width:60px;padding:6px;border:1px solid #d1d5db;border-radius:6px;text-align:center" />
       </td>
-      <td class="price-cell">
+      <td class="price-cell" style="text-align:right;font-weight:600">
         ${numericPrice > 0 ? `$${numericPrice.toFixed(2)}` : 'Price on request'}
       </td>
-      <td class="line-total">
+      <td class="line-total" style="text-align:right;color:#6b7280;font-weight:500">
         ${numericPrice > 0 ? `$${(numericPrice * defaultQty).toFixed(2)}` : '-'}
       </td>
       <td>
-        <div class="actions">
+        <div class="actions" style="display:flex;gap:6px;align-items:center">
           <button class="btn-add" type="button" data-index="${index}"
-                  aria-label="Add item to quotation" title="إضافة للعرض">
+                  aria-label="Add item to quotation" title="إضافة للعرض"
+                  style="background:#059669;color:#fff;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500">
             Add
           </button>
           <button class="btn-details" type="button" onclick="window.open('${safeLink || '#'}','_blank','noopener')"
-                  aria-label="View product details" title="عرض التفاصيل">
+                  aria-label="View product details" title="عرض التفاصيل"
+                  style="background:#6b7280;color:#fff;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px">
             Details
           </button>
         </div>
@@ -144,7 +153,7 @@
     updateGrandTotal();
   }
 
-  /* ---- Update grand total display ---- */
+  /* ---- Update grand total display from basket ---- */
   function updateGrandTotal() {
     let grandTotal = 0;
     resultsBody.querySelectorAll('tr').forEach(row => {
@@ -152,6 +161,12 @@
       const qty = parseInt(row.querySelector('.qty-input').value) || 1;
       grandTotal += price * qty;
     });
+
+    // Add basket total if basket exists
+    if (window.qiqBasket) {
+      const basketTotal = window.qiqBasket.getGrandTotal();
+      grandTotal += basketTotal;
+    }
 
     if (grandTotalEl) {
       grandTotalEl.textContent = grandTotal > 0 ? `$${grandTotal.toFixed(2)}` : '-';
@@ -501,7 +516,7 @@
   /* ---- Show quote page ---- */
   if (showQuoteBtn) {
     showQuoteBtn.addEventListener('click', () => {
-      window.location.href = '/public/quote.html';
+      window.location.href = 'quote.html';
     });
   }
 

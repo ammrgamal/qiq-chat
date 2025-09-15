@@ -1,39 +1,235 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>طلب عرض مخصص</title>
-  <link rel="stylesheet" href="css/styles.css"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>طلب عرض سعر | QuickITQuote</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="public/css/styles.css"/>
+  <style>
+    :root{ --border:#e5e7eb; --muted:#6b7280; --accent:#2563eb; --bg:#f8fafc; --ok:#059669; }
+    body{ font-family:Inter,system-ui,Segoe UI,Arial; background:#fff; color:#111; margin:0 }
+    .container{ max-width:1000px; margin:20px auto; padding:16px }
+    .card{ border:1px solid var(--border); border-radius:16px; padding:16px; background:#fff; margin-bottom:14px }
+    .row{ display:grid; gap:10px; grid-template-columns:repeat(12,1fr) }
+    .col-12{ grid-column:span 12 } .col-6{ grid-column:span 6 } .col-4{ grid-column:span 4 } .col-3{ grid-column:span 3 }
+    label{ font-size:13px; color:#374151; display:block; margin-bottom:6px }
+    input,select,textarea{ width:100%; border:1px solid var(--border); border-radius:10px; padding:10px; font-size:14px; background:#fff }
+    textarea{ min-height:90px; resize:vertical }
+    .muted{ color:var(--muted); font-size:12px }
+    .flex{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+    .right{ margin-inline-start:auto }
+    .btn{ border:0; border-radius:10px; padding:10px 14px; background:#374151; color:#fff; cursor:pointer }
+    .btn[disabled]{ opacity:.6; cursor:not-allowed }
+    .btn-primary{ background:var(--accent) }
+    .btn-ok{ background:var(--ok) }
+    .btn-danger{ background:#dc2626 }
+    .table-wrap{ overflow:auto }
+    table{ width:100%; border-collapse:collapse; table-layout:fixed }
+    th,td{ border-bottom:1px solid var(--border); padding:10px; vertical-align:top; text-align:right }
+    tfoot td{ font-weight:700 }
+    .totals{ display:grid; gap:8px; grid-template-columns:1fr auto; align-items:center; margin-top:10px }
+    .quote-head{ display:flex; align-items:center; gap:14px; margin:8px 0 14px }
+    .logo{ width:120px; height:56px; object-fit:contain; border:1px dashed var(--border); border-radius:8px; background:#fff }
+    .print-only{ display:none }
+    @media print{
+      .no-print{ display:none !important }
+      .print-only{ display:block }
+      body{ background:#fff }
+      .card{ break-inside:avoid }
+    }
+    .notice{ background:#f0f9ff; border:1px solid #dbeafe; color:#0c4a6e; padding:8px 10px; border-radius:10px; font-size:13px }
+    .checkbox{ display:flex; align-items:center; gap:8px }
+    .item-img{ width:40px; height:40px; object-fit:contain; border-radius:6px; border:1px solid #e5e7eb }
+    .qty-input{ width:70px; padding:6px; border:1px solid #d1d5db; border-radius:6px; text-align:center }
+    .actions{ display:flex; gap:6px; align-items:center }
+    .product-info{ font-weight:600 }
+    .product-badge{ display:inline-block; background:#eef2ff; border:1px solid #dbe1ff; border-radius:6px; padding:2px 6px; font-size:11px; margin-top:4px }
+  </style>
 </head>
 <body>
-  <div class="bar">
-    <h1>طلب عرض مخصص</h1>
-    <div>
-      <a class="btn" href="index.html">الصفحة الرئيسية</a>
-      <a class="btn" href="account.html">حسابي</a>
+  <div class="container">
+
+    <!-- Header / Logo + meta -->
+    <div class="card">
+      <div class="quote-head">
+        <img id="qo-logo" class="logo" alt="Logo" />
+        <div>
+          <div style="font-size:18px; font-weight:700">عرض سعر / Quotation</div>
+          <div class="muted">رقم العرض: <span id="qo-number"></span> • التاريخ: <span id="qo-date"></span></div>
+          <div class="muted">العملة: <span id="qo-currency-view"></span> • شروط السداد الافتراضية: 50% مقدمة + 50% بعد الاستلام</div>
+        </div>
+        <div class="right no-print flex">
+          <button id="btn-back-home" class="btn">الصفحة الرئيسية</button>
+          <button id="btn-clear-basket" class="btn btn-danger">تفريغ السلة</button>
+          <button id="btn-print" class="btn">طباعة / PDF</button>
+          <button id="btn-save" class="btn btn-ok">حفظ كمسودة</button>
+        </div>
+      </div>
+      <div class="notice no-print">عناصر السلة يتم تحميلها تلقائيًا من <code>localStorage</code> (المفتاح <code>qiq_staged_items</code>). يمكنك تعديل الكميات أو حذف العناصر حسب الحاجة.</div>
     </div>
+
+    <!-- Client & Project -->
+    <div class="card">
+      <div class="row">
+        <div class="col-6">
+          <label>بيانات العميل (اسم الشركة/الجهة)</label>
+          <input id="client-name" placeholder="مثال: ACME Systems" />
+        </div>
+        <div class="col-3">
+          <label>الشخص المسؤول</label>
+          <input id="client-contact" placeholder="الاسم" />
+        </div>
+        <div class="col-3">
+          <label>البريد الإلكتروني</label>
+          <input id="client-email" type="email" placeholder="name@example.com" />
+        </div>
+        <div class="col-3">
+          <label>الهاتف</label>
+          <input id="client-phone" placeholder="+20..." />
+        </div>
+        <div class="col-3">
+          <label>اسم المشروع</label>
+          <input id="project-name" placeholder="Project X" />
+        </div>
+        <div class="col-3">
+          <label>صاحب / مالك المشروع (إن وجد)</label>
+          <input id="project-owner" placeholder="Owner name" />
+        </div>
+        <div class="col-3">
+          <label>المقاول العام (إن وجد)</label>
+          <input id="main-contractor" placeholder="General Contractor" />
+        </div>
+        <div class="col-3">
+          <label>موقع التنفيذ</label>
+          <input id="site-location" placeholder="City, Country" />
+        </div>
+        <div class="col-3">
+          <label>العملة</label>
+          <select id="currency">
+            <option value="USD">$ USD</option>
+            <option value="EUR">€ EUR</option>
+            <option value="EGP">جنيه EGP</option>
+            <option value="AED">د.إ AED</option>
+            <option value="SAR">ر.س SAR</option>
+          </select>
+        </div>
+        <div class="col-3">
+          <label>تاريخ العرض</label>
+          <input id="quote-date" type="date" />
+        </div>
+        <div class="col-6 checkbox">
+          <input id="need-assist" type="checkbox" />
+          <label for="need-assist" style="margin:0">أحتاج مكالمة/مساعدة قبل استلام العرض</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Staged Items from Basket -->
+    <div class="card">
+      <div class="flex">
+        <div style="font-weight:700">بنود عرض السعر من السلة</div>
+        <div class="right no-print flex">
+          <span id="basket-status" class="muted"></span>
+          <button id="btn-add-manual" class="btn">إضافة بند يدوي</button>
+          <button id="btn-reload-basket" class="btn">إعادة تحميل السلة</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="basket-table" aria-label="Quote items from basket">
+          <thead>
+            <tr>
+              <th style="width:50px">صورة</th>
+              <th style="width:35%">الوصف / PN / SKU</th>
+              <th style="width:15%">سعر الوحدة</th>
+              <th style="width:10%">الكمية</th>
+              <th style="width:15%">الإجمالي</th>
+              <th class="no-print" style="width:15%">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="basket-body"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4" style="text-align:left">الإجمالي الفرعي (Subtotal):</td>
+              <td id="subtotal-cell">-</td>
+              <td class="no-print"></td>
+            </tr>
+            <tr>
+              <td colspan="4" class="checkbox" style="text-align:left">
+                <input id="include-install" type="checkbox" />
+                <label for="include-install" style="margin:0">إضافة بند تركيب اختياري (5% من الإجمالي الفرعي)</label>
+              </td>
+              <td id="install-cell">0</td>
+              <td class="no-print"></td>
+            </tr>
+            <tr>
+              <td colspan="4" style="text-align:left">الإجمالي الكلي (Total):</td>
+              <td id="grand-cell"><strong>-</strong></td>
+              <td class="no-print"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Additional Manual Items -->
+    <div class="card">
+      <div class="flex">
+        <div style="font-weight:700">بنود إضافية يدوية</div>
+        <div class="right no-print">
+          <button id="btn-add-row" class="btn">إضافة بند يدوي</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="items-table" aria-label="Additional manual items">
+          <thead>
+            <tr>
+              <th style="width:40%">الوصف / PN / SKU</th>
+              <th style="width:14%">سعر الوحدة</th>
+              <th style="width:12%">الكمية</th>
+              <th style="width:16%">الإجمالي</th>
+              <th class="no-print" style="width:18%">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="items-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Payments & Terms -->
+    <div class="card">
+      <div class="row">
+        <div class="col-6">
+          <label>طريقة الدفع الافتراضية</label>
+          <textarea id="payment-terms">50% دفعة مقدمة عند تأكيد الطلب، 50% عند الاستلام. أعمال التركيبات — إن طُلبت — يتم سدادها بشكل مستقل وفق الجداول الزمنية المتفق عليها.</textarea>
+          <div class="muted">يمكنك تعديل النص حسب سياسة شركتك.</div>
+        </div>
+        <div class="col-6">
+          <label>الشروط والأحكام (Terms & Conditions)</label>
+          <textarea id="terms">الأسعار لا تشمل الضرائب أو الرسوم الجمركية إن وجدت. صلاحية العرض 14 يومًا من تاريخ الإصدار ما لم يُذكر خلاف ذلك. قد تختلف مواعيد التسليم بناءً على التوفر. أي تغييرات في النطاق قد تؤثر على الأسعار والمواعيد.</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card no-print">
+      <div class="flex">
+        <div class="muted">سيتّم تضمين اللوجو والعناوين والبيانات أعلاه في عرض السعر المطبوع/المحفوظ PDF.</div>
+        <div class="right flex">
+          <button id="btn-generate" class="btn btn-primary">تحديث الإجماليات</button>
+          <button id="btn-request-special" class="btn">طلب سعر مُخصّص بعد التحقق</button>
+          <button id="btn-submit" class="btn btn-ok">إرسال الطلب</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden payload preview (for debug) -->
+    <pre id="payload-preview" class="card print-only" style="white-space:pre-wrap;word-wrap:break-word"></pre>
+
   </div>
 
-  <form id="quoteForm" class="form-col" autocomplete="off">
-    <div class="row">
-      <input id="qName" placeholder="الاسم *" required/>
-      <input id="qEmail" placeholder="الإيميل *" type="email" required/>
-    </div>
-    <div class="row">
-      <input id="qPhone" placeholder="التليفون"/>
-      <input id="qCompany" placeholder="الشركة"/>
-    </div>
-    <div class="row">
-      <textarea id="qReq" rows="6" placeholder="المتطلبات/الوصف (مثال: 120 مستخدم EDR لمدة سنتين، دعم 24/7...)"></textarea>
-    </div>
-    <div class="row">
-      <button class="btn primary" type="submit">إرسال الطلب</button>
-    </div>
-    <div id="qout" class="muted"></div>
-  </form>
-
-  <script type="module" src="js/quote-form.js"></script>
+  <script src="public/js/qiq-basket.js"></script>
+  <script src="public/js/quote.js"></script>
 </body>
 </html>
 

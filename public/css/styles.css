@@ -20,7 +20,11 @@
 .qiq-send{background:#111827}
 .qiq-btn:disabled,.qiq-send:disabled{opacity:.6;cursor:not-allowed}
 .qiq-primary{background:#0ea5e9}
-.qiq-success{background:#059669}
+.qiq-success{background:#059669;color:#fff}
+.qiq-success:hover{background:#047857}
+.qiq-success:disabled{background:#d1d5db;color:#6b7280;cursor:not-allowed}
+.qiq-secondary{background:#6b7280;color:#fff}
+.qiq-secondary:hover{background:#4b5563}
 .qiq-right{display:flex;gap:8px;align-items:center}
 .qiq-status{font-size:12px;color:#6b7280;margin-inline-start:8px}
 
@@ -44,11 +48,38 @@
 .qiq-table-wrap{overflow:auto;max-height:520px;border-top:1px dashed #e5e7eb;will-change:contents}
 .qiq-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
 .qiq-table th,.qiq-table td{padding:10px;border-bottom:1px solid #eef2f7;vertical-align:top;text-align:right}
-.qiq-img{width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid #eee;background:#fff}
+.qiq-img{width:40px;height:40px;object-fit:contain;border-radius:8px;border:1px solid #eee;background:#fff}
 .qiq-actions-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .qiq-qty{width:70px;padding:8px;border:1px solid #d1d5db;border-radius:8px}
 .qiq-link{color:#2563eb;text-decoration:none}
 .qiq-chip{display:inline-block;background:#eef2ff;border:1px solid #dbe1ff;border-radius:8px;padding:2px 8px;margin-top:6px;font-size:12px}
+
+/* ===== Results Section (index.html) ===== */
+.qiq-results-section{max-width:980px;margin:16px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+.qiq-section-title{margin:0 0 16px;font-weight:700;font-size:18px;color:#374151}
+
+/* Results table styles */
+.qiq-results-table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden}
+.qiq-results-table th,.qiq-results-table td{padding:12px;border-bottom:1px solid #eef2f7;vertical-align:middle}
+.qiq-results-table th{background:#f8fafc;font-weight:600;color:#374151;text-align:left}
+.qiq-results-table td{text-align:left}
+.qiq-results-table img{width:40px;height:40px;object-fit:contain;border-radius:6px;border:1px solid #e5e7eb;background:#fff}
+.qiq-results-table .qty-input{width:60px;padding:6px;border:1px solid #d1d5db;border-radius:6px;text-align:center;font-size:14px}
+.qiq-results-table .actions{display:flex;gap:6px;align-items:center}
+.qiq-results-table .btn-add{background:#059669;color:#fff;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500}
+.qiq-results-table .btn-details{background:#6b7280;color:#fff;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px}
+.qiq-results-table .btn-add:hover{background:#047857}
+.qiq-results-table .btn-details:hover{background:#4b5563}
+.qiq-results-table .btn-add:disabled{background:#d1d5db;cursor:not-allowed}
+.qiq-results-table .product-badge{display:inline-block;background:#eef2ff;border:1px solid #dbe1ff;border-radius:6px;padding:2px 6px;font-size:11px;margin-top:4px;color:#374151}
+.qiq-results-table .price-cell{text-align:right;font-weight:600;color:#374151}
+.qiq-results-table .line-total{text-align:right;color:#6b7280;font-weight:500}
+.qiq-results-table .product-info{font-weight:600;color:#111827;margin-bottom:4px}
+
+/* Bottom action buttons */
+.qiq-bottom-actions{display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding:16px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px}
+.qiq-left-actions{display:flex;gap:12px;align-items:center}
+.qiq-right-info{display:flex;gap:16px;align-items:center;font-size:14px}
 
 /* ===== Inline blocks ===== */
 .qiq-section-title{margin:8px 0 6px;font-weight:700}
@@ -68,36 +99,29 @@
 .qiq-modal__dialog{position:absolute;inset:40px;max-width:1200px;margin:auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);overflow:hidden}
 .qiq-modal__close{position:absolute;right:8px;top:8px;width:36px;height:36px;border-radius:50%;border:0;background:#111827;color:#fff;font-size:20px;cursor:pointer;z-index:1}
 #qiq-modal-frame{width:100%;height:100%;border:0}
-/* ===== Results table (index.html) ===== */
-.qiq-results-table{width:100%;border-collapse:collapse;background:#fff;margin:16px 0;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden}
-.qiq-results-table th,.qiq-results-table td{padding:12px;border-bottom:1px solid #eef2f7;vertical-align:middle;text-align:right}
-.qiq-results-table th{background:#f8fafc;font-weight:600;color:#374151}
-.qiq-results-table img{width:40px;height:40px;object-fit:contain;border-radius:6px;border:1px solid #e5e7eb}
-.qiq-results-table .qty-input{width:60px;padding:6px;border:1px solid #d1d5db;border-radius:6px;text-align:center}
-.qiq-results-table .actions{display:flex;gap:6px;align-items:center}
-.qiq-results-table .btn-add{background:#059669;color:#fff;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px}
-.qiq-results-table .btn-details{background:#6b7280;color:#fff;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px}
-.qiq-results-table .btn-add:hover{background:#047857}
-.qiq-results-table .btn-details:hover{background:#4b5563}
-.qiq-results-table .product-badge{display:inline-block;background:#eef2ff;border:1px solid #dbe1ff;border-radius:6px;padding:2px 6px;font-size:11px;margin-top:4px}
-.qiq-results-table .price-cell{text-align:center;font-weight:600}
-.qiq-results-table .line-total{text-align:center;color:#6b7280}
-
-/* Bottom action buttons */
-.qiq-bottom-actions{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:16px 0;padding:16px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px}
-.qiq-bottom-actions .btn-add-all{background:#059669;color:#fff;border:0;padding:12px 20px;border-radius:8px;cursor:pointer;font-weight:600}
-.qiq-bottom-actions .btn-show-quote{background:#6b7280;color:#fff;border:0;padding:12px 20px;border-radius:8px;cursor:pointer}
-.qiq-bottom-actions .btn-add-all:hover{background:#047857}
-.qiq-bottom-actions .btn-show-quote:hover{background:#4b5563}
-.qiq-bottom-actions .btn-add-all:disabled{background:#d1d5db;cursor:not-allowed}
-
 /* Clarification dialog */
+.qiq-clarification{background:#fefce8;border:1px solid #facc15;border-radius:8px;padding:12px;margin-bottom:16px}
+.qiq-clarification h4{margin:0 0 8px;color:#854d0e;font-size:14px}
+.qiq-filter-buttons{display:flex;gap:8px;flex-wrap:wrap}
+.filter-btn{background:#facc15;color:#854d0e;border:0;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:12px;font-weight:500}
+.filter-btn:hover{background:#eab308}
 .qiq-clarification{background:#fef3c7;border:1px solid #fbbf24;border-radius:12px;padding:16px;margin:16px 0}
 .qiq-clarification h3{margin:0 0 8px;color:#92400e}
 .qiq-clarification p{margin:0 0 12px;color:#92400e}
 .qiq-clarification .filter-buttons{display:flex;gap:8px;flex-wrap:wrap}
 .qiq-clarification .filter-btn{background:#fbbf24;color:#92400e;border:0;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:14px}
 .qiq-clarification .filter-btn:hover{background:#f59e0b}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .qiq{margin:8px}
+  .qiq-results-section{margin:8px;padding:12px}
+  .qiq-results-table{font-size:12px}
+  .qiq-results-table th,.qiq-results-table td{padding:8px}
+  .qiq-bottom-actions{flex-direction:column;gap:12px;align-items:stretch}
+  .qiq-left-actions{justify-content:center}
+  .qiq-right-info{justify-content:center;text-align:center}
+}
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
