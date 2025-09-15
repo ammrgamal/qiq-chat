@@ -51,22 +51,22 @@
     const safeLink = esc(link);
 
     return `
-      <div class="qiq-inline-wrap" style="margin:10px 0">
-        <table class="qiq-inline-table">
+      <div class="qiq-inline-wrap" style="margin:8px 0">
+        <table class="slim-table">
           <tbody>
             <tr>
-              <td style="width:68px">
-                <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
+              <td style="width:54px">
+                <img class="product-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
               </td>
               <td>
-                <div style="font-weight:700">${safeName}</div>
-                ${safeSku ? `<div class="qiq-chip">PN/SKU: ${safeSku}</div>` : ""}
-                ${safeLink ? `<div style="margin-top:4px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener">Open product</a></div>` : ""}
+                <div style="font-weight:600;font-size:13px">${safeName}</div>
+                ${safeSku ? `<div style="font-size:11px;color:#666;margin-top:2px">PN/SKU: ${safeSku}</div>` : ""}
+                ${safeLink ? `<div style="margin-top:3px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener" style="font-size:11px">Open product</a></div>` : ""}
               </td>
-              <td style="width:140px">${safePrice || "-"}</td>
-              <td style="width:220px">
-                <div class="qiq-inline-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                  <button class="qiq-mini primary" type="button"
+              <td style="width:100px;font-size:12px">${safePrice || "-"}</td>
+              <td style="width:160px">
+                <div style="display:flex;gap:4px;align-items:center">
+                  <button class="qiq-mini primary" type="button" style="padding:4px 8px;font-size:11px"
                     data-name="${safeName}"
                     data-price="${safePrice}"
                     data-sku="${safeSku}"
@@ -76,7 +76,7 @@
                     onclick="AddToQuote(this)">
                     Add
                   </button>
-                  <button class="qiq-mini" type="button"
+                  <button class="qiq-mini" type="button" style="padding:4px 8px;font-size:11px"
                     onclick="window.open('${safeLink || '#'}','_blank','noopener')">
                     Shop
                   </button>

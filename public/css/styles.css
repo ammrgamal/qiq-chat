@@ -64,19 +64,25 @@
 .slim-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 12px;
   background: #fff;
-  margin-bottom: 2em;
+  margin-bottom: 1em;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
 }
 .slim-table th, .slim-table td {
-  border: 1px solid #e0e0e0;
+  border: none;
+  border-bottom: 1px solid #f3f4f6;
   padding: 6px 8px;
   text-align: center;
   vertical-align: middle;
 }
 .slim-table th {
-  background: #f5f7fa;
-  font-weight: bold;
+  background: #f8fafc;
+  font-weight: 600;
+  font-size: 11px;
+  color: #374151;
 }
 .product-img {
   width: 48px;
@@ -84,8 +90,11 @@
   object-fit: contain;
   border-radius: 4px;
   background: #fafafa;
-  border: 1px solid #eee;
+  border: 1px solid #e5e7eb;
 }
 .slim-table tr:hover {
   background: #f0f8ff;
+}
+.slim-table tbody tr:last-child td {
+  border-bottom: none;
 }
