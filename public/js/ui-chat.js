@@ -35,7 +35,43 @@
   // رسالة ترحيب
   addMsg("bot", "أهلاً بك في QuickITQuote 👋\nاسأل عن منتج أو رخصة، أو استخدم زر \"البحث عن منتجات\".");
 
-  /* ---- بناء كارت نتيجة واحدة ---- */
+  // عرض مثال على التصميم الجديد
+  setTimeout(() => {
+    const mockHits = [
+      {
+        name: "Kaspersky Endpoint Security for Business - Advanced",
+        price: "$45.99",
+        sku: "KL4867AAFTS",
+        image: "https://via.placeholder.com/40x40?text=KAS",
+        link: "#"
+      },
+      {
+        name: "Kaspersky EDR Optimum",
+        price: "$89.99", 
+        sku: "KL4906AAFTS",
+        image: "https://via.placeholder.com/40x40?text=EDR",
+        link: "#"
+      },
+      {
+        name: "Cisco ASA 5506-X Firewall",
+        price: "$750.00",
+        sku: "ASA5506-K9",
+        image: "https://via.placeholder.com/40x40?text=CISCO",
+        link: "#"
+      },
+      {
+        name: "Microsoft 365 Business Premium",
+        price: "$22.00",
+        sku: "CFQ7TTC0LH18",
+        image: "https://via.placeholder.com/40x40?text=M365",
+        link: "#"
+      }
+    ];
+    const html = renderHitsBlock("مثال على العرض الجديد", mockHits);
+    addMsg("bot", html, true);
+  }, 1000);
+
+  /* ---- بناء كارت نتيجة واحدة (نمط مدمج) ---- */
   function hitToCard(hit) {
     // محاولة استخراج أهم الحقول الشائعة
     const name  = hit?.name || hit?.title || hit?.Description || "(No name)";
@@ -51,52 +87,82 @@
     const safeLink = esc(link);
 
     return `
-      <div class="qiq-inline-wrap" style="margin:10px 0">
-        <table class="qiq-inline-table">
-          <tbody>
-            <tr>
-              <td style="width:68px">
-                <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
-              </td>
-              <td>
-                <div style="font-weight:700">${safeName}</div>
-                ${safeSku ? `<div class="qiq-chip">PN/SKU: ${safeSku}</div>` : ""}
-                ${safeLink ? `<div style="margin-top:4px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener">Open product</a></div>` : ""}
-              </td>
-              <td style="width:140px">${safePrice || "-"}</td>
-              <td style="width:220px">
-                <div class="qiq-inline-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                  <button class="qiq-mini primary" type="button"
-                    data-name="${safeName}"
-                    data-price="${safePrice}"
-                    data-sku="${safeSku}"
-                    data-image="${safeImg}"
-                    data-link="${safeLink}"
-                    data-source="Search"
-                    onclick="AddToQuote(this)">
-                    Add
-                  </button>
-                  <button class="qiq-mini" type="button"
-                    onclick="window.open('${safeLink || '#'}','_blank','noopener')">
-                    Shop
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="qiq-compact-item">
+        <img class="qiq-compact-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
+        <div class="qiq-compact-content">
+          <div class="qiq-compact-name">${safeName}</div>
+          ${safeSku ? `<div class="qiq-compact-sku">SKU: ${safeSku}</div>` : ""}
+          <div class="qiq-compact-price">${safePrice || "السعر عند الطلب"}</div>
+        </div>
+        <div class="qiq-compact-actions">
+          <button class="qiq-compact-btn qiq-compact-add" type="button"
+            data-name="${safeName}"
+            data-price="${safePrice}"
+            data-sku="${safeSku}"
+            data-image="${safeImg}"
+            data-link="${safeLink}"
+            data-source="Search"
+            onclick="AddToQuote(this)">
+            إضافة
+          </button>
+          ${safeLink ? `<button class="qiq-compact-btn qiq-compact-view" type="button"
+            onclick="window.open('${safeLink}','_blank','noopener')">
+            عرض
+          </button>` : ""}
+        </div>
       </div>
     `;
   }
 
-  /* ---- تجميع مجموعة كروت ---- */
+  /* ---- تصنيف المنتجات حسب الفئة ---- */
+  function categorizeHits(hits) {
+    const categories = new Map();
+    
+    hits.forEach(hit => {
+      const name = (hit?.name || hit?.title || hit?.Description || "").toLowerCase();
+      let category = "منتجات عامة"; // Default category
+      
+      // تصنيف حسب كلمات مفتاحية
+      if (name.includes("kaspersky") || name.includes("endpoint") || name.includes("edr") || 
+          name.includes("antivirus") || name.includes("security") || name.includes("protection")) {
+        category = "Category: Endpoint Security Solution";
+      } else if (name.includes("cisco") || name.includes("network") || name.includes("switch") || 
+                 name.includes("router") || name.includes("firewall")) {
+        category = "Category: Network Infrastructure";
+      } else if (name.includes("microsoft") || name.includes("office") || name.includes("windows") || 
+                 name.includes("azure") || name.includes("cloud")) {
+        category = "Category: Cloud & Productivity Solutions";
+      } else if (name.includes("server") || name.includes("storage") || name.includes("backup") || 
+                 name.includes("datacenter")) {
+        category = "Category: Infrastructure & Storage";
+      }
+      
+      if (!categories.has(category)) {
+        categories.set(category, []);
+      }
+      categories.get(category).push(hit);
+    });
+    
+    return categories;
+  }
+
+  /* ---- تجميع مجموعة كروت مع عناوين الفئات ---- */
   function renderHitsBlock(title, hits) {
     if (!hits || !hits.length) return "";
-    const cards = hits.map(hitToCard).join("");
-    return `
-      <div class="qiq-section-title">${esc(title)}</div>
-      ${cards}
-    `;
+    
+    const categories = categorizeHits(hits);
+    let html = `<div class="qiq-section-title">${esc(title)}</div>`;
+    
+    categories.forEach((categoryHits, categoryName) => {
+      html += `<div class="qiq-category-header">${esc(categoryName)}</div>`;
+      html += `<div class="qiq-compact-grid">`;
+      categoryHits.forEach(hit => {
+        html += hitToCard(hit);
+      });
+      html += `</div>`;
+    });
+    
+    return html;
   }
 
   /* ---- استدعاء /api/search ---- */
