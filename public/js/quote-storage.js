@@ -139,8 +139,9 @@
   function formatPrice(price, showCurrency = true) {
     const num = parsePrice(price);
     
-    if (!showCurrency && num === 0) return '0';
-    if (num === 0) return 'Price on request';
+    if (num === 0) {
+      return showCurrency ? 'Price on request' : '0';
+    }
     
     if (showCurrency) {
       try {
