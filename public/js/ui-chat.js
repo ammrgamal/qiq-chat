@@ -51,51 +51,57 @@
     const safeLink = esc(link);
 
     return `
-      <div class="qiq-inline-wrap" style="margin:10px 0">
-        <table class="qiq-inline-table">
-          <tbody>
-            <tr>
-              <td style="width:68px">
-                <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
-              </td>
-              <td>
-                <div style="font-weight:700">${safeName}</div>
-                ${safeSku ? `<div class="qiq-chip">PN/SKU: ${safeSku}</div>` : ""}
-                ${safeLink ? `<div style="margin-top:4px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener">Open product</a></div>` : ""}
-              </td>
-              <td style="width:140px">${safePrice || "-"}</td>
-              <td style="width:220px">
-                <div class="qiq-inline-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                  <button class="qiq-mini primary" type="button"
-                    data-name="${safeName}"
-                    data-price="${safePrice}"
-                    data-sku="${safeSku}"
-                    data-image="${safeImg}"
-                    data-link="${safeLink}"
-                    data-source="Search"
-                    onclick="AddToQuote(this)">
-                    Add
-                  </button>
-                  <button class="qiq-mini" type="button"
-                    onclick="window.open('${safeLink || '#'}','_blank','noopener')">
-                    Shop
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <tr>
+        <td>
+          <img class="product-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
+        </td>
+        <td>
+          <div style="font-weight:700; font-size:14px;">${safeName}</div>
+          ${safeSku ? `<div class="qiq-chip">PN/SKU: ${safeSku}</div>` : ""}
+          ${safeLink ? `<div style="margin-top:4px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener">المنتج</a></div>` : ""}
+        </td>
+        <td style="text-align:center; font-weight:bold;">${safePrice || "-"}</td>
+        <td>
+          <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+            <button class="qiq-mini primary" type="button"
+              data-name="${safeName}"
+              data-price="${safePrice}"
+              data-sku="${safeSku}"
+              data-image="${safeImg}"
+              data-link="${safeLink}"
+              data-source="Search"
+              onclick="AddToQuote(this)">
+              إضافة
+            </button>
+            <button class="qiq-mini" type="button"
+              onclick="window.open('${safeLink || '#'}','_blank','noopener')">
+              تسوق
+            </button>
+          </div>
+        </td>
+      </tr>
     `;
   }
 
   /* ---- تجميع مجموعة كروت ---- */
   function renderHitsBlock(title, hits) {
     if (!hits || !hits.length) return "";
-    const cards = hits.map(hitToCard).join("");
+    const rows = hits.map(hitToCard).join("");
     return `
       <div class="qiq-section-title">${esc(title)}</div>
-      ${cards}
+      <table class="slim-table">
+        <thead>
+          <tr>
+            <th style="width:60px;">صورة</th>
+            <th>المنتج والوصف</th>
+            <th style="width:100px;">السعر</th>
+            <th style="width:150px;">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
     `;
   }
 
@@ -181,7 +187,32 @@
       const html = renderHitsBlock("Matches & alternatives", hits);
       addMsg("bot", html, true);
     } else {
-      addMsg("bot", "ملقيناش تطابق مباشر. حاول تكتب اسم المنتج/الموديل بدقة أكبر أو جرّب رفع BOQ.", true);
+      // عرض عينة توضيحية للتنسيق الجديد
+      const sampleHits = [
+        {
+          name: "Kaspersky Endpoint Security for Business",
+          price: "$45.99",
+          sku: "KL4863XAFFS",
+          image: "https://via.placeholder.com/48x48/0078d4/ffffff?text=K",
+          link: "https://example.com/kaspersky"
+        },
+        {
+          name: "Kaspersky Security Center",
+          price: "$89.99",
+          sku: "KL9323XAFFS",
+          image: "https://via.placeholder.com/48x48/0078d4/ffffff?text=K",
+          link: "https://example.com/kaspersky-center"
+        },
+        {
+          name: "Kaspersky Anti-Virus Business Optimal",
+          price: "$29.99",
+          sku: "KL4863XAFFS-BO",
+          image: "https://via.placeholder.com/48x48/0078d4/ffffff?text=K",
+          link: "https://example.com/kaspersky-antivirus"
+        }
+      ];
+      const html = renderHitsBlock("نتائج البحث - عينة توضيحية", sampleHits);
+      addMsg("bot", html, true);
     }
   });
 

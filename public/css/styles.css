@@ -6,11 +6,11 @@
 .qiq-topbar .nav a:hover{opacity:.85}
 
 /* ===== Chat container ===== */
-.qiq{max-width:980px;margin:16px auto;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;font-family:Inter,system-ui,Segoe UI,Arial;background:#fff}
-.qiq-window{min-height:420px;max-height:560px;overflow:auto;background:#f8fafc;padding:16px}
-.qiq-msg{margin:10px 0;line-height:1.55}
+.qiq{max-width:980px;margin:12px auto;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;font-family:Inter,system-ui,Segoe UI,Arial;background:#fff}
+.qiq-window{min-height:380px;max-height:480px;overflow:auto;background:#f8fafc;padding:14px}
+.qiq-msg{margin:8px 0;line-height:1.5}
 .qiq-msg.user{text-align:right}
-.qiq-bubble{display:inline-block;padding:10px 12px;border-radius:12px;max-width:95%;white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #e5e7eb}
+.qiq-bubble{display:inline-block;padding:9px 11px;border-radius:12px;max-width:95%;white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #e5e7eb}
 .qiq-msg.user .qiq-bubble{background:#2563eb;border-color:#2563eb;color:#fff}
 
 .qiq-form{display:flex;gap:8px;border-top:1px solid #e5e7eb;padding:10px;background:#fff;align-items:center}
@@ -31,9 +31,9 @@
 .qiq-toast .close{margin-inline-start:8px;background:transparent;border:0;color:#fff;cursor:pointer;font-size:16px}
 
 /* ===== BOQ table ===== */
-.qiq-boq{max-width:980px;margin:16px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:block}
-.qiq-boq-top{display:flex;justify-content:space-between;align-items:center;margin:6px 4px 12px}
-.qiq-table-wrap{overflow:auto;max-height:520px;border-top:1px dashed #e5e7eb;will-change:contents}
+.qiq-boq{max-width:980px;margin:12px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px;display:block}
+.qiq-boq-top{display:flex;justify-content:space-between;align-items:center;margin:4px 4px 8px}
+.qiq-table-wrap{overflow:auto;max-height:520px;border-top:1px dashed #e5e7eb;will-change:contents;margin-top:8px}
 .qiq-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
 .qiq-table th,.qiq-table td{padding:10px;border-bottom:1px solid #eef2f7;vertical-align:top;text-align:right}
 .qiq-img{width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid #eee;background:#fff}
@@ -66,19 +66,20 @@
   border-collapse: collapse;
   font-size: 14px;
   background: #fff;
-  margin-bottom: 2em;
+  margin-bottom: 1em;
 }
 .slim-table th, .slim-table td {
   border: 1px solid #e0e0e0;
-  padding: 6px 8px;
-  text-align: center;
+  padding: 8px 10px;
+  text-align: right;
   vertical-align: middle;
 }
 .slim-table th {
   background: #f5f7fa;
   font-weight: bold;
+  font-size: 13px;
 }
-.product-img {
+.product-img, .slim-table .qiq-img {
   width: 48px;
   height: 48px;
   object-fit: contain;
@@ -88,4 +89,128 @@
 }
 .slim-table tr:hover {
   background: #f0f8ff;
+}
+.slim-table .qiq-actions-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.slim-table .qiq-qty {
+  width: 60px;
+  padding: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.slim-table .qiq-mini {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+}
+.slim-table .qiq-mini.primary {
+  background: #0ea5e9;
+  color: #fff;
+  border-color: #0ea5e9;
+}
+.slim-table .qiq-mini.success {
+  background: #059669;
+  color: #fff;
+  border-color: #059669;
+}
+.slim-table .qiq-chip {
+  display: inline-block;
+  background: #eef2ff;
+  border: 1px solid #dbe1ff;
+  border-radius: 6px;
+  padding: 2px 6px;
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+/* ===== Cards and Forms ===== */
+.qiq-card {
+  max-width: 980px;
+  margin: 12px auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+}
+.qiq-card h2 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  color: #111827;
+}
+
+/* Enhanced form layout - compact grid */
+.qiq-form-vertical {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  max-width: 900px;
+}
+
+.qiq-form-vertical .row {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Full width rows for textarea and actions */
+.qiq-form-vertical .row.full-width {
+  grid-column: 1 / -1;
+}
+
+.qiq-form-vertical label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+  text-align: right;
+}
+
+.qiq-form-vertical input, .qiq-form-vertical textarea, .qiq-form-vertical select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.qiq-form-vertical .actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 8px;
+  justify-content: flex-start;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+  .qiq-form-vertical {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .qiq-form-vertical .row.full-width {
+    grid-column: 1;
+  }
+}
+
+.account-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.qiq-danger {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
 }
