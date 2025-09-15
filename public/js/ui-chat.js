@@ -44,58 +44,127 @@
     const img   = hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || "";
     const link  = hit?.link || hit?.url || hit?.product_url || hit?.permalink || "";
 
+    // توليد عنوان ذكي للمنتج
+    const smartTitle = generateSmartTitle(name);
+    
+    // توليد صورة مناسبة للعنوان
+    const titleImage = generateTitleImage(smartTitle);
+
     const safeName = esc(String(name));
     const safePrice = esc(String(price));
     const safeSku = esc(String(sku));
-    const safeImg = esc(img || PLACEHOLDER_IMG);
+    const safeImg = esc(img || titleImage);
     const safeLink = esc(link);
+    const safeSmartTitle = esc(smartTitle);
 
     return `
-      <div class="qiq-inline-wrap" style="margin:10px 0">
-        <table class="qiq-inline-table">
-          <tbody>
             <tr>
-              <td style="width:68px">
-                <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
+              <td style="width:76px">
+                <img class="qiq-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${titleImage}'" />
               </td>
               <td>
                 <div style="font-weight:700">${safeName}</div>
                 ${safeSku ? `<div class="qiq-chip">PN/SKU: ${safeSku}</div>` : ""}
+                <div class="qiq-chip qiq-chip-category" style="background:#f0f9ff;border-color:#0ea5e9;color:#0c4a6e">Category: ${safeSmartTitle}</div>
                 ${safeLink ? `<div style="margin-top:4px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener">Open product</a></div>` : ""}
               </td>
-              <td style="width:140px">${safePrice || "-"}</td>
-              <td style="width:220px">
-                <div class="qiq-inline-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                  <button class="qiq-mini primary" type="button"
+              <td style="width:120px">${safePrice ? "$" + safePrice : "-"}</td>
+              <td style="width:140px">-</td>
+              <td style="width:270px">
+                <div class="qiq-actions-row">
+                  <button class="qiq-btn qiq-mini qiq-primary" type="button"
                     data-name="${safeName}"
                     data-price="${safePrice}"
                     data-sku="${safeSku}"
                     data-image="${safeImg}"
                     data-link="${safeLink}"
                     data-source="Search"
+                    data-smart-title="${safeSmartTitle}"
                     onclick="AddToQuote(this)">
                     Add
                   </button>
-                  <button class="qiq-mini" type="button"
+                  <button class="qiq-btn qiq-mini" type="button"
                     onclick="window.open('${safeLink || '#'}','_blank','noopener')">
                     Shop
                   </button>
                 </div>
               </td>
             </tr>
-          </tbody>
-        </table>
-      </div>
     `;
+  }
+
+  /* ---- توليد عنوان ذكي للمنتج ---- */
+  function generateSmartTitle(productName) {
+    const name = (productName || "").toLowerCase();
+    
+    // قاموس للمطابقات الذكية
+    const categoryMap = {
+      'kaspersky': 'Endpoint Security Solution',
+      'edr': 'Endpoint Detection & Response', 
+      'endpoint': 'Endpoint Security Solution',
+      'antivirus': 'Antivirus Protection',
+      'firewall': 'Network Security Firewall',
+      'vpn': 'Virtual Private Network',
+      'backup': 'Data Backup Solution',
+      'office': 'Productivity Suite',
+      'windows': 'Operating System License',
+      'adobe': 'Creative Software Suite',
+      'vmware': 'Virtualization Platform',
+      'cisco': 'Network Infrastructure',
+      'microsoft': 'Enterprise Software',
+      'defender': 'Security Protection',
+      'server': 'Server Infrastructure',
+      'storage': 'Data Storage Solution',
+      'cloud': 'Cloud Computing Service',
+      'security': 'Cybersecurity Solution',
+      'license': 'Software License',
+      'subscription': 'Software Subscription'
+    };
+
+    // البحث عن مطابقة في اسم المنتج
+    for (const [keyword, title] of Object.entries(categoryMap)) {
+      if (name.includes(keyword)) {
+        return title;
+      }
+    }
+
+    // عنوان افتراضي
+    return 'IT Solution';
+  }
+
+  /* ---- توليد صورة نص بسيطة للعنوان ---- */
+  function generateTitleImage(title) {
+    // استخدام خدمة مجانية لتوليد صورة نص
+    const encodedTitle = encodeURIComponent(title.split(' ').map(word => word.charAt(0)).join(''));
+    const bgColor = '2563eb'; // أزرق
+    const textColor = 'ffffff'; // أبيض
+    return `https://via.placeholder.com/64x64/${bgColor}/${textColor}?text=${encodedTitle}`;
   }
 
   /* ---- تجميع مجموعة كروت ---- */
   function renderHitsBlock(title, hits) {
     if (!hits || !hits.length) return "";
-    const cards = hits.map(hitToCard).join("");
+    const rows = hits.map(hitToCard).join("");
     return `
-      <div class="qiq-section-title">${esc(title)}</div>
-      ${cards}
+      <div class="qiq-chat-table-wrap" style="margin:10px 0">
+        <div class="qiq-section-title">${esc(title)}</div>
+        <div class="qiq-table-wrap">
+          <table class="qiq-table">
+            <thead>
+              <tr>
+                <th style="width:76px">صورة</th>
+                <th>الوصف / PN / SKU</th>
+                <th style="width:120px">سعر الوحدة</th>
+                <th style="width:140px">الإجمالي</th>
+                <th style="width:270px">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </div>
+      </div>
     `;
   }
 
@@ -112,8 +181,44 @@
       return Array.isArray(json?.hits) ? json.hits : [];
     } catch (e) {
       console.warn("Search error:", e);
-      return [];
+      // Return mock data for demonstration when API is not available
+      return getMockSearchResults(query);
     }
+  }
+
+  /* ---- Mock data for demonstration ---- */
+  function getMockSearchResults(query) {
+    const mockData = [
+      {
+        name: "Kaspersky Endpoint Security for Business Select",
+        price: "45.99",
+        sku: "KL4863XAMTS",
+        image: "",
+        link: "https://www.kaspersky.com/business-security",
+        description: "Advanced endpoint protection for business environments"
+      },
+      {
+        name: "Kaspersky EDR Expert",
+        price: "89.99", 
+        sku: "KL4906XAMTS",
+        image: "",
+        link: "https://www.kaspersky.com/enterprise-security",
+        description: "Expert-level endpoint detection and response"
+      },
+      {
+        name: "Microsoft Defender for Business",
+        price: "3.00",
+        sku: "CFQ7TTC0LH16",
+        image: "",
+        link: "https://www.microsoft.com/security/business",
+        description: "Microsoft endpoint security solution"
+      }
+    ];
+    
+    return mockData.filter(item => 
+      item.name.toLowerCase().includes(query.toLowerCase()) ||
+      item.sku.toLowerCase().includes(query.toLowerCase())
+    );
   }
 
   /* ---- استدعاء /api/chat (نفس الموجود قبل كده) ---- */

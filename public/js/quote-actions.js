@@ -15,6 +15,52 @@
     return Number(String(v||"").replace(/[^\d.]/g,"")) || 0;
   }
 
+  // توليد عنوان ذكي للمنتج
+  function generateSmartTitle(productName) {
+    const name = (productName || "").toLowerCase();
+    
+    // قاموس للمطابقات الذكية
+    const categoryMap = {
+      'kaspersky': 'Endpoint Security Solution',
+      'edr': 'Endpoint Detection & Response',
+      'antivirus': 'Antivirus Protection',
+      'firewall': 'Network Security Firewall',
+      'vpn': 'Virtual Private Network',
+      'backup': 'Data Backup Solution',
+      'office': 'Productivity Suite',
+      'windows': 'Operating System License',
+      'adobe': 'Creative Software Suite',
+      'vmware': 'Virtualization Platform',
+      'cisco': 'Network Infrastructure',
+      'microsoft': 'Enterprise Software',
+      'server': 'Server Infrastructure',
+      'storage': 'Data Storage Solution',
+      'cloud': 'Cloud Computing Service',
+      'security': 'Cybersecurity Solution',
+      'license': 'Software License',
+      'subscription': 'Software Subscription'
+    };
+
+    // البحث عن مطابقة في اسم المنتج
+    for (const [keyword, title] of Object.entries(categoryMap)) {
+      if (name.includes(keyword)) {
+        return title;
+      }
+    }
+
+    // عنوان افتراضي
+    return 'IT Solution';
+  }
+
+  // توليد صورة نص بسيطة للعنوان
+  function generateTitleImage(title) {
+    // استخدام خدمة مجانية لتوليد صورة نص
+    const encodedTitle = encodeURIComponent(title);
+    const bgColor = '2563eb'; // أزرق
+    const textColor = 'ffffff'; // أبيض
+    return `https://via.placeholder.com/64x64/${bgColor}/${textColor}?text=${encodedTitle}`;
+  }
+
   // إعادة حساب الإجمالي وحالة زرار Add all
   function recalcTotals(){
     let grand = 0;
@@ -52,16 +98,21 @@
     const source  = data.source|| "Add";
     const pn      = data.pn    || data.sku || "";
 
+    // توليد عنوان ذكي وصورة مناسبة 
+    const smartTitle = data.smartTitle || generateSmartTitle(name);
+    const titleImage = generateTitleImage(smartTitle);
+
     const tr = document.createElement("tr");
     tr.dataset.unit = price || "";
     tr.dataset.key  = key;
     tr.setAttribute("data-key", key);
 
     tr.innerHTML = `
-      <td><img class="qiq-img" src="${img}" alt="${name}" onerror="this.src='https://via.placeholder.com/68?text=IMG'"></td>
+      <td><img class="qiq-img" src="${img}" alt="${name}" onerror="this.src='${titleImage}'"></td>
       <td>
         ${link?`<a class="qiq-link" target="_blank" rel="noopener" href="${link}"><strong>${name}</strong></a>`:`<strong>${name}</strong>`}
         ${pn? `<div class="qiq-chip">PN/SKU: ${pn}</div>` : ""}
+        <div class="qiq-chip qiq-chip-category" style="background:#f0f9ff;border-color:#0ea5e9;color:#0c4a6e">Category: ${smartTitle}</div>
         <div class="qiq-chip" style="background:#f5f5f5;border-color:#e5e7eb">Source: ${source}</div>
       </td>
       <td>${price? fmtUSD(price) : "-"}</td>
@@ -111,6 +162,7 @@
 
   // تجهّز الداتا من زرار عليه data-*
   function dataFromElement(el){
+    const smartTitle = el.getAttribute("data-smart-title") || generateSmartTitle(el.getAttribute("data-name") || "");
     return {
       name  : el.getAttribute("data-name")  || "",
       price : el.getAttribute("data-price") || "",
@@ -118,7 +170,8 @@
       pn    : el.getAttribute("data-pn")    || "",
       image : el.getAttribute("data-image") || "",
       link  : el.getAttribute("data-link")  || "",
-      source: el.getAttribute("data-source")|| "Add"
+      source: el.getAttribute("data-source")|| "Add",
+      smartTitle: smartTitle
     };
   }
 

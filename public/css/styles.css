@@ -48,6 +48,66 @@
 .qiq-inline-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
 .qiq-inline-table th,.qiq-inline-table td{border:1px solid #e5e7eb;padding:8px;vertical-align:top;text-align:right}
 .qiq-inline-img{width:58px;height:58px;object-fit:contain;border:1px solid #eee;border-radius:8px}
+
+/* ===== Chat table formatting ===== */
+.qiq-chat-table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;margin:8px 0}
+.qiq-chat-table-wrap .qiq-table{margin-top:8px}
+.qiq-chat-table-wrap .qiq-section-title{
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border-left: 4px solid #2563eb;
+}
+
+/* Enhanced category chip styling */
+.qiq-chip-category {
+  font-weight: 600;
+  background: #f0f9ff !important;
+  border-color: #0ea5e9 !important;
+  color: #0c4a6e !important;
+}
+
+/* Better table styling for chat results */
+.qiq-chat-table-wrap .qiq-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.qiq-chat-table-wrap .qiq-table tr:hover {
+  background: #f8fafc;
+}
+
+/* Enhanced mini button styling */
+.qiq-btn.qiq-mini.qiq-primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.qiq-btn.qiq-mini.qiq-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.qiq-btn.qiq-mini {
+  transition: all 0.2s ease;
+}
+
+.qiq-btn.qiq-mini:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Mini buttons ===== */
+.qiq-btn.qiq-mini{padding:6px 10px;font-size:12px;border-radius:6px}
 .qiq-inline-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .qiq-mini{border:1px solid #d1d5db;border-radius:8px;padding:6px 10px;background:#fff;cursor:pointer}
 .qiq-mini.primary{background:#0ea5e9;color:#fff;border-color:#0ea5e9}
