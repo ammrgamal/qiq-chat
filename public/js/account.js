@@ -151,17 +151,39 @@
   }
 
   function loadQuotationHistory(user) {
-    // Simulate quotation history - replace with real API call
-    const mockQuotations = [
-      { id: "QT-2024-001", date: "2024-01-15", status: "مكتمل", total: "$15,250" },
-      { id: "QT-2024-002", date: "2024-01-20", status: "قيد المراجعة", total: "$8,900" },
-      { id: "QT-2024-003", date: "2024-01-25", status: "مسودة", total: "$22,150" }
-    ];
-    
     const historyDiv = document.getElementById("quotation-history");
     if (!historyDiv) return;
     
-    if (mockQuotations.length === 0) {
+    historyDiv.innerHTML = '<p style="color: #6b7280;">جاري تحميل عروض الأسعار...</p>';
+    
+    // Try to load quotations from API
+    loadQuotationsFromAPI(user)
+      .then(quotations => {
+        displayQuotations(quotations, historyDiv);
+      })
+      .catch(error => {
+        console.warn("Failed to load quotations from API:", error);
+        // Fallback to mock data
+        const mockQuotations = [
+          { id: "QT-2024-001", date: "2024-01-15", status: "مكتمل", total: "$15,250", clientName: "عميل تجريبي" },
+          { id: "QT-2024-002", date: "2024-01-20", status: "قيد المراجعة", total: "$8,900", clientName: "عميل تجريبي" },
+          { id: "QT-2024-003", date: "2024-01-25", status: "مسودة", total: "$22,150", clientName: "عميل تجريبي" }
+        ];
+        displayQuotations(mockQuotations, historyDiv);
+      });
+  }
+  
+  async function loadQuotationsFromAPI(user) {
+    try {
+      const response = await getJSON("/api/users/quotations");
+      return response.quotations || [];
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  function displayQuotations(quotations, historyDiv) {
+    if (!quotations || quotations.length === 0) {
       historyDiv.innerHTML = '<p style="color: #6b7280;">لا توجد عروض أسعار سابقة</p>';
       return;
     }
@@ -171,6 +193,7 @@
         <thead>
           <tr>
             <th>رقم العرض</th>
+            <th>اسم العميل</th>
             <th>التاريخ</th>
             <th>الحالة</th>
             <th>الإجمالي</th>
@@ -178,21 +201,41 @@
           </tr>
         </thead>
         <tbody>
-          ${mockQuotations.map(q => `
+          ${quotations.map(q => `
             <tr>
               <td><strong>${q.id}</strong></td>
+              <td>${q.clientName || 'غير محدد'}</td>
               <td>${q.date}</td>
               <td><span class="qiq-chip" style="${getStatusColor(q.status)}">${q.status}</span></td>
-              <td>${q.total}</td>
+              <td>${formatCurrency(q.total, q.currency)}</td>
               <td>
-                <button class="qiq-btn" onclick="viewQuotation('${q.id}')">عرض</button>
-                ${q.status === 'مسودة' ? `<button class="qiq-btn qiq-primary" onclick="editQuotation('${q.id}')">تعديل</button>` : ''}
+                <button class="qiq-btn" onclick="viewQuotation('${q.id}')" style="font-size: 12px; padding: 4px 8px;">عرض</button>
+                ${q.status === 'مسودة' ? `<button class="qiq-btn qiq-primary" onclick="editQuotation('${q.id}')" style="font-size: 12px; padding: 4px 8px;">تعديل</button>` : ''}
+                <button class="qiq-btn" onclick="downloadQuotation('${q.id}')" style="font-size: 12px; padding: 4px 8px; background: #059669;">تحميل</button>
               </td>
             </tr>
           `).join('')}
         </tbody>
       </table>
+      <div style="margin-top: 12px; padding: 8px; background: #f8fafc; border-radius: 8px; font-size: 13px; color: #6b7280;">
+        💡 <strong>نصيحة:</strong> يمكنك تتبع عروض الأسعار باستخدام الأرقام المرجعية أعلاه. 
+        احفظ هذه الأرقام لسهولة المتابعة مع فريق المبيعات.
+      </div>
     `;
+  }
+  
+  function formatCurrency(amount, currency = 'USD') {
+    if (typeof amount === 'string') return amount; // Already formatted
+    
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency || 'USD',
+        maximumFractionDigits: 0
+      }).format(amount);
+    } catch {
+      return `${amount.toLocaleString()} ${currency || 'USD'}`;
+    }
   }
 
   function getStatusColor(status) {
@@ -207,12 +250,28 @@
   // Global functions for quotation actions
   window.viewQuotation = function(id) {
     setStatus(`جاري عرض العرض ${id}...`, "info");
-    // TODO: Implement view quotation
+    // Open quote page in new tab/window
+    window.open(`/public/quote.html?view=${encodeURIComponent(id)}`, '_blank');
   };
 
   window.editQuotation = function(id) {
     setStatus(`جاري تحميل العرض ${id} للتعديل...`, "info");
-    // TODO: Implement edit quotation
+    // Open quote page for editing
+    window.open(`/public/quote.html?edit=${encodeURIComponent(id)}`, '_blank');
+  };
+  
+  window.downloadQuotation = function(id) {
+    setStatus(`جاري تحميل العرض ${id}...`, "info");
+    // Simulate PDF download
+    setTimeout(() => {
+      const link = document.createElement('a');
+      link.href = 'data:application/pdf;base64,'; // In real app, this would be the actual PDF
+      link.download = `quotation-${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setStatus(`تم تحميل العرض ${id} بنجاح`, "success");
+    }, 1000);
   };
 
   // ============ Login ============
@@ -323,6 +382,23 @@
 
   // ============ On load: لو عندي توكن اعرض الحالة ============
   (async function init() {
+    // For demo purposes, simulate a logged-in user
+    const demoMode = new URLSearchParams(window.location.search).has('demo');
+    
+    if (demoMode) {
+      // Simulate demo user login
+      const demoUser = {
+        id: 12345,
+        email: "demo@company.com",
+        company: "شركة التكنولوجيا المتقدمة",
+        phone: "+201234567890"
+      };
+      
+      storage.token = "qiq_demo_token";
+      showLoggedInUI(demoUser);
+      return;
+    }
+    
     if (!storage.token) return;
     try {
       const me = await getJSON("/api/users/me");
