@@ -17,6 +17,27 @@
     statusEl.style.color = type === "error" ? "#b91c1c" : type === "success" ? "#065f46" : "#6b7280";
   };
 
+  // Business email validation - block personal email providers
+  const isBusinessEmail = (email) => {
+    const personalProviders = [
+      'gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com', 'live.com',
+      'aol.com', 'icloud.com', 'mail.com', 'protonmail.com', 'tutanota.com',
+      'gmx.com', 'yandex.com', 'mail.ru', 'qq.com', '163.com', '126.com'
+    ];
+    
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (!domain) return false;
+    
+    return !personalProviders.includes(domain);
+  };
+
+  // Show toast notification
+  const showToast = (message, type = 'info') => {
+    if (window.QiqToast && window.QiqToast.show) {
+      window.QiqToast.show(message, type);
+    }
+  };
+
   async function postJSON(path, body) {
     const headers = { "content-type": "application/json" };
     const token = getToken();

@@ -70,6 +70,117 @@
   font-size: 16px;
 }
 
+/* ===== Search Results Table ===== */
+.qiq-search-results {
+  max-width: 980px;
+  margin: 16px auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  display: block;
+}
+
+.qiq-search-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 6px 4px 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.qiq-search-results-header h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.qiq-search-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.qiq-search-results .qiq-table th:first-child {
+  text-align: center;
+}
+
+.qiq-search-results .qiq-table td:first-child {
+  text-align: center;
+  font-family: monospace;
+  font-size: 13px;
+  color: #374151;
+}
+
+.qiq-search-results .qiq-table td:nth-child(3) {
+  text-align: center;
+}
+
+.qiq-search-results .qiq-table td:nth-child(4) {
+  text-align: center;
+}
+
+.qiq-search-results .qiq-qty-input {
+  width: 60px;
+  padding: 4px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.qiq-manufacturer {
+  font-size: 13px;
+  color: #6b7280;
+  background: #f3f4f6;
+  border-radius: 4px;
+  padding: 2px 6px;
+  display: inline-block;
+}
+
+.qiq-cart-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.qiq-cart-btn {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.qiq-cart-btn.add {
+  background: #059669;
+  color: #fff;
+  border-color: #059669;
+}
+
+.qiq-cart-btn.add:hover {
+  background: #047857;
+}
+
+.qiq-cart-btn.delete {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+}
+
+.qiq-cart-btn.delete:hover {
+  background: #b91c1c;
+}
+
+.qiq-cart-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ===== BOQ table ===== */
 .qiq-boq{max-width:980px;margin:16px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:block}
 .qiq-boq-top{display:flex;justify-content:space-between;align-items:center;margin:6px 4px 12px}

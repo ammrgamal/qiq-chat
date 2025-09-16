@@ -28,6 +28,48 @@
     </form>
   </section>
 
+  <!-- ======== Search Results Table ======== -->
+  <section id="qiq-search-results" class="qiq-search-results" style="display: none;">
+    <div class="qiq-search-results-header">
+      <h3>نتائج البحث والبدائل</h3>
+      <div class="qiq-search-actions">
+        <button id="qiq-add-all-results" class="qiq-btn qiq-success" type="button" disabled>إضافة الكل للعربة</button>
+        <button id="qiq-clear-results" class="qiq-btn" type="button" style="background:#dc2626">مسح النتائج</button>
+      </div>
+    </div>
+    
+    <!-- Search/Filter for results -->
+    <div class="qiq-search">
+      <span class="qiq-search-icon">🔍</span>
+      <input 
+        id="qiq-results-search-input" 
+        class="qiq-search-input" 
+        type="text" 
+        placeholder="تصفية النتائج (الاسم أو الكود)..." 
+        autocomplete="off"
+      />
+      <span id="qiq-results-search-count" class="qiq-status"></span>
+    </div>
+    
+    <div class="qiq-table-wrap">
+      <table class="qiq-table" aria-label="Search results">
+        <thead>
+          <tr>
+            <th style="width:80px">PN/SKU</th>
+            <th>الوصف</th>
+            <th style="width:76px">صورة</th>
+            <th style="width:80px">الكمية</th>
+            <th style="width:120px">الشركة المصنعة</th>
+            <th style="width:120px">سعر الوحدة</th>
+            <th style="width:140px">الإجمالي</th>
+            <th style="width:200px">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="qiq-search-results-body"></tbody>
+      </table>
+    </div>
+  </section>
+
   <!-- ======== BOQ / Staging ======== -->
   <section id="qiq-boq-wrap" class="qiq-boq">
     <div class="qiq-boq-top">
