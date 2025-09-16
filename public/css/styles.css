@@ -78,6 +78,8 @@
 .qiq-table th,.qiq-table td{padding:10px;border-bottom:1px solid #eef2f7;vertical-align:top;text-align:right}
 .qiq-table th{background:#f8fafc;font-weight:600;position:sticky;top:0;z-index:5}
 .qiq-table tbody tr:hover{background:#f9fafb}
+/* Chat page table specific: maximize Description column width */
+.qiq-table th:nth-child(2){width:auto;min-width:300px}
 .qiq-img{width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid #eee;background:#fff}
 .qiq-actions-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .qiq-qty{width:70px;padding:8px;border:1px solid #d1d5db;border-radius:8px}
