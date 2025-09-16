@@ -216,12 +216,12 @@
         ${pn? `<div class="qiq-chip">PN/SKU: ${pn}</div>` : ""}
         <div class="qiq-chip" style="background:#f5f5f5;border-color:#e5e7eb">Source: ${source}</div>
       </td>
+      <td><input type="number" min="1" step="1" value="1" class="qiq-qty" style="width:60px;padding:4px;border:1px solid #d1d5db;border-radius:4px"></td>
       <td style="font-size:12px;color:#6b7280">${manufacturer}</td>
       <td>${price? fmtUSD(price) : "-"}</td>
       <td class="qiq-line">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
       <td>
         <div class="qiq-actions-row">
-          <input type="number" min="1" step="1" value="1" class="qiq-qty">
           <button class="qiq-btn" type="button" data-detail-sku="${sku}">تفاصيل المنتج</button>
           <button class="qiq-btn qiq-primary" type="button" data-sku="${sku}" data-slug="">إضافة للسلة</button>
           <button class="qiq-btn" type="button" data-remove-sku="${sku}" style="background:#dc2626" title="حذف هذا البند">حذف</button>
@@ -306,6 +306,7 @@
       pn    : el.getAttribute("data-pn")    || "",
       image : el.getAttribute("data-image") || "",
       link  : el.getAttribute("data-link")  || "",
+      manufacturer: el.getAttribute("data-manufacturer") || "غير محدد",
       source: el.getAttribute("data-source")|| "Add"
     };
   }

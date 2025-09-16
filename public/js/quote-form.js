@@ -5,10 +5,10 @@
   // ============ DOM ============
   const form = document.getElementById("quote-form");
   const statusEl = document.getElementById("quote-status");
-  const companyEl = document.getElementById("company");
-  const emailEl = document.getElementById("email");
-  const phoneEl = document.getElementById("phone");
-  const detailsEl = document.getElementById("details");
+  const companyEl = document.querySelector('input[name="company"]');
+  const emailEl = document.querySelector('input[name="email"]');
+  const phoneEl = document.querySelector('input[name="phone"]');
+  const detailsEl = document.querySelector('textarea[name="notes"]');
 
   // ============ Helpers ============
   const getToken = () => localStorage.getItem("qiq_token") || "";
@@ -46,10 +46,10 @@
   // ============ Submit ============
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const company = companyEl.value.trim();
-    const email = emailEl.value.trim();
-    const phone = phoneEl.value.trim();
-    const details = detailsEl.value.trim();
+    const company = companyEl?.value.trim() || "";
+    const email = emailEl?.value.trim() || "";
+    const phone = phoneEl?.value.trim() || "";
+    const details = detailsEl?.value.trim() || "";
 
     if (!company || !email || !phone) {
       setStatus("من فضلك املأ الحقول المطلوبة (الشركة، البريد، الهاتف).", "error");
