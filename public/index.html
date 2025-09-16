@@ -44,6 +44,7 @@
     <div class="qiq-boq-top">
       <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>Add all matched</button>
       <div class="qiq-right">
+        <button id="qiq-clear-all" class="qiq-btn" type="button" style="background:#dc2626">مسح الكل</button>
         <button id="qiq-export-csv"  class="qiq-btn" type="button">Export CSV</button>
         <button id="qiq-export-xlsx" class="qiq-btn" type="button">Export XLSX</button>
         <span id="qiq-status" class="qiq-status"></span>
@@ -80,10 +81,12 @@
     </div>
   </div>
 
+  <!-- ====== Image Preview Overlay ====== -->
+  <div id="image-preview-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:9999;">
+    <button onclick="closeImagePreview()" style="position:absolute;top:20px;right:20px;background:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:20px;">×</button>
+    <img id="preview-image" src="" alt="Preview" style="max-width:90vw;max-height:90vh;border-radius:8px;" />
+  </div>
+
 </body>
 </html>
-<<<<<<< HEAD
-[]
-=======
-[]
->>>>>>> d8052fa7a29b9a34020d4056b573d7a910c5e643
+
