@@ -1,4 +1,4 @@
-/* ========= Helpers ========= */
+/* ========= Enhanced Quote Actions with Search ========= */
 (function () {
   const tbody     = document.getElementById("qiq-body");     // جدول البنود
   const grandCell = document.getElementById("qiq-grand");    // الإجمالي
@@ -6,6 +6,8 @@
   const clearAllBtn = document.getElementById("qiq-clear-all"); // زرار Clear all
   const exportCsvBtn = document.getElementById("qiq-export-csv"); // زرار Export CSV
   const exportXlsxBtn = document.getElementById("qiq-export-xlsx"); // زرار Export XLSX
+  const searchInput = document.getElementById("qiq-search-input"); // مربع البحث
+  const searchCount = document.getElementById("qiq-search-count"); // عداد النتائج
 
   // تنسيقات الأسعار
   function fmtUSD(v){
@@ -18,24 +20,89 @@
     return Number(String(v||"").replace(/[^\d.]/g,"")) || 0;
   }
 
-  // Enhanced notification system
+  // Use the global toast system instead of inline notifications
   const showNotification = (message, type = 'info') => {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed; top: 20px; right: 20px; z-index: 10000;
-      padding: 12px 16px; border-radius: 8px; color: white;
-      background: ${type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : '#2563eb'};
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
+    if (window.QiqToast && window.QiqToast.show) {
+      window.QiqToast.show(message, type);
+    } else {
+      // Fallback for legacy compatibility
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 10000;
+        padding: 12px 16px; border-radius: 8px; color: white;
+        background: ${type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : '#2563eb'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+    }
   };
 
-  // إعادة حساب الإجمالي وحالة زرار Add all
+  // ===== Search/Filter Functionality =====
+  function filterTable(searchTerm) {
+    if (!tbody) return;
+    
+    const term = searchTerm.toLowerCase().trim();
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+      if (!term) {
+        row.style.display = '';
+        visibleCount++;
+        return;
+      }
+      
+      // البحث في الاسم و PN/SKU
+      const nameElement = row.querySelector('strong');
+      const chipElement = row.querySelector('.qiq-chip');
+      const name = nameElement ? nameElement.textContent.toLowerCase() : '';
+      const chip = chipElement ? chipElement.textContent.toLowerCase() : '';
+      
+      const matches = name.includes(term) || chip.includes(term) || 
+                     (row.dataset.key && row.dataset.key.toLowerCase().includes(term));
+      
+      row.style.display = matches ? '' : 'none';
+      if (matches) visibleCount++;
+    });
+    
+    // تحديث عداد النتائج
+    if (searchCount) {
+      if (term) {
+        searchCount.textContent = `${visibleCount} من ${rows.length} عنصر`;
+        searchCount.style.color = visibleCount === 0 ? '#dc2626' : '#059669';
+      } else {
+        searchCount.textContent = '';
+      }
+    }
+    
+    recalcTotals(); // إعادة حساب الإجماليات للعناصر المرئية فقط
+  }
+
+  // إضافة مستمع البحث
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      filterTable(e.target.value);
+    });
+    
+    // مفاتيح الاختصار
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.target.value = '';
+        filterTable('');
+        e.target.blur();
+      }
+    });
+  }
+
+  // إعادة حساب الإجمالي وحالة زرار Add all (فقط للصفوف المرئية)
   function recalcTotals(){
     let grand = 0;
     [...(tbody?.querySelectorAll("tr")||[])].forEach(tr=>{
+      // تجاهل الصفوف المخفية في البحث
+      if (tr.style.display === 'none') return;
+      
       const unit = numFromPrice(tr.dataset.unit||"");
       const qty  = Math.max(1, parseInt(tr.querySelector(".qiq-qty")?.value||"1",10));
       const line = unit * qty;
@@ -92,6 +159,7 @@
           <input type="number" min="1" step="1" value="1" class="qiq-qty">
           <button class="qiq-btn" type="button" data-detail-sku="${sku}">Product details</button>
           <button class="qiq-btn qiq-primary" type="button" data-sku="${sku}" data-slug="">Add to quotation</button>
+          <button class="qiq-btn" type="button" data-remove-sku="${sku}" style="background:#dc2626" title="حذف هذا البند">حذف</button>
         </div>
       </td>
     `;
@@ -125,6 +193,24 @@
         showNotification("خطأ في إضافة المنتج للعربة", "error");
       } finally {
         setTimeout(()=>{ btn.textContent = old; btn.disabled = false; }, 900);
+      }
+    });
+
+    // Remove item with confirmation
+    tr.querySelector('[data-remove-sku]').addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const itemName = name.length > 50 ? name.substring(0, 50) + '...' : name;
+      const confirmMessage = `هل أنت متأكد من حذف هذا البند؟\n\n"${itemName}"\n\nهذا الإجراء لا يمكن التراجع عنه.`;
+      
+      if (confirm(confirmMessage)) {
+        tr.remove();
+        recalcTotals();
+        showNotification("تم حذف البند بنجاح", "success");
+        
+        // إعادة تطبيق البحث بعد الحذف
+        if (searchInput && searchInput.value.trim()) {
+          filterTable(searchInput.value);
+        }
       }
     });
 

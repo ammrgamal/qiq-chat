@@ -39,6 +39,20 @@
         <span id="qiq-status" class="qiq-status"></span>
       </div>
     </div>
+    
+    <!-- Search/Filter for products -->
+    <div class="qiq-search">
+      <span class="qiq-search-icon">🔍</span>
+      <input 
+        id="qiq-search-input" 
+        class="qiq-search-input" 
+        type="text" 
+        placeholder="البحث في المنتجات (الاسم أو الكود)..." 
+        autocomplete="off"
+      />
+      <span id="qiq-search-count" class="qiq-status"></span>
+    </div>
+    
     <div class="qiq-table-wrap">
       <table class="qiq-table" aria-label="Staged items">
         <thead>
@@ -130,7 +144,12 @@
     </div>
   </div>
 
+  <!-- ======== Toast Notifications Container ======== -->
+  <div id="qiq-toast-container" class="qiq-toast" aria-live="polite"></div>
+
   <!-- ======== Bundles (Front-end) ======== -->
+  <!-- toast.js: نظام الإشعارات المحسن -->
+  <script src="/public/js/toast.js"></script>
   <!-- api.js: دوال الفetch للباك إند (/api/search, /api/chat, /api/quote, /api/users/...) -->
   <script src="/public/js/api.js"></script>
   <!-- quote-actions.js: BOQ table functionality and AddToQuote function -->
