@@ -133,6 +133,33 @@
     }
   }
 
+  /* ---- دالة لعرض المنتجات مباشرة في الجدول ---- */
+  function displayProductsInTable(hits, source = "Search") {
+    hits.forEach(hit => {
+      const productData = {
+        name: hit?.name || hit?.title || hit?.Description || "(No name)",
+        price: hit?.price || hit?.Price || hit?.list_price || hit?.ListPrice || "",
+        sku: hit?.sku || hit?.SKU || hit?.pn || hit?.PN || hit?.part_number || hit?.PartNumber || "",
+        pn: hit?.sku || hit?.SKU || hit?.pn || hit?.PN || hit?.part_number || hit?.PartNumber || "",
+        image: hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || "",
+        link: hit?.link || hit?.url || hit?.product_url || hit?.permalink || "",
+        manufacturer: hit?.manufacturer || hit?.brand || hit?.vendor || hit?.company || "غير محدد",
+        source: source
+      };
+      
+      // استخدام دالة AddToQuote الموجودة
+      if (window.AddToQuote && typeof window.AddToQuote === 'function') {
+        window.AddToQuote(productData);
+      }
+    });
+    
+    // التمرير إلى الجدول
+    const tableSection = document.getElementById("qiq-boq-wrap");
+    if (tableSection) {
+      tableSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
   /* ---- المنطق: لو المستخدم كتب كلمة/منتج → نبحث ونظهر كروت بداخلها زر AddToQuote ---- */
   const messages = [
     {
@@ -175,13 +202,15 @@
       sendBtn && (sendBtn.disabled = false);
     }
 
-    // 2) نتائج البحث (نفس النص) – نعرض كروت فيها زر AddToQuote
+    // 2) نتائج البحث (نفس النص) – نعرض في الجدول مباشرة
     const hits = await runSearch(userText, 6);
     if (hits.length) {
-      const html = renderHitsBlock("Matches & alternatives", hits);
-      addMsg("bot", html, true);
+      // إضافة النتائج مباشرة إلى الجدول بدلاً من إظهارها في الشات
+      displayProductsInTable(hits, "Matches & alternatives");
+      // رسالة قصيرة في الشات
+      addMsg("bot", `تم العثور على ${hits.length} نتيجة مطابقة. تحقق من الجدول أدناه.`);
     } else {
-      addMsg("bot", "ملقيناش تطابق مباشر. حاول تكتب اسم المنتج/الموديل بدقة أكبر أو جرّب رفع BOQ.", true);
+      addMsg("bot", "ملقيناش تطابق مباشر. حاول تكتب اسم المنتج/الموديل بدقة أكبر أو جرّب رفع BOQ.");
     }
   });
 
@@ -197,10 +226,10 @@
 
     const results = await runSearch(q, 8);
     if (results.length) {
-      const html = renderHitsBlock("Search results", results);
-      addMsg("bot", html, true);
+      displayProductsInTable(results, "Search results");
+      addMsg("bot", `تم العثور على ${results.length} نتيجة بحث. تحقق من الجدول أدناه.`);
     } else {
-      addMsg("bot", "لا توجد نتائج مطابقة.", true);
+      addMsg("bot", "لا توجد نتائج مطابقة.");
     }
   });
 })();
