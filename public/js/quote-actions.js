@@ -8,6 +8,13 @@
   const exportXlsxBtn = document.getElementById("qiq-export-xlsx"); // زرار Export XLSX
   const searchInput = document.getElementById("qiq-search-input"); // مربع البحث
   const searchCount = document.getElementById("qiq-search-count"); // عداد النتائج
+  const saveDraftBtn = document.getElementById("qiq-save-draft"); // زرار حفظ المسودة
+  const loadDraftBtn = document.getElementById("qiq-load-draft"); // زرار تحميل المسودة
+  const logSection = document.getElementById("qiq-log-section"); // قسم السجل
+  const logContent = document.getElementById("qiq-log-content"); // محتوى السجل
+  const toggleLogBtn = document.getElementById("qiq-toggle-log"); // زرار إظهار/إخفاء السجل
+  const clearLogBtn = document.getElementById("qiq-clear-log"); // زرار مسح السجل
+  const showLogBtn = document.getElementById("qiq-show-log"); // زرار إظهار السجل من الجدول
 
   // تنسيقات الأسعار
   function fmtUSD(v){
@@ -38,6 +45,59 @@
       setTimeout(() => notification.remove(), 3000);
     }
   };
+
+  // ===== Operations Log Functions =====
+  function addToLog(action, productName, details = '') {
+    if (!logContent) return;
+    
+    const timestamp = new Date().toLocaleString('ar-EG');
+    const logEntry = document.createElement('div');
+    logEntry.style.cssText = 'margin-bottom: 4px; padding: 4px; border-bottom: 1px solid #e5e7eb;';
+    
+    const actionColor = action === 'إضافة' ? '#059669' : action === 'حذف' ? '#dc2626' : '#6b7280';
+    logEntry.innerHTML = `
+      <span style="color: ${actionColor}; font-weight: 600;">[${action}]</span> 
+      <span style="color: #374151;">${productName}</span>
+      ${details ? `<span style="color: #6b7280;"> - ${details}</span>` : ''}
+      <span style="float: left; color: #9ca3af; font-size: 10px;">${timestamp}</span>
+    `;
+    
+    // Add to top of log
+    logContent.insertBefore(logEntry, logContent.firstChild);
+    
+    // Show log section if hidden
+    if (logSection) {
+      logSection.style.display = 'block';
+    }
+    
+    // Limit log entries to 50
+    const entries = logContent.children;
+    if (entries.length > 50) {
+      for (let i = entries.length - 1; i >= 50; i--) {
+        entries[i].remove();
+      }
+    }
+  }
+
+  function clearLog() {
+    if (logContent) {
+      logContent.innerHTML = '';
+      addToLog('نظام', 'تم مسح السجل', '');
+    }
+  }
+
+  function toggleLog() {
+    if (!logSection || !toggleLogBtn) return;
+    
+    const isVisible = logSection.style.display !== 'none';
+    logSection.style.display = isVisible ? 'none' : 'block';
+    toggleLogBtn.textContent = isVisible ? 'إظهار السجل' : 'إخفاء';
+    
+    // Update show log button text
+    if (showLogBtn) {
+      showLogBtn.textContent = isVisible ? 'إظهار السجل' : 'إخفاء السجل';
+    }
+  }
 
   // ===== Search/Filter Functionality =====
   function filterTable(searchTerm) {
@@ -126,7 +186,10 @@
     if(!key) return;
 
     // منع التكرار بنفس الـ SKU
-    if(tbody.querySelector(`tr[data-key="${CSS.escape(key)}"]`)) return;
+    if(tbody.querySelector(`tr[data-key="${CSS.escape(key)}"]`)) {
+      showNotification("هذا المنتج موجود بالفعل في الجدول", "warning");
+      return;
+    }
 
     const name    = data.name  || "—";
     const price   = data.price || "";
@@ -135,6 +198,7 @@
     const link    = data.link  || "";
     const source  = data.source|| "Add";
     const pn      = data.pn    || data.sku || "";
+    const manufacturer = data.manufacturer || data.brand || data.vendor || "غير محدد";
 
     const tr = document.createElement("tr");
     tr.dataset.unit = price || "";
@@ -152,13 +216,14 @@
         ${pn? `<div class="qiq-chip">PN/SKU: ${pn}</div>` : ""}
         <div class="qiq-chip" style="background:#f5f5f5;border-color:#e5e7eb">Source: ${source}</div>
       </td>
+      <td><input type="number" min="1" step="1" value="1" class="qiq-qty" style="width:60px;padding:4px;border:1px solid #d1d5db;border-radius:4px"></td>
+      <td style="font-size:12px;color:#6b7280">${manufacturer}</td>
       <td>${price? fmtUSD(price) : "-"}</td>
       <td class="qiq-line">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
       <td>
         <div class="qiq-actions-row">
-          <input type="number" min="1" step="1" value="1" class="qiq-qty">
-          <button class="qiq-btn" type="button" data-detail-sku="${sku}">Product details</button>
-          <button class="qiq-btn qiq-primary" type="button" data-sku="${sku}" data-slug="">Add to quotation</button>
+          <button class="qiq-btn" type="button" data-detail-sku="${sku}">تفاصيل المنتج</button>
+          <button class="qiq-btn qiq-primary" type="button" data-sku="${sku}" data-slug="">إضافة للسلة</button>
           <button class="qiq-btn" type="button" data-remove-sku="${sku}" style="background:#dc2626" title="حذف هذا البند">حذف</button>
         </div>
       </td>
@@ -175,22 +240,30 @@
       }catch{}
     });
 
-    // Add to quotation (Woo/Cart) — Enhanced with proper feedback
+    // Add to quotation (Woo/Cart) — Enhanced with proper feedback and navigation
     tr.querySelector('[data-sku]').addEventListener('click', async (ev)=>{
       ev.preventDefault();
       const btn = ev.currentTarget;
       const qty = Math.max(1, parseInt(tr.querySelector('.qiq-qty')?.value||"1",10));
       btn.disabled = true;
       const old = btn.textContent;
-      btn.textContent = "Adding…";
+      btn.textContent = "جاري الإضافة…";
       try {
         // TODO: اربط هنا مع /wp-json/qiq/v1/cart/add لو عندك الباك اند
         await new Promise(r=>setTimeout(r,400)); // محاكاة نجاح
-        btn.textContent = "Added ✓";
-        showNotification("تمت إضافة المنتج للعربة بنجاح", "success");
+        btn.textContent = "تم ✓";
+        showNotification("تمت إضافة المنتج للسلة بنجاح", "success");
+        
+        // Auto-navigate to quote.html after adding
+        setTimeout(() => {
+          if (confirm("تم إضافة المنتج بنجاح. هل تريد الانتقال لصفحة المعاينة؟")) {
+            window.location.href = "/quote.html";
+          }
+        }, 800);
+        
       } catch {
-        btn.textContent = "Error";
-        showNotification("خطأ في إضافة المنتج للعربة", "error");
+        btn.textContent = "خطأ";
+        showNotification("خطأ في إضافة المنتج للسلة", "error");
       } finally {
         setTimeout(()=>{ btn.textContent = old; btn.disabled = false; }, 900);
       }
@@ -207,6 +280,9 @@
         recalcTotals();
         showNotification("تم حذف البند بنجاح", "success");
         
+        // إضافة إلى السجل
+        addToLog('حذف', itemName, '');
+        
         // إعادة تطبيق البحث بعد الحذف
         if (searchInput && searchInput.value.trim()) {
           filterTable(searchInput.value);
@@ -216,6 +292,9 @@
 
     tbody.appendChild(tr);
     recalcTotals();
+    
+    // إضافة إلى السجل
+    addToLog('إضافة', name, `المصدر: ${source}`);
   }
 
   // تجهّز الداتا من زرار عليه data-*
@@ -227,6 +306,7 @@
       pn    : el.getAttribute("data-pn")    || "",
       image : el.getAttribute("data-image") || "",
       link  : el.getAttribute("data-link")  || "",
+      manufacturer: el.getAttribute("data-manufacturer") || "غير محدد",
       source: el.getAttribute("data-source")|| "Add"
     };
   }
@@ -262,6 +342,75 @@
       console.warn(e);
     }
   };
+
+  // ===== Draft Save/Load Functions =====
+  function saveDraftToStorage() {
+    try {
+      const draftData = getTableData().map(item => ({
+        ...item,
+        timestamp: new Date().toISOString()
+      }));
+      
+      localStorage.setItem('qiq-draft', JSON.stringify({
+        items: draftData,
+        savedAt: new Date().toISOString(),
+        version: '1.0'
+      }));
+      
+      showNotification(`تم حفظ المسودة بنجاح (${draftData.length} عنصر)`, "success");
+    } catch (error) {
+      showNotification("خطأ في حفظ المسودة", "error");
+      console.error('Draft save error:', error);
+    }
+  }
+
+  function loadDraftFromStorage() {
+    try {
+      const draftJson = localStorage.getItem('qiq-draft');
+      if (!draftJson) {
+        showNotification("لا توجد مسودة محفوظة", "warning");
+        return;
+      }
+      
+      const draft = JSON.parse(draftJson);
+      if (!draft.items || !Array.isArray(draft.items)) {
+        showNotification("المسودة المحفوظة تالفة", "error");
+        return;
+      }
+      
+      // Clear existing table
+      if (tbody) tbody.innerHTML = '';
+      
+      // Load draft items
+      let loadedCount = 0;
+      draft.items.forEach(item => {
+        if (item.name) {
+          buildRow({
+            name: item.name,
+            sku: item.pn || '',
+            pn: item.pn || '',
+            price: item.unit || '',
+            source: 'Draft',
+            image: '',
+            link: ''
+          });
+          loadedCount++;
+        }
+      });
+      
+      recalcTotals();
+      showNotification(`تم تحميل المسودة بنجاح (${loadedCount} عنصر)`, "success");
+      
+      // Scroll to table
+      if (tbody) {
+        tbody.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      
+    } catch (error) {
+      showNotification("خطأ في تحميل المسودة", "error");
+      console.error('Draft load error:', error);
+    }
+  }
 
   // ===== Export Functions =====
   function getTableData() {
@@ -359,6 +508,23 @@
   clearAllBtn?.addEventListener('click', clearAllItems);
   exportCsvBtn?.addEventListener('click', exportToCSV);
   exportXlsxBtn?.addEventListener('click', exportToExcel);
+  saveDraftBtn?.addEventListener('click', saveDraftToStorage);
+  loadDraftBtn?.addEventListener('click', () => {
+    if (tbody && tbody.children.length > 0) {
+      if (confirm("سيتم استبدال البيانات الحالية بالمسودة المحفوظة. هل تريد المتابعة؟")) {
+        loadDraftFromStorage();
+      }
+    } else {
+      loadDraftFromStorage();
+    }
+  });
+  toggleLogBtn?.addEventListener('click', toggleLog);
+  showLogBtn?.addEventListener('click', toggleLog);
+  clearLogBtn?.addEventListener('click', () => {
+    if (confirm("هل تريد مسح سجل العمليات؟")) {
+      clearLog();
+    }
+  });
 
   // Import BOQ functionality
   const importBtn = document.getElementById("qiq-import-btn");
