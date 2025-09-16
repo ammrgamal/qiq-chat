@@ -265,7 +265,6 @@
     setLoadingState(e.target, true);
     try {
       exportToExcel();
-      showNotification("تم تصدير الملف بنجاح", "success");
     } catch (error) {
       showNotification("حدث خطأ أثناء التصدير", "error");
     } finally {
@@ -279,7 +278,6 @@
     setLoadingState(e.target, true);
     try {
       exportToCSV();
-      showNotification("تم تصدير الملف بنجاح", "success");
     } catch (error) {
       showNotification("حدث خطأ أثناء التصدير", "error");
     } finally {
