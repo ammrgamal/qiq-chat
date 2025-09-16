@@ -23,17 +23,22 @@
 
   // ===== UI Helpers =====
   const showNotification = (message, type = 'info') => {
-    // Create a simple notification system
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed; top: 20px; right: 20px; z-index: 10000;
-      padding: 12px 16px; border-radius: 8px; color: white;
-      background: ${type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : '#2563eb'};
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
+    // Use the global toast system if available
+    if (window.QiqToast && window.QiqToast.show) {
+      window.QiqToast.show(message, type);
+    } else {
+      // Fallback notification system
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 10000;
+        padding: 12px 16px; border-radius: 8px; color: white;
+        background: ${type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : '#2563eb'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+    }
   };
 
   const setLoadingState = (button, loading = true) => {
@@ -435,6 +440,7 @@
         qty: Math.max(1, parseInt(tr.querySelector(".in-qty")?.value || "1", 10))
       });
     });
+    
     const s = {
       number: quoteNoEl.textContent,
       date: $("quote-date").value || todayISO(),
@@ -452,10 +458,86 @@
       payment_terms: $("payment-terms").value || "",
       terms: $("terms").value || "",
       include_install: $("include-install").checked,
-      items
+      items,
+      // Enhanced draft metadata
+      lastModified: new Date().toISOString(),
+      userToken: localStorage.getItem("qiq_token") || null,
+      isDraft: true,
+      version: 1
     };
+    
+    // Save to localStorage (local draft)
     localStorage.setItem(STATE_KEY, JSON.stringify(s));
-    if (notify) console.log("Saved.");
+    
+    // Also save to a separate drafts collection for the user
+    saveDraftToCollection(s);
+    
+    if (notify) {
+      console.log("Saved.");
+      showNotification("تم حفظ المسودة بنجاح", "success");
+    }
+  }
+
+  // Enhanced draft management
+  function saveDraftToCollection(quoteData) {
+    try {
+      const userToken = localStorage.getItem("qiq_token");
+      if (!userToken) return; // Only save drafts for logged-in users
+      
+      const draftsKey = `qiq_drafts_${userToken.slice(-10)}`; // Use last 10 chars of token as key
+      let drafts = [];
+      
+      try {
+        drafts = JSON.parse(localStorage.getItem(draftsKey) || "[]");
+      } catch { drafts = []; }
+      
+      // Find existing draft by quote number or create new
+      const existingIndex = drafts.findIndex(d => d.number === quoteData.number);
+      const draftData = {
+        ...quoteData,
+        id: existingIndex >= 0 ? drafts[existingIndex].id : uid(),
+        lastModified: new Date().toISOString()
+      };
+      
+      if (existingIndex >= 0) {
+        drafts[existingIndex] = draftData;
+      } else {
+        drafts.unshift(draftData); // Add to beginning
+      }
+      
+      // Keep only last 10 drafts
+      if (drafts.length > 10) {
+        drafts = drafts.slice(0, 10);
+      }
+      
+      localStorage.setItem(draftsKey, JSON.stringify(drafts));
+    } catch (error) {
+      console.warn("Failed to save draft to collection:", error);
+    }
+  }
+
+  // Function to load user drafts
+  function loadUserDrafts() {
+    try {
+      const userToken = localStorage.getItem("qiq_token");
+      if (!userToken) return [];
+      
+      const draftsKey = `qiq_drafts_${userToken.slice(-10)}`;
+      return JSON.parse(localStorage.getItem(draftsKey) || "[]");
+    } catch {
+      return [];
+    }
+  }
+
+  // Function to load a specific draft
+  function loadDraft(draftId) {
+    const drafts = loadUserDrafts();
+    const draft = drafts.find(d => d.id === draftId);
+    if (draft) {
+      // Load the draft data into the form
+      restoreState(draft);
+      showNotification("تم تحميل المسودة بنجاح", "success");
+    }
   }
 
   function loadState() {
@@ -463,6 +545,48 @@
       const raw = localStorage.getItem(STATE_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch { return null; }
+  }
+
+  function restoreState(state) {
+    if (!state) return;
+    
+    try {
+      // Restore form fields
+      if (state.client_name) $("client-name").value = state.client_name;
+      if (state.client_contact) $("client-contact").value = state.client_contact;
+      if (state.client_email) $("client-email").value = state.client_email;
+      if (state.client_phone) $("client-phone").value = state.client_phone;
+      if (state.project_name) $("project-name").value = state.project_name;
+      if (state.project_owner) $("project-owner").value = state.project_owner;
+      if (state.main_contractor) $("main-contractor").value = state.main_contractor;
+      if (state.site_location) $("site-location").value = state.site_location;
+      if (state.quote_date) $("quote-date").value = state.date;
+      if (state.currency) $("currency").value = state.currency;
+      if (state.payment_terms) $("payment-terms").value = state.payment_terms;
+      if (state.terms) $("terms").value = state.terms;
+      
+      $("need-assist").checked = !!state.need_assist;
+      $("include-install").checked = !!state.include_install;
+      
+      // Restore quote number
+      if (state.number) quoteNoEl.textContent = state.number;
+      
+      // Clear existing items and restore saved items
+      itemsBody.innerHTML = '';
+      if (state.items && Array.isArray(state.items)) {
+        state.items.forEach(item => {
+          if (item.desc || item.pn) {
+            addRow(item.desc, item.pn, item.unit, item.qty);
+          }
+        });
+      }
+      
+      recalcTotals();
+      showNotification("تم استعادة البيانات المحفوظة", "info");
+    } catch (error) {
+      console.error("Error restoring state:", error);
+      showNotification("خطأ في استعادة البيانات المحفوظة", "error");
+    }
   }
 
   function num(v) {
