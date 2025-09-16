@@ -1,0 +1,150 @@
+<html>
+<head>
+<style>
+body { font-family: Inter, system-ui; margin: 20px; background: #f8fafc; }
+.container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 20px 0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+th, td { border: 1px solid #f1f5f9; padding: 10px 12px; vertical-align: middle; text-align: left; }
+th { background: #f8fafc; font-weight: 600; color: #475569; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
+.desc-col { width: 65%; }
+.qty-col { width: 8%; text-align: center; min-width: 70px; }
+.price-col { width: 12%; text-align: right; min-width: 90px; }
+.total-col { width: 12%; text-align: right; min-width: 90px; font-weight: 600; }
+.actions-col { width: 3%; text-align: center; min-width: 60px; }
+.product-desc { line-height: 1.5; }
+.product-name { font-weight: 600; color: #1e293b; margin-bottom: 4px; display: block; font-size: 14px; }
+.product-details { font-size: 12px; color: #64748b; line-height: 1.4; }
+.product-brand { color: #475569; font-weight: 500; }
+.product-pn { color: #64748b; }
+.numeric { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+.action-icons { display: flex; gap: 4px; justify-content: center; align-items: center; }
+.action-btn { width: 24px; height: 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; transition: all 0.2s ease; }
+.edit { background: #dbeafe; color: #2563eb; }
+.duplicate { background: #d1fae5; color: #059669; }
+.delete { background: #fee2e2; color: #dc2626; }
+.qty-input { width: 60px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; }
+.guidance { background: #f0f9ff; border: 1px solid #bae6fd; color: #0c4a6e; padding: 8px 12px; border-radius: 6px; font-size: 13px; margin: 8px 0; text-align: center; }
+.proceed-cta { margin-top: 16px; text-align: center; padding: 16px; background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; border-radius: 12px; }
+.btn-proceed { background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25); }
+.empty-state { text-align: center; padding: 3rem 1rem; color: #6b7280; }
+.empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+.empty-message { font-size: 16px; font-weight: 500; color: #374151; }
+h2 { color: #1e293b; margin: 20px 0 10px; }
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Enhanced Quote Table UI - Compact & Clean Design</h2>
+
+<div class="guidance">
+Add products, edit quantities, then request your quote.
+</div>
+
+<table>
+<thead>
+<tr>
+<th class="desc-col">Product Description</th>
+<th class="qty-col">Qty</th>
+<th class="price-col">Unit Price</th>
+<th class="total-col">Total</th>
+<th class="actions-col"></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="desc-col">
+<div class="product-desc">
+<span class="product-name">Dell Inspiron 3511 Laptop</span>
+<div class="product-details">
+<span class="product-pn">(PN: ABC123)</span> - <span class="product-brand">Dell</span>
+</div>
+</div>
+</td>
+<td class="qty-col">
+<input class="qty-input" type="number" value="2">
+</td>
+<td class="price-col numeric">$850.00</td>
+<td class="total-col numeric">$1,700.00</td>
+<td class="actions-col">
+<div class="action-icons">
+<button class="action-btn edit" title="Edit">✏️</button>
+<button class="action-btn duplicate" title="Duplicate">📋</button>
+<button class="action-btn delete" title="Delete">🗑️</button>
+</div>
+</td>
+</tr>
+<tr>
+<td class="desc-col">
+<div class="product-desc">
+<span class="product-name">HP EliteBook 850 G8 Business Laptop</span>
+<div class="product-details">
+<span class="product-pn">(PN: 3C8A5PA)</span> - <span class="product-brand">HP</span>
+</div>
+</div>
+</td>
+<td class="qty-col">
+<input class="qty-input" type="number" value="1">
+</td>
+<td class="price-col numeric">$1,200.00</td>
+<td class="total-col numeric">$1,200.00</td>
+<td class="actions-col">
+<div class="action-icons">
+<button class="action-btn edit" title="Edit">✏️</button>
+<button class="action-btn duplicate" title="Duplicate">📋</button>
+<button class="action-btn delete" title="Delete">🗑️</button>
+</div>
+</td>
+</tr>
+<tr>
+<td class="desc-col">
+<div class="product-desc">
+<span class="product-name">Lenovo ThinkCentre M720s Desktop</span>
+<div class="product-details">
+<span class="product-pn">PN: 10SUS2RX00</span>
+</div>
+</div>
+</td>
+<td class="qty-col">
+<input class="qty-input" type="number" value="3">
+</td>
+<td class="price-col numeric">$650.00</td>
+<td class="total-col numeric">$1,950.00</td>
+<td class="actions-col">
+<div class="action-icons">
+<button class="action-btn edit" title="Edit">✏️</button>
+<button class="action-btn duplicate" title="Duplicate">📋</button>
+<button class="action-btn delete" title="Delete">🗑️</button>
+</div>
+</td>
+</tr>
+</tbody>
+<tfoot>
+<tr>
+<td colspan="3" style="text-align:left;">Subtotal:</td>
+<td class="numeric">$4,850.00</td>
+<td></td>
+</tr>
+<tr>
+<td colspan="3" style="text-align:left;"><strong>Grand Total:</strong></td>
+<td class="numeric"><strong>$4,850.00</strong></td>
+<td></td>
+</tr>
+</tfoot>
+</table>
+
+<div class="proceed-cta">
+<button class="btn-proceed">
+<span>📋</span>
+<span>Proceed to Request Quote</span>
+</button>
+</div>
+
+<h2>Empty State Example</h2>
+<div class="empty-state">
+<div class="empty-icon">📦</div>
+<div class="empty-message">Add products to start your quote.</div>
+</div>
+
+</div>
+</body>
+</html>
