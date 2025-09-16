@@ -478,16 +478,43 @@
   
   function exportToExcel() {
     const data = getTableData();
-    const ws = XLSX.utils.aoa_to_sheet([
-      ['الوصف', 'PN/SKU', 'سعر الوحدة', 'الكمية', 'الإجمالي'],
-      ...data.map(row => [row.desc, row.pn, row.unit, row.qty, row.total])
-    ]);
     
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Quote Items");
-    
-    const filename = `quote-${quoteNoEl.textContent}-${todayISO()}.xlsx`;
-    XLSX.writeFile(wb, filename);
+    // Check if XLSX library is available
+    if (typeof XLSX !== 'undefined') {
+      // Use XLSX library
+      const ws = XLSX.utils.aoa_to_sheet([
+        ['الوصف', 'PN/SKU', 'سعر الوحدة', 'الكمية', 'الإجمالي'],
+        ...data.map(row => [row.desc, row.pn, row.unit, row.qty, row.total])
+      ]);
+      
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Quote Items");
+      
+      const filename = `quote-${quoteNoEl.textContent}-${todayISO()}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    } else {
+      // Fallback: Export as Excel-compatible CSV with .xls extension
+      const csvContent = [
+        ['الوصف', 'PN/SKU', 'سعر الوحدة', 'الكمية', 'الإجمالي'].join('\t'),
+        ...data.map(row => [
+          row.desc,
+          row.pn,
+          row.unit,
+          row.qty,
+          row.total
+        ].join('\t'))
+      ].join('\n');
+      
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `quote-${quoteNoEl.textContent}-${todayISO()}.xls`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   }
 
   function exportToCSV() {
@@ -518,29 +545,22 @@
     const reader = new FileReader();
     reader.onload = function(e) {
       try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-        
-        // Skip header row and process data
-        let importedCount = 0;
-        for (let i = 1; i < jsonData.length; i++) {
-          const row = jsonData[i];
-          if (row.length >= 4 && (row[0] || row[1])) { // At least description or PN
-            addRowFromData({
-              desc: String(row[0] || ''),
-              pn: String(row[1] || ''),
-              unit: Number(row[2] || 0),
-              qty: Number(row[3] || 1)
-            });
-            importedCount++;
-          }
+        if (typeof XLSX !== 'undefined') {
+          // Use XLSX library for proper Excel files
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+          
+          processImportedData(jsonData);
+        } else {
+          // Fallback: Try to parse as CSV for basic Excel files
+          const text = e.target.result;
+          const rows = text.split('\n').map(row => 
+            row.split(/[,\t]/).map(cell => cell.trim().replace(/"/g, ''))
+          );
+          processImportedData(rows);
         }
-        
-        recalcTotals();
-        saveState();
-        showNotification(`تم استيراد ${importedCount} عنصر بنجاح`, "success");
       } catch (error) {
         showNotification("خطأ في قراءة الملف. تأكد من صحة التنسيق", "error");
         console.error('Import error:', error);
@@ -549,7 +569,34 @@
         $("excel-file-input").value = ''; // Clear the input
       }
     };
-    reader.readAsArrayBuffer(file);
+
+    // Read as array buffer for XLSX, or as text for CSV fallback
+    if (typeof XLSX !== 'undefined') {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsText(file, 'UTF-8');
+    }
+  }
+
+  function processImportedData(jsonData) {
+    // Skip header row and process data
+    let importedCount = 0;
+    for (let i = 1; i < jsonData.length; i++) {
+      const row = jsonData[i];
+      if (row.length >= 4 && (row[0] || row[1])) { // At least description or PN
+        addRowFromData({
+          desc: String(row[0] || ''),
+          pn: String(row[1] || ''),
+          unit: Number(row[2] || 0),
+          qty: Number(row[3] || 1)
+        });
+        importedCount++;
+      }
+    }
+    
+    recalcTotals();
+    saveState();
+    showNotification(`تم استيراد ${importedCount} عنصر بنجاح`, "success");
   }
 
   function getTableData() {
