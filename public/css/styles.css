@@ -24,11 +24,51 @@
 .qiq-right{display:flex;gap:8px;align-items:center}
 .qiq-status{font-size:12px;color:#6b7280;margin-inline-start:8px}
 
-/* ===== Toast ===== */
+/* ===== Toast Notifications ===== */
 .qiq-toast{position:fixed;right:16px;bottom:16px;z-index:9999;display:flex;flex-direction:column;gap:8px}
-.qiq-toast .item{background:#111827;color:#fff;padding:12px 14px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px}
+.qiq-toast .item{
+  background:#111827;color:#fff;padding:12px 14px;border-radius:12px;
+  box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px;
+  animation: qiq-slide-in 0.3s ease-out, qiq-fade-out 0.3s ease-in 2.7s;
+  transform: translateX(100%);
+}
+.qiq-toast .item.success{background:#059669;border-left:4px solid #047857}
+.qiq-toast .item.error{background:#dc2626;border-left:4px solid #b91c1c}
+.qiq-toast .item.warning{background:#f59e0b;border-left:4px solid #d97706}
+.qiq-toast .item.info{background:#2563eb;border-left:4px solid #1d4ed8}
 .qiq-toast .item a{color:#93c5fd;text-decoration:underline}
-.qiq-toast .close{margin-inline-start:8px;background:transparent;border:0;color:#fff;cursor:pointer;font-size:16px}
+.qiq-toast .close{margin-inline-start:8px;background:transparent;border:0;color:#fff;cursor:pointer;font-size:16px;opacity:0.7}
+.qiq-toast .close:hover{opacity:1}
+
+@keyframes qiq-slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes qiq-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* ===== Search Filter ===== */
+.qiq-search{
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.qiq-search-input{
+  flex: 1;
+  max-width: 300px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: #fff;
+}
+.qiq-search-icon{
+  color: #6b7280;
+  font-size: 16px;
+}
 
 /* ===== BOQ table ===== */
 .qiq-boq{max-width:980px;margin:16px auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:block}
