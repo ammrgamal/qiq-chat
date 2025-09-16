@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Export Bug Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .qiq-chip { background: #e0e0e0; padding: 2px 8px; margin: 2px; border-radius: 4px; font-size: 12px; }
+        .qiq-qty { width: 60px; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Export Bug Test</h1>
+    
+    <div>
+        <button id="qiq-export-csv" type="button">Export CSV</button>
+        <button id="qiq-export-xlsx" type="button">Export XLSX</button>
+        <button onclick="addTestProduct()">Add Test Product</button>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Description / PN / SKU</th>
+                <th>Qty</th>
+                <th>Manufacturer</th>
+                <th>Unit Price</th>
+                <th>Line Total</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="qiq-body">
+            <!-- Products will be added here -->
+        </tbody>
+    </table>
+
+    <script>
+        // Simplified version of the functions for testing
+        const tbody = document.getElementById("qiq-body");
+        
+        function numFromPrice(v) {
+            return Number(String(v || "").replace(/[^\d.]/g, "")) || 0;
+        }
+        
+        function showNotification(message, type) {
+            alert(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        // The fixed getTableData function
+        function getTableData() {
+            const data = [];
+            tbody?.querySelectorAll("tr").forEach(tr => {
+                const img = tr.querySelector(".qiq-img")?.src || "";
+                const name = tr.querySelector("strong")?.textContent || "";
+                
+                // Find the PN/SKU chip specifically (not just any chip)
+                const chips = tr.querySelectorAll(".qiq-chip");
+                let pn = "";
+                chips.forEach(chip => {
+                    if (chip.textContent.startsWith("PN/SKU: ")) {
+                        pn = chip.textContent.replace("PN/SKU: ", "");
+                    }
+                });
+                
+                const priceText = tr.dataset.unit || "";
+                const unit = numFromPrice(priceText);
+                const qty = Math.max(1, parseInt(tr.querySelector(".qiq-qty")?.value || "1", 10));
+                const total = unit * qty;
+
+                // Include row if it has a meaningful name or PN/SKU
+                if ((name && name.trim() && name !== "—") || (pn && pn.trim())) {
+                    data.push({ name, pn, unit, qty, total });
+                }
+            });
+            return data;
+        }
+        
+        function exportToCSV() {
+            const data = getTableData();
+            console.log('Export CSV - data found:', data.length, data);
+            if (!data.length) {
+                showNotification("لا توجد بيانات للتصدير", "error");
+                return;
+            }
+
+            const csvContent = [
+                ['الوصف', 'PN/SKU', 'سعر الوحدة', 'الكمية', 'الإجمالي'].join(','),
+                ...data.map(row => [
+                    `"${row.name.replace(/"/g, '""')}"`,
+                    `"${row.pn.replace(/"/g, '""')}"`,
+                    row.unit,
+                    row.qty,
+                    row.total
+                ].join(','))
+            ].join('\\n');
+
+            console.log('CSV Content:', csvContent);
+            showNotification("تم تصدير ملف CSV بنجاح", "success");
+        }
+        
+        function addTestProduct() {
+            const tr = document.createElement("tr");
+            tr.dataset.unit = "100";
+            tr.innerHTML = `
+                <td><img class="qiq-img" src="https://via.placeholder.com/68?text=IMG" alt="Test Product"></td>
+                <td>
+                    <strong>Test Product Name</strong>
+                    <div class="qiq-chip">PN/SKU: TEST123</div>
+                    <div class="qiq-chip" style="background:#f5f5f5">Source: Test</div>
+                </td>
+                <td><input type="number" min="1" step="1" value="2" class="qiq-qty"></td>
+                <td>Test Manufacturer</td>
+                <td>$100.00</td>
+                <td>$200.00</td>
+                <td>Actions</td>
+            `;
+            tbody.appendChild(tr);
+        }
+        
+        // Add event listeners
+        document.getElementById("qiq-export-csv").addEventListener("click", exportToCSV);
+        document.getElementById("qiq-export-xlsx").addEventListener("click", () => {
+            showNotification("Excel export would work the same way", "info");
+        });
+        
+        // Add a test product automatically
+        addTestProduct();
+    </script>
+</body>
+</html>

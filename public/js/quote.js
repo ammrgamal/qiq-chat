@@ -602,6 +602,10 @@
   
   function exportToExcel() {
     const data = getTableData();
+    if (!data.length) {
+      showNotification("لا توجد بيانات للتصدير", "error");
+      return;
+    }
     
     // Check if XLSX library is available
     if (typeof XLSX !== 'undefined') {
@@ -639,10 +643,17 @@
       link.click();
       document.body.removeChild(link);
     }
+    
+    showNotification("تم تصدير ملف Excel بنجاح", "success");
   }
 
   function exportToCSV() {
     const data = getTableData();
+    if (!data.length) {
+      showNotification("لا توجد بيانات للتصدير", "error");
+      return;
+    }
+    
     const csvContent = [
       ['الوصف', 'PN/SKU', 'سعر الوحدة', 'الكمية', 'الإجمالي'].join(','),
       ...data.map(row => [
@@ -663,6 +674,8 @@
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    showNotification("تم تصدير ملف CSV بنجاح", "success");
   }
 
   function importFromExcel(file) {
@@ -732,7 +745,10 @@
       const qty = Math.max(1, parseInt(tr.querySelector(".in-qty")?.value || "1", 10));
       const total = unit * qty;
       
-      data.push({ desc, pn, unit, qty, total });
+      // Only include rows with actual data (description or PN/SKU)
+      if ((desc && desc.trim()) || (pn && pn.trim())) {
+        data.push({ desc, pn, unit, qty, total });
+      }
     });
     return data;
   }

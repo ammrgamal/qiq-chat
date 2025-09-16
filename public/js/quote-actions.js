@@ -418,14 +418,23 @@
     tbody?.querySelectorAll("tr").forEach(tr => {
       const img = tr.querySelector(".qiq-img")?.src || "";
       const name = tr.querySelector("strong")?.textContent || "";
-      const pnChip = tr.querySelector(".qiq-chip");
-      const pn = pnChip ? pnChip.textContent.replace("PN/SKU: ", "") : "";
+      
+      // Find the PN/SKU chip specifically (not just any chip)
+      const chips = tr.querySelectorAll(".qiq-chip");
+      let pn = "";
+      chips.forEach(chip => {
+        if (chip.textContent.startsWith("PN/SKU: ")) {
+          pn = chip.textContent.replace("PN/SKU: ", "");
+        }
+      });
+      
       const priceText = tr.dataset.unit || "";
       const unit = numFromPrice(priceText);
       const qty = Math.max(1, parseInt(tr.querySelector(".qiq-qty")?.value || "1", 10));
       const total = unit * qty;
 
-      if (name) { // Only include rows with actual data
+      // Include row if it has a meaningful name or PN/SKU
+      if ((name && name.trim() && name !== "—") || (pn && pn.trim())) {
         data.push({ name, pn, unit, qty, total });
       }
     });
@@ -434,6 +443,7 @@
 
   function exportToCSV() {
     const data = getTableData();
+    console.log('Export CSV - data found:', data.length, data); // Debug log
     if (!data.length) {
       showNotification("لا توجد بيانات للتصدير", "error");
       return;
@@ -465,6 +475,7 @@
 
   function exportToExcel() {
     const data = getTableData();
+    console.log('Export Excel - data found:', data.length, data); // Debug log
     if (!data.length) {
       showNotification("لا توجد بيانات للتصدير", "error");
       return;
