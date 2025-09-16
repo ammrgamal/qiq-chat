@@ -6,7 +6,7 @@
  * @param {number} hits - عدد النتائج المطلوبة (اختياري)
  * @returns {Promise<Array>} مصفوفة النتائج أو []
  */
-export async function aSearch(query, hits = 10) {
+async function aSearch(query, hits = 10) {
   const endpoint = "/api/search";
 
   // تنظيف الكويري سريعًا
@@ -48,6 +48,16 @@ export async function aSearch(query, hits = 10) {
 /**
  * مثال بسيط لو عايز دالة مريحة بترجع أول نتيجة فقط.
  * @param {string} query
+ * @returns {Promise<Object|null>}
+ */
+async function aSearchFirst(query) {
+  const hits = await aSearch(query, 1);
+  return hits.length > 0 ? hits[0] : null;
+}
+
+// Make functions globally available
+window.aSearch = aSearch;
+window.aSearchFirst = aSearchFirst;
  * @returns {Promise<Object|null>}
  */
 export async function aSearchFirst(query) {

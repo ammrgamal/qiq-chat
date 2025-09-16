@@ -76,11 +76,22 @@
 .qiq-table-wrap{overflow:auto;max-height:520px;border-top:1px dashed #e5e7eb;will-change:contents}
 .qiq-table{width:100%;border-collapse:collapse;background:#fff;table-layout:fixed}
 .qiq-table th,.qiq-table td{padding:10px;border-bottom:1px solid #eef2f7;vertical-align:top;text-align:right}
+.qiq-table th{background:#f8fafc;font-weight:600;position:sticky;top:0;z-index:5}
+.qiq-table tbody tr:hover{background:#f9fafb}
 .qiq-img{width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid #eee;background:#fff}
 .qiq-actions-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .qiq-qty{width:70px;padding:8px;border:1px solid #d1d5db;border-radius:8px}
 .qiq-link{color:#2563eb;text-decoration:none}
 .qiq-chip{display:inline-block;background:#eef2ff;border:1px solid #dbe1ff;border-radius:8px;padding:2px 8px;margin-top:6px;font-size:12px}
+
+/* ===== Account/Profile Cards ===== */
+.qiq-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:16px}
+.qiq-card h3{margin:0 0 12px 0;color:#111827;font-size:18px}
+.qiq-card .row{margin-bottom:12px}
+.qiq-card label{display:block;margin-bottom:4px;font-weight:500;color:#374151}
+.qiq-card input,.qiq-card select,.qiq-card textarea{width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px}
+.qiq-card input:disabled{background:#f9fafb;color:#6b7280}
+.qiq-card small{color:#6b7280;font-size:12px;margin-top:4px;display:block}
 
 /* ===== Inline blocks ===== */
 .qiq-section-title{margin:8px 0 6px;font-weight:700}
