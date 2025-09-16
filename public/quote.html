@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>طلب عرض سعر | QuickITQuote</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <!-- SheetJS for Excel import/export functionality -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root{ --border:#e5e7eb; --muted:#6b7280; --accent:#2563eb; --bg:#f8fafc; --ok:#059669; }
     body{ font-family:Inter,system-ui,Segoe UI,Arial; background:#fff; color:#111; margin:0 }
@@ -38,6 +40,16 @@
     }
     .notice{ background:#f0f9ff; border:1px solid #dbeafe; color:#0c4a6e; padding:8px 10px; border-radius:10px; font-size:13px }
     .checkbox{ display:flex; align-items:center; gap:8px }
+    .btn-danger{ background:#dc2626 !important; }
+    .btn-danger:hover{ background:#b91c1c !important; }
+    .loading-spinner{ display:inline-block; width:16px; height:16px; border:2px solid #fff; border-top:2px solid transparent; border-radius:50%; animation:spin 1s linear infinite; margin-right:8px; }
+    @keyframes spin{ 0%{ transform:rotate(0deg); } 100%{ transform:rotate(360deg); } }
+    .sticky-header thead th{ position:sticky; top:0; background:#f5f7fa; z-index:10; }
+    .search-container{ margin:10px 0; }
+    .search-input{ width:300px; padding:8px; border:1px solid var(--border); border-radius:8px; }
+    .preview-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:9999; }
+    .preview-overlay img{ max-width:90vw; max-height:90vh; border-radius:8px; }
+    .preview-close{ position:absolute; top:20px; right:20px; background:#fff; border:none; border-radius:50%; width:40px; height:40px; cursor:pointer; font-size:20px; }
   </style>
 </head>
 <body>
@@ -121,12 +133,22 @@
       <div class="flex">
         <div style="font-weight:700">بنود عرض السعر</div>
         <div class="right no-print flex">
+          <button id="btn-clear-all" class="btn btn-danger">مسح الكل</button>
+          <button id="btn-import-excel" class="btn btn-primary">استيراد Excel</button>
+          <button id="btn-export-csv" class="btn">تصدير CSV</button>
+          <button id="btn-export-excel" class="btn">تصدير XLSX</button>
           <button id="btn-add-row" class="btn">إضافة بند يدوي</button>
           <button id="btn-load-staged" class="btn">تحميل البنود من الشات</button>
         </div>
       </div>
+      
+      <!-- Search/Filter -->
+      <div class="search-container no-print">
+        <input id="search-input" class="search-input" placeholder="البحث في البنود (الوصف أو PN/SKU)..." />
+      </div>
+      
       <div class="table-wrap">
-        <table id="items-table" aria-label="Quote items">
+        <table id="items-table" class="sticky-header" aria-label="Quote items">
           <thead>
             <tr>
               <th style="width:40%">الوصف / PN / SKU</th>
@@ -152,13 +174,16 @@
               <td class="no-print"></td>
             </tr>
             <tr>
-              <td colspan="3" style="text-align:left">الإجمالي الكلي (Total):</td>
+              <td colspan="3" style="text-align:left">الإجمالي الكلي (Grand Total):</td>
               <td id="grand-cell"><strong>-</strong></td>
               <td class="no-print"></td>
             </tr>
           </tfoot>
         </table>
       </div>
+      
+      <!-- Hidden file input for Excel import -->
+      <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none" />
     </div>
 
     <!-- Payments & Terms -->
@@ -190,6 +215,12 @@
 
     <!-- Hidden payload preview (for debug) -->
     <pre id="payload-preview" class="card print-only" style="white-space:pre-wrap;word-wrap:break-word"></pre>
+
+    <!-- Image Preview Overlay -->
+    <div id="image-preview-overlay" class="preview-overlay">
+      <button class="preview-close" onclick="closeImagePreview()">×</button>
+      <img id="preview-image" src="" alt="Preview" />
+    </div>
 
   </div>
 

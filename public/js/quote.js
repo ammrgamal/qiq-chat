@@ -1,4 +1,8 @@
 (function () {
+  // ===== Global variables =====
+  let isLoading = false;
+  let filteredRows = [];
+
   // ===== Helpers =====
   const $ = (id) => document.getElementById(id);
   const fmt = (v, cur) => {
@@ -16,6 +20,35 @@
   const getCurrency = () => $("currency").value || "USD";
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const uid = () => Math.random().toString(36).slice(2, 8).toUpperCase();
+
+  // ===== UI Helpers =====
+  const showNotification = (message, type = 'info') => {
+    // Create a simple notification system
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed; top: 20px; right: 20px; z-index: 10000;
+      padding: 12px 16px; border-radius: 8px; color: white;
+      background: ${type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : '#2563eb'};
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+  };
+
+  const setLoadingState = (button, loading = true) => {
+    if (loading) {
+      button.disabled = true;
+      button.innerHTML = '<span class="loading-spinner"></span>' + button.textContent;
+    } else {
+      button.disabled = false;
+      button.innerHTML = button.textContent.replace(/^.*?>/, '');
+    }
+  };
+
+  const confirmAction = (message) => {
+    return window.confirm(message);
+  };
 
   // ===== Elements =====
   const logoEl = $("qo-logo");
@@ -123,8 +156,9 @@
     // دمج بدون مسح القديم
     try {
       const stagedRaw = localStorage.getItem(STAGED_KEY);
-      if (!stagedRaw) return alert("لا يوجد عناصر Staged مخزنة.");
+      if (!stagedRaw) return showNotification("لا يوجد عناصر Staged مخزنة", "error");
       const staged = JSON.parse(stagedRaw) || [];
+      let loadedCount = 0;
       staged.forEach((it) => {
         addRowFromData({
           desc: it.Name || it.name || "—",
@@ -132,11 +166,13 @@
           unit: num(it.UnitPrice || it.unitPrice || it.price || 0),
           qty: Number(it.Qty || it.qty || 1)
         });
+        loadedCount++;
       });
       recalcTotals();
+      showNotification(`تم تحميل ${loadedCount} عنصر من الشات`, "success");
     } catch (err) {
       console.warn(err);
-      alert("تعذر تحميل البنود من التخزين المحلي.");
+      showNotification("تعذر تحميل البنود من التخزين المحلي", "error");
     }
   });
 
@@ -154,23 +190,29 @@
   $("btn-save").addEventListener("click", (e) => {
     e.preventDefault();
     saveState(true);
-    alert("تم حفظ المسودة محليًا.");
+    showNotification("تم حفظ المسودة محليًا", "success");
   });
 
   $("btn-request-special").addEventListener("click", async (e) => {
     e.preventDefault();
     const payload = buildPayload({ reason: "special-price" });
     showPayloadPreview(payload);
+    setLoadingState(e.target, true);
     try {
       const r = await fetch("/api/special-quote", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload)
       });
-      if (r.ok) alert("تم إرسال طلب السعر المُخصّص. سنتواصل معك للتحقق.");
-      else alert("تعذر الإرسال (API).");
+      if (r.ok) {
+        showNotification("تم إرسال طلب السعر المُخصّص. سنتواصل معك للتحقق", "success");
+      } else {
+        showNotification("تعذر الإرسال (API)", "error");
+      }
     } catch (err) {
-      alert("تعذر الاتصال بالخادم.");
+      showNotification("تعذر الاتصال بالخادم", "error");
+    } finally {
+      setLoadingState(e.target, false);
     }
   });
 
@@ -178,16 +220,104 @@
     e.preventDefault();
     const payload = buildPayload({ reason: "standard-quote" });
     showPayloadPreview(payload);
+    setLoadingState(e.target, true);
     try {
       const r = await fetch("/api/special-quote", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload)
       });
-      if (r.ok) alert("تم إرسال طلب عرض السعر.");
-      else alert("تعذر الإرسال (API).");
+      if (r.ok) {
+        showNotification("تم إرسال طلب عرض السعر بنجاح", "success");
+      } else {
+        showNotification("تعذر الإرسال (API)", "error");
+      }
     } catch (err) {
-      alert("تعذر الاتصال بالخادم.");
+      showNotification("تعذر الاتصال بالخادم", "error");
+    } finally {
+      setLoadingState(e.target, false);
+    }
+  });
+
+  // ===== New Event Handlers =====
+  
+  // Clear All Button
+  $("btn-clear-all").addEventListener("click", (e) => {
+    e.preventDefault();
+    if (confirmAction("هل أنت متأكد من حذف جميع البنود؟ هذا الإجراء لا يمكن التراجع عنه.")) {
+      const tbody = $("items-body");
+      tbody.innerHTML = '';
+      addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 }); // Add one empty row
+      recalcTotals();
+      saveState();
+      showNotification("تم مسح جميع البنود", "success");
+    }
+  });
+
+  // Export Excel Button
+  $("btn-export-excel").addEventListener("click", (e) => {
+    e.preventDefault();
+    setLoadingState(e.target, true);
+    try {
+      exportToExcel();
+      showNotification("تم تصدير الملف بنجاح", "success");
+    } catch (error) {
+      showNotification("حدث خطأ أثناء التصدير", "error");
+    } finally {
+      setLoadingState(e.target, false);
+    }
+  });
+
+  // Export CSV Button
+  $("btn-export-csv").addEventListener("click", (e) => {
+    e.preventDefault();
+    setLoadingState(e.target, true);
+    try {
+      exportToCSV();
+      showNotification("تم تصدير الملف بنجاح", "success");
+    } catch (error) {
+      showNotification("حدث خطأ أثناء التصدير", "error");
+    } finally {
+      setLoadingState(e.target, false);
+    }
+  });
+
+  // Import Excel Button
+  $("btn-import-excel").addEventListener("click", (e) => {
+    e.preventDefault();
+    $("excel-file-input").click();
+  });
+
+  $("excel-file-input").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setLoadingState($("btn-import-excel"), true);
+      importFromExcel(file);
+    }
+  });
+
+  // Search functionality
+  $("search-input").addEventListener("input", (e) => {
+    filterTable(e.target.value);
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      switch(e.key.toLowerCase()) {
+        case 'e':
+          e.preventDefault();
+          $("btn-export-excel").click();
+          break;
+        case 's':
+          e.preventDefault();
+          $("btn-save").click();
+          break;
+        case 'p':
+          e.preventDefault();
+          $("btn-print").click();
+          break;
+      }
     }
   });
 
@@ -343,4 +473,126 @@
   function esc(s) {
     return String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   }
+
+  // ===== New Export/Import Functions =====
+  
+  function exportToExcel() {
+    const data = getTableData();
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['الوصف', 'PN/SKU', 'سعر الوحدة', 'الكمية', 'الإجمالي'],
+      ...data.map(row => [row.desc, row.pn, row.unit, row.qty, row.total])
+    ]);
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Quote Items");
+    
+    const filename = `quote-${quoteNoEl.textContent}-${todayISO()}.xlsx`;
+    XLSX.writeFile(wb, filename);
+  }
+
+  function exportToCSV() {
+    const data = getTableData();
+    const csvContent = [
+      ['الوصف', 'PN/SKU', 'سعر الوحدة', 'الكمية', 'الإجمالي'].join(','),
+      ...data.map(row => [
+        `"${row.desc.replace(/"/g, '""')}"`,
+        `"${row.pn.replace(/"/g, '""')}"`,
+        row.unit,
+        row.qty,
+        row.total
+      ].join(','))
+    ].join('\n');
+    
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `quote-${quoteNoEl.textContent}-${todayISO()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function importFromExcel(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+        
+        // Skip header row and process data
+        let importedCount = 0;
+        for (let i = 1; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (row.length >= 4 && (row[0] || row[1])) { // At least description or PN
+            addRowFromData({
+              desc: String(row[0] || ''),
+              pn: String(row[1] || ''),
+              unit: Number(row[2] || 0),
+              qty: Number(row[3] || 1)
+            });
+            importedCount++;
+          }
+        }
+        
+        recalcTotals();
+        saveState();
+        showNotification(`تم استيراد ${importedCount} عنصر بنجاح`, "success");
+      } catch (error) {
+        showNotification("خطأ في قراءة الملف. تأكد من صحة التنسيق", "error");
+        console.error('Import error:', error);
+      } finally {
+        setLoadingState($("btn-import-excel"), false);
+        $("excel-file-input").value = ''; // Clear the input
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function getTableData() {
+    const data = [];
+    itemsBody.querySelectorAll("tr").forEach(tr => {
+      const desc = tr.querySelector(".in-desc")?.value || "";
+      const pn = tr.querySelector(".in-pn")?.value || "";
+      const unit = num(tr.querySelector(".in-unit")?.value);
+      const qty = Math.max(1, parseInt(tr.querySelector(".in-qty")?.value || "1", 10));
+      const total = unit * qty;
+      
+      data.push({ desc, pn, unit, qty, total });
+    });
+    return data;
+  }
+
+  function filterTable(searchTerm) {
+    const rows = itemsBody.querySelectorAll("tr");
+    const term = searchTerm.toLowerCase();
+    
+    rows.forEach(row => {
+      const desc = (row.querySelector(".in-desc")?.value || "").toLowerCase();
+      const pn = (row.querySelector(".in-pn")?.value || "").toLowerCase();
+      const shouldShow = !term || desc.includes(term) || pn.includes(term);
+      row.style.display = shouldShow ? "" : "none";
+    });
+  }
+
+  // ===== Image Preview Functions =====
+  window.openImagePreview = function(imgSrc) {
+    const overlay = $("image-preview-overlay");
+    const previewImg = $("preview-image");
+    previewImg.src = imgSrc;
+    overlay.style.display = "flex";
+  };
+
+  window.closeImagePreview = function() {
+    const overlay = $("image-preview-overlay");
+    overlay.style.display = "none";
+  };
+
+  // Load saved state from localStorage on page load
+  window.addEventListener('beforeunload', () => {
+    saveState();
+  });
 })();
