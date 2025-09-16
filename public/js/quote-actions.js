@@ -75,7 +75,11 @@
     tr.setAttribute("data-key", key);
 
     tr.innerHTML = `
-      <td><img class="qiq-img" src="${img}" alt="${name}" onerror="this.src='https://via.placeholder.com/68?text=IMG'"></td>
+      <td><img class="qiq-img" src="${img}" alt="${name}" 
+              onerror="this.src='https://via.placeholder.com/68?text=IMG'"
+              onclick="openImagePreview('${img}')" 
+              style="cursor:pointer" 
+              title="اضغط لمعاينة الصورة"></td>
       <td>
         ${link?`<a class="qiq-link" target="_blank" rel="noopener" href="${link}"><strong>${name}</strong></a>`:`<strong>${name}</strong>`}
         ${pn? `<div class="qiq-chip">PN/SKU: ${pn}</div>` : ""}
@@ -269,5 +273,77 @@
   clearAllBtn?.addEventListener('click', clearAllItems);
   exportCsvBtn?.addEventListener('click', exportToCSV);
   exportXlsxBtn?.addEventListener('click', exportToExcel);
+
+  // Import BOQ functionality
+  const importBtn = document.getElementById("qiq-import-btn");
+  const fileInput = document.getElementById("qiq-file");
+
+  importBtn?.addEventListener('click', () => {
+    fileInput?.click();
+  });
+
+  fileInput?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      importFromExcel(file);
+    }
+  });
+
+  function importFromExcel(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const text = e.target.result;
+        const rows = text.split('\n').map(row => 
+          row.split(/[,\t]/).map(cell => cell.trim().replace(/"/g, ''))
+        );
+        
+        let importedCount = 0;
+        // Skip header row and process data
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (row.length >= 2 && (row[0] || row[1])) { // At least name or SKU
+            const itemData = {
+              name: String(row[0] || 'Imported Item'),
+              sku: String(row[1] || ''),
+              price: String(row[2] || '0'),
+              source: 'Import'
+            };
+            buildRow(itemData);
+            importedCount++;
+          }
+        }
+        
+        if (importedCount > 0) {
+          showNotification(`تم استيراد ${importedCount} عنصر بنجاح`, "success");
+        } else {
+          showNotification("لم يتم العثور على بيانات صالحة للاستيراد", "error");
+        }
+      } catch (error) {
+        showNotification("خطأ في قراءة الملف. تأكد من صحة التنسيق", "error");
+        console.error('Import error:', error);
+      } finally {
+        fileInput.value = ''; // Clear the input
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  // ===== Image Preview Functions =====
+  window.openImagePreview = function(imgSrc) {
+    const overlay = document.getElementById("image-preview-overlay");
+    const previewImg = document.getElementById("preview-image");
+    if (overlay && previewImg) {
+      previewImg.src = imgSrc;
+      overlay.style.display = "flex";
+    }
+  };
+
+  window.closeImagePreview = function() {
+    const overlay = document.getElementById("image-preview-overlay");
+    if (overlay) {
+      overlay.style.display = "none";
+    }
+  };
 
 })();
