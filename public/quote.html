@@ -6,7 +6,11 @@
   <title>طلب عرض سعر | QuickITQuote</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <!-- SheetJS for Excel import/export functionality -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    // Simple Excel-compatible CSV with .xls extension as fallback if SheetJS fails
+    window.XLSX_FALLBACK = true;
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onerror="console.warn('XLSX library failed to load, using fallback')"></script>
   <style>
     :root{ --border:#e5e7eb; --muted:#6b7280; --accent:#2563eb; --bg:#f8fafc; --ok:#059669; }
     body{ font-family:Inter,system-ui,Segoe UI,Arial; background:#fff; color:#111; margin:0 }

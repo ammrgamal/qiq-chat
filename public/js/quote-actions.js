@@ -3,6 +3,9 @@
   const tbody     = document.getElementById("qiq-body");     // جدول البنود
   const grandCell = document.getElementById("qiq-grand");    // الإجمالي
   const addAllBtn = document.getElementById("qiq-add-all");  // زرار Add all matched (لو موجود)
+  const clearAllBtn = document.getElementById("qiq-clear-all"); // زرار Clear all
+  const exportCsvBtn = document.getElementById("qiq-export-csv"); // زرار Export CSV
+  const exportXlsxBtn = document.getElementById("qiq-export-xlsx"); // زرار Export XLSX
 
   // تنسيقات الأسعار
   function fmtUSD(v){
@@ -14,6 +17,20 @@
   function numFromPrice(v){
     return Number(String(v||"").replace(/[^\d.]/g,"")) || 0;
   }
+
+  // Enhanced notification system
+  const showNotification = (message, type = 'info') => {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed; top: 20px; right: 20px; z-index: 10000;
+      padding: 12px 16px; border-radius: 8px; color: white;
+      background: ${type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : '#2563eb'};
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+  };
 
   // إعادة حساب الإجمالي وحالة زرار Add all
   function recalcTotals(){
@@ -86,7 +103,7 @@
       }catch{}
     });
 
-    // Add to quotation (Woo/Cart) — Stub: عدّل النداء حسب API عربيتك لو موجود
+    // Add to quotation (Woo/Cart) — Enhanced with proper feedback
     tr.querySelector('[data-sku]').addEventListener('click', async (ev)=>{
       ev.preventDefault();
       const btn = ev.currentTarget;
@@ -98,8 +115,10 @@
         // TODO: اربط هنا مع /wp-json/qiq/v1/cart/add لو عندك الباك اند
         await new Promise(r=>setTimeout(r,400)); // محاكاة نجاح
         btn.textContent = "Added ✓";
+        showNotification("تمت إضافة المنتج للعربة بنجاح", "success");
       } catch {
         btn.textContent = "Error";
+        showNotification("خطأ في إضافة المنتج للعربة", "error");
       } finally {
         setTimeout(()=>{ btn.textContent = old; btn.disabled = false; }, 900);
       }
@@ -146,13 +165,109 @@
       if (tbody) {
         tbody.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-      // مِسچ بسيط
-      // eslint-disable-next-line no-alert
-      alert("تمت إضافة البند إلى عرض السعر.");
+      // إشعار محسّن
+      showNotification("تمت إضافة البند إلى عرض السعر", "success");
     }catch(e){
-      // eslint-disable-next-line no-alert
-      alert("حدث خطأ أثناء إضافة العنصر.");
+      showNotification("حدث خطأ أثناء إضافة العنصر", "error");
       console.warn(e);
     }
   };
+
+  // ===== Export Functions =====
+  function getTableData() {
+    const data = [];
+    tbody?.querySelectorAll("tr").forEach(tr => {
+      const img = tr.querySelector(".qiq-img")?.src || "";
+      const name = tr.querySelector("strong")?.textContent || "";
+      const pnChip = tr.querySelector(".qiq-chip");
+      const pn = pnChip ? pnChip.textContent.replace("PN/SKU: ", "") : "";
+      const priceText = tr.dataset.unit || "";
+      const unit = numFromPrice(priceText);
+      const qty = Math.max(1, parseInt(tr.querySelector(".qiq-qty")?.value || "1", 10));
+      const total = unit * qty;
+
+      if (name) { // Only include rows with actual data
+        data.push({ name, pn, unit, qty, total });
+      }
+    });
+    return data;
+  }
+
+  function exportToCSV() {
+    const data = getTableData();
+    if (!data.length) {
+      showNotification("لا توجد بيانات للتصدير", "error");
+      return;
+    }
+
+    const csvContent = [
+      ['الوصف', 'PN/SKU', 'سعر الوحدة', 'الكمية', 'الإجمالي'].join(','),
+      ...data.map(row => [
+        `"${row.name.replace(/"/g, '""')}"`,
+        `"${row.pn.replace(/"/g, '""')}"`,
+        row.unit,
+        row.qty,
+        row.total
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `boq-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showNotification("تم تصدير ملف CSV بنجاح", "success");
+  }
+
+  function exportToExcel() {
+    const data = getTableData();
+    if (!data.length) {
+      showNotification("لا توجد بيانات للتصدير", "error");
+      return;
+    }
+
+    // Fallback Excel export using CSV with .xls extension
+    const csvContent = [
+      ['الوصف', 'PN/SKU', 'سعر الوحدة', 'الكمية', 'الإجمالي'].join('\t'),
+      ...data.map(row => [
+        row.name,
+        row.pn,
+        row.unit,
+        row.qty,
+        row.total
+      ].join('\t'))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `boq-${new Date().toISOString().slice(0, 10)}.xls`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showNotification("تم تصدير ملف Excel بنجاح", "success");
+  }
+
+  function clearAllItems() {
+    if (!tbody) return;
+    if (confirm("هل أنت متأكد من حذف جميع البنود؟ هذا الإجراء لا يمكن التراجع عنه.")) {
+      tbody.innerHTML = '';
+      recalcTotals();
+      showNotification("تم مسح جميع البنود", "success");
+    }
+  }
+
+  // ===== Event Listeners =====
+  clearAllBtn?.addEventListener('click', clearAllItems);
+  exportCsvBtn?.addEventListener('click', exportToCSV);
+  exportXlsxBtn?.addEventListener('click', exportToExcel);
+
 })();

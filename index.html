@@ -33,6 +33,7 @@
     <div class="qiq-boq-top">
       <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>إضافة الكل للعرض</button>
       <div class="qiq-right">
+        <button id="qiq-clear-all" class="qiq-btn" type="button" style="background:#dc2626">مسح الكل</button>
         <button id="qiq-export-csv"  class="qiq-btn" type="button">تصدير CSV</button>
         <button id="qiq-export-xlsx" class="qiq-btn" type="button">تصدير XLSX</button>
         <span id="qiq-status" class="qiq-status"></span>
@@ -132,6 +133,8 @@
   <!-- ======== Bundles (Front-end) ======== -->
   <!-- api.js: دوال الفetch للباك إند (/api/search, /api/chat, /api/quote, /api/users/...) -->
   <script src="/public/js/api.js"></script>
+  <!-- quote-actions.js: BOQ table functionality and AddToQuote function -->
+  <script src="/public/js/quote-actions.js"></script>
   <!-- ui-chat.js: واجهة الشات + الBOQ + المنطق الذكي للبحث عبر /api/search -->
   <script src="/public/js/ui-chat.js"></script>
   <!-- quote-form.js: إرسال فورم العرض المخصص إلى /api/quote -->
