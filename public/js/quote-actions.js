@@ -208,11 +208,13 @@
     tr.setAttribute("data-key", key);
 
     tr.innerHTML = `
-      <td><img class="qiq-img" src="${img}" alt="${name}" 
-              onerror="this.src='https://via.placeholder.com/68?text=IMG'"
-              onclick="openImagePreview('${img}')" 
-              style="cursor:pointer" 
-              title="اضغط لمعاينة الصورة"></td>
+      <td>
+        <img class="qiq-img" src="${img}" alt="${name}"
+          onerror="this.src='https://via.placeholder.com/68?text=IMG'"
+          onclick="openImagePreview('${img}')"
+          style="cursor:pointer"
+          title="اضغط لمعاينة الصورة">
+      </td>
       <td>
         <div class="product-desc">
           <span class="product-name">${link?`<a class="qiq-link" target="_blank" rel="noopener" href="${link}">${name}</a>`:`${name}`}</span>
@@ -223,9 +225,9 @@
           </div>
         </div>
       </td>
-      <td><input type="number" min="1" step="1" value="1" class="qiq-qty qty-input"></td>
       <td class="numeric">${price? fmtUSD(price) : "-"}</td>
       <td class="qiq-line numeric">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
+      <td><input type="number" min="1" step="1" value="1" class="qiq-qty qty-input"></td>
       <td>
         <div class="action-icons">
           <button class="action-btn edit" type="button" data-detail-sku="${sku}" title="تفاصيل المنتج">ℹ️</button>
