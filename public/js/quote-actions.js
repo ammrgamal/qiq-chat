@@ -212,19 +212,23 @@
               style="cursor:pointer" 
               title="اضغط لمعاينة الصورة"></td>
       <td>
-        ${link?`<a class="qiq-link" target="_blank" rel="noopener" href="${link}"><strong>${name}</strong></a>`:`<strong>${name}</strong>`}
-        ${pn? `<div class="qiq-chip">PN/SKU: ${pn}</div>` : ""}
-        <div class="qiq-chip" style="background:#f5f5f5;border-color:#e5e7eb">Source: ${source}</div>
+        <div class="product-desc">
+          <span class="product-name">${link?`<a class="qiq-link" target="_blank" rel="noopener" href="${link}">${name}</a>`:`${name}`}</span>
+          <div class="product-details">
+            ${pn && manufacturer ? `<span class="product-pn">(PN: ${pn})</span> - <span class="product-brand">${manufacturer}</span>` : 
+              pn ? `<span class="product-pn">PN: ${pn}</span>` : 
+              manufacturer ? `<span class="product-brand">${manufacturer}</span>` : ''}
+          </div>
+        </div>
       </td>
-      <td><input type="number" min="1" step="1" value="1" class="qiq-qty" style="width:60px;padding:4px;border:1px solid #d1d5db;border-radius:4px"></td>
-      <td style="font-size:12px;color:#6b7280">${manufacturer}</td>
-      <td>${price? fmtUSD(price) : "-"}</td>
-      <td class="qiq-line">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
+      <td><input type="number" min="1" step="1" value="1" class="qiq-qty qty-input"></td>
+      <td class="numeric">${price? fmtUSD(price) : "-"}</td>
+      <td class="qiq-line numeric">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
       <td>
-        <div class="qiq-actions-row">
-          <button class="qiq-btn" type="button" data-detail-sku="${sku}">تفاصيل المنتج</button>
-          <button class="qiq-btn qiq-primary" type="button" data-sku="${sku}" data-slug="">إضافة للسلة</button>
-          <button class="qiq-btn" type="button" data-remove-sku="${sku}" style="background:#dc2626" title="حذف هذا البند">حذف</button>
+        <div class="action-icons">
+          <button class="action-btn edit" type="button" data-detail-sku="${sku}" title="تفاصيل المنتج">ℹ️</button>
+          <button class="action-btn duplicate" type="button" data-sku="${sku}" data-slug="" title="إضافة للسلة">➕</button>
+          <button class="action-btn delete" type="button" data-remove-sku="${sku}" title="حذف هذا البند">🗑️</button>
         </div>
       </td>
     `;

@@ -90,6 +90,7 @@
         <div class="col-3">
           <label>البريد الإلكتروني</label>
           <input id="client-email" type="email" placeholder="name@example.com" />
+          <div class="email-hint">Please use your business email for faster response.</div>
         </div>
         <div class="col-3">
           <label>الهاتف</label>
@@ -146,27 +147,42 @@
         </div>
       </div>
       
+      <!-- User Guidance Note -->
+      <div class="quote-guidance no-print">
+        Add products, edit quantities, then request your quote.
+      </div>
+      
       <!-- Search/Filter -->
       <div class="search-container no-print">
         <input id="search-input" class="search-input" placeholder="البحث في البنود (الوصف أو PN/SKU)..." />
       </div>
       
+      <!-- Empty State -->
+      <div id="empty-state" class="empty-state" style="display:none">
+        <div class="empty-state-content">
+          <div class="empty-icon">📦</div>
+          <div class="empty-message">Add products to start your quote.</div>
+        </div>
+      </div>
+      
       <div class="table-wrap">
-        <table id="items-table" class="sticky-header" aria-label="Quote items">
+        <table id="items-table" class="compact-quote-table sticky-header" aria-label="Quote items">
           <thead>
             <tr>
-              <th style="width:75%">الوصف / PN / SKU</th>
-              <th style="width:8%">سعر الوحدة</th>
-              <th style="width:6%">الكمية</th>
-              <th style="width:8%">الإجمالي</th>
-              <th class="no-print" style="width:3%">إجراءات</th>
+
+              <th style="width:86%">Description / PN / SKU</th>
+              <th style="width:4%">Price</th>
+              <th style="width:3%">QTY</th>
+              <th style="width:4%">Total</th>
+              <th class="no-print" style="width:3%">Action</th>
+main
             </tr>
           </thead>
           <tbody id="items-body"></tbody>
           <tfoot>
             <tr>
               <td colspan="3" style="text-align:left">الإجمالي الفرعي (Subtotal):</td>
-              <td id="subtotal-cell">-</td>
+              <td id="subtotal-cell" class="numeric">-</td>
               <td class="no-print"></td>
             </tr>
             <tr>
@@ -174,12 +190,12 @@
                 <input id="include-install" type="checkbox" />
                 <label for="include-install" style="margin:0">إضافة بند تركيب اختياري (5% من الإجمالي الفرعي)</label>
               </td>
-              <td id="install-cell">0</td>
+              <td id="install-cell" class="numeric">0</td>
               <td class="no-print"></td>
             </tr>
             <tr>
               <td colspan="3" style="text-align:left">الإجمالي الكلي (Grand Total):</td>
-              <td id="grand-cell"><strong>-</strong></td>
+              <td id="grand-cell" class="numeric"><strong>-</strong></td>
               <td class="no-print"></td>
             </tr>
           </tfoot>
@@ -215,6 +231,14 @@
           <button id="btn-submit" class="btn btn-ok">إرسال الطلب</button>
         </div>
       </div>
+      
+      <!-- Proceed to Request Quote CTA -->
+      <div id="proceed-cta" class="proceed-cta" style="display:none">
+        <button id="btn-proceed-quote" class="btn-proceed">
+          <span class="proceed-icon">📋</span>
+          <span class="proceed-text">Proceed to Request Quote</span>
+        </button>
+      </div>
     </div>
 
     <!-- Hidden payload preview (for debug) -->
@@ -227,8 +251,8 @@
     </div>
 
   </div>
-
-  <script src="js/toast.js"></script>
-  <script src="js/quote.js"></script>
+ copilot/fix-4469cf6e-7277-40cb-916f-dd572d8ca406
+  <script src="/public/js/toast.js"></script>
+  <script src="/public/js/quote.js"></script>
 </body>
 </html>
