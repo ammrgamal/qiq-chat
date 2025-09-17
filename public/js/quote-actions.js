@@ -209,11 +209,13 @@
 
     tr.innerHTML = `
       <td>
-        <img class="qiq-img" src="${img}" alt="${name}"
-          onerror="this.src='https://via.placeholder.com/68?text=IMG'"
-          onclick="openImagePreview('${img}')"
-          style="cursor:pointer"
-          title="اضغط لمعاينة الصورة">
+        <div class="product-desc">
+          <span class="product-name">${link?`<a class="qiq-link" target="_blank" rel="noopener" href="${link}">${name}</a>`:`${name}`}</span>
+          <div class="product-details">
+            ${pn ? `<span class="product-pn">PN: ${pn}</span>` : ''}
+            ${manufacturer ? `<span class="product-brand">${manufacturer}</span>` : ''}
+          </div>
+        </div>
       </td>
       <td>
         <div class="action-icons">
@@ -226,13 +228,11 @@
       <td class="numeric">${price? fmtUSD(price) : "-"}</td>
       <td><input type="number" min="1" step="1" value="1" class="qiq-qty qty-input"></td>
       <td>
-        <div class="product-desc">
-          <span class="product-name">${link?`<a class="qiq-link" target="_blank" rel="noopener" href="${link}">${name}</a>`:`${name}`}</span>
-          <div class="product-details">
-            ${pn ? `<span class="product-pn">PN: ${pn}</span>` : ''}
-            ${manufacturer ? `<span class="product-brand">${manufacturer}</span>` : ''}
-          </div>
-        </div>
+        <img class="qiq-img" src="${img}" alt="${name}"
+          onerror="this.src='https://via.placeholder.com/68?text=IMG'"
+          onclick="openImagePreview('${img}')"
+          style="cursor:pointer"
+          title="اضغط لمعاينة الصورة">
       </td>
     `;
 
