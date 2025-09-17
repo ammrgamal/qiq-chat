@@ -1,21 +1,5 @@
 /* ========= Enhanced Quote Actions with Search ========= */
 (function () {
-  // إضافة زر اختبار التغيير أعلى الجدول
-  window.addEventListener('DOMContentLoaded', function() {
-    const testBtn = document.createElement('button');
-    testBtn.textContent = 'اختبار التغيير';
-    testBtn.style.background = '#0070f3';
-    testBtn.style.color = '#fff';
-    testBtn.style.fontWeight = 'bold';
-    testBtn.style.padding = '8px 16px';
-    testBtn.style.borderRadius = '6px';
-    testBtn.style.margin = '12px';
-    testBtn.onclick = function() {
-      alert('✅ التغيير ظهر بنجاح!');
-    };
-    const parent = document.getElementById('qiq-body')?.parentElement;
-    if (parent) parent.prepend(testBtn);
-  });
   const tbody     = document.getElementById("qiq-body");     // جدول البنود
   const grandCell = document.getElementById("qiq-grand");    // الإجمالي
   const addAllBtn = document.getElementById("qiq-add-all");  // زرار Add all matched (لو موجود)
@@ -232,6 +216,16 @@
           title="اضغط لمعاينة الصورة">
       </td>
       <td>
+        <div class="action-icons">
+          <button class="action-btn edit" type="button" data-detail-sku="${sku}" title="تفاصيل المنتج">ℹ️</button>
+          <button class="action-btn duplicate" type="button" data-sku="${sku}" data-slug="" title="إضافة للسلة">➕</button>
+          <button class="action-btn delete" type="button" data-remove-sku="${sku}" title="حذف هذا البند">🗑️</button>
+        </div>
+      </td>
+      <td class="qiq-line numeric">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
+      <td class="numeric">${price? fmtUSD(price) : "-"}</td>
+      <td><input type="number" min="1" step="1" value="1" class="qiq-qty qty-input"></td>
+      <td>
         <div class="product-desc">
           <span class="product-name">${link?`<a class="qiq-link" target="_blank" rel="noopener" href="${link}">${name}</a>`:`${name}`}</span>
           <div class="product-details">
@@ -239,16 +233,6 @@
               pn ? `<span class="product-pn">PN: ${pn}</span>` : 
               manufacturer ? `<span class="product-brand">${manufacturer}</span>` : ''}
           </div>
-        </div>
-      </td>
-      <td class="numeric">${price? fmtUSD(price) : "-"}</td>
-      <td class="qiq-line numeric">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
-      <td><input type="number" min="1" step="1" value="1" class="qiq-qty qty-input"></td>
-      <td>
-        <div class="action-icons">
-          <button class="action-btn edit" type="button" data-detail-sku="${sku}" title="تفاصيل المنتج">ℹ️</button>
-          <button class="action-btn duplicate" type="button" data-sku="${sku}" data-slug="" title="إضافة للسلة">➕</button>
-          <button class="action-btn delete" type="button" data-remove-sku="${sku}" title="حذف هذا البند">🗑️</button>
         </div>
       </td>
     `;
