@@ -229,9 +229,8 @@
         <div class="product-desc">
           <span class="product-name">${link?`<a class="qiq-link" target="_blank" rel="noopener" href="${link}">${name}</a>`:`${name}`}</span>
           <div class="product-details">
-            ${pn && manufacturer ? `<span class="product-pn">(PN: ${pn})</span> - <span class="product-brand">${manufacturer}</span>` : 
-              pn ? `<span class="product-pn">PN: ${pn}</span>` : 
-              manufacturer ? `<span class="product-brand">${manufacturer}</span>` : ''}
+            ${pn ? `<span class="product-pn">PN: ${pn}</span>` : ''}
+            ${manufacturer ? `<span class="product-brand">${manufacturer}</span>` : ''}
           </div>
         </div>
       </td>
