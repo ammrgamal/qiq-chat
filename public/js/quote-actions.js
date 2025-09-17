@@ -217,6 +217,9 @@
           </div>
         </div>
       </td>
+      <td class="numeric">${price? fmtUSD(price) : "-"}</td>
+      <td class="qiq-line numeric">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
+      <td><input type="number" min="1" step="1" value="1" class="qiq-qty qty-input"></td>
       <td>
         <div class="action-icons">
           <button class="action-btn edit" type="button" data-detail-sku="${sku}" title="تفاصيل المنتج">ℹ️</button>
@@ -224,14 +227,12 @@
           <button class="action-btn delete" type="button" data-remove-sku="${sku}" title="حذف هذا البند">🗑️</button>
         </div>
       </td>
-      <td class="qiq-line numeric">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
-      <td class="numeric">${price? fmtUSD(price) : "-"}</td>
-      <td><input type="number" min="1" step="1" value="1" class="qiq-qty qty-input"></td>
       <td>
         <img class="qiq-img" src="${img}" alt="${name}"
-          onerror="this.src='https://via.placeholder.com/68?text=IMG'"
+          width="32" height="32"
+          style="max-width:32px;max-height:32px;cursor:pointer;border-radius:6px"
+          onerror="this.src='https://via.placeholder.com/32?text=IMG'"
           onclick="openImagePreview('${img}')"
-          style="cursor:pointer"
           title="اضغط لمعاينة الصورة">
       </td>
     `;
@@ -424,15 +425,15 @@
     const data = [];
     tbody?.querySelectorAll("tr").forEach(tr => {
       const img = tr.querySelector(".qiq-img")?.src || "";
-      const name = tr.querySelector("strong")?.textContent || "";
-      const pnChip = tr.querySelector(".qiq-chip");
-      const pn = pnChip ? pnChip.textContent.replace("PN/SKU: ", "") : "";
+      const name = tr.querySelector(".product-name")?.textContent || "";
+      const pn = tr.querySelector(".product-pn")?.textContent.replace("PN: ","") || "";
       const priceText = tr.dataset.unit || "";
       const unit = numFromPrice(priceText);
       const qty = Math.max(1, parseInt(tr.querySelector(".qiq-qty")?.value || "1", 10));
       const total = unit * qty;
 
-      if (name) { // Only include rows with actual data
+      // تجاهل الصفوف الفارغة أو التي ليس بها اسم أو سعر
+      if (name && name.trim() && unit > 0) {
         data.push({ name, pn, unit, qty, total });
       }
     });
