@@ -179,6 +179,8 @@
 
   // يبني صف في جدول الكوت
   function buildRow(data){
+  // تحسين بسيط: طباعة اسم المنتج في الكونسول عند إضافة صف جديد
+  console.log("تمت إضافة المنتج:", data.name || "—");
     if(!tbody) return;
 
     const sku     = (data.sku || data.pn || "").toString().trim();
