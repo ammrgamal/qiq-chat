@@ -21,7 +21,7 @@
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const uid = () => Math.random().toString(36).slice(2, 8).toUpperCase();
 
-  // ===== UI Helpers =====
+  // ===== Enhanced UI Helpers =====
   const showNotification = (message, type = 'info') => {
     // Use the global toast system if available
     if (window.QiqToast && window.QiqToast.show) {
@@ -39,6 +39,39 @@
       document.body.appendChild(notification);
       setTimeout(() => notification.remove(), 3000);
     }
+  };
+
+  const updateEmptyState = () => {
+    const emptyState = $("empty-state");
+    const proceedCta = $("proceed-cta");
+    const tableWrap = document.querySelector(".table-wrap");
+    const rowCount = itemsBody.querySelectorAll("tr").length;
+    
+    if (rowCount === 0 || (rowCount === 1 && !hasValidData())) {
+      if (emptyState) {
+        emptyState.style.display = "block";
+        tableWrap.style.display = "none";
+      }
+      if (proceedCta) proceedCta.style.display = "none";
+    } else {
+      if (emptyState) {
+        emptyState.style.display = "none";
+        tableWrap.style.display = "block";
+      }
+      if (proceedCta) proceedCta.style.display = "block";
+    }
+  };
+
+  const hasValidData = () => {
+    const rows = itemsBody.querySelectorAll("tr");
+    for (let row of rows) {
+      const desc = row.querySelector(".in-desc")?.value?.trim();
+      const unit = row.querySelector(".in-unit")?.value?.trim();
+      if (desc && desc !== "" && unit && parseFloat(unit) > 0) {
+        return true;
+      }
+    }
+    return false;
   };
 
   const setLoadingState = (button, loading = true) => {
@@ -131,6 +164,7 @@
   }
 
   recalcTotals();
+  updateEmptyState();
 
   // ===== Events =====
   $("currency").addEventListener("change", () => {
@@ -154,6 +188,7 @@
     e.preventDefault();
     addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
     recalcTotals();
+    showNotification("Product added! You can add more or proceed.", "success");
   });
 
   $("btn-load-staged").addEventListener("click", (e) => {
@@ -174,6 +209,7 @@
         loadedCount++;
       });
       recalcTotals();
+      updateEmptyState();
       showNotification(`تم تحميل ${loadedCount} عنصر من الشات`, "success");
     } catch (err) {
       console.warn(err);
@@ -246,6 +282,20 @@
 
   // ===== New Event Handlers =====
   
+  // Proceed to Request Quote CTA
+  const proceedBtn = $("btn-proceed-quote");
+  if (proceedBtn) {
+    proceedBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      // Scroll to the actions section
+      const actionsSection = document.querySelector(".card.no-print");
+      if (actionsSection) {
+        actionsSection.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      showNotification("Complete the client details above, then submit your quote request.", "info");
+    });
+  }
+  
   // Clear All Button
   $("btn-clear-all").addEventListener("click", (e) => {
     e.preventDefault();
@@ -255,7 +305,8 @@
       addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 }); // Add one empty row
       recalcTotals();
       saveState();
-      showNotification("تم مسح جميع البنود", "success");
+      updateEmptyState();
+      showNotification("Add products to start your quote.", "info");
     }
   });
 
@@ -326,46 +377,179 @@
     }
   });
 
-  // ===== Functions =====
-  function addRowFromData({ desc, pn, unit, qty }) {
+  // ===== Enhanced Functions =====
+  function addRowFromData({ desc, pn, unit, qty, manufacturer, brand }) {
     const tr = document.createElement("tr");
+    
+    // Create the enhanced product description combining name, brand, and PN
+    const productName = desc || "";
+    const productBrand = manufacturer || brand || "";
+    const productPN = pn || "";
+    
+    let descriptionHTML = `<div class="product-desc">`;
+    descriptionHTML += `<span class="product-name">${esc(productName)}</span>`;
+    
+    if (productBrand || productPN) {
+      descriptionHTML += `<div class="product-details">`;
+      if (productBrand && productPN) {
+        descriptionHTML += `<span class="product-pn">(PN: ${esc(productPN)})</span> - <span class="product-brand">${esc(productBrand)}</span>`;
+      } else if (productBrand) {
+        descriptionHTML += `<span class="product-brand">${esc(productBrand)}</span>`;
+      } else if (productPN) {
+        descriptionHTML += `<span class="product-pn">PN: ${esc(productPN)}</span>`;
+      }
+      descriptionHTML += `</div>`;
+    }
+    descriptionHTML += `</div>`;
+    
     tr.innerHTML = `
-      <td>
-        <input class="in-desc" placeholder="الوصف" value="${esc(desc)}" />
-        <div class="muted"><input class="in-pn" placeholder="PN/SKU (اختياري)" value="${esc(pn)}" /></div>
+      <td class="desc-col">
+        ${descriptionHTML}
+        <input class="in-desc" type="hidden" value="${esc(desc)}" />
+        <input class="in-pn" type="hidden" value="${esc(pn)}" />
+        <input class="in-brand" type="hidden" value="${esc(productBrand)}" />
       </td>
-      <td><input class="in-unit" type="number" min="0" step="0.01" value="${Number(unit)||0}"></td>
-      <td><input class="in-qty" type="number" min="1" step="1" value="${Number(qty)||1}"></td>
-      <td class="line-total">-</td>
-      <td class="no-print">
-        <button class="btn btn-primary btn-dup">تكرار</button>
-        <button class="btn btn-danger btn-del" style="background:#b91c1c">حذف</button>
+      <td class="qty-col">
+        <input class="in-qty qty-input" type="number" min="1" step="1" value="${Number(qty)||1}">
+      </td>
+      <td class="price-col numeric">
+        <input class="in-unit" type="number" min="0" step="0.01" value="${Number(unit)||0}" style="width:100%;text-align:right;border:1px solid #d1d5db;border-radius:4px;padding:4px 6px;">
+      </td>
+      <td class="total-col numeric line-total">-</td>
+      <td class="actions-col no-print">
+        <div class="action-icons">
+          <button class="action-btn edit btn-edit" title="Edit product details" type="button">✏️</button>
+          <button class="action-btn duplicate btn-dup" title="Duplicate this item" type="button">📋</button>
+          <button class="action-btn delete btn-del" title="Remove this item" type="button">🗑️</button>
+        </div>
       </td>
     `;
+    
     itemsBody.appendChild(tr);
 
     const inUnit = tr.querySelector(".in-unit");
     const inQty = tr.querySelector(".in-qty");
     const inputs = tr.querySelectorAll("input");
-    inputs.forEach(inp => inp.addEventListener("input", () => { recalcTotals(); saveState(); }));
+    inputs.forEach(inp => inp.addEventListener("input", () => { 
+      recalcTotals(); 
+      saveState();
+      updateEmptyState();
+    }));
 
     tr.querySelector(".btn-del").addEventListener("click", (e) => {
       e.preventDefault();
-      tr.remove();
-      recalcTotals();
-      saveState();
+      const productName = tr.querySelector(".product-name")?.textContent || "Product";
+      if (confirmAction(`هل أنت متأكد من حذف "${productName}"؟`)) {
+        tr.remove();
+        recalcTotals();
+        saveState();
+        updateEmptyState();
+        showNotification("Product removed.", "success");
+      }
     });
+    
     tr.querySelector(".btn-dup").addEventListener("click", (e) => {
       e.preventDefault();
       addRowFromData({
         desc: tr.querySelector(".in-desc").value || "",
         pn: tr.querySelector(".in-pn").value || "",
+        manufacturer: tr.querySelector(".in-brand").value || "",
         unit: Number(inUnit.value || 0),
         qty: Number(inQty.value || 1)
       });
       recalcTotals();
       saveState();
+      updateEmptyState();
+      showNotification("Product added! You can add more or proceed.", "success");
     });
+    
+    tr.querySelector(".btn-edit").addEventListener("click", (e) => {
+      e.preventDefault();
+      editProductInline(tr);
+    });
+
+    updateEmptyState();
+  }
+
+  function editProductInline(tr) {
+    const descCell = tr.querySelector(".desc-col");
+    const currentDesc = tr.querySelector(".in-desc").value;
+    const currentPN = tr.querySelector(".in-pn").value;
+    const currentBrand = tr.querySelector(".in-brand").value;
+    
+    // Create inline editing form
+    descCell.innerHTML = `
+      <div class="inline-edit">
+        <input class="edit-desc" placeholder="Product description" value="${esc(currentDesc)}" style="width:100%;margin-bottom:4px;padding:4px;border:1px solid #d1d5db;border-radius:4px;">
+        <input class="edit-brand" placeholder="Brand/Manufacturer" value="${esc(currentBrand)}" style="width:100%;margin-bottom:4px;padding:4px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;">
+        <input class="edit-pn" placeholder="Part Number (PN)" value="${esc(currentPN)}" style="width:100%;margin-bottom:8px;padding:4px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;">
+        <div style="display:flex;gap:4px;">
+          <button class="btn-save" style="background:#059669;color:white;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;">💾 Save</button>
+          <button class="btn-cancel" style="background:#6b7280;color:white;border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;">❌ Cancel</button>
+        </div>
+      </div>
+    `;
+    
+    const saveBtn = descCell.querySelector(".btn-save");
+    const cancelBtn = descCell.querySelector(".btn-cancel");
+    
+    const saveEdit = () => {
+      const newDesc = descCell.querySelector(".edit-desc").value;
+      const newBrand = descCell.querySelector(".edit-brand").value;
+      const newPN = descCell.querySelector(".edit-pn").value;
+      
+      // Update hidden inputs
+      tr.querySelector(".in-desc").value = newDesc;
+      tr.querySelector(".in-pn").value = newPN;
+      tr.querySelector(".in-brand").value = newBrand;
+      
+      // Rebuild the description display
+      rebuildDescriptionDisplay(tr);
+      saveState();
+      showNotification("Product updated successfully!", "success");
+    };
+    
+    const cancelEdit = () => {
+      rebuildDescriptionDisplay(tr);
+    };
+    
+    saveBtn.addEventListener("click", saveEdit);
+    cancelBtn.addEventListener("click", cancelEdit);
+    
+    // Focus on description input
+    descCell.querySelector(".edit-desc").focus();
+  }
+
+  function rebuildDescriptionDisplay(tr) {
+    const descCell = tr.querySelector(".desc-col");
+    const desc = tr.querySelector(".in-desc").value;
+    const pn = tr.querySelector(".in-pn").value;
+    const brand = tr.querySelector(".in-brand").value;
+    
+    let descriptionHTML = `<div class="product-desc">`;
+    descriptionHTML += `<span class="product-name">${esc(desc)}</span>`;
+    
+    if (brand || pn) {
+      descriptionHTML += `<div class="product-details">`;
+      if (brand && pn) {
+        descriptionHTML += `<span class="product-pn">(PN: ${esc(pn)})</span> - <span class="product-brand">${esc(brand)}</span>`;
+      } else if (brand) {
+        descriptionHTML += `<span class="product-brand">${esc(brand)}</span>`;
+      } else if (pn) {
+        descriptionHTML += `<span class="product-pn">PN: ${esc(pn)}</span>`;
+      }
+      descriptionHTML += `</div>`;
+    }
+    descriptionHTML += `</div>`;
+    
+    // Keep the hidden inputs
+    descriptionHTML += `
+      <input class="in-desc" type="hidden" value="${esc(desc)}" />
+      <input class="in-pn" type="hidden" value="${esc(pn)}" />
+      <input class="in-brand" type="hidden" value="${esc(brand)}" />
+    `;
+    
+    descCell.innerHTML = descriptionHTML;
   }
 
   function recalcTotals() {
