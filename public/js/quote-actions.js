@@ -1,5 +1,21 @@
 /* ========= Enhanced Quote Actions with Search ========= */
 (function () {
+  // إضافة زر اختبار التغيير أعلى الجدول
+  window.addEventListener('DOMContentLoaded', function() {
+    const testBtn = document.createElement('button');
+    testBtn.textContent = 'اختبار التغيير';
+    testBtn.style.background = '#0070f3';
+    testBtn.style.color = '#fff';
+    testBtn.style.fontWeight = 'bold';
+    testBtn.style.padding = '8px 16px';
+    testBtn.style.borderRadius = '6px';
+    testBtn.style.margin = '12px';
+    testBtn.onclick = function() {
+      alert('✅ التغيير ظهر بنجاح!');
+    };
+    const parent = document.getElementById('qiq-body')?.parentElement;
+    if (parent) parent.prepend(testBtn);
+  });
   const tbody     = document.getElementById("qiq-body");     // جدول البنود
   const grandCell = document.getElementById("qiq-grand");    // الإجمالي
   const addAllBtn = document.getElementById("qiq-add-all");  // زرار Add all matched (لو موجود)
