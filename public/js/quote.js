@@ -933,6 +933,40 @@
     });
   }
 
+  // ===== دالة تحميل المنتجات المعلقة من localStorage =====
+  function loadPendingProducts() {
+    try {
+      const pendingData = localStorage.getItem('qiq-pending-products');
+      if (pendingData) {
+        const products = JSON.parse(pendingData);
+        if (Array.isArray(products) && products.length > 0) {
+          console.log('Loading pending products:', products);
+          
+          // إضافة كل منتج للجدول
+          products.forEach(product => {
+            addRow({
+              desc: product.name,
+              pn: product.pn || product.sku,
+              unit: parseFloat(product.price) || 0,
+              qty: product.qty || 1,
+              total: (parseFloat(product.price) || 0) * (product.qty || 1)
+            });
+          });
+          
+          // إعادة حساب الإجماليات
+          calcTotals();
+          
+          // مسح المنتجات المعلقة بعد التحميل
+          localStorage.removeItem('qiq-pending-products');
+          
+          showNotification(`تم تحميل ${products.length} منتج من الدردشة`, "success");
+        }
+      }
+    } catch (error) {
+      console.error('Error loading pending products:', error);
+    }
+  }
+
   // ===== Image Preview Functions =====
   window.openImagePreview = function(imgSrc) {
     const overlay = $("image-preview-overlay");
@@ -949,5 +983,10 @@
   // Load saved state from localStorage on page load
   window.addEventListener('beforeunload', () => {
     saveState();
+  });
+
+  // تحميل المنتجات المعلقة عند تحميل الصفحة
+  window.addEventListener('DOMContentLoaded', () => {
+    loadPendingProducts();
   });
 })();
