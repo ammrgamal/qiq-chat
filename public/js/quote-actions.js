@@ -265,7 +265,7 @@
         // Auto-navigate to quote.html after adding
         setTimeout(() => {
           if (confirm("تم إضافة المنتج بنجاح. هل تريد الانتقال لصفحة المعاينة؟")) {
-            window.location.href = "/public/quote.html";
+            window.location.href = "quote.html";
           }
         }, 800);
         
