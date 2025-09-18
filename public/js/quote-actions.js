@@ -231,7 +231,7 @@
       <td>
         <div class="action-icons">
           <button class="action-btn edit" type="button" data-detail-sku="${sku}" title="تفاصيل المنتج">ℹ️</button>
-          <button class="action-btn duplicate" type="button" data-sku="${sku}" data-slug="" title="إضافة للسلة">➕</button>
+          <button class="action-btn duplicate" type="button" data-sku="${sku}" data-slug="" title="إضافة للعرض">➕</button>
           <button class="action-btn delete" type="button" data-remove-sku="${sku}" title="حذف هذا البند">🗑️</button>
         </div>
       </td>
@@ -260,18 +260,18 @@
         // TODO: اربط هنا مع /wp-json/qiq/v1/cart/add لو عندك الباك اند
         await new Promise(r=>setTimeout(r,400)); // محاكاة نجاح
         btn.textContent = "تم ✓";
-        showNotification("تمت إضافة المنتج للسلة بنجاح", "success");
+        showNotification("تمت إضافة المنتج للعرض بنجاح", "success");
         
         // Auto-navigate to quote.html after adding
         setTimeout(() => {
           if (confirm("تم إضافة المنتج بنجاح. هل تريد الانتقال لصفحة المعاينة؟")) {
-            window.location.href = "/quote.html";
+            window.location.href = "/public/quote.html";
           }
         }, 800);
         
       } catch {
         btn.textContent = "خطأ";
-        showNotification("خطأ في إضافة المنتج للسلة", "error");
+        showNotification("خطأ في إضافة المنتج للعرض", "error");
       } finally {
         setTimeout(()=>{ btn.textContent = old; btn.disabled = false; }, 900);
       }
@@ -319,6 +319,42 @@
     };
   }
 
+  // ===== دالة حفظ المنتج في localStorage =====
+  function saveProductToQuote(payload) {
+    try {
+      // الحصول على المنتجات المحفوظة مسبقاً
+      let existingProducts = [];
+      const savedData = localStorage.getItem('qiq-pending-products');
+      if (savedData) {
+        existingProducts = JSON.parse(savedData);
+      }
+      
+      // إضافة المنتج الجديد
+      const productToSave = {
+        name: payload.name || 'منتج غير محدد',
+        sku: payload.sku || payload.pn || '',
+        pn: payload.sku || payload.pn || '',
+        price: payload.price || '',
+        unit: payload.price || '',
+        image: payload.image || '',
+        link: payload.link || '',
+        manufacturer: payload.manufacturer || '',
+        source: payload.source || 'Chat',
+        qty: 1,
+        timestamp: new Date().toISOString()
+      };
+      
+      existingProducts.push(productToSave);
+      
+      // حفظ القائمة المحدثة
+      localStorage.setItem('qiq-pending-products', JSON.stringify(existingProducts));
+      
+      console.log('Product saved to localStorage:', productToSave);
+    } catch (error) {
+      console.error('Error saving product to localStorage:', error);
+    }
+  }
+
   /* ========= API عامّة =========
      — تقدر تنادي AddToQuote بطريقتين:
        1) AddToQuote({name, price, sku, pn, image, link, source})
@@ -326,7 +362,29 @@
   ================================= */
   window.AddToQuote = function (arg){
     try{
-      if(!tbody){ alert("Table not found (qiq-body)"); return; }
+      if(!tbody){ 
+        // إذا لم يوجد جدول في الصفحة الحالية، احفظ في localStorage وانتقل
+        let payload = null;
+        if (arg && typeof arg === "object" && !(arg instanceof Element)) {
+          payload = arg;
+        } else if (arg instanceof Element) {
+          payload = dataFromElement(arg);
+        } else {
+          alert("Invalid AddToQuote call.");
+          return;
+        }
+        
+        // حفظ المنتج في localStorage
+        saveProductToQuote(payload);
+        
+        // الانتقال لصفحة العرض
+        showNotification("تم حفظ المنتج. سيتم الانتقال لصفحة العرض...", "success");
+        setTimeout(() => {
+          window.location.href = "/public/quote.html";
+        }, 1000);
+        return;
+      }
+      
       let payload = null;
 
       if (arg && typeof arg === "object" && !(arg instanceof Element)) {
