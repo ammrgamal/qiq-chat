@@ -247,54 +247,60 @@
     }
 
     // Add to quotation (Woo/Cart) — Enhanced with proper feedback and navigation
-    tr.querySelector('[data-sku]').addEventListener('click', async (ev)=>{
-      ev.preventDefault();
-      const btn = ev.currentTarget;
-      const qty = Math.max(1, parseInt(tr.querySelector('.qiq-qty')?.value||"1",10));
-      btn.disabled = true;
-      const old = btn.textContent;
-      btn.textContent = "جاري الإضافة…";
-      try {
-        // TODO: اربط هنا مع /wp-json/qiq/v1/cart/add لو عندك الباك اند
-        await new Promise(r=>setTimeout(r,400)); // محاكاة نجاح
-        btn.textContent = "تم ✓";
-        showNotification("تمت إضافة المنتج للعرض بنجاح", "success");
-        
-        // Auto-navigate to quote.html after adding
-        setTimeout(() => {
-          if (confirm("تم إضافة المنتج بنجاح. هل تريد الانتقال لصفحة المعاينة؟")) {
-            window.location.href = "quote.html";
-          }
-        }, 800);
-        
-      } catch {
-        btn.textContent = "خطأ";
-        showNotification("خطأ في إضافة المنتج للعرض", "error");
-      } finally {
-        setTimeout(()=>{ btn.textContent = old; btn.disabled = false; }, 900);
-      }
-    });
+    const skuBtn = tr.querySelector('[data-sku]');
+    if (skuBtn) {
+      skuBtn.addEventListener('click', async (ev)=>{
+        ev.preventDefault();
+        const btn = ev.currentTarget;
+        const qty = Math.max(1, parseInt(tr.querySelector('.qiq-qty')?.value||"1",10));
+        btn.disabled = true;
+        const old = btn.textContent;
+        btn.textContent = "جاري الإضافة…";
+        try {
+          // TODO: اربط هنا مع /wp-json/qiq/v1/cart/add لو عندك الباك اند
+          await new Promise(r=>setTimeout(r,400)); // محاكاة نجاح
+          btn.textContent = "تم ✓";
+          showNotification("تمت إضافة المنتج للعرض بنجاح", "success");
+          
+          // Auto-navigate to quote.html after adding
+          setTimeout(() => {
+            if (confirm("تم إضافة المنتج بنجاح. هل تريد الانتقال لصفحة المعاينة؟")) {
+              window.location.href = "quote.html";
+            }
+          }, 800);
+          
+        } catch {
+          btn.textContent = "خطأ";
+          showNotification("خطأ في إضافة المنتج للعرض", "error");
+        } finally {
+          setTimeout(()=>{ btn.textContent = old; btn.disabled = false; }, 900);
+        }
+      });
+    }
 
     // Remove item with confirmation
-    tr.querySelector('[data-remove-sku]').addEventListener('click', (ev) => {
-      ev.preventDefault();
-      const itemName = name.length > 50 ? name.substring(0, 50) + '...' : name;
-      const confirmMessage = `هل أنت متأكد من حذف هذا البند؟\n\n"${itemName}"\n\nهذا الإجراء لا يمكن التراجع عنه.`;
-      
-      if (confirm(confirmMessage)) {
-        tr.remove();
-        recalcTotals();
-        showNotification("تم حذف البند بنجاح", "success");
+    const removeBtn = tr.querySelector('[data-remove-sku]');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const itemName = name.length > 50 ? name.substring(0, 50) + '...' : name;
+        const confirmMessage = `هل أنت متأكد من حذف هذا البند؟\n\n"${itemName}"\n\nهذا الإجراء لا يمكن التراجع عنه.`;
         
-        // إضافة إلى السجل
-        addToLog('حذف', itemName, '');
-        
-        // إعادة تطبيق البحث بعد الحذف
-        if (searchInput && searchInput.value.trim()) {
-          filterTable(searchInput.value);
+        if (confirm(confirmMessage)) {
+          tr.remove();
+          recalcTotals();
+          showNotification("تم حذف البند بنجاح", "success");
+          
+          // إضافة إلى السجل
+          addToLog('حذف', itemName, '');
+          
+          // إعادة تطبيق البحث بعد الحذف
+          if (searchInput && searchInput.value.trim()) {
+            filterTable(searchInput.value);
+          }
         }
-      }
-    });
+      });
+    }
 
     tbody.appendChild(tr);
     recalcTotals();
