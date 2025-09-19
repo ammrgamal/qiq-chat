@@ -936,7 +936,7 @@
   // ===== دالة تحميل المنتجات المعلقة من localStorage =====
   function loadPendingProducts() {
     try {
-      const pendingData = localStorage.getItem('qiq-pending-products');
+  const pendingData = localStorage.getItem('qiq_staged_items');
       if (pendingData) {
         const products = JSON.parse(pendingData);
         if (Array.isArray(products) && products.length > 0) {
@@ -958,7 +958,7 @@
           calcTotals();
           
           // مسح المنتجات المعلقة بعد التحميل
-          localStorage.removeItem('qiq-pending-products');
+          localStorage.removeItem('qiq_staged_items');
           
           showNotification(`تم تحميل ${products.length} منتج من الدردشة`, "success");
         }

@@ -324,7 +324,7 @@
     try {
       // الحصول على المنتجات المحفوظة مسبقاً
       let existingProducts = [];
-      const savedData = localStorage.getItem('qiq-pending-products');
+      const savedData = localStorage.getItem('qiq_staged_items');
       if (savedData) {
         existingProducts = JSON.parse(savedData);
       }
@@ -347,7 +347,7 @@
       existingProducts.push(productToSave);
       
       // حفظ القائمة المحدثة
-      localStorage.setItem('qiq-pending-products', JSON.stringify(existingProducts));
+  localStorage.setItem('qiq_staged_items', JSON.stringify(existingProducts));
       
       console.log('Product saved to localStorage:', productToSave);
     } catch (error) {
