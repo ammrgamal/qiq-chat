@@ -372,12 +372,9 @@
         return;
       }
 
-      // دائماً احفظ المنتج في localStorage وانتقل لصفحة عرض السعر
+      // فقط احفظ المنتج في localStorage، ولا تحول المستخدم تلقائياً
       saveProductToQuote(payload);
-      showNotification("تم حفظ المنتج. سيتم الانتقال لصفحة العرض...", "success");
-      setTimeout(() => {
-        window.location.href = "/public/quote.html";
-      }, 1000);
+      showNotification("تم حفظ المنتج في قائمة العرض. يمكنك الانتقال لصفحة عرض السعر من الزر أسفل الجدول.", "success");
     }catch(e){
       showNotification("حدث خطأ أثناء إضافة العنصر", "error");
       console.warn(e);

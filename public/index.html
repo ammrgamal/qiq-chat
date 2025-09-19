@@ -88,5 +88,14 @@
     <img id="preview-image" src="" alt="Preview" style="max-width:90vw;max-height:90vh;border-radius:8px;" />
   </div>
 
+  <div style="text-align:center;margin:20px 0;">
+    <button id="go-to-quote" class="qiq-btn qiq-primary" type="button" style="font-size:18px;padding:12px 32px;">الانتقال لصفحة عرض السعر</button>
+  </div>
+
+  <script>
+document.getElementById('go-to-quote').addEventListener('click', function() {
+  window.location.href = '/quote.html';
+});
+</script>
 </body>
 </html>
