@@ -182,28 +182,13 @@
 
   /* ---- دالة لعرض المنتجات مباشرة في الجدول ---- */
   function displayProductsInTable(hits, source = "Search") {
-    hits.forEach(hit => {
-      const productData = {
-        name: hit?.name || hit?.title || hit?.Description || "(No name)",
-        price: hit?.price || hit?.Price || hit?.list_price || hit?.ListPrice || "",
-        sku: hit?.sku || hit?.SKU || hit?.pn || hit?.PN || hit?.part_number || hit?.PartNumber || "",
-        pn: hit?.sku || hit?.SKU || hit?.pn || hit?.PN || hit?.part_number || hit?.PartNumber || "",
-        image: hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || "",
-        link: hit?.link || hit?.url || hit?.product_url || hit?.permalink || "",
-        manufacturer: hit?.manufacturer || hit?.brand || hit?.vendor || hit?.company || "غير محدد",
-        source: source
-      };
-      
-      // استخدام دالة AddToQuote الموجودة
-      if (window.AddToQuote && typeof window.AddToQuote === 'function') {
-        window.AddToQuote(productData);
-      }
-    });
-    
-    // التمرير إلى الجدول
-    const tableSection = document.getElementById("qiq-boq-wrap");
-    if (tableSection) {
-      tableSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    // اعرض المنتجات في كروت فقط، لا تضيفها تلقائياً للجدول
+    const cardsHtml = hits.map(hitToCard).join("");
+    addMsg("bot", cardsHtml, true);
+    // التمرير إلى الكروت
+    const win = document.getElementById("qiq-window");
+    if (win) {
+      win.scrollTop = win.scrollHeight;
     }
   }
 
