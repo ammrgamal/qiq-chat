@@ -944,12 +944,13 @@
           
           // إضافة كل منتج للجدول
           products.forEach(product => {
-            addRow({
+            addRowFromData({
               desc: product.name,
               pn: product.pn || product.sku,
               unit: parseFloat(product.price) || 0,
               qty: product.qty || 1,
-              total: (parseFloat(product.price) || 0) * (product.qty || 1)
+              manufacturer: product.manufacturer || "",
+              brand: product.manufacturer || ""
             });
           });
           
