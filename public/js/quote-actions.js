@@ -383,9 +383,11 @@
         return;
       }
 
-      // فقط احفظ المنتج في localStorage، ولا تحول المستخدم تلقائياً
+      // أضف المنتج للجدول فعلياً
+      buildRow(payload);
+      // ثم احفظه في localStorage
       saveProductToQuote(payload);
-      showNotification("تم حفظ المنتج في قائمة العرض. يمكنك الانتقال لصفحة عرض السعر من الزر أسفل الجدول.", "success");
+      showNotification("تمت إضافة المنتج للجدول وحفظه في قائمة العرض. يمكنك الانتقال لصفحة عرض السعر من الزر أسفل الجدول.", "success");
     }catch(e){
       showNotification("حدث خطأ أثناء إضافة العنصر", "error");
       console.warn(e);
