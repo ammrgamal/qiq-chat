@@ -140,25 +140,10 @@
   if (savedItems.length) {
     savedItems.forEach(addRowFromData);
   } else {
-    // حاول تحميل من localStorage (مُدخلة من صفحة الشات)
-    try {
-      const stagedRaw = localStorage.getItem(STAGED_KEY);
-      if (stagedRaw) {
-        const staged = JSON.parse(stagedRaw);
-        // توقع شكل: [{name, pn, unitPrice, qty}, ...]
-        (staged || []).forEach((it) => {
-          addRowFromData({
-            desc: it.Name || it.name || "—",
-            pn: it.PN_SKU || it.pn || it.sku || "",
-            unit: num(it.UnitPrice || it.unitPrice || it.price || 0),
-            qty: Number(it.Qty || it.qty || 1)
-          });
-        });
-      } else {
-        // صف فارغ كبداية
-        addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
-      }
-    } catch {
+    // التحقق من وجود بنود محفوظة من الشات قبل إضافة صف فارغ
+    const stagedRaw = localStorage.getItem(STAGED_KEY);
+    if (!stagedRaw) {
+      // إضافة صف فارغ فقط إذا لم تكن هناك بنود محفوظة
       addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
     }
   }
@@ -933,40 +918,7 @@
     });
   }
 
-  // ===== دالة تحميل المنتجات المعلقة من localStorage =====
-  function loadPendingProducts() {
-    try {
-  const pendingData = localStorage.getItem('qiq_staged_items');
-      if (pendingData) {
-        const products = JSON.parse(pendingData);
-        if (Array.isArray(products) && products.length > 0) {
-          console.log('Loading pending products:', products);
-          
-          // إضافة كل منتج للجدول
-          products.forEach(product => {
-            addRowFromData({
-              desc: product.name,
-              pn: product.pn || product.sku,
-              unit: parseFloat(product.price) || 0,
-              qty: product.qty || 1,
-              manufacturer: product.manufacturer || "",
-              brand: product.manufacturer || ""
-            });
-          });
-          
-          // إعادة حساب الإجماليات
-          calcTotals();
-          
-          // مسح المنتجات المعلقة بعد التحميل
-          localStorage.removeItem('qiq_staged_items');
-          
-          showNotification(`تم تحميل ${products.length} منتج من الدردشة`, "success");
-        }
-      }
-    } catch (error) {
-      console.error('Error loading pending products:', error);
-    }
-  }
+
 
   // ===== Image Preview Functions =====
   window.openImagePreview = function(imgSrc) {
@@ -986,8 +938,34 @@
     saveState();
   });
 
-  // تحميل المنتجات المعلقة عند تحميل الصفحة
-  window.addEventListener('DOMContentLoaded', () => {
-    loadPendingProducts();
+  // تحميل البنود من الشات تلقائيًا عند فتح صفحة quote
+  document.addEventListener('DOMContentLoaded', () => {
+    // استخدام نفس المنطق المستخدم في زر "تحميل البنود من الشات"
+    try {
+      const stagedRaw = localStorage.getItem(STAGED_KEY);
+      if (!stagedRaw) return; // لا يوجد عناصر محفوظة، لا نظهر إشعار خطأ
+      
+      const staged = JSON.parse(stagedRaw) || [];
+      let loadedCount = 0;
+      staged.forEach((it) => {
+        addRowFromData({
+          desc: it.Name || it.name || "—",
+          pn: it.PN_SKU || it.pn || it.sku || "",
+          unit: num(it.UnitPrice || it.unitPrice || it.price || 0),
+          qty: Number(it.Qty || it.qty || 1)
+        });
+        loadedCount++;
+      });
+      
+      if (loadedCount > 0) {
+        recalcTotals();
+        updateEmptyState();
+        showNotification(`تم تحميل ${loadedCount} عنصر من الشات تلقائيًا!`, "success");
+      }
+    } catch (err) {
+      console.warn(err);
+      showNotification("خطأ في تحميل البنود من الشات", "error");
+    }
   });
+
 })();
