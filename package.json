@@ -1,8 +1,21 @@
 {
   "name": "qiq-chat",
   "private": true,
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "algoliasearch": "^4.24.0"
+  },
+  "scripts": {
+    "apply:algolia-settings": "ts-node src/search/applySettings.ts",
+    "test:search": "jest __tests__/algoliaMapper.spec.ts -u"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.5.2",
+    "jest": "^30.1.3",
+    "ts-jest": "^29.4.4",
+    "ts-node": "^10.9.2"
   }
 }
