@@ -183,30 +183,25 @@
   console.log("تمت إضافة المنتج:", data.name || "—");
     if(!tbody) return;
 
-    const sku     = (data.sku || data.pn || "").toString().trim();
-    const key     = sku ? sku.toUpperCase() : (data.name||"").toUpperCase();
+    const key     = (data.pn || data.name || "").toString().trim().toUpperCase();
     if(!key) return;
-
-    // منع التكرار بنفس الـ SKU
+    // منع التكرار بنفس الـ objectID
     if(tbody.querySelector(`tr[data-key="${CSS.escape(key)}"]`)) {
       showNotification("هذا المنتج موجود بالفعل في الجدول", "warning");
       return;
     }
-
     const name    = data.name  || "—";
     const price   = data.price || "";
     const unitNum = numFromPrice(price);
     const img     = data.image || "https://via.placeholder.com/68?text=IMG";
     const link    = data.link  || "";
     const source  = data.source|| "Add";
-    const pn      = data.pn    || data.sku || "";
+    const pn      = data.pn    || "";
     const manufacturer = data.manufacturer || data.brand || data.vendor || "غير محدد";
-
     const tr = document.createElement("tr");
     tr.dataset.unit = price || "";
     tr.dataset.key  = key;
     tr.setAttribute("data-key", key);
-
     tr.innerHTML = `
       <td>
         <img class="qiq-img" src="${img}" alt="${name}"
@@ -220,7 +215,7 @@
         <div class="product-desc">
           <span class="product-name">${link?`<a class="qiq-link" target="_blank" rel="noopener" href="${link}">${name}</a>`:`${name}`}</span>
           <div class="product-details">
-            ${pn ? `<span class="product-pn">PN: ${pn}</span>` : ''}
+            ${pn ? `<span class="product-pn">${pn}</span>` : ''}
             ${manufacturer ? `<span class="product-brand">${manufacturer}</span>` : ''}
           </div>
         </div>
@@ -230,9 +225,8 @@
       <td class="qiq-line numeric">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
       <td>
         <div class="action-icons">
-          <button class="action-btn edit" type="button" data-detail-sku="${sku}" title="تفاصيل المنتج">ℹ️</button>
-          <button class="action-btn duplicate" type="button" data-sku="${sku}" data-slug="" title="إضافة للعرض">➕</button>
-          <button class="action-btn delete" type="button" data-remove-sku="${sku}" title="حذف هذا البند">🗑️</button>
+          <button class="action-btn edit" type="button" data-detail-pn="${pn}" title="تفاصيل المنتج">ℹ️</button>
+          <button class="action-btn delete" type="button" data-remove-pn="${pn}" title="حذف هذا البند">🗑️</button>
         </div>
       </td>
     `;
