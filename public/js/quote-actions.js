@@ -304,6 +304,17 @@
     // إضافة إلى السجل
     addToLog('إضافة', name, `المصدر: ${source}`);
   }
+    // حفظ كل المنتجات الحالية في الجدول في localStorage بعد كل إضافة
+    const products = [];
+    tbody.querySelectorAll('tr').forEach(row => {
+      const name = row.querySelector('.in-desc')?.value || '';
+      const pn = row.querySelector('.in-pn')?.value || '';
+      const price = row.querySelector('.in-unit')?.value || '';
+      const qty = row.querySelector('.in-qty')?.value || '1';
+      const manufacturer = row.querySelector('.in-manufacturer')?.value || '';
+      products.push({ name, pn, price, qty, manufacturer });
+    });
+    localStorage.setItem('qiq_staged_items', JSON.stringify(products));
 
   // تجهّز الداتا من زرار عليه data-*
   function dataFromElement(el){
