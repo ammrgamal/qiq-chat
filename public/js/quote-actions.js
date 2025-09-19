@@ -362,31 +362,7 @@
   ================================= */
   window.AddToQuote = function (arg){
     try{
-      if(!tbody){ 
-        // إذا لم يوجد جدول في الصفحة الحالية، احفظ في localStorage وانتقل
-        let payload = null;
-        if (arg && typeof arg === "object" && !(arg instanceof Element)) {
-          payload = arg;
-        } else if (arg instanceof Element) {
-          payload = dataFromElement(arg);
-        } else {
-          alert("Invalid AddToQuote call.");
-          return;
-        }
-        
-        // حفظ المنتج في localStorage
-        saveProductToQuote(payload);
-        
-        // الانتقال لصفحة العرض
-        showNotification("تم حفظ المنتج. سيتم الانتقال لصفحة العرض...", "success");
-        setTimeout(() => {
-          window.location.href = "/public/quote.html";
-        }, 1000);
-        return;
-      }
-      
       let payload = null;
-
       if (arg && typeof arg === "object" && !(arg instanceof Element)) {
         payload = arg;
       } else if (arg instanceof Element) {
@@ -396,13 +372,12 @@
         return;
       }
 
-      buildRow(payload);
-      // تمرير تلقائي إلى جدول البنود بعد الإضافة
-      if (tbody) {
-        tbody.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-      // إشعار محسّن
-      showNotification("تمت إضافة البند إلى عرض السعر", "success");
+      // دائماً احفظ المنتج في localStorage وانتقل لصفحة عرض السعر
+      saveProductToQuote(payload);
+      showNotification("تم حفظ المنتج. سيتم الانتقال لصفحة العرض...", "success");
+      setTimeout(() => {
+        window.location.href = "/public/quote.html";
+      }, 1000);
     }catch(e){
       showNotification("حدث خطأ أثناء إضافة العنصر", "error");
       console.warn(e);
