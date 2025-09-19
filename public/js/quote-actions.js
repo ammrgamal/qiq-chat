@@ -377,13 +377,22 @@
         return;
       }
 
+      // تحقق من القيم الأساسية
+      if (!payload.name || !payload.pn || !payload.price) {
+        showNotification("يجب أن يحتوي المنتج على اسم، رقم PN (objectID)، وسعر.", "error");
+        return;
+      }
+      if (!payload.image) {
+        payload.image = "https://via.placeholder.com/68?text=IMG";
+      }
+
       // أضف المنتج للجدول فعلياً
       buildRow(payload);
       // ثم احفظه في localStorage
       saveProductToQuote(payload);
       showNotification("تمت إضافة المنتج للجدول وحفظه في قائمة العرض. يمكنك الانتقال لصفحة عرض السعر من الزر أسفل الجدول.", "success");
     }catch(e){
-      showNotification("حدث خطأ أثناء إضافة العنصر", "error");
+      showNotification("حدث خطأ أثناء إضافة العنصر: " + (e?.message || e), "error");
       console.warn(e);
     }
   };
