@@ -250,12 +250,13 @@
       sendBtn && (sendBtn.disabled = false);
     }
 
-    // 2) نتائج البحث (نفس النص) – نعرض النتائج كبطاقات مع أزرار الإضافة
+    // 2) نتائج البحث (نفس النص) – نعرض في الجدول مباشرة
     const hits = await runSearch(userText, 6);
     if (hits.length) {
-      // عرض النتائج كبطاقات مع أزرار للإضافة
-      const cardsHtml = renderHitsBlock("نتائج مطابقة ومشابهة", hits);
-      addMsg("bot", cardsHtml, true);
+      // إضافة النتائج مباشرة إلى الجدول بدلاً من إظهارها في الشات
+      displayProductsInTable(hits, "Matches & alternatives");
+      // رسالة قصيرة في الشات
+      addMsg("bot", `تم العثور على ${hits.length} نتيجة مطابقة. تحقق من الجدول أدناه.`);
     } else {
       addMsg("bot", "ملقيناش تطابق مباشر. حاول تكتب اسم المنتج/الموديل بدقة أكبر أو جرّب رفع BOQ.");
     }
@@ -273,8 +274,8 @@
 
     const results = await runSearch(q, 8);
     if (results.length) {
-      const cardsHtml = renderHitsBlock("نتائج البحث", results);
-      addMsg("bot", cardsHtml, true);
+      displayProductsInTable(results, "Search results");
+      addMsg("bot", `تم العثور على ${results.length} نتيجة بحث. تحقق من الجدول أدناه.`);
     } else {
       addMsg("bot", "لا توجد نتائج مطابقة.");
     }
