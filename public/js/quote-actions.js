@@ -636,4 +636,18 @@
     }
   };
 
+  addAllBtn?.addEventListener('click', function() {
+    const products = [];
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const name = tr.querySelector('.in-desc')?.value || '';
+      const pn = tr.querySelector('.in-pn')?.value || '';
+      const price = tr.querySelector('.in-unit')?.value || '';
+      const qty = tr.querySelector('.in-qty')?.value || '1';
+      const manufacturer = tr.querySelector('.in-manufacturer')?.value || '';
+      products.push({ name, pn, price, qty, manufacturer });
+    });
+    localStorage.setItem('qiq_staged_items', JSON.stringify(products));
+    showNotification('تم حفظ كل المنتجات في قائمة عرض السعر. يمكنك الآن الانتقال لصفحة عرض السعر.', 'success');
+  });
+
 })();
