@@ -182,13 +182,10 @@
 
   /* ---- دالة لعرض المنتجات مباشرة في الجدول ---- */
   function displayProductsInTable(hits, source = "Search") {
-    // اعرض المنتجات في كروت فقط، لا تضيفها تلقائياً للجدول
-    const cardsHtml = hits.map(hitToCard).join("");
-    addMsg("bot", cardsHtml, true);
-    // التمرير إلى الكروت
-    const win = document.getElementById("qiq-window");
-    if (win) {
-      win.scrollTop = win.scrollHeight;
+    // اعرض المنتجات في منطقة منفصلة تحت الشات
+    const productsList = document.getElementById("qiq-products-list");
+    if (productsList) {
+      productsList.innerHTML = hits.map(hitToCard).join("");
     }
   }
 
