@@ -231,16 +231,20 @@
       </td>
     `;
 
-    tr.querySelector(".qiq-qty").addEventListener("input", recalcTotals);
+    const qtyInput = tr.querySelector(".qiq-qty");
+    if (qtyInput) qtyInput.addEventListener("input", recalcTotals);
 
-    // فتح التفاصيل (لو حابب تستخدم نفس الـ endpoint اللي عندك، سيبه/عدّله لاحقًا)
-    tr.querySelector('[data-detail-sku]').addEventListener('click', (ev)=>{
-      ev.preventDefault();
-      try{
-        const url = link || `/shop/?s=${encodeURIComponent(sku)}&post_type=product`;
-        window.open(url, "_blank", "noopener");
-      }catch{}
-    });
+    // فتح التفاصيل (يجب التأكد من وجود الزر)
+    const detailBtn = tr.querySelector('[data-detail-pn]');
+    if (detailBtn) {
+      detailBtn.addEventListener('click', (ev)=>{
+        ev.preventDefault();
+        try{
+          const url = link || `/shop/?s=${encodeURIComponent(pn)}&post_type=product`;
+          window.open(url, "_blank", "noopener");
+        }catch{}
+      });
+    }
 
     // Add to quotation (Woo/Cart) — Enhanced with proper feedback and navigation
     tr.querySelector('[data-sku]').addEventListener('click', async (ev)=>{
