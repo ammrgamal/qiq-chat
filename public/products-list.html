@@ -1,2 +1,45 @@
-<!-- منطقة عرض المنتجات المقترحة تحت الشات -->
-<div id="qiq-products-list" class="qiq-products-list"></div>
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Product Catalog</title>
+	<link rel="stylesheet" href="/css/styles.css" />
+	<style>
+		body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:#fff;color:#111}
+		.container{max-width:1080px;margin:16px auto;padding:12px}
+		.header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+		.header a{color:#2563eb;text-decoration:none}
+		.toolbar{display:flex;gap:8px;align-items:center;margin:10px 0}
+		.toolbar input{flex:1;min-width:280px;padding:10px;border:1px solid #e5e7eb;border-radius:10px}
+		.results{display:grid;gap:10px}
+		.card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;display:flex;gap:10px;align-items:flex-start}
+		.card img{width:60px;height:60px;border-radius:8px;object-fit:cover;background:#f3f4f6}
+		.card .name{font-weight:600;margin-bottom:4px}
+		.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+		.chip{background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:12px;color:#374151}
+		.price{background:#eef2ff;color:#3730a3}
+		.actions{margin-inline-start:auto;display:flex;gap:6px}
+		.btn{border:0;border-radius:10px;padding:8px 10px;background:#2563eb;color:#fff;cursor:pointer}
+		.btn.secondary{background:#6b7280}
+		.muted{color:#6b7280}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="header">
+			<h1 style="margin:0">Product Catalog</h1>
+			<div class="muted" id="status"></div>
+			<div style="margin-inline-start:auto"><a href="/quote.html">View Quote</a></div>
+		</div>
+		<div class="toolbar">
+			<input id="q" type="search" placeholder="Search by name / PN / SKU" />
+			<button id="searchBtn" class="btn">Search</button>
+			<button id="clearBtn" class="btn secondary">Clear</button>
+		</div>
+		<div class="results" id="results"></div>
+	</div>
+	<script src="/js/quote-actions.js"></script>
+	<script src="/js/products-search.js"></script>
+	</body>
+	</html>

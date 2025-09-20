@@ -243,7 +243,8 @@
       detailBtn.addEventListener('click', (ev)=>{
         ev.preventDefault();
         try{
-          const url = link || `/shop/?s=${encodeURIComponent(pn)}&post_type=product`;
+          // Open the new catalog view filtered by PN/SKU
+          const url = `/products-list.html?q=${encodeURIComponent(pn || name)}`;
           window.open(url, "_blank", "noopener");
         }catch{}
       });

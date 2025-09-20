@@ -622,7 +622,8 @@
     });
 
     subtotalCell.textContent = fmt(sub, toCurrency);
-    const installCost = $("include-install").checked ? sub * 0.1 : 0;
+  // Apply 5% optional installation cost (matches UI label)
+  const installCost = $("include-install").checked ? sub * 0.05 : 0;
     installCell.textContent = fmt(installCost, toCurrency);
     grandCell.textContent = fmt(sub + installCost, toCurrency);
   }
@@ -813,7 +814,7 @@
       if (state.items && Array.isArray(state.items)) {
         state.items.forEach(item => {
           if (item.desc || item.pn) {
-            addRow(item.desc, item.pn, item.unit, item.qty);
+            addRowFromData({ desc: item.desc, pn: item.pn, unit: item.unit, qty: item.qty });
           }
         });
       }

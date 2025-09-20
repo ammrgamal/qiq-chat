@@ -70,14 +70,15 @@
     const price = hit?.price || hit?.list_price || "";
     const pn    = hit?.objectID || hit?.sku || "";
     const img   = hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || PLACEHOLDER_IMG;
-    const link  = hit?.link || hit?.product_url || hit?.permalink || "";
+  // Prefer our internal catalog page filtered by PN for details
+  const linkTarget = (hit?.objectID || hit?.sku) ? `/products-list.html?q=${encodeURIComponent(hit.objectID || hit.sku)}` : (hit?.link || hit?.product_url || hit?.permalink || "");
     const brand = hit?.brand || hit?.manufacturer || hit?.vendor || hit?.company || "غير محدد";
 
     const safeName = esc(String(name));
     const safePrice = esc(String(price));
     const safePn = esc(String(pn));
     const safeImg = esc(img);
-    const safeLink = esc(link);
+  const safeLink = esc(linkTarget);
     const safeBrand = esc(String(brand));
 
     return `
@@ -117,14 +118,14 @@
     const price = hit?.price || hit?.list_price || "";
     const pn    = hit?.objectID || hit?.sku || "";
     const img   = hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || PLACEHOLDER_IMG;
-    const link  = hit?.link || hit?.product_url || hit?.permalink || "";
+  const linkTarget2 = (hit?.objectID || hit?.sku) ? `/products-list.html?q=${encodeURIComponent(hit.objectID || hit.sku)}` : (hit?.link || hit?.product_url || hit?.permalink || "");
     const brand = hit?.brand || hit?.manufacturer || hit?.vendor || hit?.company || "غير محدد";
 
     const safeName = esc(String(name));
     const safePrice = esc(String(price));
     const safePn = esc(String(pn));
     const safeImg = esc(img);
-    const safeLink = esc(link);
+  const safeLink = esc(linkTarget2);
     const safeBrand = esc(String(brand));
 
     return `
