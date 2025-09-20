@@ -41,6 +41,13 @@
       .print-only{ display:block }
       body{ background:#fff }
       .card{ break-inside:avoid }
+      @page {
+        margin: 0.5in;
+        size: A4;
+      }
+      body > footer, .print-footer {
+        display: none !important;
+      }
     }
     .notice{ background:#f0f9ff; border:1px solid #dbeafe; color:#0c4a6e; padding:8px 10px; border-radius:10px; font-size:13px }
     .checkbox{ display:flex; align-items:center; gap:8px }
@@ -58,17 +65,6 @@
 </head>
 <body>
   <div class="container">
-    <!-- منطقة الشات -->
-    <div class="card" style="margin-bottom:18px">
-      <div id="qiq-window" style="min-height:120px"></div>
-      <form id="qiq-form" class="flex" style="margin-top:10px">
-        <input id="qiq-input" type="text" placeholder="اكتب سؤالك أو اسم المنتج..." style="flex:1" />
-        <button type="submit" class="btn qiq-send">إرسال</button>
-      </form>
-    </div>
-    <!-- منطقة نتائج البحث أسفل الشات -->
-    <div id="qiq-products-list" class="card" style="margin-bottom:18px"></div>
-
     <!-- Header / Logo + meta -->
     <div class="card">
       <div class="quote-head">
@@ -153,7 +149,6 @@
           <button id="btn-export-csv" class="btn">تصدير CSV</button>
           <button id="btn-export-excel" class="btn">تصدير XLSX</button>
           <button id="btn-add-row" class="btn">إضافة بند يدوي</button>
-          <button id="btn-load-staged" class="btn">تحميل البنود من الشات</button>
         </div>
       </div>
       
@@ -181,8 +176,8 @@
             <tr>
 
               <th style="width:86%">Description / PN / SKU</th>
-              <th style="width:4%">Price</th>
               <th style="width:3%">QTY</th>
+              <th style="width:4%">Price</th>
               <th style="width:4%">Total</th>
               <th class="no-print" style="width:3%">Action</th>
 main

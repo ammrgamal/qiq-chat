@@ -152,9 +152,9 @@
   updateEmptyState();
 
   // ===== Events =====
-  $("currency").addEventListener("change", () => {
+  $("currency").addEventListener("change", async () => {
     currencyViewEl.textContent = getCurrency();
-    recalcTotals();
+    await recalcTotals(); // Make it async
     saveState();
   });
   $("quote-date").addEventListener("change", () => {
@@ -167,7 +167,10 @@
 
   $("payment-terms").addEventListener("input", saveState);
   $("terms").addEventListener("input", saveState);
-  $("include-install").addEventListener("change", () => { recalcTotals(); saveState(); });
+  $("include-install").addEventListener("change", async () => { 
+    await recalcTotals(); // Make it async
+    saveState(); 
+  });
 
   $("btn-add-row").addEventListener("click", (e) => {
     e.preventDefault();
@@ -365,7 +368,10 @@
   // ===== Enhanced Functions =====
   function addRowFromData({ desc, pn, unit, qty, manufacturer, brand }) {
     const tr = document.createElement("tr");
-    
+    const id = `row-${uid()}`;
+    tr.id = id;
+    tr.dataset.basePrice = unit || 0; // Store base price in USD
+
     // Create the enhanced product description combining name, brand, and PN
     const productName = desc || "";
     const productBrand = manufacturer || brand || "";
@@ -537,26 +543,50 @@
     descCell.innerHTML = descriptionHTML;
   }
 
-  function recalcTotals() {
-    const cur = getCurrency();
-    let subtotal = 0;
-    itemsBody.querySelectorAll("tr").forEach(tr => {
-      const unit = num(tr.querySelector(".in-unit")?.value);
-      const qty  = Math.max(1, parseInt(tr.querySelector(".in-qty")?.value || "1", 10));
-      const line = unit * qty;
-      tr.querySelector(".line-total").textContent = line ? fmt(line, cur) : "-";
-      subtotal += line;
-    });
-    subtotalCell.textContent = fmt(subtotal, cur);
+  // ===== Currency Conversion =====
+  let ratesCache = {};
+  const getExchangeRate = async (from, to) => {
+    if (from === to) return 1;
+    const rateKey = `${from}_${to}`;
+    if (ratesCache[rateKey]) return ratesCache[rateKey];
 
-    let install = 0;
-    if ($("include-install").checked) {
-      install = +(subtotal * 0.05).toFixed(2);
+    try {
+      const response = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${from.toLowerCase()}.json`);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const data = await response.json();
+      const rate = data[from.toLowerCase()][to.toLowerCase()];
+      if (!rate) throw new Error(`Rate for ${to} not found`);
+      ratesCache[rateKey] = rate;
+      return rate;
+    } catch (error) {
+      console.error("Could not fetch exchange rate:", error);
+      showNotification(`Could not fetch exchange rate for ${to}. Using 1:1.`, 'error');
+      return 1; // Fallback
     }
-    installCell.textContent = fmt(install, cur);
+  };
 
-    const grand = subtotal + install;
-    grandCell.textContent = fmt(grand, cur);
+  // ===== Recalculate Totals =====
+  async function recalcTotals() {
+    let sub = 0;
+    const toCurrency = getCurrency();
+    const rate = await getExchangeRate('USD', toCurrency); // Assuming base currency of items is USD
+
+    itemsBody.querySelectorAll("tr").forEach((row) => {
+      const unitPriceUSD = num(row.dataset.basePrice || row.querySelector(".in-unit").value);
+      const qty = num(row.querySelector(".in-qty").value);
+      
+      const convertedPrice = unitPriceUSD * rate;
+      row.querySelector(".in-unit").value = convertedPrice.toFixed(2); // Update displayed unit price
+      
+      const total = convertedPrice * qty;
+      row.querySelector(".out-total").textContent = fmt(total, toCurrency);
+      sub += total;
+    });
+
+    subtotalCell.textContent = fmt(sub, toCurrency);
+    const installCost = $("include-install").checked ? sub * 0.1 : 0;
+    installCell.textContent = fmt(installCost, toCurrency);
+    grandCell.textContent = fmt(sub + installCost, toCurrency);
   }
 
   function buildPayload(extra) {
