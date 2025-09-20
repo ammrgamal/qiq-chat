@@ -13,16 +13,214 @@
 .qiq-bubble{display:inline-block;padding:10px 12px;border-radius:12px;max-width:95%;white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #e5e7eb}
 .qiq-msg.user .qiq-bubble{background:#2563eb;border-color:#2563eb;color:#fff}
 
-.qiq-form{display:flex;gap:8px;border-top:1px solid #e5e7eb;padding:10px;background:#fff;align-items:center}
-.qiq-input{flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:10px}
-.qiq-actions{display:flex;gap:8px}
-.qiq-btn,.qiq-send{border:0;border-radius:10px;padding:10px 14px;cursor:pointer;background:#374151;color:#fff}
-.qiq-send{background:#111827}
-.qiq-btn:disabled,.qiq-send:disabled{opacity:.6;cursor:not-allowed}
-.qiq-primary{background:#0ea5e9}
-.qiq-success{background:#059669}
-.qiq-right{display:flex;gap:8px;align-items:center}
-.qiq-status{font-size:12px;color:#6b7280;margin-inline-start:8px}
+/* ===== منطقة نتائج البحث ===== */
+.qiq-products-list {
+  padding: 16px;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+}
+
+.qiq-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.qiq-inline-wrap {
+  margin-bottom: 12px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.qiq-inline-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  table-layout: fixed;
+}
+
+.qiq-inline-table td {
+  padding: 12px;
+  vertical-align: middle;
+  border: none;
+}
+
+.product-image-wrap {
+  width: 64px;
+  height: 64px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.product-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: pointer;
+}
+
+.product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.product-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.qiq-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.qiq-chip.brand {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.qiq-chip.pn {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* ===== Forms & Inputs ===== */
+.qiq-form {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid #e5e7eb;
+  padding: 10px;
+  background: #fff;
+  align-items: center;
+}
+
+.qiq-input {
+  flex: 1;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.qiq-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.qiq-btn,
+.qiq-send,
+.qiq-mini {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  background: #374151;
+  color: #fff;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.qiq-mini {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.qiq-send {
+  background: #111827;
+}
+
+.qiq-btn:hover,
+.qiq-send:hover,
+.qiq-mini:hover {
+  opacity: 0.9;
+}
+
+.qiq-btn:disabled,
+.qiq-send:disabled,
+.qiq-mini:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.qiq-primary,
+.qiq-mini.primary {
+  background: #0ea5e9;
+}
+
+.qiq-success {
+  background: #059669;
+}
+
+/* ===== Modals & Overlays ===== */
+.overlay-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #fff;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+#image-preview-overlay img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+/* ===== Utils ===== */
+.qiq-right {
+  margin-inline-start: auto;
+}
 
 /* ===== Toast Notifications ===== */
 .qiq-toast{position:fixed;right:16px;bottom:16px;z-index:9999;display:flex;flex-direction:column;gap:8px}

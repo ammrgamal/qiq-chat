@@ -98,8 +98,8 @@
                 <div class="product-info" style="display:flex;flex-direction:column;gap:6px">
                   <div style="font-weight:600;color:#111827">${safeName}</div>
                   <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px">
-                    ${safePn ? `<span class="qiq-chip" style="background:#f3f4f6;padding:4px 8px;border-radius:4px;color:#374151">${safePn}</span>` : ""}
                     ${safeBrand ? `<span class="qiq-chip" style="background:#e0f2fe;padding:4px 8px;border-radius:4px;color:#0369a1">${safeBrand}</span>` : ""}
+                    ${safePn ? `<span class="qiq-chip" style="background:#f3f4f6;padding:4px 8px;border-radius:4px;color:#374151">${safePn}</span>` : ""}
                   </div>
                 </div>
               </td>
@@ -245,11 +245,12 @@
 
     // 2) نتائج البحث - نعرض في الجدول فقط
     const hits = await runSearch(userText, 6);
-    displayProductsInTable(hits, "Matches & alternatives");
+    // عرض النتائج في الجدول فقط
     if (hits.length) {
-      addMsg("bot", `تم العثور على ${hits.length} ${hits.length === 1 ? 'منتج' : 'منتجات'}. يمكنك مشاهدة النتائج أدناه.`);
+      displayProductsInTable(hits, "Search results");
+      thinking.textContent = `يمكنك اختيار المنتجات التي تريدها من الجدول أدناه.`;
     } else {
-      addMsg("bot", "لم نجد منتجات مطابقة. حاول كتابة اسم المنتج بشكل مختلف أو استخدم خاصية رفع BOQ.");
+      thinking.textContent = "لم نجد منتجات مطابقة. حاول كتابة اسم المنتج بشكل مختلف أو استخدم خاصية رفع BOQ.";
     }
   });
 
