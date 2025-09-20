@@ -58,6 +58,16 @@
 </head>
 <body>
   <div class="container">
+    <!-- منطقة الشات -->
+    <div class="card" style="margin-bottom:18px">
+      <div id="qiq-window" style="min-height:120px"></div>
+      <form id="qiq-form" class="flex" style="margin-top:10px">
+        <input id="qiq-input" type="text" placeholder="اكتب سؤالك أو اسم المنتج..." style="flex:1" />
+        <button type="submit" class="btn qiq-send">إرسال</button>
+      </form>
+    </div>
+    <!-- منطقة نتائج البحث أسفل الشات -->
+    <div id="qiq-products-list" class="card" style="margin-bottom:18px"></div>
 
     <!-- Header / Logo + meta -->
     <div class="card">

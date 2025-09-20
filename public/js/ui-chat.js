@@ -180,12 +180,15 @@
     }
   }
 
-  /* ---- دالة لعرض المنتجات مباشرة في الجدول ---- */
+  /* ---- دالة لعرض المنتجات مباشرة في منطقة منفصلة تحت الشات ---- */
   function displayProductsInTable(hits, source = "Search") {
-    // اعرض المنتجات في منطقة منفصلة تحت الشات
     const productsList = document.getElementById("qiq-products-list");
     if (productsList) {
-      productsList.innerHTML = hits.map(hitToCard).join("");
+      if (hits.length) {
+        productsList.innerHTML = `<div class="qiq-section-title">${esc(source)}</div>` + hits.map(hitToCard).join("");
+      } else {
+        productsList.innerHTML = "<div class='muted'>لا توجد نتائج مطابقة.</div>";
+      }
     }
   }
 
