@@ -55,9 +55,75 @@
   font-size: 16px;
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   padding-bottom: 8px;
   border-bottom: 1px solid #e5e7eb;
+}
+
+.qiq-result-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  background: #fff;
+}
+
+.qiq-result-image {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+}
+
+.qiq-result-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.qiq-result-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.qiq-result-name {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.qiq-result-details {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.qiq-result-price {
+  font-size: 15px;
+  font-weight: 600;
+  color: #059669;
+  margin-bottom: 12px;
+}
+
+.qiq-result-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.qiq-btn.secondary {
+  background: #f3f4f6;
+  color: #374151;
+  text-decoration: none;
+}
+
+.qiq-btn.secondary:hover {
+  background: #e5e7eb;
 }
 
 @keyframes qiq-slide-in {

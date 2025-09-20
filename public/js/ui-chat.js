@@ -81,42 +81,32 @@
     const safeBrand = esc(String(brand));
 
     return `
-      <div class="qiq-inline-wrap" style="margin:10px 0">
-        <table class="qiq-inline-table">
-          <tbody>
-            <tr>
-              <td style="width:68px">
-                <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
-              </td>
-              <td>
-                <div style="font-weight:700">${safeName}</div>
-                ${safePn ? `<div class="qiq-chip">PN: ${safePn}</div>` : ""}
-                ${safeBrand ? `<div class="qiq-chip" style="background:#f0f9ff;border-color:#0ea5e9">الشركة: ${safeBrand}</div>` : ""}
-                ${safeLink ? `<div style="margin-top:4px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener">تفاصيل المنتج</a></div>` : ""}
-              </td>
-              <td style="width:140px">${safePrice ? safePrice + ' USD' : "-"}</td>
-              <td style="width:220px">
-                <div class="qiq-inline-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                  <button class="qiq-mini primary" type="button"
-                    data-name="${safeName}"
-                    data-price="${safePrice}"
-                    data-pn="${safePn}"
-                    data-image="${safeImg}"
-                    data-link="${safeLink}"
-                    data-manufacturer="${safeBrand}"
-                    data-source="Search"
-                    onclick="AddToQuote(this)">
-                    إضافة للعرض
-                  </button>
-                  <button class="qiq-mini" type="button"
-                    onclick="window.open('${safeLink || '#'}','_blank','noopener')">
-                    تفاصيل المنتج
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="qiq-result-card">
+        <div class="qiq-result-image">
+          <img src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
+        </div>
+        <div class="qiq-result-content">
+          <div class="qiq-result-name">${safeName}</div>
+          <div class="qiq-result-details">
+            ${safePn ? `<span class="qiq-chip">PN: ${safePn}</span>` : ""}
+            ${safeBrand ? `<span class="qiq-chip brand">الشركة: ${safeBrand}</span>` : ""}
+          </div>
+          <div class="qiq-result-price">${safePrice ? safePrice + ' USD' : "-"}</div>
+          <div class="qiq-result-actions">
+            <button class="qiq-btn primary" type="button"
+              data-name="${safeName}"
+              data-price="${safePrice}"
+              data-pn="${safePn}"
+              data-image="${safeImg}"
+              data-link="${safeLink}"
+              data-manufacturer="${safeBrand}"
+              data-source="Search"
+              onclick="AddToQuote(this)">
+              إضافة للعرض
+            </button>
+            ${safeLink ? `<a class="qiq-btn secondary" href="${safeLink}" target="_blank" rel="noopener">تفاصيل المنتج</a>` : ""}
+          </div>
+        </div>
       </div>
     `;
   }
