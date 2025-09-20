@@ -519,10 +519,22 @@
       }
 
       // تحقق من القيم الأساسية
-      if (!payload.name || !payload.pn || !payload.price) {
-        showNotification("يجب أن يحتوي المنتج على اسم، رقم PN (objectID)، وسعر.", "error");
+      if (!payload.name) {
+        showNotification("يجب أن يحتوي المنتج على اسم", "error");
         return;
       }
+
+      // معالجة خاصة لمنتجات Palo Alto
+      if (!payload.pn && payload.objectID) {
+        payload.pn = payload.objectID;
+      }
+
+      // تأكد من وجود رقم تعريفي (PN أو SKU)
+      if (!payload.pn && !payload.sku) {
+        showNotification("يجب أن يحتوي المنتج على رقم تعريفي (PN أو SKU)", "error");
+        return;
+      }
+
       if (!payload.image) {
         payload.image = "https://via.placeholder.com/68?text=IMG";
       }

@@ -68,7 +68,9 @@
     // محاولة استخراج أهم الحقول الشائعة
     const name  = hit?.name || "(No name)";
     const price = hit?.price || hit?.list_price || "";
-    const pn    = hit?.objectID || hit?.sku || "";
+    // معالجة خاصة لمنتجات Palo Alto التي تأتي بتنسيق مختلف
+    const pn    = (hit?.objectID && hit?.objectID.startsWith('PAN-')) ? hit?.objectID 
+                : hit?.sku || hit?.mpn || "";
     const img   = hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || PLACEHOLDER_IMG;
     const link  = hit?.link || hit?.product_url || hit?.permalink || "";
     const brand = hit?.brand || hit?.manufacturer || hit?.vendor || hit?.company || "غير محدد";
