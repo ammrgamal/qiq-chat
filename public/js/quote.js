@@ -2,6 +2,8 @@
   // ===== Global variables =====
   let isLoading = false;
   let filteredRows = [];
+  const algoliaClient = algoliasearch('YOUR_APP_ID', 'YOUR_SEARCH_API_KEY');
+  const productsIndex = algoliaClient.initIndex('woocommerce_products');
 
   // ===== Helpers =====
   const $ = (id) => document.getElementById(id);
@@ -16,6 +18,13 @@
     } catch {
       return `${n.toFixed(2)} ${cur || ""}`.trim();
     }
+  };
+  
+  // Remove PN/SKU from product title if it already appears at the end
+  const cleanProductTitle = (title) => {
+    if (!title) return "";
+    // Remove PN-XXXXXX or PN: XXXXXX from the end of the string
+    return title.replace(/\s+(?:PN[-:]?\s*[\w-]+|\(PN[-:]?\s*[\w-]+\))$/i, '');
   };
   const getCurrency = () => $("currency").value || "USD";
   const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -143,13 +152,80 @@
     // التحقق من وجود بنود محفوظة من الشات قبل إضافة صف فارغ
     const stagedRaw = localStorage.getItem(STAGED_KEY);
     if (!stagedRaw) {
-      // إضافة صف فارغ فقط إذا لم تكن هناك بنود محفوظة
-      addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
+          addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
     }
   }
 
   recalcTotals();
   updateEmptyState();
+
+  // === وظائف إضافة منتج جديد ===
+  async function addNewProduct() {
+    try {
+      const searchQuery = prompt("ادخل اسم المنتج أو رقم القطعة للبحث:");
+      if (!searchQuery) return;
+
+      const results = await productsIndex.search(searchQuery, {
+        hitsPerPage: 5,
+        attributesToRetrieve: [
+          'name', 'sku', 'mpn', 'brand', 
+          'price', 'image', 'category',
+          'availability'
+        ]
+      });
+
+      if (!results.hits.length) {
+        return showNotification("لم يتم العثور على منتجات مطابقة", "warning");
+      }
+
+      // اختيار منتج
+      const selectedProduct = results.hits[0]; // يمكن تحسين هذا لإظهار قائمة اختيار
+      
+      addRowFromData({
+        desc: selectedProduct.name,
+        pn: selectedProduct.sku || selectedProduct.mpn,
+        unit: selectedProduct.price,
+        qty: 1,
+        manufacturer: selectedProduct.brand,
+        image: selectedProduct.image
+      });
+
+      showNotification("تم إضافة المنتج بنجاح", "success");
+      recalcTotals();
+      saveState();
+
+    } catch (error) {
+      console.error('Error adding product:', error);
+      showNotification("حدث خطأ أثناء إضافة المنتج", "error");
+    }
+  }
+
+  // === طلب عرض سعر مخصص ===
+  async function requestSpecialQuote() {
+    if (!validateForm()) {
+      showNotification("يرجى ملء جميع البيانات المطلوبة", "error");
+      return;
+    }
+
+    try {
+      const payload = buildPayload({ reason: "special-price" });
+      const response = await fetch("/api/special-quote", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        showNotification("تم إرسال طلب السعر المخصص بنجاح. سنتواصل معك قريباً", "success");
+      } else {
+        throw new Error("API Error");
+      }
+
+    } catch (error) {
+      console.error('Error requesting special quote:', error);
+      showNotification("حدث خطأ أثناء إرسال الطلب", "error");
+    }
+  }
 
   // ===== Events =====
   $("currency").addEventListener("change", () => {
@@ -169,11 +245,10 @@
   $("terms").addEventListener("input", saveState);
   $("include-install").addEventListener("change", () => { recalcTotals(); saveState(); });
 
+  // إضافة منتج جديد
   $("btn-add-row").addEventListener("click", (e) => {
     e.preventDefault();
-    addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
-    recalcTotals();
-    showNotification("Product added! You can add more or proceed.", "success");
+    addNewProduct();
   });
 
   $("btn-load-staged").addEventListener("click", (e) => {
@@ -366,8 +441,8 @@
   function addRowFromData({ desc, pn, unit, qty, manufacturer, brand }) {
     const tr = document.createElement("tr");
     
-    // Create the enhanced product description combining name, brand, and PN
-    const productName = desc || "";
+    // Clean product description to remove duplicate PN/SKU
+    const productName = cleanProductTitle(desc || "");
     const productBrand = manufacturer || brand || "";
     const productPN = pn || "";
     
@@ -377,11 +452,11 @@
     if (productBrand || productPN) {
       descriptionHTML += `<div class="product-details">`;
       if (productBrand && productPN) {
-        descriptionHTML += `<span class="product-pn">(PN: ${esc(productPN)})</span> - <span class="product-brand">${esc(productBrand)}</span>`;
+        descriptionHTML += `<span class="product-brand">${esc(productBrand)}</span> - <span class="product-pn">${esc(productPN)}</span>`;
       } else if (productBrand) {
         descriptionHTML += `<span class="product-brand">${esc(productBrand)}</span>`;
       } else if (productPN) {
-        descriptionHTML += `<span class="product-pn">PN: ${esc(productPN)}</span>`;
+        descriptionHTML += `<span class="product-pn">${esc(productPN)}</span>`;
       }
       descriptionHTML += `</div>`;
     }
@@ -394,11 +469,12 @@
         <input class="in-pn" type="hidden" value="${esc(pn)}" />
         <input class="in-brand" type="hidden" value="${esc(productBrand)}" />
       </td>
-      <td class="qty-col">
-        <input class="in-qty qty-input" type="number" min="1" step="1" value="${Number(qty)||1}">
+      <td class="qty-col numeric">
+        <input class="in-qty qty-input" type="number" min="1" step="1" value="${Number(qty)||1}" style="width:100%;text-align:right;border:1px solid #d1d5db;border-radius:4px;padding:4px 6px;">
       </td>
       <td class="price-col numeric">
-        <input class="in-unit" type="number" min="0" step="0.01" value="${Number(unit)||0}" style="width:100%;text-align:right;border:1px solid #d1d5db;border-radius:4px;padding:4px 6px;">
+        ${fmt(unit)}
+        <input class="in-unit" type="hidden" value="${Number(unit)||0}">
       </td>
       <td class="total-col numeric line-total">-</td>
       <td class="actions-col no-print">
@@ -474,6 +550,36 @@
         </div>
       </div>
     `;
+
+    function rebuildDescriptionDisplay(tr) {
+      const descCell = tr.querySelector(".desc-col");
+      const productName = cleanProductTitle(tr.querySelector(".in-desc").value);
+      const productBrand = tr.querySelector(".in-brand").value;
+      const productPN = tr.querySelector(".in-pn").value;
+
+      let descriptionHTML = `<div class="product-desc">`;
+      descriptionHTML += `<span class="product-name">${esc(productName)}</span>`;
+      
+      if (productBrand || productPN) {
+        descriptionHTML += `<div class="product-details">`;
+        if (productBrand && productPN) {
+          descriptionHTML += `<span class="product-brand">${esc(productBrand)}</span> - <span class="product-pn">${esc(productPN)}</span>`;
+        } else if (productBrand) {
+          descriptionHTML += `<span class="product-brand">${esc(productBrand)}</span>`;
+        } else if (productPN) {
+          descriptionHTML += `<span class="product-pn">${esc(productPN)}</span>`;
+        }
+        descriptionHTML += `</div>`;
+      }
+      descriptionHTML += `</div>`;
+      
+      // Replace only the display content
+      tr.querySelector(".product-desc")?.parentElement?.innerHTML = descriptionHTML + `
+        <input class="in-desc" type="hidden" value="${esc(tr.querySelector(".in-desc").value)}" />
+        <input class="in-pn" type="hidden" value="${esc(productPN)}" />
+        <input class="in-brand" type="hidden" value="${esc(productBrand)}" />
+      `;
+    }
     
     const saveBtn = descCell.querySelector(".btn-save");
     const cancelBtn = descCell.querySelector(".btn-cancel");
@@ -545,6 +651,13 @@
       const qty  = Math.max(1, parseInt(tr.querySelector(".in-qty")?.value || "1", 10));
       const line = unit * qty;
       tr.querySelector(".line-total").textContent = line ? fmt(line, cur) : "-";
+      
+      // Update visible price in price-col
+      const priceCol = tr.querySelector(".price-col");
+      if (priceCol) {
+        priceCol.firstChild.textContent = fmt(unit, cur);
+      }
+      
       subtotal += line;
     });
     subtotalCell.textContent = fmt(subtotal, cur);

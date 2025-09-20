@@ -16,48 +16,53 @@
   const clearLogBtn = document.getElementById("qiq-clear-log"); // زرار مسح السجل
   const showLogBtn = document.getElementById("qiq-show-log"); // زرار إظهار السجل من الجدول
 
-  // أسعار الصرف الرسمية
+  // تنسيقات الأسعار وتحويل العملات
+  const defaultCountry = "Egypt";
   const exchangeRates = {
-    USD: 1,
-    EUR: 0.93,
-    EGP: 30.90,
-    AED: 3.67,
-    SAR: 3.75
+    "Egypt": { rate: 31.5, currency: "EGP", symbol: "ج.م" },
+    "UAE": { rate: 3.67, currency: "AED", symbol: "د.إ" },
+    "Saudi": { rate: 3.75, currency: "SAR", symbol: "ر.س" },
+    "Kuwait": { rate: 0.31, currency: "KWD", symbol: "د.ك" },
+    "Qatar": { rate: 3.64, currency: "QAR", symbol: "ر.ق" },
+    "Oman": { rate: 0.385, currency: "OMR", symbol: "ر.ع" },
+    "Bahrain": { rate: 0.376, currency: "BHD", symbol: "د.ب" }
   };
 
-  // العملة الحالية
-  let currentCurrency = 'EGP';
+  function getSelectedCountry() {
+    return document.getElementById("country-select")?.value || defaultCountry;
+  }
 
-  // تنسيقات الأسعار
-  function formatPrice(value, currency = currentCurrency) {
-    const n = Number(String(value||"").replace(/[^\d.]/g,""));
-    if (!isFinite(n)) return "-";
-    try {
-      // تحويل السعر من الدولار إلى العملة المطلوبة
-      const exchangeRate = exchangeRates[currency] || 1;
-      const convertedPrice = n * exchangeRate;
-      
-      const options = { style: 'currency', currency };
-      return new Intl.NumberFormat(currency === 'EGP' ? 'ar-EG' : 'en-US', options).format(convertedPrice);
+  function getCurrentRate() {
+    const country = getSelectedCountry();
+    return exchangeRates[country]?.rate || 1;
+  }
+
+  function fmtPrice(v, country = null){
+    const n = Number(String(v||"").replace(/[^\d.]/g,""));
+    if(!isFinite(n)) return "-";
+    
+    const selectedCountry = country || getSelectedCountry();
+    const rate = exchangeRates[selectedCountry]?.rate || 1;
+    const currency = exchangeRates[selectedCountry]?.currency || "USD";
+    
+    try { 
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency
+      }).format(n * rate);
     } catch {
-      return `${currency} ${n.toFixed(2)}`;
+      const symbol = exchangeRates[selectedCountry]?.symbol || "$";
+      return `${symbol} ${(n * rate).toFixed(2)}`;
     }
   }
+  
+  function fmtUSD(v) {
+    return fmtPrice(v);
+  }
 
-  function numFromPrice(v) {
+  function numFromPrice(v){
     return Number(String(v||"").replace(/[^\d.]/g,"")) || 0;
   }
-
-  // تحديث العملة وإعادة حساب الأسعار
-  function updateCurrency(newCurrency) {
-    currentCurrency = newCurrency;
-    recalcTotals();
-  }
-
-  // استمع لتغييرات العملة
-  document.getElementById('currency')?.addEventListener('change', (e) => {
-    updateCurrency(e.target.value);
-  });
 
   // Use the global toast system instead of inline notifications
   const showNotification = (message, type = 'info') => {
@@ -189,9 +194,9 @@
   }
 
   // إعادة حساب الإجمالي وحالة زرار Add all (فقط للصفوف المرئية)
-  function recalcTotals() {
+  function recalcTotals(){
     let grand = 0;
-    [...(tbody?.querySelectorAll("tr")||[])].forEach(tr => {
+    [...(tbody?.querySelectorAll("tr")||[])].forEach(tr=>{
       // تجاهل الصفوف المخفية في البحث
       if (tr.style.display === 'none') return;
       
@@ -199,98 +204,66 @@
       const qty  = Math.max(1, parseInt(tr.querySelector(".qiq-qty")?.value||"1",10));
       const line = unit * qty;
       const cell = tr.querySelector(".qiq-line");
-      if(cell) cell.textContent = unit ? formatPrice(line) : "-";
-      
-      // تحديث سعر الوحدة أيضاً بالعملة الجديدة
-      const unitCell = tr.querySelector("td.numeric");
-      if (unitCell) unitCell.textContent = unit ? formatPrice(unit) : "-";
-      
+      if(cell) cell.textContent = unit? fmtUSD(line) : "-";
       grand += line;
     });
-    if(grandCell) grandCell.textContent = grand ? formatPrice(grand) : "-";
-    if(addAllBtn) {
+    if(grandCell) grandCell.textContent = grand ? fmtUSD(grand) : "-";
+    if(addAllBtn){
       const addables = tbody?.querySelectorAll('button[data-sku]:not(:disabled)')?.length || 0;
       addAllBtn.disabled = addables === 0;
     }
   }
 
   // يبني صف في جدول الكوت
-  function buildRow(data) {
+  function buildRow(data){
+  // تحسين بسيط: طباعة اسم المنتج في الكونسول عند إضافة صف جديد
+  console.log("تمت إضافة المنتج:", data.name || "—");
     if(!tbody) return;
 
-    const key = (data.pn || data.name || "").toString().trim().toUpperCase();
+    const key     = (data.pn || data.name || "").toString().trim().toUpperCase();
     if(!key) return;
     // منع التكرار بنفس الـ objectID
     if(tbody.querySelector(`tr[data-key="${CSS.escape(key)}"]`)) {
       showNotification("هذا المنتج موجود بالفعل في الجدول", "warning");
       return;
     }
-    const name = data.name || "—";
-    const price = data.price || "";
+    const name    = data.name  || "—";
+    const price   = data.price || "";
     const unitNum = numFromPrice(price);
-    const img = data.image || "https://via.placeholder.com/68?text=IMG";
-    const link = data.link || "";
-    const source = data.source || "Add";
-    const pn = data.pn || "";
+    const img     = data.image || "https://via.placeholder.com/68?text=IMG";
+    const link    = data.link  || "";
+    const source  = data.source|| "Add";
+    const pn      = data.pn    || "";
     const manufacturer = data.manufacturer || data.brand || data.vendor || "غير محدد";
-
     const tr = document.createElement("tr");
     tr.dataset.unit = price || "";
-    tr.dataset.key = key;
+    tr.dataset.key  = key;
     tr.setAttribute("data-key", key);
-
-    // تحسين عرض البيانات وإضافة معاينة للصور
     tr.innerHTML = `
-      <td style="width:68px;text-align:center">
-        <div class="product-image-container" style="position:relative;width:64px;height:64px;margin:auto">
-          <img class="qiq-img" src="${img}" alt="${name}"
-            style="width:100%;height:100%;object-fit:contain;cursor:pointer;border-radius:8px;border:1px solid #e5e7eb"
-            onerror="this.src='https://via.placeholder.com/64?text=NO+IMAGE'"
-            onclick="openImagePreview('${img}')"
-            title="انقر لمعاينة الصورة">
-        </div>
+      <td>
+        <img class="qiq-img" src="${img}" alt="${name}"
+          width="32" height="32"
+          style="max-width:32px;max-height:32px;cursor:pointer;border-radius:6px"
+          onerror="this.src='https://via.placeholder.com/32?text=IMG'"
+          onclick="openImagePreview('${img}')"
+          title="اضغط لمعاينة الصورة">
       </td>
       <td>
-        <div class="product-info" style="display:flex;flex-direction:column;gap:4px">
-          <div class="product-name" style="font-weight:600;color:#111827">
-            ${link ? `<a class="qiq-link" target="_blank" rel="noopener" href="${link}">${name}</a>` : name}
-          </div>
-          <div class="product-meta" style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px">
-            ${pn ? `<span class="meta-tag" style="background:#f3f4f6;padding:2px 8px;border-radius:4px;color:#374151">P/N: ${pn}</span>` : ''}
-            ${manufacturer ? `<span class="meta-tag" style="background:#e0f2fe;padding:2px 8px;border-radius:4px;color:#0369a1">${manufacturer}</span>` : ''}
+        <div class="product-desc">
+          <span class="product-name">${link?`<a class="qiq-link" target="_blank" rel="noopener" href="${link}">${name}</a>`:`${name}`}</span>
+          <div class="product-details">
+            ${pn ? `<span class="product-pn">${pn}</span>` : ''}
+            ${manufacturer ? `<span class="product-brand">${manufacturer}</span>` : ''}
           </div>
         </div>
       </td>
-      <td style="width:80px">
-        <input type="number" min="1" step="1" value="1" class="qiq-qty qty-input"
-          style="width:100%;padding:4px;border:1px solid #e5e7eb;border-radius:6px;text-align:center">
-      </td>
-      <td class="numeric" style="width:120px;color:#374151;font-weight:500">
-        ${price ? formatPrice(unitNum) : "-"}
-      </td>
-      <td class="qiq-line numeric" style="width:120px;color:#374151;font-weight:500">
-        ${unitNum ? formatPrice(unitNum) : "-"}
-      </td>
-      <td style="width:100px">
-        <div style="display:flex;gap:8px;justify-content:flex-end">
-          ${link ? `
-            <button type="button" class="action-btn" 
-              onclick="openProductDetails('${link}')" 
-              style="padding:6px;border:none;background:#f3f4f6;border-radius:6px;cursor:pointer"
-              title="تفاصيل المنتج">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
-              </svg>
-            </button>
-          ` : ''}
-          <button type="button" class="action-btn delete"
-            data-remove-pn="${pn}"
-            style="padding:6px;border:none;background:#fee2e2;border-radius:6px;cursor:pointer;color:#dc2626"
-            title="حذف هذا البند">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-            </svg>
-          </button>
+      <td><input type="number" min="1" step="1" value="1" class="qiq-qty qty-input"></td>
+      <td class="numeric">${price? fmtUSD(price) : "-"}</td>
+      <td class="qiq-line numeric">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
+      <td>
+        <div class="action-icons">
+          <button class="action-btn edit" type="button" data-detail-pn="${pn}" title="تفاصيل المنتج">ℹ️</button>
+          <button class="action-btn delete" type="button" data-remove-sku="${pn}" title="حذف هذا البند">🗑️</button>
         </div>
       </td>
     `;
@@ -372,81 +345,14 @@
     // إضافة إلى السجل
     addToLog('إضافة', name, `المصدر: ${source}`);
   }
-      // تفاصيل المنتج في نافذة منبثقة
-    window.openProductDetails = function(link) {
-      // إنشاء نافذة منبثقة إذا لم تكن موجودة
-      let modal = document.getElementById('product-details-modal');
-      if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'product-details-modal';
-        modal.style.cssText = `
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.7);
-          display: none;
-          align-items: center;
-          justify-content: center;
-          z-index: 9999;
-        `;
-        modal.innerHTML = `
-          <div style="position:relative;background:#fff;padding:20px;border-radius:12px;width:90%;max-width:800px;max-height:90vh;overflow:auto">
-            <button onclick="this.closest('#product-details-modal').style.display='none'" 
-                    style="position:absolute;top:10px;right:10px;background:none;border:none;font-size:24px;cursor:pointer">×</button>
-            <iframe style="width:100%;height:70vh;border:none" loading="lazy"></iframe>
-          </div>
-        `;
-        document.body.appendChild(modal);
-      }
-      
-      // تحديث المحتوى وعرض النافذة
-      const iframe = modal.querySelector('iframe');
-      if (iframe) iframe.src = link;
-      modal.style.display = 'flex';
-    };
-
-    // معاينة الصورة في نافذة منبثقة
-    window.openImagePreview = function(imageUrl) {
-      // إنشاء نافذة المعاينة إذا لم تكن موجودة
-      let preview = document.getElementById('image-preview-overlay');
-      if (!preview) {
-        preview = document.createElement('div');
-        preview.id = 'image-preview-overlay';
-        preview.style.cssText = `
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.9);
-          display: none;
-          align-items: center;
-          justify-content: center;
-          z-index: 9999;
-        `;
-        preview.innerHTML = `
-          <button onclick="this.closest('#image-preview-overlay').style.display='none'"
-                  style="position:absolute;top:20px;right:20px;background:#fff;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:24px">×</button>
-          <img style="max-width:90vw;max-height:90vh;border-radius:8px;object-fit:contain" />
-        `;
-        document.body.appendChild(preview);
-      }
-      
-      // تحديث الصورة وعرض النافذة
-      const img = preview.querySelector('img');
-      if (img) {
-        img.src = imageUrl;
-        img.alt = 'Product preview';
-        // إظهار الصورة الافتراضية في حالة الفشل
-        img.onerror = () => img.src = 'https://via.placeholder.com/400?text=NO+IMAGE';
-      }
-      preview.style.display = 'flex';
-    };
-
     // حفظ كل المنتجات الحالية في الجدول في localStorage بعد كل إضافة
     const products = [];
     tbody.querySelectorAll('tr').forEach(row => {
-      const name = row.querySelector('.product-name')?.textContent || '';
-      const pn = row.querySelector('.meta-tag')?.textContent.replace('P/N:', '').trim() || '';
-      const price = row.querySelector('.numeric')?.textContent || '';
-      const qty = row.querySelector('.qiq-qty')?.value || '1';
-      const manufacturer = row.querySelector('.meta-tag:last-child')?.textContent || '';
+      const name = row.querySelector('.in-desc')?.value || '';
+      const pn = row.querySelector('.in-pn')?.value || '';
+      const price = row.querySelector('.in-unit')?.value || '';
+      const qty = row.querySelector('.in-qty')?.value || '1';
+      const manufacturer = row.querySelector('.in-manufacturer')?.value || '';
       products.push({ name, pn, price, qty, manufacturer });
     });
     localStorage.setItem('qiq_staged_items', JSON.stringify(products));
@@ -519,22 +425,10 @@
       }
 
       // تحقق من القيم الأساسية
-      if (!payload.name) {
-        showNotification("يجب أن يحتوي المنتج على اسم", "error");
+      if (!payload.name || !payload.pn || !payload.price) {
+        showNotification("يجب أن يحتوي المنتج على اسم، رقم PN (objectID)، وسعر.", "error");
         return;
       }
-
-      // معالجة خاصة لمنتجات Palo Alto
-      if (!payload.pn && payload.objectID) {
-        payload.pn = payload.objectID;
-      }
-
-      // تأكد من وجود رقم تعريفي (PN أو SKU)
-      if (!payload.pn && !payload.sku) {
-        showNotification("يجب أن يحتوي المنتج على رقم تعريفي (PN أو SKU)", "error");
-        return;
-      }
-
       if (!payload.image) {
         payload.image = "https://via.placeholder.com/68?text=IMG";
       }

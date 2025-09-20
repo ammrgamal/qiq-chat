@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8 />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>طلب عرض سعر | QuickITQuote</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -108,22 +108,21 @@
           <label>المقاول العام (إن وجد)</label>
           <input id="main-contractor" placeholder="General Contractor" />
         </div>
-        <div class="col-6">
-          <label>عنوان الشركة</label>
-          <textarea id="company-address" placeholder="العنوان التفصيلي للشركة" style="min-height: 60px;"></textarea>
-        </div>
         <div class="col-3">
           <label>موقع التنفيذ</label>
           <input id="site-location" placeholder="City, Country" />
         </div>
         <div class="col-3">
-          <label>العملة</label>
-          <select id="currency">
-            <option value="EGP" selected>جنيه EGP</option>
-            <option value="USD">$ USD</option>
-            <option value="EUR">€ EUR</option>
-            <option value="AED">د.إ AED</option>
-            <option value="SAR">ر.س SAR</option>
+          <label>البلد</label>
+          <select id="country-select">
+            <option value="Egypt">مصر (EGP)</option>
+            <option value="UAE">الإمارات (AED)</option>
+            <option value="Saudi">السعودية (SAR)</option>
+            <option value="Kuwait">الكويت (KWD)</option>
+            <option value="Qatar">قطر (QAR)</option>
+            <option value="Oman">عمان (OMR)</option>
+            <option value="Bahrain">البحرين (BHD)</option>
+            <option value="USA">USA (USD)</option>
           </select>
         </div>
         <div class="col-3">
@@ -142,12 +141,9 @@
       <div class="flex">
         <div style="font-weight:700">بنود عرض السعر</div>
         <div class="right no-print flex">
-          <button id="btn-clear-all" class="btn btn-danger">مسح الكل</button>
-          <button id="btn-import-excel" class="btn btn-primary">استيراد Excel</button>
-          <button id="btn-export-csv" class="btn">تصدير CSV</button>
-          <button id="btn-export-excel" class="btn">تصدير XLSX</button>
-          <button id="btn-add-row" class="btn">إضافة بند يدوي</button>
-
+          <button id="btn-clear-all" class="btn btn-danger" title="مسح جميع البنود">مسح الكل</button>
+          <button id="btn-export-xlsx" class="btn" title="تصدير كملف Excel">تصدير Excel</button>
+          <button id="btn-add-row" class="btn btn-primary" title="إضافة منتج جديد يدوياً">إضافة منتج جديد</button>
         </div>
       </div>
       

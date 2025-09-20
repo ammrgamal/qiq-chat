@@ -1,0 +1,80 @@
+# Index: woocommerce_products
+# Description: Algolia index for products with enhanced search capabilities
+indexName: woocommerce_products
+searchableAttributes:
+  - sku
+  - mpn
+  - name
+  - brand
+  - category
+  - synonyms
+  - custom_memo
+  - custom_text
+  - tags
+
+attributesForFaceting:
+  - brand
+  - category
+  - item_type
+  - unit
+  - availability
+  - discontinued
+  - tags
+  - facet_ct10
+  - facet_ct11
+
+attributesToRetrieve:
+  - "*"
+
+unretrievableAttributes:
+  - CustomMemo01
+  - CustomMemo02
+  - CustomMemo03
+  - CustomMemo04
+  - CustomMemo05
+  - CustomText01
+  - CustomText02
+  - CustomText03
+  - CustomText04
+  - CustomText05
+  - CustomText06
+  - CustomText07
+  - CustomText08
+  - CustomText09
+  - CustomText10
+  - CustomText11
+  - CustomText12
+  - CustomText13
+  - CustomText14
+  - CustomText15
+  - CustomText16
+  - CustomText17
+  - CustomText18
+  - CustomText19
+  - CustomText20
+
+attributesToSnippet:
+  - ExtendedDescription:40
+  - ShortDescription:20
+
+attributesToHighlight:
+  - sku
+  - mpn
+  - name
+  - synonyms
+  - custom_memo
+  - custom_text
+  - tags
+
+snippetEllipsisText: "…"
+
+customRanking:
+  - desc(availability_weight)
+  - asc(price)
+  - asc(tags)
+  - asc(name)
+
+removeWordsIfNoResults: allOptional
+ignorePlurals: true
+typoTolerance: min
+decompoundQuery: true

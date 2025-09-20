@@ -66,8 +66,8 @@ module.exports = async (req, res) => {
         "content-type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0.4,
+        model: "gpt-3.5-turbo",
+        temperature: 0.7,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages
@@ -95,8 +95,8 @@ module.exports = async (req, res) => {
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
-          temperature: 0.4,
+          model: "gpt-3.5-turbo",
+          temperature: 0.7,
           messages: [
             { role: "system", content: systemPrompt },
             ...messages,

@@ -1,19 +1,14 @@
 /* =========================
    QIQ – Chat + Product UI
-   (uses /api/chat and /api/search)
+   Uses /api/chat for conversations and /api/search for product search
    ========================= */
 
-/** نقاط تكامل أساسية
- *  - الزر "Add" في كروت النتائج يستدعي AddToQuote(this)
- *  - لازم يكون ملف public/js/quote-actions.js محمّل قبله وفيه الدالة AddToQuote
- */
-
 (() => {
-  /* ---- DOM ---- */
-  const win   = document.getElementById("qiq-window");          // مساحة الرسائل
-  const form  = document.getElementById("qiq-form");             // فورم الإدخال
-  const input = document.getElementById("qiq-input");            // حقل الإدخال
-  const sendBtn = form?.querySelector(".qiq-send");              // زر الإرسال (لو موجود)
+  /* ---- DOM Elements ---- */
+  const win = document.getElementById("qiq-window");
+  const form = document.getElementById("qiq-form");
+  const input = document.getElementById("qiq-input");
+  const sendBtn = form?.querySelector(".qiq-send");
 
   /* ---- Helpers ---- */
   const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c] || c));
@@ -68,9 +63,7 @@
     // محاولة استخراج أهم الحقول الشائعة
     const name  = hit?.name || "(No name)";
     const price = hit?.price || hit?.list_price || "";
-    // معالجة خاصة لمنتجات Palo Alto التي تأتي بتنسيق مختلف
-    const pn    = (hit?.objectID && hit?.objectID.startsWith('PAN-')) ? hit?.objectID 
-                : hit?.sku || hit?.mpn || "";
+    const pn    = hit?.objectID || hit?.sku || "";
     const img   = hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || PLACEHOLDER_IMG;
     const link  = hit?.link || hit?.product_url || hit?.permalink || "";
     const brand = hit?.brand || hit?.manufacturer || hit?.vendor || hit?.company || "غير محدد";
@@ -88,26 +81,15 @@
           <tbody>
             <tr>
               <td style="width:68px">
-                <div class="product-image-wrap" style="width:64px;height:64px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
-                  <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" 
-                       onerror="this.src='${PLACEHOLDER_IMG}'" 
-                       style="width:100%;height:100%;object-fit:contain;cursor:pointer"
-                       onclick="openImagePreview('${safeImg}')"
-                       title="انقر لمعاينة الصورة" />
-                </div>
+                <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
               </td>
               <td>
-                <div class="product-info" style="display:flex;flex-direction:column;gap:6px">
-                  <div style="font-weight:600;color:#111827">${safeName}</div>
-                  <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px">
-                    ${safeBrand ? `<span class="qiq-chip" style="background:#e0f2fe;padding:4px 8px;border-radius:4px;color:#0369a1">${safeBrand}</span>` : ""}
-                    ${safePn ? `<span class="qiq-chip" style="background:#f3f4f6;padding:4px 8px;border-radius:4px;color:#374151">${safePn}</span>` : ""}
-                  </div>
-                </div>
+                <div style="font-weight:700">${safeName}</div>
+                ${safePn ? `<div class="qiq-chip">PN: ${safePn}</div>` : ""}
+                ${safeBrand ? `<div class="qiq-chip" style="background:#f0f9ff;border-color:#0ea5e9">الشركة: ${safeBrand}</div>` : ""}
+                ${safeLink ? `<div style="margin-top:4px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener">تفاصيل المنتج</a></div>` : ""}
               </td>
-              <td style="width:140px;text-align:left;color:#374151;font-weight:500">
-                ${safePrice ? formatPrice(numFromPrice(safePrice)) : "-"}
-              </td>
+              <td style="width:140px">${safePrice ? safePrice + ' USD' : "-"}</td>
               <td style="width:220px">
                 <div class="qiq-inline-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
                   <button class="qiq-mini primary" type="button"
@@ -121,11 +103,10 @@
                     onclick="AddToQuote(this)">
                     إضافة للعرض
                   </button>
-                  ${safeLink ? `
-                    <button class="qiq-mini" type="button" onclick="openProductDetails('${safeLink}')">
-                      تفاصيل المنتج
-                    </button>
-                  ` : ""}
+                  <button class="qiq-mini" type="button"
+                    onclick="window.open('${safeLink || '#'}','_blank','noopener')">
+                    تفاصيل المنتج
+                  </button>
                 </div>
               </td>
             </tr>
@@ -197,13 +178,23 @@
   /* ---- دالة لعرض المنتجات مباشرة في الجدول ---- */
   function displayProductsInTable(hits, source = "Search") {
     // اعرض المنتجات في منطقة منفصلة تحت الشات
-    const productsList = document.getElementById("qiq-products-list");
-    if (productsList) {
-      productsList.innerHTML = hits.map(hitToCard).join("");
+    const searchResultsDiv = document.getElementById("search-results");
+    if (!searchResultsDiv) {
+      // إنشاء div جديد لعرض النتائج إذا لم يكن موجوداً
+      const resultsDiv = document.createElement("div");
+      resultsDiv.id = "search-results";
+      resultsDiv.className = "search-results-container";
+      // إضافة div بعد منطقة الشات
+      document.querySelector("#qiq-chat").after(resultsDiv);
     }
+    // عرض النتائج
+    document.getElementById("search-results").innerHTML = `
+      <div class="results-title">المنتجات المقترحة</div>
+      ${hits.map(hitToCard).join("")}
+    `;
   }
 
-  /* ---- المنطق: لو المستخدم كتب كلمة/منتج → نبحث ونظهر كروت بداخلها زر AddToQuote ---- */
+  // تهيئة المتغيرات العامة
   const messages = [
     {
       role: "system",
@@ -212,66 +203,93 @@
     }
   ];
 
-  // إرسال الرسالة
+  // إرسال الرسالة وتنفيذ البحث
+  async function handleSearch(query, fromSearchButton = false) {
+    const userText = query.trim();
+    if (!userText) return;
+
+    if (!fromSearchButton) {
+      addMsg("user", userText);
+      messages.push({ role: "user", content: userText });
+    }
+
+    // 1) رد الشات (فقط إذا لم يكن من زر البحث)
+    if (!fromSearchButton) {
+      const thinking = addMsg("bot", "جاري البحث...");
+      sendBtn && (sendBtn.disabled = true);
+      try {
+        const reply = await runChat(messages);
+        thinking.textContent = reply || "جاري عرض النتائج...";
+      } catch (error) {
+        console.error('Chat error:', error);
+        thinking.textContent = "عذراً، حدث خطأ في النظام. لكن سأواصل البحث عن منتجات...";
+      } finally {
+        sendBtn && (sendBtn.disabled = false);
+      }
+    }
+
+    // 2) البحث عن المنتجات باستخدام Algolia
+    try {
+      const searchResults = await productsIndex.search(userText, {
+        hitsPerPage: 6,
+        attributesToRetrieve: [
+          'name', 'sku', 'mpn', 'brand', 
+          'price', 'image', 'category',
+          'availability', 'spec_sheet'
+        ]
+      });
+
+      if (searchResults.hits.length) {
+        displayProductsInTable(searchResults.hits);
+        if (!fromSearchButton) {
+          addMsg("bot", `تم العثور على ${searchResults.hits.length} نتيجة مطابقة. تحقق من النتائج أدناه.`);
+        }
+      } else {
+        // إذا لم نجد نتائج في Algolia، نجرب البحث المحلي
+        const localResults = await runSearch(userText, 6);
+        if (localResults.length) {
+          displayProductsInTable(localResults);
+          if (!fromSearchButton) {
+            addMsg("bot", `تم العثور على ${localResults.length} نتيجة مطابقة. تحقق من النتائج أدناه.`);
+          }
+        } else {
+          if (!fromSearchButton) {
+            addMsg("bot", "عذراً، لم نجد منتجات مطابقة لبحثك. حاول تعديل كلمات البحث أو استخدم أرقام القطع المحددة.");
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      if (!fromSearchButton) {
+        addMsg("bot", "عذراً، حدث خطأ في البحث. حاول مرة أخرى لاحقاً.");
+      }
+    }
+  }
+
+  // معالج النموذج
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const userText = (input?.value || "").trim();
     if (!userText) return;
-
-    input.value = "";
-    addMsg("user", userText);
-    messages.push({ role: "user", content: userText });
-
-    // 1) رد الشات
-    const thinking = addMsg("bot", "…");
-    sendBtn && (sendBtn.disabled = true);
-    try {
-      const reply = await runChat(messages);
-      let showReply = reply;
-      // إذا كان الرد JSON أو يحتوي على hits، تجاهله
-      try {
-        const parsed = JSON.parse(reply);
-        if (parsed && (parsed.hits || parsed.reply)) {
-          showReply = parsed.reply || "";
-        }
-      } catch {}
-      // إذا كان الرد نفسه JSON أو طويل وغير مفهوم، لا تعرضه
-      if (showReply && showReply.length < 400 && !showReply.startsWith("{")) {
-        thinking.textContent = showReply;
-      } else {
-        thinking.remove();
-      }
-    } finally {
-      sendBtn && (sendBtn.disabled = false);
-    }
-
-    // 2) نتائج البحث - نعرض في الجدول فقط
-    const hits = await runSearch(userText, 6);
-    // عرض النتائج في الجدول فقط
-    if (hits.length) {
-      displayProductsInTable(hits, "Search results");
-      thinking.textContent = `يمكنك اختيار المنتجات التي تريدها من الجدول أدناه.`;
-    } else {
-      thinking.textContent = "لم نجد منتجات مطابقة. حاول كتابة اسم المنتج بشكل مختلف أو استخدم خاصية رفع BOQ.";
-    }
+    
+    input.value = ""; // مسح حقل الإدخال
+    await handleSearch(userText, false);
+  });
   });
 
-  /* ---- لو عندك زر مستقل للبحث عن المنتجات (اختياري) اربطه هنا ----
-     مثال: زر id="qiq-search-btn" يقرأ من input ويعرض النتائج فقط
-  */
+  /* ---- معالجة زر البحث المستقل ---- */
   const searchBtn = document.getElementById("qiq-search-btn");
   searchBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
     const q = (input?.value || "").trim();
     if (!q) return;
-    addMsg("user", q);
-
-    const results = await runSearch(q, 8);
-    displayProductsInTable(results, "Search results");
-    if (results.length) {
-      addMsg("bot", `تم العثور على ${results.length} ${results.length === 1 ? 'منتج' : 'منتجات'}. يمكنك مشاهدة النتائج أدناه.`);
-    } else {
-      addMsg("bot", "لم نجد منتجات مطابقة. حاول كتابة اسم المنتج بشكل مختلف.");
+    
+    searchBtn.disabled = true;
+    try {
+      await handleSearch(q, true);
+    } finally {
+      searchBtn.disabled = false;
     }
   });
+})();
 })();

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickITQuote - Chat</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/modal.css">
+    <link rel="stylesheet" href="css/chat.css">
+    <style>
+        .qiq-inline-wrap { margin: 10px 0; }
+        .qiq-inline-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+        .qiq-inline-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+        .qiq-inline-img {
+            width: 68px;
+            height: 68px;
+            object-fit: contain;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        .qiq-chip {
+            display: inline-block;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: #f1f5f9;
+            border: 1px solid #94a3b8;
+            color: #475569;
+            margin: 4px 0;
+            margin-inline-end: 8px;
+        }
+        .qiq-link {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .qiq-link:hover { text-decoration: underline; }
+        .qiq-inline-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .qiq-mini {
+            font-size: 12px;
+            padding: 6px 10px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            color: #374151;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .qiq-mini:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+        }
+        .qiq-mini.primary {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #fff;
+        }
+        .qiq-mini.primary:hover {
+            background: #1d4ed8;
+        }
+        .numeric {
+            text-align: left;
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
+</head>
+<body>
+    <!-- Topbar -->
+    <div class="qiq-topbar">
+        <div class="qiq-topbar__inner">
+            <a href="/" class="brand">QuickITQuote</a>
+            <nav class="nav">
+                <a href="quote.html">طلب عرض سعر</a>
+                <a href="#help">مساعدة</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Chat Window -->
+    <div class="qiq">
+        <!-- Messages Area -->
+        <div id="qiq-window" class="qiq-window"></div>
+
+        <!-- Input Form -->
+        <form id="qiq-form" class="qiq-form">
+            <input id="qiq-input" class="qiq-input" type="text" 
+                placeholder="اكتب اسم المنتج أو رقم القطعة..." autocomplete="off">
+            <div class="qiq-actions">
+                <button type="submit" class="qiq-send">إرسال</button>
+                <button id="qiq-search-btn" type="button" class="qiq-btn">بحث عن منتجات</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Search Results will be injected here -->
+    <div id="search-results" class="search-results-container" style="display:none"></div>
+
+    <!-- Scripts -->
+    <script src="js/chat-working.js"></script>
+</body>
+</html>
