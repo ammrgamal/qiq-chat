@@ -436,13 +436,12 @@
         <input class="in-qty qty-input" type="number" min="1" step="1" value="${Number(qty)||1}">
       </td>
       <td class="price-col numeric">
-        <input class="in-unit" type="number" min="0" step="0.01" value="${Number(unit)||0}" style="width:100%;text-align:right;border:1px solid #d1d5db;border-radius:4px;padding:4px 6px;">
+        <span class="unit-text">${fmt(Number(unit)||0)}</span>
+        <input class="in-unit" type="hidden" value="${Number(unit)||0}">
       </td>
       <td class="total-col numeric line-total">-</td>
       <td class="actions-col no-print">
         <div class="action-icons">
-          <button class="action-btn edit btn-edit" title="Edit product details" type="button">✏️</button>
-          <button class="action-btn duplicate btn-dup" title="Duplicate this item" type="button">📋</button>
           <button class="action-btn delete btn-del" title="Remove this item" type="button">🗑️</button>
         </div>
       </td>
@@ -471,25 +470,7 @@
       }
     });
     
-    tr.querySelector(".btn-dup").addEventListener("click", (e) => {
-      e.preventDefault();
-      addRowFromData({
-        desc: tr.querySelector(".in-desc").value || "",
-        pn: tr.querySelector(".in-pn").value || "",
-        manufacturer: tr.querySelector(".in-brand").value || "",
-        unit: Number(inUnit.value || 0),
-        qty: Number(inQty.value || 1)
-      });
-      recalcTotals();
-      saveState();
-      updateEmptyState();
-      showNotification("Product added! You can add more or proceed.", "success");
-    });
-    
-    tr.querySelector(".btn-edit").addEventListener("click", (e) => {
-      e.preventDefault();
-      editProductInline(tr);
-    });
+    // duplicate/edit removed: only qty and delete allowed
 
     updateEmptyState();
   }
@@ -706,17 +687,19 @@
     
     // Save to localStorage (local draft)
     localStorage.setItem(STATE_KEY, JSON.stringify(s));
-    
+        const unitEl = row.querySelector(".in-unit");
     // Also save to a separate drafts collection for the user
     saveDraftToCollection(s);
     
     if (notify) {
       console.log("Saved.");
-      showNotification("تم حفظ المسودة بنجاح", "success");
+        const unitPriceUSD = num(row.dataset.basePrice || unitEl.value);
     }
   }
 
-  // Enhanced draft management
+        unitEl.value = convertedPrice.toFixed(2); // keep hidden numeric
+        const unitText = row.querySelector('.unit-text');
+        if (unitText) unitText.textContent = fmt(convertedPrice, toCurrency);
   function saveDraftToCollection(quoteData) {
     try {
       const userToken = localStorage.getItem("qiq_token");
@@ -724,7 +707,13 @@
       
       const draftsKey = `qiq_drafts_${userToken.slice(-10)}`; // Use last 10 chars of token as key
       let drafts = [];
-      
+      // Optional installation: 5% of subtotal with a minimum of 200 USD equivalent
+      let installCost = 0;
+      if ($("include-install").checked) {
+        const fivePct = sub * 0.05;
+        const minInTarget = 200 * rate; // 200 USD converted to selected currency
+        installCost = Math.max(fivePct, minInTarget);
+      }
       try {
         drafts = JSON.parse(localStorage.getItem(draftsKey) || "[]");
       } catch { drafts = []; }

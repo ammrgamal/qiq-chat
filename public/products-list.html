@@ -5,28 +5,39 @@
 	<meta name="viewport" content="width=device-width,initial-scale=1" />
 	<title>Product Catalog</title>
 	<link rel="stylesheet" href="/css/styles.css" />
-	<style>
-		body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:#fff;color:#111}
-		.container{max-width:1080px;margin:16px auto;padding:12px}
-		.header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-		.header a{color:#2563eb;text-decoration:none}
-		.toolbar{display:flex;gap:8px;align-items:center;margin:10px 0}
-		.toolbar input{flex:1;min-width:280px;padding:10px;border:1px solid #e5e7eb;border-radius:10px}
-		.results{display:grid;gap:10px}
-		.card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;display:flex;gap:10px;align-items:flex-start}
-		.card img{width:60px;height:60px;border-radius:8px;object-fit:cover;background:#f3f4f6}
-		.card .name{font-weight:600;margin-bottom:4px}
-		.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
-		.chip{background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:12px;color:#374151}
-		.price{background:#eef2ff;color:#3730a3}
-		.actions{margin-inline-start:auto;display:flex;gap:6px}
-		.btn{border:0;border-radius:10px;padding:8px 10px;background:#2563eb;color:#fff;cursor:pointer}
-		.btn.secondary{background:#6b7280}
-		.muted{color:#6b7280}
-	</style>
+		<style>
+			body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:#fff;color:#111}
+			.container{max-width:1200px;margin:16px auto;padding:12px}
+			.header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+			.header a{color:#2563eb;text-decoration:none}
+			.toolbar{display:flex;gap:8px;align-items:center;margin:10px 0}
+			.toolbar input{flex:1;min-width:280px;padding:10px;border:1px solid #e5e7eb;border-radius:10px}
+			.layout{display:grid;grid-template-columns:260px 1fr;gap:16px}
+			.sidebar{border:1px solid #e5e7eb;border-radius:12px;padding:12px;height:fit-content}
+			.facet{margin-bottom:12px}
+			.facet h3{font-size:14px;margin:6px 0}
+			.facet ul{list-style:none;padding:0;margin:0;max-height:260px;overflow:auto}
+			.facet li{display:flex;align-items:center;gap:8px;padding:4px 0}
+			.range{display:flex;gap:8px}
+			.range input{width:100%;padding:6px;border:1px solid #e5e7eb;border-radius:8px}
+			.results{display:grid;gap:10px}
+			.card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;display:flex;gap:10px;align-items:flex-start}
+			.card img{width:60px;height:60px;border-radius:8px;object-fit:cover;background:#f3f4f6}
+			.card .name{font-weight:600;margin-bottom:4px}
+			.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+			.chip{background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:12px;color:#374151}
+			.price{background:#eef2ff;color:#3730a3}
+			.actions{margin-inline-start:auto;display:flex;gap:6px}
+			.btn{border:0;border-radius:10px;padding:8px 10px;background:#2563eb;color:#fff;cursor:pointer}
+			.btn.secondary{background:#6b7280}
+			.muted{color:#6b7280}
+			.pagination{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+			.pagination button{padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer}
+			.pagination .active{background:#2563eb;color:#fff;border-color:#2563eb}
+		</style>
 </head>
 <body>
-	<div class="container">
+		<div class="container">
 		<div class="header">
 			<h1 style="margin:0">Product Catalog</h1>
 			<div class="muted" id="status"></div>
@@ -37,7 +48,32 @@
 			<button id="searchBtn" class="btn">Search</button>
 			<button id="clearBtn" class="btn secondary">Clear</button>
 		</div>
-		<div class="results" id="results"></div>
+			<div class="layout">
+				<aside class="sidebar">
+					<div class="facet" id="facet-brands">
+						<h3>Brand</h3>
+						<ul></ul>
+					</div>
+					<div class="facet" id="facet-categories">
+						<h3>Category</h3>
+						<ul></ul>
+					</div>
+					<div class="facet">
+						<h3>Price range</h3>
+						<div class="range">
+							<input id="priceMin" type="number" placeholder="Min" />
+							<input id="priceMax" type="number" placeholder="Max" />
+						</div>
+						<div style="margin-top:8px">
+							<button id="applyPrice" class="btn secondary" style="padding:6px 10px">Apply</button>
+						</div>
+					</div>
+				</aside>
+				<main>
+					<div class="results" id="results"></div>
+					<div class="pagination" id="pagination"></div>
+				</main>
+			</div>
 	</div>
 	<script src="/js/quote-actions.js"></script>
 	<script src="/js/products-search.js"></script>

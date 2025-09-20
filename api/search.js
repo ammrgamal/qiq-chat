@@ -8,9 +8,8 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { query, hitsPerPage } = req.body || {};
-    const q = (query || "").toString().trim();
-    if (!q) return res.status(400).json({ error: "Missing query" });
+  const { query, hitsPerPage, page, facets, filters } = req.body || {};
+  const q = (query ?? "").toString(); // allow empty query for default listing
 
     const appId   = process.env.ALGOLIA_APP_ID;
     const apiKey  = process.env.ALGOLIA_API_KEY; // استخدم Search API Key
@@ -23,9 +22,38 @@ module.exports = async (req, res) => {
     const client = algoliasearch(appId, apiKey);
     const index  = client.initIndex(indexNm);
 
-    const result = await index.search(q, {
-      hitsPerPage: Math.min(50, Number(hitsPerPage) || 10),
-    });
+    // Compose Algolia search options with facets and filters
+    const facetList = Array.isArray(facets) && facets.length
+      ? facets
+      : ["brand", "manufacturer", "categories", "category"];
+
+    const opts = {
+      hitsPerPage: Math.min(50, Number(hitsPerPage) || 20),
+      page: Number(page) || 0,
+      facets: facetList,
+    };
+
+    // facetFilters: array of OR groups => [["brand:Apple","brand:Dell"],["categories:Laptops"]]
+    const facetFilters = [];
+    if (filters && Array.isArray(filters.brands) && filters.brands.length) {
+      facetFilters.push(filters.brands.map((b) => `brand:${b}`));
+    }
+    if (filters && Array.isArray(filters.categories) && filters.categories.length) {
+      facetFilters.push(filters.categories.map((c) => `categories:${c}`));
+    }
+    if (facetFilters.length) opts.facetFilters = facetFilters;
+
+    // numericFilters for price range if the index has numeric 'price'
+    const numericFilters = [];
+    if (filters && filters.priceMin != null && filters.priceMin !== "") {
+      numericFilters.push(`price>=${Number(filters.priceMin)}`);
+    }
+    if (filters && filters.priceMax != null && filters.priceMax !== "") {
+      numericFilters.push(`price<=${Number(filters.priceMax)}`);
+    }
+    if (numericFilters.length) opts.numericFilters = numericFilters;
+
+    const result = await index.search(q, opts);
 
     const normalized = (result?.hits || []).map(h => ({
       name: h.name || h.title || h.Description || h.product_name || "",
@@ -37,7 +65,13 @@ module.exports = async (req, res) => {
       brand: h.brand || h.manufacturer || h.vendor || h.company || ""
     }));
 
-    return res.status(200).json({ hits: normalized });
+    return res.status(200).json({
+      hits: normalized,
+      facets: result?.facets || {},
+      nbHits: result?.nbHits || 0,
+      page: result?.page || 0,
+      nbPages: result?.nbPages || 0,
+    });
   } catch (e) {
     console.error("Algolia search error:", e);
     return res.status(500).json({ error: e?.message || "Search failed" });

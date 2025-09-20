@@ -5,17 +5,22 @@
   const input = $('#q');
   const searchBtn = $('#searchBtn');
   const clearBtn = $('#clearBtn');
+  const brandsFacetEl = document.querySelector('#facet-brands ul');
+  const catsFacetEl = document.querySelector('#facet-categories ul');
+  const priceMinEl = $('#priceMin');
+  const priceMaxEl = $('#priceMax');
+  const applyPriceBtn = $('#applyPrice');
+  const paginationEl = $('#pagination');
 
   function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
   const PLACEHOLDER = 'https://via.placeholder.com/68?text=IMG';
 
-  async function apiSearch(q, hitsPerPage=20){
-    if(!q) return [];
+  async function apiSearch(q, {hitsPerPage=20,page=0,filters={}}={}){
     try{
-      const r = await fetch('/api/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({query:q,hitsPerPage})});
+      const r = await fetch('/api/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({query:q,hitsPerPage,page,filters})});
       if(!r.ok) throw new Error('HTTP '+r.status);
       const j = await r.json();
-      return Array.isArray(j?.hits)? j.hits : [];
+      return j;
     }catch(e){ console.warn('search failed',e); return []; }
   }
 
@@ -54,12 +59,42 @@
     `;
   }
 
-  async function render(q){
-    resultsEl.innerHTML = '';
-    statusEl.textContent = q? `Searching for \"${q}\"...` : '';
-    const hits = await apiSearch(q, 24);
-    statusEl.textContent = hits.length? `${hits.length} result(s)` : 'No results';
-    resultsEl.innerHTML = hits.map(hitToCard).join('');
+  function renderFacets(facets, selected){
+    // Brands
+    if (brandsFacetEl){
+      const brands = facets?.brand || facets?.manufacturer || {};
+      const entries = Object.entries(brands).sort((a,b)=>b[1]-a[1]).slice(0,50);
+      brandsFacetEl.innerHTML = entries.map(([name,count])=>{
+        const checked = selected.brands.includes(name) ? 'checked' : '';
+        return `<li><input type="checkbox" data-facet="brand" value="${esc(name)}" ${checked}/> <span>${esc(name)}</span> <span class="muted">(${count})</span></li>`;
+      }).join('');
+    }
+    // Categories
+    if (catsFacetEl){
+      const cats = facets?.categories || facets?.category || {};
+      const entries = Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,50);
+      catsFacetEl.innerHTML = entries.map(([name,count])=>{
+        const checked = selected.categories.includes(name) ? 'checked' : '';
+        return `<li><input type="checkbox" data-facet="category" value="${esc(name)}" ${checked}/> <span>${esc(name)}</span> <span class="muted">(${count})</span></li>`;
+      }).join('');
+    }
+  }
+
+  function renderPagination(page, nbPages, onGo){
+    if(!paginationEl) return;
+    paginationEl.innerHTML = '';
+    if (nbPages <= 1) return;
+    const makeBtn = (p, label, active=false)=>`<button data-page="${p}" class="${active?'active':''}">${label}</button>`;
+    const buttons = [];
+    const start = Math.max(0, page-2);
+    const end = Math.min(nbPages-1, page+2);
+    if (page>0) buttons.push(makeBtn(page-1,'Prev'));
+    for(let p=start;p<=end;p++) buttons.push(makeBtn(p,(p+1), p===page));
+    if (page<nbPages-1) buttons.push(makeBtn(page+1,'Next'));
+    paginationEl.innerHTML = buttons.join('');
+    paginationEl.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click',()=> onGo(Number(btn.dataset.page)) );
+    });
   }
 
   function getParam(name){
@@ -67,12 +102,36 @@
     return u.searchParams.get(name) || '';
   }
 
+  function getSelectedFilters(){
+    const brands = Array.from(document.querySelectorAll('#facet-brands input[type="checkbox"]:checked')).map(i=>i.value);
+    const categories = Array.from(document.querySelectorAll('#facet-categories input[type="checkbox"]:checked')).map(i=>i.value);
+    const priceMin = priceMinEl?.value || '';
+    const priceMax = priceMaxEl?.value || '';
+    return {brands, categories, priceMin, priceMax};
+  }
+
+  async function render(q, page=0){
+    resultsEl.innerHTML = '';
+    statusEl.textContent = q? `Searching for \"${q}\"...` : 'Loading top products...';
+    const filters = getSelectedFilters();
+    const res = await apiSearch(q, {hitsPerPage: 24, page, filters});
+    const hits = Array.isArray(res?.hits)? res.hits : [];
+    statusEl.textContent = `${res?.nbHits||hits.length} result(s)`;
+    resultsEl.innerHTML = hits.map(hitToCard).join('');
+    renderFacets(res?.facets||{}, filters);
+    renderPagination(res?.page||0, res?.nbPages||1, (p)=>render(q, p));
+    // Rewire facet checkboxes after render
+    document.querySelectorAll('#facet-brands input[type="checkbox"], #facet-categories input[type="checkbox"]').forEach(cb=>{
+      cb.addEventListener('change', ()=> render((input?.value||'').trim(), 0));
+    });
+  }
+
   searchBtn?.addEventListener('click', ()=>{
     const q = (input?.value||'').trim();
     const u = new URL(window.location.href);
     if(q) u.searchParams.set('q', q); else u.searchParams.delete('q');
     history.replaceState(null,'',u.toString());
-    render(q);
+    render(q, 0);
   });
 
   clearBtn?.addEventListener('click', ()=>{
@@ -82,9 +141,26 @@
     history.replaceState(null,'',u.toString());
     resultsEl.innerHTML='';
     statusEl.textContent='';
+    brandsFacetEl.innerHTML = '';
+    catsFacetEl.innerHTML = '';
+    priceMinEl.value = '';
+    priceMaxEl.value = '';
+    paginationEl.innerHTML = '';
+    // بعد التنظيف، اعرض نتائج افتراضية
+    render('', 0);
+  });
+
+  applyPriceBtn?.addEventListener('click', ()=>{
+    render((input?.value||'').trim(), 0);
   });
 
   // Init from ?q=
   const q0 = getParam('q');
-  if(q0){ input.value = q0; render(q0); }
+  if(q0){
+    input.value = q0;
+    render(q0, 0);
+  } else {
+    // اعرض نتائج وفلاتر افتراضية بدون كلمة بحث
+    render('', 0);
+  }
 })();
