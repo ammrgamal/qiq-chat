@@ -183,12 +183,30 @@
   /* ---- دالة لعرض المنتجات مباشرة في منطقة منفصلة تحت الشات ---- */
   function displayProductsInTable(hits, source = "Search") {
     const productsList = document.getElementById("qiq-products-list");
-    if (productsList) {
-      if (hits.length) {
-        productsList.innerHTML = `<div class="qiq-section-title">${esc(source)}</div>` + hits.map(hitToCard).join("");
-      } else {
-        productsList.innerHTML = "<div class='muted'>لا توجد نتائج مطابقة.</div>";
-      }
+    if (!productsList) return;
+
+    if (hits.length) {
+      // Always clear previous results first
+      productsList.innerHTML = '';
+      
+      // Add section title
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'qiq-section-title';
+      titleDiv.textContent = source;
+      productsList.appendChild(titleDiv);
+
+      // Add results
+      hits.forEach(hit => {
+        const card = hitToCard(hit);
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = card;
+        productsList.appendChild(wrapper.firstChild);
+      });
+
+      // Make sure the products list is visible
+      productsList.style.display = 'block';
+    } else {
+      productsList.innerHTML = "<div class='muted' style='text-align:center;padding:20px;color:#6b7280'>لا توجد نتائج مطابقة.</div>";
     }
   }
 

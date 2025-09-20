@@ -6,8 +6,8 @@
 .qiq-topbar .nav a:hover{opacity:.85}
 
 /* ===== Chat container ===== */
-.qiq{max-width:980px;margin:16px auto;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;font-family:Inter,system-ui,Segoe UI,Arial;background:#fff}
-.qiq-window{min-height:420px;max-height:560px;overflow:auto;background:#f8fafc;padding:16px}
+.qiq{max-width:980px;margin:16px auto;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;font-family:Inter,system-ui,Segoe UI,Arial;background:#fff;display:flex;flex-direction:column}
+.qiq-window{height:420px;overflow:auto;background:#f8fafc;padding:16px;flex:1}
 .qiq-msg{margin:10px 0;line-height:1.55}
 .qiq-msg.user{text-align:right}
 .qiq-bubble{display:inline-block;padding:10px 12px;border-radius:12px;max-width:95%;white-space:pre-wrap;word-break:break-word;background:#fff;border:1px solid #e5e7eb}
@@ -46,10 +46,18 @@
   margin: 16px auto;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
-  overflow: hidden;
   font-family: Inter,system-ui,Segoe UI,Arial;
   background: #fff;
   padding: 16px;
+}
+
+.qiq-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 @keyframes qiq-slide-in {
