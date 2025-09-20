@@ -170,33 +170,18 @@
     }
   }
 
-  /* ---- دالة لعرض المنتجات مباشرة في منطقة منفصلة تحت الشات ---- */
+  /* ---- دالة لعرض المنتجات في منطقة منفصلة تحت الشات ---- */
   function displayProductsInTable(hits, source = "Search") {
     const productsList = document.getElementById("qiq-products-list");
     if (!productsList) return;
 
-    // Clear previous results and hide initially
-    productsList.style.display = 'none';
-    productsList.innerHTML = '';
-    
-    if (!hits || !hits.length) {
-      productsList.innerHTML = "<div class='muted' style='text-align:center;padding:20px;color:#6b7280'>لا توجد نتائج مطابقة.</div>";
-      productsList.style.display = 'block';
-      return;
+    if (hits && hits.length) {
+      // عرض النتائج
+      productsList.innerHTML = hits.map(hit => hitToCard(hit)).join('');
+    } else {
+      // رسالة في حالة عدم وجود نتائج
+      productsList.innerHTML = "<div style='text-align:center;padding:20px;color:#6b7280'>لا توجد نتائج مطابقة.</div>";
     }
-
-    // Add section title
-    productsList.innerHTML = `
-      <div class="qiq-section-title">${esc(source)}</div>
-      <div class="qiq-results-grid">
-        ${hits.map(hit => hitToCard(hit)).join('')}
-      </div>
-    `;
-
-    // Show the products list after content is added
-    requestAnimationFrame(() => {
-      productsList.style.display = 'block';
-    });
   }
 
   /* ---- المنطق: لو المستخدم كتب كلمة/منتج → نبحث ونظهر كروت بداخلها زر AddToQuote ---- */
