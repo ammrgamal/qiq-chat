@@ -75,6 +75,7 @@
           <div class="muted">العملة: <span id="qo-currency-view"></span> • شروط السداد الافتراضية: 50% مقدمة + 50% بعد الاستلام</div>
         </div>
         <div class="right no-print flex">
+          <button id="btn-load-staged" class="btn">تحميل من الشات</button>
           <button id="btn-print" class="btn">طباعة / PDF</button>
           <button id="btn-save" class="btn btn-ok">حفظ كمسودة</button>
         </div>
@@ -174,13 +175,11 @@
         <table id="items-table" class="compact-quote-table sticky-header" aria-label="Quote items">
           <thead>
             <tr>
-
               <th style="width:86%">Description / PN / SKU</th>
               <th style="width:3%">QTY</th>
               <th style="width:4%">Price</th>
               <th style="width:4%">Total</th>
               <th class="no-print" style="width:3%">Action</th>
-main
             </tr>
           </thead>
           <tbody id="items-body"></tbody>
@@ -256,7 +255,6 @@ main
     </div>
 
   </div>
- copilot/fix-4469cf6e-7277-40cb-916f-dd572d8ca406
   <script src="js/toast.js"></script>
   <script src="js/quote.js"></script>
 </body>

@@ -140,10 +140,35 @@
   if (savedItems.length) {
     savedItems.forEach(addRowFromData);
   } else {
-    // التحقق من وجود بنود محفوظة من الشات قبل إضافة صف فارغ
-    const stagedRaw = localStorage.getItem(STAGED_KEY);
-    if (!stagedRaw) {
-      // إضافة صف فارغ فقط إذا لم تكن هناك بنود محفوظة
+    // لو مفيش state محفوظ، جرّب تحميل العناصر اللى اتخزنت مؤقتًا من الشات
+    try {
+      const stagedRaw = localStorage.getItem(STAGED_KEY);
+      const staged = stagedRaw ? JSON.parse(stagedRaw) : [];
+      if (Array.isArray(staged) && staged.length) {
+        let imported = 0;
+        staged.forEach((it) => {
+          addRowFromData({
+            desc: it.Name || it.name || "—",
+            pn: it.PN_SKU || it.pn || it.sku || "",
+            unit: num(it.UnitPrice || it.unitPrice || it.price || 0),
+            qty: Number(it.Qty || it.qty || 1),
+            manufacturer: it.manufacturer || it.brand || it.vendor || ""
+          });
+          imported++;
+        });
+        if (imported > 0) {
+          recalcTotals();
+          updateEmptyState();
+          showNotification(`تم استيراد ${imported} عنصر من صفحة الشات`, "success");
+          // خزّن كمسوّدة فورًا حتى لا يحصل تكرار عند إعادة التحميل
+          saveState();
+        }
+      } else {
+        // لا يوجد staged → أضف صف فارغ للمستخدم
+        addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
+      }
+    } catch (err) {
+      console.warn("Failed to auto-import staged items:", err);
       addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
     }
   }
@@ -187,13 +212,20 @@
       if (!stagedRaw) return showNotification("لا يوجد عناصر Staged مخزنة", "error");
       const staged = JSON.parse(stagedRaw) || [];
       let loadedCount = 0;
+      const existingKeys = new Set(
+        Array.from(itemsBody.querySelectorAll('tr')).map(tr => tr.querySelector('.in-pn')?.value?.toUpperCase() || '')
+      );
       staged.forEach((it) => {
+        const pn = (it.PN_SKU || it.pn || it.sku || '').toString().toUpperCase();
+        if (pn && existingKeys.has(pn)) return; // تجنب التكرار
         addRowFromData({
           desc: it.Name || it.name || "—",
           pn: it.PN_SKU || it.pn || it.sku || "",
           unit: num(it.UnitPrice || it.unitPrice || it.price || 0),
-          qty: Number(it.Qty || it.qty || 1)
+          qty: Number(it.Qty || it.qty || 1),
+          manufacturer: it.manufacturer || it.brand || it.vendor || ""
         });
+        if (pn) existingKeys.add(pn);
         loadedCount++;
       });
       recalcTotals();
@@ -572,14 +604,20 @@
     const rate = await getExchangeRate('USD', toCurrency); // Assuming base currency of items is USD
 
     itemsBody.querySelectorAll("tr").forEach((row) => {
-      const unitPriceUSD = num(row.dataset.basePrice || row.querySelector(".in-unit").value);
-      const qty = num(row.querySelector(".in-qty").value);
-      
+      const unitEl = row.querySelector(".in-unit");
+      const qtyEl = row.querySelector(".in-qty");
+      const totalEl = row.querySelector(".line-total");
+
+      if (!unitEl || !qtyEl || !totalEl) return; // guard against partial rows
+
+      const unitPriceUSD = num(row.dataset.basePrice || unitEl.value);
+      const qty = num(qtyEl.value);
+
       const convertedPrice = unitPriceUSD * rate;
-      row.querySelector(".in-unit").value = convertedPrice.toFixed(2); // Update displayed unit price
-      
+      unitEl.value = convertedPrice.toFixed(2); // Update displayed unit price
+
       const total = convertedPrice * qty;
-      row.querySelector(".out-total").textContent = fmt(total, toCurrency);
+      totalEl.textContent = fmt(total, toCurrency);
       sub += total;
     });
 

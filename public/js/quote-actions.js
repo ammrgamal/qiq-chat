@@ -232,7 +232,10 @@
     `;
 
     const qtyInput = tr.querySelector(".qiq-qty");
-    if (qtyInput) qtyInput.addEventListener("input", recalcTotals);
+    if (qtyInput) qtyInput.addEventListener("input", () => {
+      recalcTotals();
+      updateStagedItemsFromTable();
+    });
 
     // فتح التفاصيل (يجب التأكد من وجود الزر)
     const detailBtn = tr.querySelector('[data-detail-pn]');
@@ -279,7 +282,7 @@
     }
 
     // Remove item with confirmation
-    const removeBtn = tr.querySelector('[data-remove-sku]');
+  const removeBtn = tr.querySelector('[data-remove-pn]');
     if (removeBtn) {
       removeBtn.addEventListener('click', (ev) => {
         ev.preventDefault();
@@ -289,6 +292,7 @@
         if (confirm(confirmMessage)) {
           tr.remove();
           recalcTotals();
+          updateStagedItemsFromTable();
           showNotification("تم حذف البند بنجاح", "success");
           
           // إضافة إلى السجل
@@ -304,21 +308,41 @@
 
     tbody.appendChild(tr);
     recalcTotals();
+  updateStagedItemsFromTable();
     
     // إضافة إلى السجل
     addToLog('إضافة', name, `المصدر: ${source}`);
   }
-    // حفظ كل المنتجات الحالية في الجدول في localStorage بعد كل إضافة
+  // حفظ كل المنتجات الحالية في الجدول في localStorage
+  function updateStagedItemsFromTable() {
+    if (!tbody) return;
     const products = [];
     tbody.querySelectorAll('tr').forEach(row => {
-      const name = row.querySelector('.in-desc')?.value || '';
-      const pn = row.querySelector('.in-pn')?.value || '';
-      const price = row.querySelector('.in-unit')?.value || '';
-      const qty = row.querySelector('.in-qty')?.value || '1';
-      const manufacturer = row.querySelector('.in-manufacturer')?.value || '';
-      products.push({ name, pn, price, qty, manufacturer });
+      const name = row.querySelector('.product-name')?.textContent?.trim() || '';
+      const pn = row.querySelector('.product-pn')?.textContent?.replace(/^PN:\s*/i,'').trim() || (row.getAttribute('data-key') || '');
+      const priceText = row.dataset.unit || '';
+      const unit = numFromPrice(priceText);
+      const qty = Math.max(1, parseInt(row.querySelector('.qiq-qty')?.value || '1', 10));
+      const manufacturer = row.querySelector('.product-brand')?.textContent?.trim() || '';
+      const image = row.querySelector('.qiq-img')?.src || '';
+      const link = row.querySelector('.qiq-link')?.href || '';
+      if (name) {
+        products.push({
+          name,
+          pn,
+          sku: pn,
+          price: unit,
+          unitPrice: unit,
+          qty,
+          manufacturer,
+          image,
+          link,
+          source: 'Staged'
+        });
+      }
     });
     localStorage.setItem('qiq_staged_items', JSON.stringify(products));
+  }
 
   // تجهّز الداتا من زرار عليه data-*
   function dataFromElement(el){
@@ -564,6 +588,7 @@
     if (confirm("هل أنت متأكد من حذف جميع البنود؟ هذا الإجراء لا يمكن التراجع عنه.")) {
       tbody.innerHTML = '';
       recalcTotals();
+      updateStagedItemsFromTable();
       showNotification("تم مسح جميع البنود", "success");
     }
   }
@@ -663,16 +688,7 @@
   };
 
   addAllBtn?.addEventListener('click', function() {
-    const products = [];
-    tbody.querySelectorAll('tr').forEach(tr => {
-      const name = tr.querySelector('.in-desc')?.value || '';
-      const pn = tr.querySelector('.in-pn')?.value || '';
-      const price = tr.querySelector('.in-unit')?.value || '';
-      const qty = tr.querySelector('.in-qty')?.value || '1';
-      const manufacturer = tr.querySelector('.in-manufacturer')?.value || '';
-      products.push({ name, pn, price, qty, manufacturer });
-    });
-    localStorage.setItem('qiq_staged_items', JSON.stringify(products));
+    updateStagedItemsFromTable();
     showNotification('تم حفظ كل المنتجات في قائمة عرض السعر. يمكنك الآن الانتقال لصفحة عرض السعر.', 'success');
   });
 

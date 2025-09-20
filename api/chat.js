@@ -38,8 +38,10 @@ module.exports = async (req, res) => {
     `.trim();
 
     // 1) نطلب من GPT اتخاذ القرار واستخدام الأداة عند اللزوم
-    const openaiKey = process.env.OPENAI_API_KEY;
-    const openaiURL = "https://api.openai.com/v1/chat/completions";
+  const openaiKey = process.env.OPENAI_API_KEY;
+  const openaiURL = "https://api.openai.com/v1/chat/completions";
+  const enableGpt5 = String(process.env.ENABLE_GPT5_ALL || "").toLowerCase() === "true";
+  const chatModel = enableGpt5 ? (process.env.OPENAI_GPT5_MODEL || "gpt-5") : (process.env.OPENAI_MODEL || "gpt-4o-mini");
 
     const tools = [
       {
@@ -66,7 +68,7 @@ module.exports = async (req, res) => {
         "content-type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: chatModel,
         temperature: 0.4,
         messages: [
           { role: "system", content: systemPrompt },
@@ -95,7 +97,7 @@ module.exports = async (req, res) => {
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: chatModel,
           temperature: 0.4,
           messages: [
             { role: "system", content: systemPrompt },

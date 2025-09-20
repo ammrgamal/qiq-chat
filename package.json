@@ -5,9 +5,12 @@
     "node": ">=18"
   },
   "dependencies": {
-    "algoliasearch": "^4.24.0"
+    "algoliasearch": "^4.24.0",
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5"
   },
   "scripts": {
+    "start": "node server.js",
     "apply:algolia-settings": "ts-node src/search/applySettings.ts",
     "test:search": "jest __tests__/algoliaMapper.spec.ts -u"
   },

@@ -27,7 +27,17 @@ module.exports = async (req, res) => {
       hitsPerPage: Math.min(50, Number(hitsPerPage) || 10),
     });
 
-    return res.status(200).json({ hits: Array.isArray(result?.hits) ? result.hits : [] });
+    const normalized = (result?.hits || []).map(h => ({
+      name: h.name || h.title || h.Description || h.product_name || "",
+      price: h.price ?? h.Price ?? h["List Price"] ?? h.list_price ?? "",
+      image: h.image || h["Image URL"] || h.thumbnail || (Array.isArray(h.images) ? h.images[0] : ""),
+      sku:   h.sku || h.SKU || h.pn || h["Part Number"] || h.product_code || h.objectID || "",
+      pn:    h.pn || h["Part Number"] || h.sku || h.SKU || h.product_code || h.objectID || "",
+      link:  h.link || h.product_url || h.url || h.permalink || "",
+      brand: h.brand || h.manufacturer || h.vendor || h.company || ""
+    }));
+
+    return res.status(200).json({ hits: normalized });
   } catch (e) {
     console.error("Algolia search error:", e);
     return res.status(500).json({ error: e?.message || "Search failed" });
