@@ -40,6 +40,18 @@
 .qiq-toast .close{margin-inline-start:8px;background:transparent;border:0;color:#fff;cursor:pointer;font-size:16px;opacity:0.7}
 .qiq-toast .close:hover{opacity:1}
 
+/* ===== Products List ===== */
+.qiq-products-list {
+  max-width: 980px;
+  margin: 16px auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  font-family: Inter,system-ui,Segoe UI,Arial;
+  background: #fff;
+  padding: 16px;
+}
+
 @keyframes qiq-slide-in {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
