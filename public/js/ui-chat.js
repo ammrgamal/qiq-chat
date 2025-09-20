@@ -129,6 +129,7 @@
 
     return `
       <div class="qiq-result-row">
+        <img src="${safeImg}" alt="${safeName}" class="qiq-result-row-img" onerror="this.src='${PLACEHOLDER_IMG}'" />
         <span class="qiq-result-row-name">${safeName}</span>
         <div class="qiq-result-row-details">
           ${safePn ? `<span class="qiq-chip">PN: ${safePn}</span>` : ""}

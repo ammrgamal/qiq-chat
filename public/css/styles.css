@@ -67,6 +67,14 @@
 .qiq-result-row:hover {
   background: #f3f4f6;
 }
+.qiq-result-row-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+}
 .qiq-result-row-name {
   flex: 1;
   font-weight: 500;
