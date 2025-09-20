@@ -86,15 +86,26 @@
           <tbody>
             <tr>
               <td style="width:68px">
-                <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" onerror="this.src='${PLACEHOLDER_IMG}'" />
+                <div class="product-image-wrap" style="width:64px;height:64px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+                  <img class="qiq-inline-img" src="${safeImg}" alt="${safeName}" 
+                       onerror="this.src='${PLACEHOLDER_IMG}'" 
+                       style="width:100%;height:100%;object-fit:contain;cursor:pointer"
+                       onclick="openImagePreview('${safeImg}')"
+                       title="انقر لمعاينة الصورة" />
+                </div>
               </td>
               <td>
-                <div style="font-weight:700">${safeName}</div>
-                ${safePn ? `<div class="qiq-chip">PN: ${safePn}</div>` : ""}
-                ${safeBrand ? `<div class="qiq-chip" style="background:#f0f9ff;border-color:#0ea5e9">الشركة: ${safeBrand}</div>` : ""}
-                ${safeLink ? `<div style="margin-top:4px"><a class="qiq-link" href="${safeLink}" target="_blank" rel="noopener">تفاصيل المنتج</a></div>` : ""}
+                <div class="product-info" style="display:flex;flex-direction:column;gap:6px">
+                  <div style="font-weight:600;color:#111827">${safeName}</div>
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px">
+                    ${safePn ? `<span class="qiq-chip" style="background:#f3f4f6;padding:4px 8px;border-radius:4px;color:#374151">${safePn}</span>` : ""}
+                    ${safeBrand ? `<span class="qiq-chip" style="background:#e0f2fe;padding:4px 8px;border-radius:4px;color:#0369a1">${safeBrand}</span>` : ""}
+                  </div>
+                </div>
               </td>
-              <td style="width:140px">${safePrice ? safePrice + ' USD' : "-"}</td>
+              <td style="width:140px;text-align:left;color:#374151;font-weight:500">
+                ${safePrice ? formatPrice(numFromPrice(safePrice)) : "-"}
+              </td>
               <td style="width:220px">
                 <div class="qiq-inline-actions" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
                   <button class="qiq-mini primary" type="button"
@@ -108,10 +119,11 @@
                     onclick="AddToQuote(this)">
                     إضافة للعرض
                   </button>
-                  <button class="qiq-mini" type="button"
-                    onclick="window.open('${safeLink || '#'}','_blank','noopener')">
-                    تفاصيل المنتج
-                  </button>
+                  ${safeLink ? `
+                    <button class="qiq-mini" type="button" onclick="openProductDetails('${safeLink}')">
+                      تفاصيل المنتج
+                    </button>
+                  ` : ""}
                 </div>
               </td>
             </tr>
@@ -231,15 +243,13 @@
       sendBtn && (sendBtn.disabled = false);
     }
 
-    // 2) نتائج البحث (نفس النص) – نعرض في الجدول مباشرة
+    // 2) نتائج البحث - نعرض في الجدول فقط
     const hits = await runSearch(userText, 6);
+    displayProductsInTable(hits, "Matches & alternatives");
     if (hits.length) {
-      // إضافة النتائج مباشرة إلى الجدول بدلاً من إظهارها في الشات
-      displayProductsInTable(hits, "Matches & alternatives");
-      // رسالة قصيرة في الشات
-      addMsg("bot", `تم العثور على ${hits.length} نتيجة مطابقة. تحقق من الجدول أدناه.`);
+      addMsg("bot", `تم العثور على ${hits.length} ${hits.length === 1 ? 'منتج' : 'منتجات'}. يمكنك مشاهدة النتائج أدناه.`);
     } else {
-      addMsg("bot", "ملقيناش تطابق مباشر. حاول تكتب اسم المنتج/الموديل بدقة أكبر أو جرّب رفع BOQ.");
+      addMsg("bot", "لم نجد منتجات مطابقة. حاول كتابة اسم المنتج بشكل مختلف أو استخدم خاصية رفع BOQ.");
     }
   });
 
@@ -254,11 +264,11 @@
     addMsg("user", q);
 
     const results = await runSearch(q, 8);
+    displayProductsInTable(results, "Search results");
     if (results.length) {
-      displayProductsInTable(results, "Search results");
-      addMsg("bot", `تم العثور على ${results.length} نتيجة بحث. تحقق من الجدول أدناه.`);
+      addMsg("bot", `تم العثور على ${results.length} ${results.length === 1 ? 'منتج' : 'منتجات'}. يمكنك مشاهدة النتائج أدناه.`);
     } else {
-      addMsg("bot", "لا توجد نتائج مطابقة.");
+      addMsg("bot", "لم نجد منتجات مطابقة. حاول كتابة اسم المنتج بشكل مختلف.");
     }
   });
 })();

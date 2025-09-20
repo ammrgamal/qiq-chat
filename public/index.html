@@ -31,6 +31,19 @@
     <!-- منطقة المنتجات المقترحة -->
     <div id="qiq-products-list" class="qiq-products-list"></div>
 
+    <!-- نوافذ منبثقة للتفاصيل والصور -->
+    <div id="image-preview-overlay" class="overlay-modal" style="display:none">
+      <button class="modal-close" onclick="this.closest('#image-preview-overlay').style.display='none'">&times;</button>
+      <img id="preview-image" alt="Product preview" />
+    </div>
+
+    <div id="product-details-modal" class="overlay-modal" style="display:none">
+      <div class="modal-content">
+        <button class="modal-close" onclick="this.closest('#product-details-modal').style.display='none'">&times;</button>
+        <iframe style="width:100%;height:80vh;border:none" loading="lazy"></iframe>
+      </div>
+    </div>
+
     <form id="qiq-form" class="qiq-form" autocomplete="off">
       <input id="qiq-input" class="qiq-input" type="text"
              placeholder="اكتب سؤالك أو ابدأ.. مثلا: عايز Kaspersky EDR لـ 120 مستخدم لمدة سنتين" required />
