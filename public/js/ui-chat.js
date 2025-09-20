@@ -111,6 +111,46 @@
     `;
   }
 
+  /* ---- بناء صف نتيجة واحد (شكل جديد) ---- */
+  function hitToRow(hit) {
+    const name  = hit?.name || "(No name)";
+    const price = hit?.price || hit?.list_price || "";
+    const pn    = hit?.objectID || hit?.sku || "";
+    const img   = hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || PLACEHOLDER_IMG;
+    const link  = hit?.link || hit?.product_url || hit?.permalink || "";
+    const brand = hit?.brand || hit?.manufacturer || hit?.vendor || hit?.company || "غير محدد";
+
+    const safeName = esc(String(name));
+    const safePrice = esc(String(price));
+    const safePn = esc(String(pn));
+    const safeImg = esc(img);
+    const safeLink = esc(link);
+    const safeBrand = esc(String(brand));
+
+    return `
+      <div class="qiq-result-row">
+        <span class="qiq-result-row-name">${safeName}</span>
+        <div class="qiq-result-row-details">
+          ${safePn ? `<span class="qiq-chip">PN: ${safePn}</span>` : ""}
+          ${safePrice ? `<span class="qiq-chip price">${safePrice} USD</span>` : ""}
+        </div>
+        <div class="qiq-result-row-actions">
+          <button class="qiq-btn primary" type="button"
+            data-name="${safeName}"
+            data-price="${safePrice}"
+            data-pn="${safePn}"
+            data-image="${safeImg}"
+            data-link="${safeLink}"
+            data-manufacturer="${safeBrand}"
+            data-source="Search"
+            onclick="AddToQuote(this)">
+            إضافة
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
   /* ---- تجميع مجموعة كروت ---- */
   function renderHitsBlock(title, hits) {
     if (!hits || !hits.length) return "";
@@ -177,7 +217,7 @@
 
     if (hits && hits.length) {
       // عرض النتائج
-      productsList.innerHTML = hits.map(hit => hitToCard(hit)).join('');
+      productsList.innerHTML = hits.map(hit => hitToRow(hit)).join('');
     } else {
       // رسالة في حالة عدم وجود نتائج
       productsList.innerHTML = "<div style='text-align:center;padding:20px;color:#6b7280'>لا توجد نتائج مطابقة.</div>";
