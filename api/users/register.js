@@ -13,12 +13,15 @@ export default async function handler(req, res) {
       }
     }
 
-    const { company, email, phone, password } = body;
+  const { company, email, phone, password } = body;
+  const AUTO_APPROVE = /^(1|true|yes)$/i.test(String(process.env.AUTO_APPROVE || ''));
 
     // Enhanced email validation - business emails only
-    const emailValidation = validateBusinessEmail(email);
-    if (!emailValidation.valid) {
-      return res.status(400).json({ error: emailValidation.message });
+    if (!AUTO_APPROVE) {
+      const emailValidation = validateBusinessEmail(email);
+      if (!emailValidation.valid) {
+        return res.status(400).json({ error: emailValidation.message });
+      }
     }
 
     // Simple password validation
@@ -47,11 +50,13 @@ export default async function handler(req, res) {
     const token = generateSimpleToken(userData);
 
     // Fire-and-forget: send verification email if SENDGRID configured
-    try {
-      const base = req.headers.origin || `http://${req.headers.host}`;
-      // Call our own endpoint
-      await fetch(base + '/api/users/send-verification', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ email }) });
-    } catch {}
+    if (!AUTO_APPROVE) {
+      try {
+        const base = req.headers.origin || `http://${req.headers.host}`;
+        // Call our own endpoint
+        await fetch(base + '/api/users/send-verification', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ email }) });
+      } catch {}
+    }
 
     return res.status(201).json({ 
       ok: true, 

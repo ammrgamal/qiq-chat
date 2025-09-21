@@ -1,23 +1,24 @@
-// api/chat.js
-const algoliasearch = require("algoliasearch");
+// api/chat.js — clean ESM with FAST_MODE fallback
+import algoliasearch from "algoliasearch";
 
 async function searchAlgolia({ query, hitsPerPage = 5 }) {
-  const appId  = process.env.ALGOLIA_APP_ID;
-  const apiKey = process.env.ALGOLIA_API_KEY; // Search API Key
-  const index  = process.env.ALGOLIA_INDEX || "woocommerce_products";
+  const appId = process.env.ALGOLIA_APP_ID;
+  const apiKey = process.env.ALGOLIA_API_KEY; // Search API Key (public/search)
+  const index = process.env.ALGOLIA_INDEX || "woocommerce_products";
+  if (!appId || !apiKey) return [];
   const client = algoliasearch(appId, apiKey);
-  const idx    = client.initIndex(index);
-  const res    = await idx.search(query, { hitsPerPage: Math.min(50, hitsPerPage) });
-  return (res?.hits || []).map(h => ({
+  const idx = client.initIndex(index);
+  const res = await idx.search(query, { hitsPerPage: Math.min(50, hitsPerPage) });
+  return (res?.hits || []).map((h) => ({
     name: h.name || h.title || h.Description || "",
     price: h.price ?? h.Price ?? h["List Price"] ?? "",
     image: h.image || h["Image URL"] || h.thumbnail || "",
-    sku:   h.sku || h.SKU || h.pn || h["Part Number"] || h.product_code || "",
-    link:  h.link || h.product_url || h.url || h.permalink || ""
+    sku: h.sku || h.SKU || h.pn || h["Part Number"] || h.product_code || "",
+    link: h.link || h.product_url || h.url || h.permalink || "",
   }));
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed" });
@@ -29,19 +30,37 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: "messages required" });
     }
 
-    const systemPrompt = `
-أنت مساعد QuickITQuote.
-- تحدث بالعربية أولاً ثم الإنجليزية باختصار.
-- إن كان سؤال المستخدم عن منتج/موديل/سعر/بدائل، استدعِ أداة البحث (searchProducts) بكلمة بحث مناسبة.
-- إن لم يكن طلبًا عن منتجات، اكمل محادثة جمع البيانات (اسم الشركة، الصناعة، عدد المستخدمين، الأولوية، الميزانية، الإيميل، الهاتف) خطوة بخطوة، ثم لخّص واطلب تأكيد الإرسال.
-- عند إرجاع نتائج، اذكر 3 إلى 5 عناصر فقط وروابطها إن توفرت، ثم اقترح إضافة العناصر للعرض (quotation).
-    `.trim();
+    const FAST_MODE = /^(1|true|yes)$/i.test(String(process.env.FAST_MODE || process.env.AUTO_APPROVE || ""));
+    const openaiKey = process.env.OPENAI_API_KEY;
 
-    // 1) نطلب من GPT اتخاذ القرار واستخدام الأداة عند اللزوم
-  const openaiKey = process.env.OPENAI_API_KEY;
-  const openaiURL = "https://api.openai.com/v1/chat/completions";
-  const enableGpt5 = String(process.env.ENABLE_GPT5_ALL || "").toLowerCase() === "true";
-  const chatModel = enableGpt5 ? (process.env.OPENAI_GPT5_MODEL || "gpt-5") : (process.env.OPENAI_MODEL || "gpt-4o-mini");
+    // Fast path: skip external LLM when FAST_MODE or no key
+    if (FAST_MODE || !openaiKey) {
+      const last = messages[messages.length - 1]?.content || "";
+      let hits = [];
+      try {
+        if (process.env.ALGOLIA_APP_ID && process.env.ALGOLIA_API_KEY) {
+          hits = await searchAlgolia({ query: last || "kaspersky", hitsPerPage: 5 });
+        } else {
+          hits = [
+            { name: "Kaspersky Endpoint Detection and Response", sku: "KES-EDR-120-2Y", price: "2500", image: "", link: "#" },
+            { name: "Microsoft Office 365 Business Premium", sku: "O365-BP-100U", price: "1200", image: "", link: "#" },
+          ];
+        }
+      } catch {}
+      return res.status(200).json({ reply: "تم — رد سريع بدون انتظار خدمات خارجية.", hits });
+    }
+
+    const systemPrompt = [
+      "أنت مساعد QuickITQuote.",
+      "- تحدث بالعربية أولاً ثم الإنجليزية باختصار.",
+      "- إن كان سؤال المستخدم عن منتج/موديل/سعر/بدائل، استدعِ أداة البحث (searchProducts) بكلمة بحث مناسبة.",
+      "- إن لم يكن طلبًا عن منتجات، اكمل محادثة جمع البيانات (اسم الشركة، الصناعة، عدد المستخدمين، الأولوية، الميزانية، الإيميل، الهاتف) خطوة بخطوة، ثم لخّص واطلب تأكيد الإرسال.",
+      "- عند إرجاع نتائج، اذكر 3 إلى 5 عناصر فقط وروابطها إن توفرت، ثم اقترح إضافة العناصر للعرض (quotation).",
+    ].join("\n");
+
+    const openaiURL = "https://api.openai.com/v1/chat/completions";
+    const enableGpt5 = String(process.env.ENABLE_GPT5_ALL || "").toLowerCase() === "true";
+    const chatModel = enableGpt5 ? (process.env.OPENAI_GPT5_MODEL || "gpt-5") : (process.env.OPENAI_MODEL || "gpt-4o-mini");
 
     const tools = [
       {
@@ -53,48 +72,45 @@ module.exports = async (req, res) => {
             type: "object",
             properties: {
               query: { type: "string", description: "User intent keyword(s) or model/part number" },
-              hitsPerPage: { type: "integer", minimum: 1, maximum: 50 }
+              hitsPerPage: { type: "integer", minimum: 1, maximum: 50 },
             },
-            required: ["query"]
-          }
-        }
-      }
+            required: ["query"],
+          },
+        },
+      },
     ];
 
     const call = await fetch(openaiURL, {
       method: "POST",
       headers: {
-        "authorization": `Bearer ${openaiKey}`,
-        "content-type": "application/json"
+        authorization: `Bearer ${openaiKey}`,
+        "content-type": "application/json",
       },
       body: JSON.stringify({
         model: chatModel,
         temperature: 0.4,
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages
-        ],
-        tools
-      })
+        messages: [{ role: "system", content: systemPrompt }, ...messages],
+        tools,
+      }),
     });
 
     const first = await call.json();
     const choice = first?.choices?.[0];
-    let toolCalls = choice?.message?.tool_calls || [];
+    const toolCalls = choice?.message?.tool_calls || [];
     let assistantMsg = choice?.message?.content || "";
     let hits = [];
 
-    // 2) لو GPT طلب الأداة، ننفّذ البحث ثم نرجع له النتيجة لكتابة الرد النهائي
     if (Array.isArray(toolCalls) && toolCalls[0]?.function?.name === "searchProducts") {
-      const args = JSON.parse(toolCalls[0].function.arguments || "{}");
+      const argsText = toolCalls[0].function.arguments || "{}";
+      let args = {};
+      try { args = JSON.parse(argsText); } catch {}
       const found = await searchAlgolia({ query: args.query || "", hitsPerPage: args.hitsPerPage || 5 });
 
-      // ردّ تالي بعد نتيجة الأداة
       const call2 = await fetch(openaiURL, {
         method: "POST",
         headers: {
-          "authorization": `Bearer ${openaiKey}`,
-          "content-type": "application/json"
+          authorization: `Bearer ${openaiKey}`,
+          "content-type": "application/json",
         },
         body: JSON.stringify({
           model: chatModel,
@@ -106,10 +122,10 @@ module.exports = async (req, res) => {
               role: "tool",
               tool_call_id: toolCalls[0].id,
               name: "searchProducts",
-              content: JSON.stringify({ hits: found })
-            }
-          ]
-        })
+              content: JSON.stringify({ hits: found }),
+            },
+          ],
+        }),
       });
 
       const second = await call2.json();
@@ -117,12 +133,9 @@ module.exports = async (req, res) => {
       hits = found || [];
     }
 
-    return res.status(200).json({
-      reply: assistantMsg || "تم.",
-      hits
-    });
+    return res.status(200).json({ reply: assistantMsg || "تم.", hits });
   } catch (e) {
     console.error("chat error:", e);
     return res.status(500).json({ error: e?.message || "chat failed" });
   }
-};
+}

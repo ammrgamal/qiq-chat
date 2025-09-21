@@ -2,7 +2,8 @@
 // Defaults are intentionally in-source per user request for quick setup/dev.
 // Override via environment variables in production.
 
-const DEFAULT_RESEND_API_KEY = 're_jgH5GHYS_9dMNPQ5tqJ6JRQ9fy6iHgHWi';
+// For safety, do NOT ship default provider API keys.
+// Emails will be disabled unless RESEND_API_KEY or SENDGRID_API_KEY is set.
 const DEFAULT_FROM_EMAIL     = 'no-reply@quickitquote.com';
 
 function getFromAddress() {
@@ -13,7 +14,7 @@ function getFromAddress() {
 }
 
 async function sendWithResend({ to, subject, html, from }){
-  const key = process.env.RESEND_API_KEY || DEFAULT_RESEND_API_KEY;
+  const key = process.env.RESEND_API_KEY;
   if (!key) return { ok:false, disabled:true };
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -68,7 +69,7 @@ export async function sendEmail({ to, subject, html, from }){
   if (!recipient) return { ok:false, error:'Missing recipient' };
 
   // Prefer Resend if key present (env or default), else fallback to SendGrid if configured
-  const hasResend = Boolean(process.env.RESEND_API_KEY || DEFAULT_RESEND_API_KEY);
+  const hasResend = Boolean(process.env.RESEND_API_KEY);
   if (hasResend) {
     const r = await sendWithResend({ to: recipient, subject, html, from });
     if (r.ok) return r;

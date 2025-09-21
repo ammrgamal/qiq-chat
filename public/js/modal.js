@@ -43,14 +43,20 @@
       frame.srcdoc = content;
     } else {
       frame.srcdoc = '';
-      frame.src = url || 'about:blank';
+      // Set explicit about:blank first to reset
+      frame.src = 'about:blank';
+      // Use absolute URL to avoid base issues inside iframe
+      try{
+        const abs = new URL(url, window.location.origin).href;
+        frame.src = abs;
+      }catch{ frame.src = url || 'about:blank'; }
       // Fallback: if the frame doesn't load content within 2.5s, show a simple inline loader/error
       const t = setTimeout(()=>{
         try{
           const doc = frame.contentDocument;
           const isBlank = !doc || !doc.body || doc.body.childElementCount === 0;
           if (isBlank) {
-            const fallback = `<!doctype html><meta charset="utf-8"><body style="margin:0;padding:20px;font-family:system-ui,Segoe UI"><div style="display:flex;align-items:center;justify-content:center;height:100%;color:#374151"><div style="text-align:center"><div style="font-size:14px">جارٍ التحميل…</div><div style="margin-top:10px;color:#9ca3af">لو استمر الفراغ، افتح في تبويب جديد</div></div></div></body>`;
+            const fallback = `<!doctype html><html><head><meta charset="utf-8"><base href="${window.location.origin}/" target="_blank"></head><body style="margin:0;padding:20px;font-family:system-ui,Segoe UI"><div style="display:flex;align-items:center;justify-content:center;height:100%;color:#374151"><div style="text-align:center"><div style="font-size:14px">جارٍ التحميل…</div><div style="margin-top:10px;color:#9ca3af">لو استمر الفراغ، افتح في تبويب جديد</div></div></div></body></html>`;
             frame.srcdoc = fallback;
           }
         }catch{}

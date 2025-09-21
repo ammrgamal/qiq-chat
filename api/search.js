@@ -1,7 +1,7 @@
-// api/search.js
-const algoliasearch = require("algoliasearch");
+// api/search.js (ESM)
+import algoliasearch from 'algoliasearch';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed" });
@@ -19,8 +19,8 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: "Algolia credentials not set" });
     }
 
-    const client = algoliasearch(appId, apiKey);
-    const index  = client.initIndex(indexNm);
+  const client = algoliasearch(appId, apiKey);
+  const index  = client.initIndex(indexNm);
 
     // Compose Algolia search options with facets and filters
     const facetList = Array.isArray(facets) && facets.length
@@ -39,15 +39,15 @@ module.exports = async (req, res) => {
       advancedSyntax: true,
       // Ensure we can match when the index settings are not perfect
       restrictSearchableAttributes: [
-        'name','title','Description','product_name',
-        'sku','SKU','pn','Part Number','product_code','objectID',
+        'name','title','Description','ShortDescription','ExtendedDescription','product_name',
+        'sku','SKU','pn','mpn','Part Number','product_code','objectID',
         'brand','manufacturer','vendor','company',
-        'categories','category'
+        'categories','category','tags'
       ],
       attributesToRetrieve: [
-        'name','title','Description','product_name','price','Price','List Price','list_price',
-        'image','Image URL','thumbnail','images','sku','SKU','pn','Part Number','product_code','objectID',
-        'link','product_url','url','permalink','brand','manufacturer','vendor','company','categories','category'
+        'name','title','Description','ShortDescription','ExtendedDescription','product_name','price','Price','List Price','list_price',
+        'image','Image URL','thumbnail','images','sku','SKU','pn','mpn','Part Number','product_code','objectID',
+        'link','product_url','url','permalink','brand','manufacturer','vendor','company','categories','category','tags'
       ]
     };
 
@@ -82,12 +82,27 @@ module.exports = async (req, res) => {
       } catch {}
     }
 
+    // If still too few hits, do a broader pass without restrictSearchableAttributes
+    if ((result?.nbHits || 0) <= 1 && q) {
+      try {
+        const broadOpts = { ...opts };
+        delete broadOpts.restrictSearchableAttributes;
+        result = await index.search(q, {
+          ...broadOpts,
+          hitsPerPage: Math.max(broadOpts.hitsPerPage || 20, 24),
+          queryType: 'prefixAll',
+          synonyms: true,
+          removeWordsIfNoResults: 'allOptional'
+        });
+      } catch {}
+    }
+
     const normalized = (result?.hits || []).map(h => ({
       name: h.name || h.title || h.Description || h.product_name || "",
       price: h.price ?? h.Price ?? h["List Price"] ?? h.list_price ?? "",
       image: h.image || h["Image URL"] || h.thumbnail || (Array.isArray(h.images) ? h.images[0] : ""),
-      sku:   h.sku || h.SKU || h.pn || h["Part Number"] || h.product_code || h.objectID || "",
-      pn:    h.pn || h["Part Number"] || h.sku || h.SKU || h.product_code || h.objectID || "",
+      sku:   h.sku || h.SKU || h.pn || h.mpn || h["Part Number"] || h.product_code || h.objectID || "",
+      pn:    h.pn || h.mpn || h["Part Number"] || h.sku || h.SKU || h.product_code || h.objectID || "",
       link:  h.link || h.product_url || h.url || h.permalink || "",
       brand: h.brand || h.manufacturer || h.vendor || h.company || ""
     }));
@@ -103,4 +118,4 @@ module.exports = async (req, res) => {
     console.error("Algolia search error:", e);
     return res.status(500).json({ error: e?.message || "Search failed" });
   }
-};
+}

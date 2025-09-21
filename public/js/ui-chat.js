@@ -68,10 +68,10 @@
     // محاولة استخراج أهم الحقول الشائعة
     const name  = hit?.name || "(No name)";
     const price = hit?.price || hit?.list_price || "";
-    const pn    = hit?.objectID || hit?.sku || "";
+  const pn    = hit?.pn || hit?.mpn || hit?.sku || hit?.objectID || "";
     const img   = hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || PLACEHOLDER_IMG;
   // Prefer our internal catalog page filtered by PN for details
-  const linkTarget = (hit?.objectID || hit?.sku) ? `/products-list.html?q=${encodeURIComponent(hit.objectID || hit.sku)}` : (hit?.link || hit?.product_url || hit?.permalink || "");
+  const linkTarget = (hit?.objectID || hit?.sku || hit?.pn || hit?.mpn) ? `/products-list.html?q=${encodeURIComponent(hit.objectID || hit.sku || hit.pn || hit.mpn)}` : (hit?.link || hit?.product_url || hit?.permalink || "");
     const brand = hit?.brand || hit?.manufacturer || hit?.vendor || hit?.company || "غير محدد";
 
     const safeName = esc(String(name));
@@ -116,9 +116,9 @@
   function hitToRow(hit) {
     const name  = hit?.name || "(No name)";
     const price = hit?.price || hit?.list_price || "";
-    const pn    = hit?.objectID || hit?.sku || "";
+  const pn    = hit?.pn || hit?.mpn || hit?.sku || hit?.objectID || "";
     const img   = hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || PLACEHOLDER_IMG;
-  const linkTarget2 = (hit?.objectID || hit?.sku) ? `/products-list.html?q=${encodeURIComponent(hit.objectID || hit.sku)}` : (hit?.link || hit?.product_url || hit?.permalink || "");
+  const linkTarget2 = (hit?.objectID || hit?.sku || hit?.pn || hit?.mpn) ? `/products-list.html?q=${encodeURIComponent(hit.objectID || hit.sku || hit.pn || hit.mpn)}` : (hit?.link || hit?.product_url || hit?.permalink || "");
     const brand = hit?.brand || hit?.manufacturer || hit?.vendor || hit?.company || "غير محدد";
 
     const safeName = esc(String(name));

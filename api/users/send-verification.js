@@ -6,6 +6,10 @@ export default async function handler(req, res){
   try{
     const { email } = req.body || {};
     if (!email) return res.status(400).json({ error:'Missing email' });
+    const AUTO_APPROVE = /^(1|true|yes)$/i.test(String(process.env.AUTO_APPROVE || ''));
+    if (AUTO_APPROVE) {
+      return res.status(200).json({ ok:true, sent:false, skipped:true });
+    }
     const secret = process.env.JWT_SECRET || 'dev-secret';
     const token = await signJWT({ email }, secret, 60*60*24); // 24h
     const base = process.env.PUBLIC_BASE_URL || (req.headers.origin || `http://${req.headers.host}`);

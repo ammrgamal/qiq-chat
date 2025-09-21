@@ -21,9 +21,13 @@ export default async function handler(req, res) {
     try{
       const body = req.body || {};
       // Require at least a project name; if missing, return 400 so frontend can prompt
-      const projectName = body?.project?.name || '';
+      const AUTO_APPROVE = /^(1|true|yes)$/i.test(String(process.env.AUTO_APPROVE || ''));
+      let projectName = body?.project?.name || '';
       if (!projectName) {
-        return res.status(400).json({ error: 'PROJECT_NAME_REQUIRED' });
+        if (!AUTO_APPROVE) {
+          return res.status(400).json({ error: 'PROJECT_NAME_REQUIRED' });
+        }
+        projectName = `Project ${new Date().toISOString().slice(0,10)}`;
       }
 
       // Generate sequential-like projectId using date + counter from storage

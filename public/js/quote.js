@@ -312,10 +312,9 @@
 
   $("btn-save").addEventListener("click", (e) => {
     e.preventDefault();
-    // Require project name for better organization
+    // Require project name for better organization via modal
     if (!$("project-name").value.trim()){
-      const val = prompt('اكتب اسم المشروع لحفظ المسودة:', $("client-name").value ? `${$("client-name").value} - مشروع` : 'Project X');
-      if (val && val.trim()) $("project-name").value = val.trim();
+      return openProjectInfoModal({ onDone: () => { saveState(true); showNotification("تم حفظ المسودة محليًا", "success"); } });
     }
     saveState(true);
     showNotification("تم حفظ المسودة محليًا", "success");
@@ -335,67 +334,15 @@
         return;
       }
       try{
-        // Ensure project name exists
+        // Ensure project name exists using modal first
         if (!$("project-name").value.trim()){
-          const val = prompt('برجاء إدخال اسم المشروع قبل الحفظ:', $("client-name").value ? `${$("client-name").value} - مشروع` : 'Project X');
-          if (!val || !val.trim()){
-            showNotification('لم يتم الحفظ: اسم المشروع مطلوب.', 'error');
-            return;
-          }
-          $("project-name").value = val.trim();
+          return openProjectInfoModal({ onDone: async () => {
+            if (!validateRequiredBeforePDF()) return; 
+            await handleSaveToAccount();
+          }});
         }
-        // Build minimal payload, totals included
-        await recalcTotals();
-        const payload = buildPayload({ reason: 'save-pdf' });
-        payload.totals = {
-          subtotal: $("subtotal-cell").textContent,
-          install: $("install-cell").textContent,
-          grand: $("grand-cell").textContent
-        };
-        const res = await fetch('/api/users/quotations', {
-          method:'POST',
-          headers:{ 'content-type':'application/json', 'authorization': `Bearer ${token}` },
-          body: JSON.stringify(payload)
-        });
-        let j;
-        if (!res.ok){
-          const err = await res.json().catch(()=>({}));
-          if (err && err.error === 'PROJECT_NAME_REQUIRED'){
-            const v = prompt('اسم المشروع مطلوب للحفظ، رجاءً أدخله الآن:');
-            if (!v || !v.trim()) return showNotification('لم يتم الحفظ: اسم المشروع مطلوب.', 'error');
-            $("project-name").value = v.trim();
-            const payload2 = buildPayload({ reason: 'save-pdf' });
-            payload2.totals = payload.totals;
-            const res2 = await fetch('/api/users/quotations', {
-              method:'POST', headers:{ 'content-type':'application/json', 'authorization': `Bearer ${token}` },
-              body: JSON.stringify(payload2)
-            });
-            if (!res2.ok) throw new Error('HTTP '+res2.status);
-            j = await res2.json();
-          } else {
-            throw new Error('HTTP '+res.status);
-          }
-        } else {
-          j = await res.json();
-        }
-        showNotification('تم حفظ العرض في حسابك. سيتم تنزيل PDF الآن.', 'success');
-  logEvent('save-to-account', { id: j.id });
-        // Offer CTA to open account history with copy button
-        try{
-          const quoteRef = j.id || payload.number;
-          if (window.QiqToast && typeof window.QiqToast.showHtml === 'function'){
-            window.QiqToast.showHtml(
-              `<div>تم حفظ العرض <strong>${quoteRef}</strong> في حسابك.</div>
-               <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
-                 <a href="/account.html" style="color:#2563eb;text-decoration:underline">اذهب إلى سجل العروض</a>
-                 <button onclick="navigator.clipboard && navigator.clipboard.writeText('${quoteRef}').then(()=>alert('تم نسخ رقم العرض')).catch(()=>prompt('انسخ رقم العرض:','${quoteRef}'))" style="background:#059669;color:#fff;border:none;padding:2px 6px;border-radius:4px;font-size:11px;cursor:pointer">📋 نسخ الرقم</button>
-               </div>`,
-              'success'
-            );
-          }
-        }catch{}
-        // Trigger print-to-PDF (user chooses destination)
-        window.print();
+        if (!validateRequiredBeforePDF()) return;
+        await handleSaveToAccount();
       }catch(err){
         console.warn(err);
         showNotification('تعذر الحفظ في الحساب.', 'error');
@@ -1235,6 +1182,99 @@
       const shouldShow = !term || desc.includes(term) || pn.includes(term);
       row.style.display = shouldShow ? "" : "none";
     });
+  }
+
+  // ===== Project Info Modal integration =====
+  function openProjectInfoModal(opts){
+    try{
+      const backdrop = document.getElementById('project-info-modal');
+      const nameInput = document.getElementById('proj-modal-name');
+      const siteInput = document.getElementById('proj-modal-site');
+      const execInput = document.getElementById('proj-modal-exec');
+      const saveBtn = document.getElementById('proj-info-save');
+      const cancelBtn = document.getElementById('proj-info-cancel');
+      if (!backdrop || !nameInput || !saveBtn) {
+        // Fallback to prompt if modal elements not found
+        const v = prompt('اكتب اسم المشروع:');
+        if (v && v.trim()) {
+          $("project-name").value = v.trim();
+          saveState();
+          if (opts && typeof opts.onDone === 'function') opts.onDone();
+        }
+        return;
+      }
+      // Prefill from current form
+      nameInput.value = $("project-name").value || '';
+      if (siteInput) siteInput.value = $("site-location").value || '';
+      if (execInput) execInput.value = $("execution-date")?.value || '';
+      // Show
+      backdrop.style.display = 'flex';
+      const closeModal = () => { backdrop.style.display = 'none'; };
+      const onCancel = () => { closeModal(); };
+      const onSave = () => {
+        const v = nameInput.value.trim();
+        if (!v){ nameInput.focus(); return; }
+        $("project-name").value = v;
+        if (siteInput) $("site-location").value = siteInput.value.trim();
+        if (execInput) { const d = execInput.value; if ($("execution-date")) $("execution-date").value = d; }
+        saveState();
+        closeModal();
+        if (opts && typeof opts.onDone === 'function') opts.onDone();
+      };
+      // Wire temporary handlers (one-off)
+      saveBtn.onclick = onSave;
+      if (cancelBtn) cancelBtn.onclick = onCancel;
+    }catch(e){ console.warn('project modal error', e); }
+  }
+
+  async function handleSaveToAccount(){
+    const token = localStorage.getItem('qiq_token');
+    if (!token){
+      showNotification('يرجى تسجيل الدخول أولاً لحفظ PDF في حسابك.', 'error');
+      try { window.QiqModal ? QiqModal.open('/account.html', {title:'تسجيل الدخول'}) : window.open('/account.html','_blank'); } catch {}
+      return;
+    }
+    await recalcTotals();
+    const payload = buildPayload({ reason: 'save-pdf' });
+    payload.totals = {
+      subtotal: $("subtotal-cell").textContent,
+      install: $("install-cell").textContent,
+      grand: $("grand-cell").textContent
+    };
+    const res = await fetch('/api/users/quotations', {
+      method:'POST',
+      headers:{ 'content-type':'application/json', 'authorization': `Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+    let j;
+    if (!res.ok){
+      const err = await res.json().catch(()=>({}));
+      if (err && err.error === 'PROJECT_NAME_REQUIRED'){
+        return openProjectInfoModal({ onDone: async () => { await handleSaveToAccount(); } });
+      } else {
+        throw new Error('HTTP '+res.status);
+      }
+    } else {
+      j = await res.json();
+    }
+    showNotification('تم حفظ العرض في حسابك. سيتم تنزيل PDF الآن.', 'success');
+    logEvent('save-to-account', { id: j.id });
+    // CTA toast if available
+    try{
+      const quoteRef = j.id || payload.number;
+      if (window.QiqToast && typeof window.QiqToast.showHtml === 'function'){
+        window.QiqToast.showHtml(
+          `<div>تم حفظ العرض <strong>${quoteRef}</strong> في حسابك.</div>
+           <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+             <a href="/account.html" style="color:#2563eb;text-decoration:underline">اذهب إلى سجل العروض</a>
+             <button onclick="navigator.clipboard && navigator.clipboard.writeText('${quoteRef}').then(()=>alert('تم نسخ رقم العرض')).catch(()=>prompt('انسخ رقم العرض:','${quoteRef}'))" style="background:#059669;color:#fff;border:none;padding:2px 6px;border-radius:4px;font-size:11px;cursor:pointer">📋 نسخ الرقم</button>
+           </div>`,
+          'success'
+        );
+      }
+    }catch{}
+    // Trigger print-to-PDF (user chooses destination)
+    window.print();
   }
 
 

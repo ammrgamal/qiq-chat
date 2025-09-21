@@ -13,6 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const AUTO_APPROVE = /^(1|true|yes)$/i.test(String(process.env.AUTO_APPROVE || ''));
 // Allow override via CLI arg: node server.js 3005
 const argPort = Number(process.argv[2]);
 const PORT = process.env.PORT || (Number.isFinite(argPort) && argPort > 0 ? argPort : 3001);
@@ -23,28 +24,30 @@ app.use(express.urlencoded({ extended: true }));
 // Static site
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Simple in-memory rate limiter for /api/users/* (per IP)
-const rateBuckets = new Map();
-const RATE_LIMIT = Number(process.env.RATE_LIMIT || 60); // requests
-const RATE_WINDOW_MS = Number(process.env.RATE_WINDOW_MS || 60_000); // per minute
-app.use((req, res, next) => {
-  if (!req.path.startsWith('/api/users/')) return next();
-  try {
-    const ip = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.socket.remoteAddress || 'local';
-    const now = Date.now();
-    let b = rateBuckets.get(ip);
-    if (!b || now - b.ts > RATE_WINDOW_MS) {
-      b = { n: 0, ts: now };
-      rateBuckets.set(ip, b);
-    }
-    b.n++;
-    if (b.n > RATE_LIMIT) {
-      res.status(429).json({ error: 'Too many requests, please try again later.' });
-      return;
-    }
-  } catch {}
-  next();
-});
+// Simple in-memory rate limiter for /api/users/* (per IP) – disabled in AUTO_APPROVE mode
+if (!AUTO_APPROVE) {
+  const rateBuckets = new Map();
+  const RATE_LIMIT = Number(process.env.RATE_LIMIT || 60); // requests
+  const RATE_WINDOW_MS = Number(process.env.RATE_WINDOW_MS || 60_000); // per minute
+  app.use((req, res, next) => {
+    if (!req.path.startsWith('/api/users/')) return next();
+    try {
+      const ip = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.socket.remoteAddress || 'local';
+      const now = Date.now();
+      let b = rateBuckets.get(ip);
+      if (!b || now - b.ts > RATE_WINDOW_MS) {
+        b = { n: 0, ts: now };
+        rateBuckets.set(ip, b);
+      }
+      b.n++;
+      if (b.n > RATE_LIMIT) {
+        res.status(429).json({ error: 'Too many requests, please try again later.' });
+        return;
+      }
+    } catch {}
+    next();
+  });
+}
 
 async function loadHandler(rel) {
   const modPath = path.join(__dirname, 'api', rel);
