@@ -23,6 +23,20 @@
   const subtotalEl = $('#quote-subtotal');
   const grandTotalEl = $('#quote-grand-total');
   
+  // TEMP: Direct Algolia fallback for testing only (remove before production)
+  // If the backend doesn't have ALGOLIA_APP_ID/ALGOLIA_API_KEY configured, we'll query Algolia directly from the browser
+  // using the Search-Only API key you provided. To disable this fallback at runtime: set window.QIQ_DISABLE_TEMP_ALGOLIA = true
+  const TEMP_ALGOLIA = (function(){
+    try {
+      if (window.QIQ_DISABLE_TEMP_ALGOLIA) return null;
+      return {
+        appId: 'R4ZBQNB1VE',
+        apiKey: '84b7868e7375eac68c15db81fc129962', // Search-Only key (OK for client-side testing)
+        index: (window.QIQ_ALGOLIA_INDEX || 'woocommerce_products')
+      };
+    } catch { return null; }
+  })();
+  
   // Quote state
   let quoteItems = [];
   let searchCount = 0;
@@ -218,7 +232,28 @@
       
         // Show a warning if backend indicates Algolia is not configured
         if (result && result.warning && window.QiqToast?.show) {
-          window.QiqToast.show('⚠️ لم يتم ضبط مفاتيح Algolia على الخادم. سيتم عرض نتائج محدودة.', { type: 'warning', duration: 4000 });
+          window.QiqToast.show('⚠️ لم يتم ضبط مفاتيح Algolia على الخادم. سيتم استخدام وضع اختبار مؤقت من الواجهة الأمامية.', { type: 'warning', duration: 4500 });
+        }
+
+        // If backend lacks Algolia (warning) or returned no hits, try direct Algolia fallback (TEMP)
+        if ((result?.warning || (result?.nbHits === 0)) && TEMP_ALGOLIA) {
+          const fallback = await algoliaDirectSearch(q, { hitsPerPage, page, filters });
+          if (fallback && (fallback.nbHits > 0 || (fallback.hits||[]).length > 0)) {
+            if (window.QiqToast?.show) {
+              window.QiqToast.show('🧪 تم استخدام مزود البحث المؤقت (Algolia) من المتصفح.', { type: 'info', duration: 3500 });
+            }
+            if (window.QiqPerformance) {
+              window.QiqPerformance.endTimer('search-api', startTime);
+            }
+            // Track search with fallback
+            if (window.QiqAnalytics) {
+              window.QiqAnalytics.trackSearch(q, fallback?.nbHits || (fallback.hits||[]).length, { ...filters, _fallback: 'frontend' }, Date.now() - startTime);
+            }
+            if (window.QiqSearchHistory) {
+              window.QiqSearchHistory.addSearch(q, fallback?.nbHits || (fallback.hits||[]).length);
+            }
+            return fallback;
+          }
         }
 
       if (window.QiqPerformance) {
@@ -239,6 +274,21 @@
     }catch(e){ 
       console.warn('search failed', e);
       
+      // If backend call failed entirely, still try the TEMP Algolia frontend fallback
+      if (TEMP_ALGOLIA) {
+        try {
+          const fb = await algoliaDirectSearch(q, { hitsPerPage, page, filters });
+          if (fb) {
+            if (window.QiqToast?.show) {
+              window.QiqToast.show('🧪 تم استخدام مزود البحث المؤقت بعد فشل الخادم.', { type: 'warning', duration: 4000 });
+            }
+            return fb;
+          }
+        } catch (e2) {
+          console.warn('fallback algolia failed', e2);
+        }
+      }
+
       // Track error
       if (window.QiqAnalytics) {
         window.QiqAnalytics.trackError(e, { context: 'search', query: q });
@@ -246,6 +296,114 @@
       
       return { hits: [], nbHits: 0, facets: {} }; 
     }
+  }
+
+  // TEMP: Direct Algolia call from browser. Normalizes hits similar to backend mapper.
+  async function algoliaDirectSearch(q, { hitsPerPage=20, page=0, filters={} }={}){
+    if (!TEMP_ALGOLIA) return null;
+    const facetFilters = [];
+    if (filters && Array.isArray(filters.brands) && filters.brands.length) {
+      facetFilters.push(filters.brands.map((b) => `brand:${b}`));
+    }
+    if (filters && Array.isArray(filters.categories) && filters.categories.length) {
+      facetFilters.push(filters.categories.map((c) => `categories:${c}`));
+    }
+    const numericFilters = [];
+    if (filters && filters.priceMin != null && filters.priceMin !== "") {
+      numericFilters.push(`price>=${Number(filters.priceMin)}`);
+    }
+    if (filters && filters.priceMax != null && filters.priceMax !== "") {
+      numericFilters.push(`price<=${Number(filters.priceMax)}`);
+    }
+
+    const opts = {
+      hitsPerPage: Math.min(50, Number(hitsPerPage) || 20),
+      page: Number(page) || 0,
+      facets: ["brand","manufacturer","categories","category"],
+      facetFilters: facetFilters.length ? facetFilters : undefined,
+      numericFilters: numericFilters.length ? numericFilters : undefined,
+      typoTolerance: 'min',
+      ignorePlurals: true,
+      queryLanguages: ['ar','en'],
+      removeWordsIfNoResults: 'allOptional',
+      advancedSyntax: true,
+      restrictSearchableAttributes: [
+        'name','title','Description','ShortDescription','ExtendedDescription','product_name',
+        'sku','SKU','pn','mpn','Part Number','product_code','objectID',
+        'brand','manufacturer','vendor','company',
+        'categories','category','tags'
+      ],
+      attributesToRetrieve: [
+        'name','title','Description','ShortDescription','ExtendedDescription','product_name','price','Price','List Price','list_price',
+        'image','Image URL','thumbnail','images','sku','SKU','pn','mpn','Part Number','product_code','objectID',
+        'link','product_url','url','permalink','brand','manufacturer','vendor','company','categories','category','tags'
+      ]
+    };
+
+    const url = `https://${TEMP_ALGOLIA.appId}-dsn.algolia.net/1/indexes/${encodeURIComponent(TEMP_ALGOLIA.index)}/query`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Algolia-Application-Id': TEMP_ALGOLIA.appId,
+        'X-Algolia-API-Key': TEMP_ALGOLIA.apiKey
+      },
+      body: JSON.stringify({ query: q || '', ...opts })
+    });
+    if (!resp.ok) throw new Error('Algolia HTTP ' + resp.status);
+    let result = await resp.json();
+
+    // secondary relaxed attempts similar to backend
+    if ((!result?.nbHits || result.nbHits === 0) && q) {
+      const tokens = String(q).split(/\s+/).filter(Boolean);
+      const optionalWords = tokens.length > 1 ? tokens : undefined;
+      try {
+        const resp2 = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Algolia-Application-Id': TEMP_ALGOLIA.appId,
+            'X-Algolia-API-Key': TEMP_ALGOLIA.apiKey
+          },
+          body: JSON.stringify({ query: q, ...opts, optionalWords })
+        });
+        if (resp2.ok) result = await resp2.json();
+      } catch {}
+    }
+    if ((result?.nbHits || 0) <= 1 && q) {
+      try {
+        const broadOpts = { ...opts };
+        delete broadOpts.restrictSearchableAttributes;
+        const resp3 = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Algolia-Application-Id': TEMP_ALGOLIA.appId,
+            'X-Algolia-API-Key': TEMP_ALGOLIA.apiKey
+          },
+          body: JSON.stringify({ query: q, ...broadOpts, hitsPerPage: Math.max(broadOpts.hitsPerPage || 20, 24), queryType: 'prefixAll', synonyms: true, removeWordsIfNoResults: 'allOptional' })
+        });
+        if (resp3.ok) result = await resp3.json();
+      } catch {}
+    }
+
+    const normalizedHits = (result?.hits || []).map(h => ({
+      name: h.name || h.title || h.Description || h.product_name || "",
+      price: (h.price ?? h.Price ?? h["List Price"] ?? h.list_price ?? ""),
+      image: h.image || h["Image URL"] || h.thumbnail || (Array.isArray(h.images) ? h.images[0] : ""),
+      sku:   h.sku || h.SKU || h.pn || h.mpn || h["Part Number"] || h.product_code || h.objectID || "",
+      pn:    h.pn || h.mpn || h["Part Number"] || h.sku || h.SKU || h.product_code || h.objectID || "",
+      link:  h.link || h.product_url || h.url || h.permalink || "",
+      brand: h.brand || h.manufacturer || h.vendor || h.company || ""
+    }));
+
+    return {
+      hits: normalizedHits,
+      facets: result?.facets || {},
+      nbHits: result?.nbHits || normalizedHits.length || 0,
+      page: result?.page || 0,
+      nbPages: result?.nbPages || 1
+    };
   }
 
   function hitToCard(h){

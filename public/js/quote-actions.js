@@ -242,7 +242,7 @@
     if (detailBtn) {
       detailBtn.addEventListener('click', (ev)=>{
         ev.preventDefault();
-  const url = `/public/products-list.html?q=${encodeURIComponent(pn || name)}`;
+  const url = `/products-list.html?q=${encodeURIComponent(pn || name)}`;
         try{
           if (window.QiqModal) QiqModal.open(url, {title: 'تفاصيل المنتج'});
           else window.open(url, "_blank", "noopener");
