@@ -31,8 +31,13 @@
     if (titleEl) titleEl.textContent = opts.title || '';
     if (opts.html){
       // Allow opening inline HTML inside the iframe using srcdoc
+      // Wrap provided HTML in a minimal document to avoid blank rendering on some browsers
+      const content = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8" />
+        <base target="_blank" />
+        <style>body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;padding:16px;background:#fff;color:#111;line-height:1.5}</style>
+      </head><body>${String(opts.html)}</body></html>`;
       frame.removeAttribute('src');
-      frame.srcdoc = String(opts.html);
+      frame.srcdoc = content;
     } else {
       frame.srcdoc = '';
       frame.src = url || 'about:blank';

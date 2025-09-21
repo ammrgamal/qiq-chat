@@ -275,6 +275,21 @@
     window.print();
   });
 
+  // Auto-print handler (when opened from account download)
+  (function(){
+    try{
+      const u = new URL(window.location.href);
+      if (u.searchParams.get('auto') === 'print') {
+        // Attempt totals then trigger print after a short delay
+        recalcTotals().then(()=>{
+          setTimeout(()=> window.print(), 300);
+        }).catch(()=>{
+          setTimeout(()=> window.print(), 300);
+        });
+      }
+    }catch{}
+  })();
+
   $("btn-save").addEventListener("click", (e) => {
     e.preventDefault();
     saveState(true);
@@ -702,12 +717,13 @@
       subtotalConverted += line;
     });
 
-    // 2) Optional installation: max(5% of subtotal, $200) — computed in target currency
+    // 2) Optional installation: if subtotal (USD) < 4000 then flat $200; else 5% — converted to target currency
     let installAmount = 0;
     if ($("include-install").checked) {
-      const fivePct = subtotalConverted * 0.05;
-      const minConverted = 200 * rate; // $200 in selected currency
-      installAmount = Math.max(fivePct, minConverted);
+      // Calculate against USD base to keep consistent thresholds
+      const subtotalUSD = subtotalConverted / rate;
+      const baseInstallUSD = subtotalUSD < 4000 ? 200 : (subtotalUSD * 0.05);
+      installAmount = baseInstallUSD * rate;
     }
 
     // 3) Footer totals

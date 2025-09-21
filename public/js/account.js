@@ -16,7 +16,8 @@
     
     // Also use toast system if available
     if (window.QiqToast && window.QiqToast.show && msg) {
-      window.QiqToast.show(msg, type);
+      // Make account toasts linger a bit more (6s)
+      window.QiqToast.show(msg, type, 6000);
     }
   };
 
@@ -77,6 +78,14 @@
     const name = user?.company || user?.name || user?.email || "مستخدم";
     setStatus(`تم تسجيل الدخول ✓ أهلاً ${name}`, "success");
 
+    // Hide login/register forms
+    try{
+      const loginSec = document.getElementById('login-form')?.closest('section');
+      const regSec = document.getElementById('register-form')?.closest('section');
+      if (loginSec) { loginSec.classList.add('is-hidden'); loginSec.style.display = 'none'; }
+      if (regSec) { regSec.classList.add('is-hidden'); regSec.style.display = 'none'; }
+    }catch{}
+
     // Display user profile and quotation history
     displayUserProfile(user);
 
@@ -98,6 +107,13 @@
         setStatus("تم تسجيل الخروج.", "info");
         logoutBtn.remove();
         hideUserProfile();
+        // Show login/register forms again
+        try{
+          const loginSec = document.getElementById('login-form')?.closest('section');
+          const regSec = document.getElementById('register-form')?.closest('section');
+          if (loginSec) { loginSec.classList.remove('is-hidden'); loginSec.style.display = ''; }
+          if (regSec) { regSec.classList.remove('is-hidden'); regSec.style.display = ''; }
+        }catch{}
       });
     }
   }
@@ -404,16 +420,9 @@
   
   window.downloadQuotation = function(id) {
     setStatus(`جاري تحميل العرض ${id}...`, "info");
-    // Simulate PDF download
-    setTimeout(() => {
-      const link = document.createElement('a');
-      link.href = 'data:application/pdf;base64,'; // In real app, this would be the actual PDF
-      link.download = `quotation-${id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setStatus(`تم تحميل العرض ${id} بنجاح`, "success");
-    }, 1000);
+    // Open quote in a new tab with auto-print instruction; the quote page will format and user can save as PDF
+    const url = `/quote.html?view=${encodeURIComponent(id)}&auto=print`;
+    window.open(url, '_blank');
   };
 
   // ============ Login ============
@@ -485,6 +494,12 @@
           try { const me = await getJSON("/api/users/me"); user = me.user || me; } catch { /* ignore */ }
         }
         if (user) showLoggedInUI(user);
+
+        // Auto-send verification email
+        try{
+          await postJSON('/api/users/send-verification', { email });
+          setStatus('تم إرسال رسالة التحقق إلى بريدك الإلكتروني.', 'success');
+        }catch(e){ /* non-blocking */ }
 
         registerForm.reset();
       } catch (err) {

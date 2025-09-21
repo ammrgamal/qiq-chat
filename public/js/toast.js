@@ -18,7 +18,7 @@
       }
     },
 
-    show(message, type = 'info', duration = 3000) {
+  show(message, type = 'info', duration = 6000) {
       this.init();
       
       const toast = document.createElement('div');
