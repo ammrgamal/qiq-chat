@@ -75,6 +75,19 @@
   /* Chat-like vibes */
   .compact-quote-table tbody tr:nth-child(odd){background:#fafafa}
   .compact-quote-table tbody tr:hover{background:#f3f4f6}
+
+  /* Project Info Modal */
+  .proj-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:99999}
+  .proj-modal{background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);width:min(520px,96vw);padding:16px}
+  .proj-modal header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .proj-modal h3{margin:0;font-size:18px}
+  .proj-modal .row{display:grid;gap:8px;grid-template-columns:1fr}
+  .proj-modal label{font-size:13px;color:#374151;margin-bottom:4px}
+  .proj-modal input, .proj-modal textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px}
+  .proj-modal footer{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  .proj-btn{border:0;border-radius:10px;padding:8px 12px;cursor:pointer}
+  .proj-btn.primary{background:#059669;color:#fff}
+  .proj-btn.secondary{background:#6b7280;color:#fff}
   </style>
 </head>
 <body>
@@ -289,6 +302,32 @@
       <img id="preview-image" src="" alt="Preview" />
     </div>
 
+  </div>
+  <!-- Project Info Modal -->
+  <div id="project-info-modal" class="proj-modal-backdrop" aria-hidden="true" role="dialog" aria-label="بيانات المشروع">
+    <div class="proj-modal" role="document">
+      <header>
+        <h3>📋 بيانات المشروع</h3>
+        <button id="proj-info-cancel" class="proj-btn secondary" type="button">إلغاء</button>
+      </header>
+      <div class="row">
+        <div>
+          <label>اسم المشروع <span style="color:#dc2626">*</span></label>
+          <input id="proj-modal-name" type="text" placeholder="مثال: نظام أمن المبنى الإداري" />
+        </div>
+        <div>
+          <label>موقع التنفيذ</label>
+          <input id="proj-modal-site" type="text" placeholder="مدينة، دولة" />
+        </div>
+        <div>
+          <label>موعد التنفيذ المتوقع</label>
+          <input id="proj-modal-exec" type="date" />
+        </div>
+      </div>
+      <footer>
+        <button id="proj-info-save" class="proj-btn primary" type="button">حفظ</button>
+      </footer>
+    </div>
   </div>
   <div class="print-only" style="margin-top:12px">
     <hr style="border:0;border-top:1px solid #e5e7eb;margin:8px 0"/>

@@ -31,6 +31,24 @@ module.exports = async (req, res) => {
       hitsPerPage: Math.min(50, Number(hitsPerPage) || 20),
       page: Number(page) || 0,
       facets: facetList,
+      // Make search more tolerant and multi-lingual (ar/en)
+      typoTolerance: 'min',
+      ignorePlurals: true,
+      queryLanguages: ['ar','en'],
+      removeWordsIfNoResults: 'allOptional',
+      advancedSyntax: true,
+      // Ensure we can match when the index settings are not perfect
+      restrictSearchableAttributes: [
+        'name','title','Description','product_name',
+        'sku','SKU','pn','Part Number','product_code','objectID',
+        'brand','manufacturer','vendor','company',
+        'categories','category'
+      ],
+      attributesToRetrieve: [
+        'name','title','Description','product_name','price','Price','List Price','list_price',
+        'image','Image URL','thumbnail','images','sku','SKU','pn','Part Number','product_code','objectID',
+        'link','product_url','url','permalink','brand','manufacturer','vendor','company','categories','category'
+      ]
     };
 
     // facetFilters: array of OR groups => [["brand:Apple","brand:Dell"],["categories:Laptops"]]
@@ -53,7 +71,16 @@ module.exports = async (req, res) => {
     }
     if (numericFilters.length) opts.numericFilters = numericFilters;
 
-    const result = await index.search(q, opts);
+    let result = await index.search(q, opts);
+
+    // If no hits, try a relaxed second attempt (split tokens as optional)
+    if ((!result?.nbHits || result.nbHits === 0) && q) {
+      const tokens = String(q).split(/\s+/).filter(Boolean);
+      const optionalWords = tokens.length > 1 ? tokens : undefined;
+      try {
+        result = await index.search(q, { ...opts, optionalWords });
+      } catch {}
+    }
 
     const normalized = (result?.hits || []).map(h => ({
       name: h.name || h.title || h.Description || h.product_name || "",

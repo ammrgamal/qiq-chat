@@ -126,8 +126,8 @@
   // Open catalog from header link
   document.getElementById('btn-open-catalog')?.addEventListener('click', function(e){
     e.preventDefault();
-    if (window.QiqModal) QiqModal.open('/products-list.html', {title:'بحث المنتجات'});
-    else window.open('/products-list.html','_blank');
+  if (window.QiqModal) QiqModal.open('/products-list.html', {title:'بحث المنتجات'});
+  else window.open('/products-list.html','_blank');
   });
   // Open catalog from chat toolbar button
   document.getElementById('qiq-open-search')?.addEventListener('click', function(){

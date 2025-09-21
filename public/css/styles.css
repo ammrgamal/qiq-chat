@@ -29,7 +29,8 @@
 .qiq-toast .item{
   background:#111827;color:#fff;padding:12px 14px;border-radius:12px;
   box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px;
-  animation: qiq-slide-in 0.3s ease-out, qiq-fade-out 0.3s ease-in 2.7s;
+  /* Only slide-in by default; fade-out is triggered by JS on remove() */
+  animation: qiq-slide-in 0.3s ease-out;
   transform: translateX(100%);
 }
 .qiq-toast .item.success{background:#059669;border-left:4px solid #047857}

@@ -20,7 +20,28 @@ export default async function handler(req, res) {
   if (req.method === 'POST'){
     try{
       const body = req.body || {};
-      const id = body.number || `QT-${new Date().getFullYear()}-${Math.random().toString(36).slice(2,7).toUpperCase()}`;
+      // Require at least a project name; if missing, return 400 so frontend can prompt
+      const projectName = body?.project?.name || '';
+      if (!projectName) {
+        return res.status(400).json({ error: 'PROJECT_NAME_REQUIRED' });
+      }
+
+      // Generate sequential-like projectId using date + counter from storage
+      // We'll compute next sequence by counting existing user's quotations for the year
+      const year = new Date().getFullYear();
+      const basePrefix = `QT-${year}`;
+      let seq = 1;
+      try {
+        const existing = await quotationStorage.getByUser(token);
+        const mine = existing.filter(q => (q.id||'').startsWith(basePrefix));
+        // Extract numeric suffixes
+        const nums = mine.map(q => {
+          const m = (q.id||'').match(/QT-\d{4}-(\d{3,})/); return m? Number(m[1]) : 0;
+        }).filter(n=>!isNaN(n));
+        seq = (nums.length? Math.max(...nums) : 0) + 1;
+      } catch {}
+      const seqStr = String(seq).padStart(3,'0');
+      const id = body.number || `${basePrefix}-${seqStr}`;
       
       const quotationData = {
         id, 
@@ -30,6 +51,8 @@ export default async function handler(req, res) {
         total: body?.totals?.grand || '-', 
         clientName: body?.client?.name || '', 
         payload: body,
+        projectId: id,
+        projectName,
         userToken: token,
         userEmail: payload.email
       };

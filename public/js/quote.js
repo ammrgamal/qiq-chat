@@ -146,14 +146,23 @@
       if (pendingItems) {
         const items = JSON.parse(pendingItems);
         let imported = 0;
+        const existingKeys = new Set();
+        // Collect any existing keys (just in case)
+        itemsBody.querySelectorAll('tr').forEach(tr=>{
+          const k = (tr.querySelector('.in-pn')?.value || '').toString().toUpperCase();
+          if (k) existingKeys.add(k);
+        });
         items.forEach((item) => {
+          const key = (item.pn || item.sku || '').toString().toUpperCase();
+          if (key && existingKeys.has(key)) return; // skip duplicates
           addRowFromData({
             desc: item.name || "—",
-            pn: item.pn || "",
+            pn: item.pn || item.sku || "",
             unit: Number(item.price || 0),
             qty: Number(item.quantity || 1),
             manufacturer: item.manufacturer || ""
           });
+          if (key) existingKeys.add(key);
           imported++;
         });
         if (imported > 0) {
@@ -170,7 +179,14 @@
         const staged = stagedRaw ? JSON.parse(stagedRaw) : [];
         if (Array.isArray(staged) && staged.length) {
           let imported = 0;
+          const existing = new Set();
+          itemsBody.querySelectorAll('tr').forEach(tr=>{
+            const k = (tr.querySelector('.in-pn')?.value || '').toString().toUpperCase();
+            if (k) existing.add(k);
+          });
           staged.forEach((it) => {
+            const key = (it.PN_SKU || it.pn || it.sku || '').toString().toUpperCase();
+            if (key && existing.has(key)) return; // avoid duplicates
             addRowFromData({
               desc: it.Name || it.name || "—",
               pn: it.PN_SKU || it.pn || it.sku || "",
@@ -178,6 +194,7 @@
               qty: Number(it.Qty || it.qty || 1),
               manufacturer: it.manufacturer || it.brand || it.vendor || ""
             });
+            if (key) existing.add(key);
             imported++;
           });
           if (imported > 0) {
@@ -187,14 +204,17 @@
             // خزّن كمسوّدة فورًا حتى لا يحصل تكرار عند إعادة التحميل
             saveState();
           }
-        } else {
-          // لا يوجد staged → أضف صف فارغ للمستخدم
+        }
+        // Only add empty row if we still have no items at all
+        if (itemsBody.querySelectorAll('tr').length === 0) {
           addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
         }
       }
     } catch (err) {
       console.warn("Failed to auto-import staged items:", err);
-      addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
+      if (itemsBody.querySelectorAll('tr').length === 0){
+        addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
+      }
     }
   }
 
@@ -292,6 +312,11 @@
 
   $("btn-save").addEventListener("click", (e) => {
     e.preventDefault();
+    // Require project name for better organization
+    if (!$("project-name").value.trim()){
+      const val = prompt('اكتب اسم المشروع لحفظ المسودة:', $("client-name").value ? `${$("client-name").value} - مشروع` : 'Project X');
+      if (val && val.trim()) $("project-name").value = val.trim();
+    }
     saveState(true);
     showNotification("تم حفظ المسودة محليًا", "success");
   });
@@ -310,6 +335,15 @@
         return;
       }
       try{
+        // Ensure project name exists
+        if (!$("project-name").value.trim()){
+          const val = prompt('برجاء إدخال اسم المشروع قبل الحفظ:', $("client-name").value ? `${$("client-name").value} - مشروع` : 'Project X');
+          if (!val || !val.trim()){
+            showNotification('لم يتم الحفظ: اسم المشروع مطلوب.', 'error');
+            return;
+          }
+          $("project-name").value = val.trim();
+        }
         // Build minimal payload, totals included
         await recalcTotals();
         const payload = buildPayload({ reason: 'save-pdf' });
@@ -323,8 +357,27 @@
           headers:{ 'content-type':'application/json', 'authorization': `Bearer ${token}` },
           body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('HTTP '+res.status);
-  const j = await res.json();
+        let j;
+        if (!res.ok){
+          const err = await res.json().catch(()=>({}));
+          if (err && err.error === 'PROJECT_NAME_REQUIRED'){
+            const v = prompt('اسم المشروع مطلوب للحفظ، رجاءً أدخله الآن:');
+            if (!v || !v.trim()) return showNotification('لم يتم الحفظ: اسم المشروع مطلوب.', 'error');
+            $("project-name").value = v.trim();
+            const payload2 = buildPayload({ reason: 'save-pdf' });
+            payload2.totals = payload.totals;
+            const res2 = await fetch('/api/users/quotations', {
+              method:'POST', headers:{ 'content-type':'application/json', 'authorization': `Bearer ${token}` },
+              body: JSON.stringify(payload2)
+            });
+            if (!res2.ok) throw new Error('HTTP '+res2.status);
+            j = await res2.json();
+          } else {
+            throw new Error('HTTP '+res.status);
+          }
+        } else {
+          j = await res.json();
+        }
         showNotification('تم حفظ العرض في حسابك. سيتم تنزيل PDF الآن.', 'success');
   logEvent('save-to-account', { id: j.id });
         // Offer CTA to open account history with copy button

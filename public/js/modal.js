@@ -29,18 +29,33 @@
   function open(url, opts={}){
     lastFocus = document.activeElement;
     if (titleEl) titleEl.textContent = opts.title || '';
+    // Reset previous handlers/state
+    frame.onload = null;
+    frame.onerror = null;
     if (opts.html){
       // Allow opening inline HTML inside the iframe using srcdoc
       // Wrap provided HTML in a minimal document to avoid blank rendering on some browsers
       const content = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8" />
         <base target="_blank" />
-        <style>body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;padding:16px;background:#fff;color:#111;line-height:1.5}</style>
+        <style>html,body{height:100%}body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;padding:16px;background:#fff;color:#111;line-height:1.5}</style>
       </head><body>${String(opts.html)}</body></html>`;
       frame.removeAttribute('src');
       frame.srcdoc = content;
     } else {
       frame.srcdoc = '';
       frame.src = url || 'about:blank';
+      // Fallback: if the frame doesn't load content within 2.5s, show a simple inline loader/error
+      const t = setTimeout(()=>{
+        try{
+          const doc = frame.contentDocument;
+          const isBlank = !doc || !doc.body || doc.body.childElementCount === 0;
+          if (isBlank) {
+            const fallback = `<!doctype html><meta charset="utf-8"><body style="margin:0;padding:20px;font-family:system-ui,Segoe UI"><div style="display:flex;align-items:center;justify-content:center;height:100%;color:#374151"><div style="text-align:center"><div style="font-size:14px">جارٍ التحميل…</div><div style="margin-top:10px;color:#9ca3af">لو استمر الفراغ، افتح في تبويب جديد</div></div></div></body>`;
+            frame.srcdoc = fallback;
+          }
+        }catch{}
+      }, 2500);
+      frame.onload = ()=> clearTimeout(t);
     }
     modal.setAttribute('aria-hidden','false');
     modal.style.display = 'block';
@@ -50,7 +65,7 @@
     dialog.focus();
     // Wire header buttons
     if (btnOpenTab){
-      btnOpenTab.onclick = ()=> window.open(url, '_blank', 'noopener');
+      btnOpenTab.onclick = ()=> window.open(url || 'about:blank', '_blank', 'noopener');
     }
     if (btnPrint){
       btnPrint.onclick = ()=> {
