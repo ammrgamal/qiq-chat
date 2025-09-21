@@ -29,10 +29,14 @@
   const TEMP_ALGOLIA = (function(){
     try {
       if (window.QIQ_DISABLE_TEMP_ALGOLIA) return null;
+      const urlIndex = (function(){ try{ return new URL(window.location.href).searchParams.get('algoliaIndex') || ''; }catch{ return ''; } })();
+      const storedIndex = (function(){ try{ return localStorage.getItem('qiq_algolia_index') || ''; }catch{ return ''; } })();
+      const indexName = (urlIndex || storedIndex || window.QIQ_ALGOLIA_INDEX || 'woocommerce_products');
+      if (urlIndex) { try { localStorage.setItem('qiq_algolia_index', indexName); } catch {} }
       return {
         appId: 'R4ZBQNB1VE',
         apiKey: '84b7868e7375eac68c15db81fc129962', // Search-Only key (OK for client-side testing)
-        index: (window.QIQ_ALGOLIA_INDEX || 'woocommerce_products')
+        index: indexName
       };
     } catch { return null; }
   })();
@@ -222,25 +226,27 @@
         return response.json();
       };
 
-      const result = window.QiqFetch ? 
+      let result = window.QiqFetch ? 
         await window.QiqFetch.fetch('/api/search', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ query: q, hitsPerPage, page, filters })
         }, `search-${q}-${page}`, 300000) : // 5 minutes cache
         await searchFn();
+      if (result) { result._source = 'backend'; }
       
         // Show a warning if backend indicates Algolia is not configured
         if (result && result.warning && window.QiqToast?.show) {
-          window.QiqToast.show('⚠️ لم يتم ضبط مفاتيح Algolia على الخادم. سيتم استخدام وضع اختبار مؤقت من الواجهة الأمامية.', { type: 'warning', duration: 4500 });
+          window.QiqToast.show('⚠️ لم يتم ضبط مفاتيح Algolia على الخادم. سيتم استخدام وضع اختبار مؤقت من الواجهة الأمامية.', 'warning', 4500);
         }
 
         // If backend lacks Algolia (warning) or returned no hits, try direct Algolia fallback (TEMP)
         if ((result?.warning || (result?.nbHits === 0)) && TEMP_ALGOLIA) {
+          console.debug('[qiq] Using frontend Algolia fallback…', { q, page, filters });
           const fallback = await algoliaDirectSearch(q, { hitsPerPage, page, filters });
           if (fallback && (fallback.nbHits > 0 || (fallback.hits||[]).length > 0)) {
             if (window.QiqToast?.show) {
-              window.QiqToast.show('🧪 تم استخدام مزود البحث المؤقت (Algolia) من المتصفح.', { type: 'info', duration: 3500 });
+              window.QiqToast.show('🧪 تم استخدام مزود البحث المؤقت (Algolia) من المتصفح.', 'info', 3500);
             }
             if (window.QiqPerformance) {
               window.QiqPerformance.endTimer('search-api', startTime);
@@ -252,7 +258,7 @@
             if (window.QiqSearchHistory) {
               window.QiqSearchHistory.addSearch(q, fallback?.nbHits || (fallback.hits||[]).length);
             }
-            return fallback;
+            return { ...fallback, _source: 'frontend', _index: TEMP_ALGOLIA.index };
           }
         }
 
@@ -277,12 +283,13 @@
       // If backend call failed entirely, still try the TEMP Algolia frontend fallback
       if (TEMP_ALGOLIA) {
         try {
+          console.debug('[qiq] Backend search failed, trying frontend Algolia fallback…', e?.message || e);
           const fb = await algoliaDirectSearch(q, { hitsPerPage, page, filters });
           if (fb) {
             if (window.QiqToast?.show) {
-              window.QiqToast.show('🧪 تم استخدام مزود البحث المؤقت بعد فشل الخادم.', { type: 'warning', duration: 4000 });
+              window.QiqToast.show('🧪 تم استخدام مزود البحث المؤقت بعد فشل الخادم.', 'warning', 4000);
             }
-            return fb;
+            return { ...fb, _source: 'frontend', _index: TEMP_ALGOLIA.index };
           }
         } catch (e2) {
           console.warn('fallback algolia failed', e2);
@@ -316,7 +323,7 @@
       numericFilters.push(`price<=${Number(filters.priceMax)}`);
     }
 
-    const opts = {
+    const baseOpts = {
       hitsPerPage: Math.min(50, Number(hitsPerPage) || 20),
       page: Number(page) || 0,
       facets: ["brand","manufacturer","categories","category"],
@@ -340,6 +347,20 @@
       ]
     };
 
+    const buildParams = (optsObj) => {
+      const p = new URLSearchParams();
+      p.set('query', q || '');
+      Object.entries(optsObj).forEach(([k,v])=>{
+        if (v === undefined || v === null || v === '') return;
+        if (Array.isArray(v) || typeof v === 'object') {
+          p.set(k, JSON.stringify(v));
+        } else {
+          p.set(k, String(v));
+        }
+      });
+      return p.toString();
+    };
+
     const url = `https://${TEMP_ALGOLIA.appId}-dsn.algolia.net/1/indexes/${encodeURIComponent(TEMP_ALGOLIA.index)}/query`;
     const resp = await fetch(url, {
       method: 'POST',
@@ -348,7 +369,7 @@
         'X-Algolia-Application-Id': TEMP_ALGOLIA.appId,
         'X-Algolia-API-Key': TEMP_ALGOLIA.apiKey
       },
-      body: JSON.stringify({ query: q || '', ...opts })
+      body: JSON.stringify({ params: buildParams(baseOpts) })
     });
     if (!resp.ok) throw new Error('Algolia HTTP ' + resp.status);
     let result = await resp.json();
@@ -358,6 +379,7 @@
       const tokens = String(q).split(/\s+/).filter(Boolean);
       const optionalWords = tokens.length > 1 ? tokens : undefined;
       try {
+        const relaxed = { ...baseOpts, optionalWords };
         const resp2 = await fetch(url, {
           method: 'POST',
           headers: {
@@ -365,14 +387,14 @@
             'X-Algolia-Application-Id': TEMP_ALGOLIA.appId,
             'X-Algolia-API-Key': TEMP_ALGOLIA.apiKey
           },
-          body: JSON.stringify({ query: q, ...opts, optionalWords })
+          body: JSON.stringify({ params: buildParams(relaxed) })
         });
         if (resp2.ok) result = await resp2.json();
       } catch {}
     }
     if ((result?.nbHits || 0) <= 1 && q) {
       try {
-        const broadOpts = { ...opts };
+        const broadOpts = { ...baseOpts };
         delete broadOpts.restrictSearchableAttributes;
         const resp3 = await fetch(url, {
           method: 'POST',
@@ -381,7 +403,7 @@
             'X-Algolia-Application-Id': TEMP_ALGOLIA.appId,
             'X-Algolia-API-Key': TEMP_ALGOLIA.apiKey
           },
-          body: JSON.stringify({ query: q, ...broadOpts, hitsPerPage: Math.max(broadOpts.hitsPerPage || 20, 24), queryType: 'prefixAll', synonyms: true, removeWordsIfNoResults: 'allOptional' })
+          body: JSON.stringify({ params: buildParams({ ...broadOpts, hitsPerPage: Math.max(broadOpts.hitsPerPage || 20, 24), queryType: 'prefixAll', synonyms: true, removeWordsIfNoResults: 'allOptional' }) })
         });
         if (resp3.ok) result = await resp3.json();
       } catch {}
@@ -512,7 +534,12 @@
     const filters = getSelectedFilters();
     const res = await apiSearch(q, {hitsPerPage: 24, page, filters});
     const hits = Array.isArray(res?.hits)? res.hits : [];
-    statusEl.textContent = `${res?.nbHits||hits.length} result(s)`;
+    const via = res? (res._source === 'frontend' ? `via Algolia (frontend)${res._index?` • ${res._index}`:''}` : 'via backend') : '';
+    statusEl.textContent = `${res?.nbHits||hits.length} result(s)${via?` • ${via}`:''}`;
+    if ((res?.nbHits || hits.length) === 0 && window.QiqToast?.show) {
+      const tip = 'لا توجد نتائج. جرّب كلمة بحث مختلفة، أو مرر algoliaIndex=اسم_الفهرس في الرابط، أو اضبط متغيرات البيئة على الخادم.';
+      window.QiqToast.show(tip, 'warning', 5000);
+    }
     searchCount++;
     
     resultsEl.innerHTML = hits.map(hitToCard).join('');
