@@ -193,6 +193,7 @@
   $("payment-terms").addEventListener("input", saveState);
   $("terms").addEventListener("input", saveState);
   $("include-install").addEventListener("change", async () => { 
+    ensureInstallRow();
     await recalcTotals(); // Make it async
     saveState(); 
   });
@@ -578,35 +579,86 @@
     }
   };
 
+  // Helper: find the install (professional service) row if any
+  function getInstallRow(){
+    return itemsBody.querySelector('tr[data-kind="install"]');
+  }
+
+  // Ensure install row exists/removed according to checkbox
+  function ensureInstallRow(){
+    const checked = $("include-install").checked;
+    const existing = getInstallRow();
+    if (checked && !existing){
+      // Create a synthetic row; price will be set during recalcTotals
+      addRowFromData({
+        desc: 'Professional Service — Installation (5%)',
+        pn: 'SERVICE-INSTALL',
+        unit: 0,
+        qty: 1,
+        manufacturer: 'Services'
+      });
+      const r = itemsBody.lastElementChild;
+      if (r) r.dataset.kind = 'install';
+    } else if (!checked && existing){
+      existing.remove();
+    }
+  }
+
   // ===== Recalculate Totals =====
   async function recalcTotals() {
-    let sub = 0;
     const toCurrency = getCurrency();
-    const rate = await getExchangeRate('USD', toCurrency); // Assuming base currency of items is USD
+    const rate = await getExchangeRate('USD', toCurrency); // USD → selected currency
 
-    itemsBody.querySelectorAll("tr").forEach((row) => {
-      const unitEl = row.querySelector(".in-unit");
-      const qtyEl = row.querySelector(".in-qty");
-      const totalEl = row.querySelector(".line-total");
-
-      if (!unitEl || !qtyEl || !totalEl) return; // guard against partial rows
-
-      const unitPriceUSD = num(row.dataset.basePrice || unitEl.value);
-      const qty = num(qtyEl.value);
-
-      const convertedPrice = unitPriceUSD * rate;
-      unitEl.value = convertedPrice.toFixed(2); // Update displayed unit price
-
-      const total = convertedPrice * qty;
-      totalEl.textContent = fmt(total, toCurrency);
-      sub += total;
+    // 1) Get subtotal of products in USD (exclude install row)
+    let productsSubtotalUSD = 0;
+    itemsBody.querySelectorAll('tr').forEach((row)=>{
+      if (row.dataset.kind === 'install') return; // exclude service when computing base
+      const unitUSD = num(row.dataset.basePrice || row.querySelector('.in-unit')?.value);
+      const qty = num(row.querySelector('.in-qty')?.value);
+      productsSubtotalUSD += (unitUSD * qty);
     });
 
-    subtotalCell.textContent = fmt(sub, toCurrency);
-  // Apply 5% optional installation cost (matches UI label)
-  const installCost = $("include-install").checked ? sub * 0.05 : 0;
-    installCell.textContent = fmt(installCost, toCurrency);
-    grandCell.textContent = fmt(sub + installCost, toCurrency);
+    // 2) If install checked → ensure row and set its base price in USD
+    const installChecked = $("include-install").checked;
+    if (installChecked){
+      ensureInstallRow();
+      const r = getInstallRow();
+      if (r){
+        const minUSD = 200; // one man day
+        const fivePctUSD = productsSubtotalUSD * 0.05;
+        const installUSD = Math.max(minUSD, fivePctUSD);
+        r.dataset.basePrice = String(installUSD);
+        const qtyEl = r.querySelector('.in-qty');
+        if (qtyEl) qtyEl.value = '1'; // fixed qty
+      }
+    } else {
+      const r = getInstallRow();
+      if (r) r.remove();
+    }
+
+    // 3) Render rows (convert to currency, compute totals)
+    let grand = 0;
+    itemsBody.querySelectorAll('tr').forEach((row)=>{
+      const unitEl = row.querySelector('.in-unit');
+      const qtyEl = row.querySelector('.in-qty');
+      const totalEl = row.querySelector('.line-total');
+      if(!unitEl || !qtyEl || !totalEl) return;
+      const unitUSD = num(row.dataset.basePrice || unitEl.value);
+      const qty = num(qtyEl.value);
+      const unitConverted = unitUSD * rate;
+      unitEl.value = unitConverted.toFixed(2);
+      const unitText = row.querySelector('.unit-text');
+      if (unitText) unitText.textContent = fmt(unitConverted, toCurrency);
+      const line = unitConverted * qty;
+      totalEl.textContent = fmt(line, toCurrency);
+      grand += line;
+    });
+
+    // 4) Totals footer: show subtotal of visible rows (including install row)
+    subtotalCell.textContent = fmt(grand, toCurrency);
+    // install shown as item → صفر في الخانة المنفصلة
+    installCell.textContent = fmt(0, toCurrency);
+    grandCell.textContent = fmt(grand, toCurrency);
   }
 
   function buildPayload(extra) {
@@ -685,21 +737,15 @@
       version: 1
     };
     
-    // Save to localStorage (local draft)
-    localStorage.setItem(STATE_KEY, JSON.stringify(s));
-        const unitEl = row.querySelector(".in-unit");
+  // Save to localStorage (local draft)
+  localStorage.setItem(STATE_KEY, JSON.stringify(s));
     // Also save to a separate drafts collection for the user
     saveDraftToCollection(s);
     
     if (notify) {
       console.log("Saved.");
-        const unitPriceUSD = num(row.dataset.basePrice || unitEl.value);
     }
   }
-
-        unitEl.value = convertedPrice.toFixed(2); // keep hidden numeric
-        const unitText = row.querySelector('.unit-text');
-        if (unitText) unitText.textContent = fmt(convertedPrice, toCurrency);
   function saveDraftToCollection(quoteData) {
     try {
       const userToken = localStorage.getItem("qiq_token");

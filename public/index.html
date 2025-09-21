@@ -14,13 +14,14 @@
 
   <!-- App JS: يجب تحميل quote-actions.js أولاً -->
   <script src="js/quote-actions.js" defer></script>
+  <script src="js/modal.js" defer></script>
   <script src="js/ui-chat.js" defer></script>
 </head>
 <body>
   <!-- ====== شريط علوي بسيط ====== -->
   <div style="max-width:980px;margin:12px auto 0;padding:8px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#0f172a;color:#fff;text-align:center">
     <a href="/" style="color:#fff;text-decoration:none;font-weight:700">QuickITQuote</a>
-    — <a href="https://search-rho-indol.vercel.app" target="_blank" style="color:#93c5fd">أداة البحث الجديدة</a>
+    — <a href="#" id="btn-open-catalog" style="color:#93c5fd">بحث</a>
     — <a href="/quote.html" style="color:#93c5fd">طلب عرض سعر مخصص</a>
     — <a href="/account.html" style="color:#93c5fd">حسابي</a>
   </div>
@@ -37,6 +38,7 @@
              placeholder="اكتب سؤالك أو ابدأ.. مثلا: عايز Kaspersky EDR لـ 120 مستخدم لمدة سنتين" required />
       <div class="qiq-actions">
         <button class="qiq-btn qiq-primary" type="button" id="qiq-import-btn" title="استيراد BOQ (Excel)">Import BOQ (Excel)</button>
+        <button class="qiq-btn" type="button" id="qiq-open-search" title="البحث عن منتجات">بحث</button>
         <button class="qiq-send" type="submit">إرسال</button>
         <input type="file" id="qiq-file" accept=".xlsx,.xls,.csv" hidden />
       </div>
@@ -77,11 +79,30 @@
     </div>
   </div>
 
-  <!-- ====== Modal تفاصيل المنتج ====== -->
-  <div id="qiq-modal" class="qiq-modal" aria-hidden="true" role="dialog" aria-label="Product details">
+  <!-- ====== Modal (Reusable) ====== -->
+  <style>
+    .qiq-modal{position:fixed;inset:0;display:none;z-index:10000}
+    .qiq-modal.is-open .qiq-modal__dialog{transform:translate(-50%,-50%) scale(1);opacity:1}
+    .qiq-modal__backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+    .qiq-modal__dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.98);opacity:.98;background:#fff;border-radius:12px;width:min(1100px,96vw);height:min(88vh,860px);box-shadow:0 10px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;outline:none}
+    .qiq-modal__header{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #e5e7eb;background:#f8fafc}
+    .qiq-modal__title{font-weight:600}
+    .qiq-modal__spacer{flex:1}
+    .qiq-modal__btn{border:1px solid #e5e7eb;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}
+    .qiq-modal__close{border:none;background:#111;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}
+    .qiq-modal iframe{flex:1;border:0;border-bottom-left-radius:12px;border-bottom-right-radius:12px}
+    @media print{ .qiq-modal,.qiq-modal__header{display:none !important} }
+  </style>
+  <div id="qiq-modal" class="qiq-modal" aria-hidden="true" role="dialog" aria-label="Dialog">
     <div class="qiq-modal__backdrop"></div>
-    <div class="qiq-modal__dialog">
-      <button class="qiq-modal__close" aria-label="Close" type="button">×</button>
+    <div class="qiq-modal__dialog" tabindex="-1">
+      <div class="qiq-modal__header">
+        <div class="qiq-modal__title">—</div>
+        <div class="qiq-modal__spacer"></div>
+        <button class="qiq-modal__btn qiq-modal__open-tab" type="button">فتح في تبويب</button>
+        <button class="qiq-modal__btn qiq-modal__print" type="button">طباعة</button>
+        <button class="qiq-modal__close" aria-label="Close" type="button">إغلاق</button>
+      </div>
       <iframe id="qiq-modal-frame" src="" loading="lazy"></iframe>
     </div>
   </div>
@@ -97,9 +118,22 @@
   </div>
 
   <script>
-document.getElementById('go-to-quote').addEventListener('click', function() {
-  window.location.href = '/quote.html';
-});
-</script>
+  // Open quote in modal
+  document.getElementById('go-to-quote').addEventListener('click', function() {
+    if (window.QiqModal) QiqModal.open('/quote.html', {title:'عرض السعر'});
+    else window.location.href = '/quote.html';
+  });
+  // Open catalog from header link
+  document.getElementById('btn-open-catalog')?.addEventListener('click', function(e){
+    e.preventDefault();
+    if (window.QiqModal) QiqModal.open('/products-list.html', {title:'بحث المنتجات'});
+    else window.open('/products-list.html','_blank');
+  });
+  // Open catalog from chat toolbar button
+  document.getElementById('qiq-open-search')?.addEventListener('click', function(){
+    if (window.QiqModal) QiqModal.open('/products-list.html', {title:'بحث المنتجات'});
+    else window.open('/products-list.html','_blank');
+  });
+  </script>
 </body>
 </html>

@@ -29,8 +29,8 @@
     .btn-primary{ background:var(--accent) }
     .btn-ok{ background:var(--ok) }
     .table-wrap{ overflow:auto }
-    table{ width:100%; border-collapse:collapse; table-layout:fixed }
-    th,td{ border-bottom:1px solid var(--border); padding:10px; vertical-align:top; text-align:right }
+  table{ width:100%; border-collapse:collapse; table-layout:fixed }
+  th,td{ border-bottom:1px solid var(--border); padding:10px; vertical-align:top; text-align:right }
     tfoot td{ font-weight:700 }
     .totals{ display:grid; gap:8px; grid-template-columns:1fr auto; align-items:center; margin-top:10px }
     .quote-head{ display:flex; align-items:center; gap:14px; margin:8px 0 14px }
@@ -61,6 +61,15 @@
     .preview-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:9999; }
     .preview-overlay img{ max-width:90vw; max-height:90vh; border-radius:8px; }
     .preview-close{ position:absolute; top:20px; right:20px; background:#fff; border:none; border-radius:50%; width:40px; height:40px; cursor:pointer; font-size:20px; }
+    /* Chat-like product row style */
+    .compact-quote-table .product-desc{display:flex;flex-direction:column;gap:4px}
+    .compact-quote-table .product-name{font-weight:600}
+    .compact-quote-table .product-details{display:flex;gap:6px;flex-wrap:wrap}
+    .compact-quote-table .product-details .product-pn,
+    .compact-quote-table .product-details .product-brand{background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:12px;color:#374151}
+    .compact-quote-table .qty-input{width:64px;text-align:center}
+    .compact-quote-table .numeric{white-space:nowrap;text-align:right}
+    .compact-quote-table .action-icons{display:flex;gap:6px;align-items:center}
   </style>
 </head>
 <body>

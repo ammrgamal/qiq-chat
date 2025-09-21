@@ -8,7 +8,9 @@ const express = require('express');
 try { require('dotenv').config(); } catch {}
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+// Allow override via CLI arg: node server.js 3005
+const argPort = Number(process.argv[2]);
+const PORT = process.env.PORT || (Number.isFinite(argPort) && argPort > 0 ? argPort : 3001);
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));

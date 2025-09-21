@@ -105,7 +105,7 @@
               onclick="AddToQuote(this)">
               إضافة للعرض
             </button>
-            ${safeLink ? `<a class="qiq-btn secondary" href="${safeLink}" target="_blank" rel="noopener">تفاصيل المنتج</a>` : ""}
+            ${safeLink ? `<a class="qiq-btn secondary qiq-open-modal" href="${safeLink}" data-title="تفاصيل المنتج">تفاصيل المنتج</a>` : ""}
           </div>
         </div>
       </div>
@@ -298,5 +298,18 @@
     } else {
       addMsg("bot", "لا توجد نتائج مطابقة.");
     }
+  });
+
+  // Delegate: open any details link in modal if available
+  document.addEventListener('click', function(ev){
+    const a = ev.target.closest('a.qiq-open-modal');
+    if (!a) return;
+    ev.preventDefault();
+    const url = a.getAttribute('href');
+    const title = a.getAttribute('data-title') || '';
+    try{
+      if (window.QiqModal) QiqModal.open(url, {title});
+      else window.open(url, '_blank', 'noopener');
+    }catch{}
   });
 })();

@@ -242,10 +242,10 @@
     if (detailBtn) {
       detailBtn.addEventListener('click', (ev)=>{
         ev.preventDefault();
+        const url = `/products-list.html?q=${encodeURIComponent(pn || name)}`;
         try{
-          // Open the new catalog view filtered by PN/SKU
-          const url = `/products-list.html?q=${encodeURIComponent(pn || name)}`;
-          window.open(url, "_blank", "noopener");
+          if (window.QiqModal) QiqModal.open(url, {title: 'تفاصيل المنتج'});
+          else window.open(url, "_blank", "noopener");
         }catch{}
       });
     }
