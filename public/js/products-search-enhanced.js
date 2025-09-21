@@ -215,6 +215,11 @@
           body: JSON.stringify({ query: q, hitsPerPage, page, filters })
         }, `search-${q}-${page}`, 300000) : // 5 minutes cache
         await searchFn();
+      
+        // Show a warning if backend indicates Algolia is not configured
+        if (result && result.warning && window.QiqToast?.show) {
+          window.QiqToast.show('⚠️ لم يتم ضبط مفاتيح Algolia على الخادم. سيتم عرض نتائج محدودة.', { type: 'warning', duration: 4000 });
+        }
 
       if (window.QiqPerformance) {
         window.QiqPerformance.endTimer('search-api', startTime);

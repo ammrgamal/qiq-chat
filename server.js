@@ -95,7 +95,22 @@ app.get('/', (req, res) => {
 
 // Simple health endpoint
 app.get('/health', (req, res) => {
-  res.json({ ok: true, uptime: process.uptime(), ts: Date.now() });
+  const hasAlgolia = Boolean(process.env.ALGOLIA_APP_ID && process.env.ALGOLIA_API_KEY);
+  const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+  const fastMode = /^(1|true|yes)$/i.test(String(process.env.FAST_MODE || ''));
+  const autoApprove = /^(1|true|yes)$/i.test(String(process.env.AUTO_APPROVE || ''));
+  res.json({
+    ok: true,
+    uptime: process.uptime(),
+    ts: Date.now(),
+    env: {
+      fastMode,
+      autoApprove,
+      hasAlgolia,
+      hasOpenAI,
+      algoliaIndex: process.env.ALGOLIA_INDEX || null
+    }
+  });
 });
 
 app.listen(PORT, () => {

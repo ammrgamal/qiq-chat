@@ -16,7 +16,8 @@ export default async function handler(req, res) {
     const indexNm = process.env.ALGOLIA_INDEX || "woocommerce_products";
 
     if (!appId || !apiKey) {
-      return res.status(500).json({ error: "Algolia credentials not set" });
+      // Keep UI responsive: return empty hits with a clear message
+      return res.status(200).json({ hits: [], facets: {}, nbHits: 0, page: 0, nbPages: 0, warning: "Algolia credentials not set" });
     }
 
   const client = algoliasearch(appId, apiKey);

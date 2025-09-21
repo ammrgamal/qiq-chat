@@ -55,12 +55,6 @@ async function aSearchFirst(query) {
   return hits.length > 0 ? hits[0] : null;
 }
 
-// Make functions globally available
+// Make functions globally available (non-module)
 window.aSearch = aSearch;
 window.aSearchFirst = aSearchFirst;
- * @returns {Promise<Object|null>}
- */
-export async function aSearchFirst(query) {
-  const hits = await aSearch(query, 1);
-  return hits[0] || null;
-}
