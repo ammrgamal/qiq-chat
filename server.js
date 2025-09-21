@@ -23,6 +23,29 @@ app.use(express.urlencoded({ extended: true }));
 // Static site
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Simple in-memory rate limiter for /api/users/* (per IP)
+const rateBuckets = new Map();
+const RATE_LIMIT = Number(process.env.RATE_LIMIT || 60); // requests
+const RATE_WINDOW_MS = Number(process.env.RATE_WINDOW_MS || 60_000); // per minute
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api/users/')) return next();
+  try {
+    const ip = req.headers['x-forwarded-for']?.toString().split(',')[0].trim() || req.socket.remoteAddress || 'local';
+    const now = Date.now();
+    let b = rateBuckets.get(ip);
+    if (!b || now - b.ts > RATE_WINDOW_MS) {
+      b = { n: 0, ts: now };
+      rateBuckets.set(ip, b);
+    }
+    b.n++;
+    if (b.n > RATE_LIMIT) {
+      res.status(429).json({ error: 'Too many requests, please try again later.' });
+      return;
+    }
+  } catch {}
+  next();
+});
+
 async function loadHandler(rel) {
   const modPath = path.join(__dirname, 'api', rel);
   const url = pathToFileURL(modPath).href;
@@ -65,6 +88,11 @@ route('get',  '/api/users/verify', 'users/verify.js');
 // Fallback to index.html for root
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Simple health endpoint
+app.get('/health', (req, res) => {
+  res.json({ ok: true, uptime: process.uptime(), ts: Date.now() });
 });
 
 app.listen(PORT, () => {

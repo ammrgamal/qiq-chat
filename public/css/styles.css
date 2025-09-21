@@ -146,6 +146,139 @@
 .qiq-card input:disabled{background:#f9fafb;color:#6b7280}
 .qiq-card small{color:#6b7280;font-size:12px;margin-top:4px;display:block}
 
+/* ===== Product Cards ===== */
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.card .name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 16px;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.card .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.card .chip {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.card .chip.price {
+  background: #dbeafe;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.card .actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: auto;
+}
+
+.card .btn {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+}
+
+.card .btn:hover {
+  transform: scale(1.05);
+}
+
+.card .btn:last-child {
+  background: #2563eb;
+  color: white;
+  flex: 1;
+  min-width: 60px;
+}
+
+.card .btn:last-child:hover {
+  background: #1d4ed8;
+}
+
+.card .btn-favorite,
+.card .btn-compare {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 16px;
+}
+
+.card .btn-favorite:hover,
+.card .btn-compare:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.card .btn-favorite.active {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.card .btn-compare.active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+}
+
+.card .muted {
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.card .muted:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
 /* ===== Inline blocks ===== */
 .qiq-section-title{margin:8px 0 6px;font-weight:700}
 .qiq-inline-wrap{margin-top:6px}

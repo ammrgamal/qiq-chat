@@ -25,6 +25,27 @@
     set token(t) { t ? localStorage.setItem("qiq_token", t) : localStorage.removeItem("qiq_token"); }
   };
 
+  // Copy helper (global)
+  window.copyText = async function(text){
+    try{
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(String(text));
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = String(text);
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setStatus('تم نسخ رقم العرض إلى الحافظة ✅', 'success');
+    }catch{
+      setStatus('تعذر نسخ النص', 'error');
+    }
+  }
+
   async function postJSON(path, body) {
     const headers = { "content-type": "application/json" };
     if (storage.token) headers["authorization"] = `Bearer ${storage.token}`;
@@ -99,7 +120,10 @@
         </div>
         <div class="row">
           <label>البريد الإلكتروني:</label>
-          <input type="email" id="edit-email" value="${user.email || ''}" disabled />
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="email" id="edit-email" value="${user.email || ''}" disabled />
+            <span id="email-verify-chip" class="qiq-chip" style="padding:4px 8px;border-radius:999px;border:1px solid #d1d5db;background:#f3f4f6;color:#374151;font-size:12px"></span>
+          </div>
           <small style="color: #6b7280;">لا يمكن تغيير البريد الإلكتروني</small>
         </div>
         <div class="row">
@@ -114,6 +138,9 @@
       <div id="verify-banner-anchor"></div>
 
       <h3>عروض الأسعار السابقة</h3>
+      <div style="margin-bottom:12px">
+        <input type="text" id="quotations-search" placeholder="البحث في العروض (رقم العرض، العميل، الحالة...)" style="width:100%;max-width:400px;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px" />
+      </div>
       <div id="quotation-history">
         <p style="color: #6b7280;">جاري تحميل عروض الأسعار...</p>
       </div>
@@ -129,6 +156,9 @@
 
     // Show verify email banner/CTA
     ensureVerifyBanner(user?.email);
+
+    // Update verify chip
+    updateVerifyChip();
   }
 
   function hideUserProfile() {
@@ -184,6 +214,8 @@
       if (!anchor) return;
       // Simple heuristic: if email domain verified? We don't track server-side state yet, so always show CTA.
       if (!email) return;
+      // If already verified locally, don't show banner
+      if (localStorage.getItem('qiq_email_verified') === '1') return;
       // Create banner
       const banner = document.createElement('div');
       banner.className = 'qiq-card';
@@ -211,6 +243,25 @@
       }
     }catch{}
   }
+
+  function updateVerifyChip(){
+    const chip = document.getElementById('email-verify-chip');
+    if (!chip) return;
+    const verified = localStorage.getItem('qiq_email_verified') === '1';
+    if (verified){
+      chip.textContent = 'Verified';
+      chip.style.background = '#dcfce7';
+      chip.style.color = '#166534';
+      chip.style.borderColor = '#bbf7d0';
+      const banner = chip.closest('main')?.querySelector('.qiq-card[style*="#fff7ed"]');
+      if (banner) banner.remove();
+    } else {
+      chip.textContent = 'Not verified';
+      chip.style.background = '#fef3c7';
+      chip.style.color = '#92400e';
+      chip.style.borderColor = '#fde68a';
+    }
+  }
   
   async function loadQuotationsFromAPI(user) {
     try {
@@ -227,8 +278,11 @@
       return;
     }
     
+    // Store original data for filtering
+    window.allQuotations = quotations;
+    
     historyDiv.innerHTML = `
-      <table class="qiq-table" style="margin-top: 12px;">
+      <table class="qiq-table" id="quotations-table" style="margin-top: 12px;">
         <thead>
           <tr>
             <th>رقم العرض</th>
@@ -239,10 +293,15 @@
             <th>إجراءات</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="quotations-tbody">
           ${quotations.map(q => `
             <tr>
-              <td><strong>${q.id}</strong></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                  <strong>${q.id}</strong>
+                  <button class="qiq-btn" title="نسخ" style="font-size: 12px; padding: 2px 6px; background:#f3f4f6;color:#374151;border:1px solid #e5e7eb" onclick="copyText('${q.id}')">نسخ</button>
+                </div>
+              </td>
               <td>${q.clientName || 'غير محدد'}</td>
               <td>${q.date}</td>
               <td><span class="qiq-chip" style="${getStatusColor(q.status)}">${q.status}</span></td>
@@ -256,11 +315,20 @@
           `).join('')}
         </tbody>
       </table>
+      
+      
       <div style="margin-top: 12px; padding: 8px; background: #f8fafc; border-radius: 8px; font-size: 13px; color: #6b7280;">
         💡 <strong>نصيحة:</strong> يمكنك تتبع عروض الأسعار باستخدام الأرقام المرجعية أعلاه. 
         احفظ هذه الأرقام لسهولة المتابعة مع فريق المبيعات.
       </div>
     `;
+    // Wire up search after rendering
+    const searchInput = document.getElementById('quotations-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', function(e) {
+        filterQuotations(e.target.value);
+      });
+    }
   }
   
   function formatCurrency(amount, currency = 'USD') {
@@ -275,6 +343,41 @@
     } catch {
       return `${amount.toLocaleString()} ${currency || 'USD'}`;
     }
+  }
+
+  // Filtering function for quotations table
+  function filterQuotations(searchTerm) {
+    const tbody = document.getElementById('quotations-tbody');
+    const allQuotations = window.allQuotations || [];
+    if (!tbody || !allQuotations.length) return;
+    
+    const query = (searchTerm || '').toString().toLowerCase();
+    const filtered = allQuotations.filter(q =>
+      (q.id && q.id.toLowerCase().includes(query)) ||
+      (q.clientName && q.clientName.toLowerCase().includes(query)) ||
+      (q.status && q.status.includes(searchTerm)) ||
+      (q.date && q.date.includes(searchTerm))
+    );
+    
+    tbody.innerHTML = filtered.map(q => `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <strong>${q.id}</strong>
+            <button class="qiq-btn" title="نسخ" style="font-size: 12px; padding: 2px 6px; background:#f3f4f6;color:#374151;border:1px solid #e5e7eb" onclick="copyText('${q.id}')">نسخ</button>
+          </div>
+        </td>
+        <td>${q.clientName || 'غير محدد'}</td>
+        <td>${q.date}</td>
+        <td><span class="qiq-chip" style="${getStatusColor(q.status)}">${q.status}</span></td>
+        <td>${formatCurrency(q.total, q.currency)}</td>
+        <td>
+          <button class="qiq-btn" onclick="viewQuotation('${q.id}')" style="font-size: 12px; padding: 4px 8px;">عرض</button>
+          ${q.status === 'مسودة' ? `<button class="qiq-btn qiq-primary" onclick="editQuotation('${q.id}')" style="font-size: 12px; padding: 4px 8px;">تعديل</button>` : ''}
+          <button class="qiq-btn" onclick="downloadQuotation('${q.id}')" style="font-size: 12px; padding: 4px 8px; background: #059669;">تحميل</button>
+        </td>
+      </tr>
+    `).join('');
   }
 
   function getStatusColor(status) {

@@ -34,6 +34,18 @@
 			.pagination{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
 			.pagination button{padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer}
 			.pagination .active{background:#2563eb;color:#fff;border-color:#2563eb}
+			.quick-btn{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;cursor:pointer;transition:all 0.2s;font-size:14px}
+			.quick-btn:hover{background:#e5e7eb;transform:translateY(-1px)}
+			.quick-btn.active{background:#2563eb;color:#fff;border-color:#2563eb}
+			@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+			.quote-section{border:1px solid #e5e7eb;border-radius:12px;padding:16px;background:#fafafa}
+			.motivational-message{font-weight:500;border-left:4px solid #10b981}
+			.quick-btn{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;cursor:pointer;transition:all 0.2s;font-size:14px}
+			.quick-btn:hover{background:#e5e7eb;transform:translateY(-1px)}
+			.quick-btn.active{background:#2563eb;color:#fff;border-color:#2563eb}
+			@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+			.quote-section{border:1px solid #e5e7eb;border-radius:12px;padding:16px;background:#fafafa}
+			.motivational-message{font-weight:500;border-left:4px solid #10b981}
 		</style>
 </head>
 <body>
@@ -41,12 +53,40 @@
 		<div class="header">
 			<h1 style="margin:0">Product Catalog</h1>
 			<div class="muted" id="status"></div>
-			<div style="margin-inline-start:auto"><a href="/quote.html">View Quote</a></div>
+			<div style="margin-inline-start:auto; display: flex; gap: 8px; align-items: center;">
+				<button id="favorites-btn" class="btn secondary" style="position: relative;">
+					❤️ المفضلة
+					<span class="favorites-badge" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: none;">0</span>
+				</button>
+				<button id="comparison-btn" class="btn secondary" style="position: relative;">
+					⚖️ مقارنة
+					<span class="comparison-badge" style="position: absolute; top: -8px; right: -8px; background: #3b82f6; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: none;">0</span>
+				</button>
+				<a href="/quote.html">View Quote</a>
+			</div>
 		</div>
 		<div class="toolbar">
 			<input id="q" type="search" placeholder="Search by name / PN / SKU" />
 			<button id="searchBtn" class="btn">Search</button>
 			<button id="clearBtn" class="btn secondary">Clear</button>
+		</div>
+		
+		<!-- Chat-like Quick Action Buttons -->
+		<div class="quick-actions" style="margin: 16px 0; display: flex; gap: 8px; flex-wrap: wrap;">
+			<button class="quick-btn" data-query="LED lights">💡 LED Lights</button>
+			<button class="quick-btn" data-query="cameras">📷 Security Cameras</button>
+			<button class="quick-btn" data-query="switches">🔌 Network Switches</button>
+			<button class="quick-btn" data-query="cables">🔗 Cables & Wiring</button>
+			<button class="quick-btn" data-query="sensors">🌡️ Sensors</button>
+			<button class="quick-btn" data-query="power supply">⚡ Power Supplies</button>
+		</div>
+		
+		<!-- Motivational Messages -->
+		<div id="motivational-message" class="motivational-message" style="
+			margin: 12px 0; padding: 12px 16px; background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+			color: white; border-radius: 12px; display: none; animation: slideIn 0.5s ease-out;
+		">
+			<span id="message-text">🎯 ابدأ البحث عن المنتجات اللي محتاجها لمشروعك</span>
 		</div>
 			<div class="layout">
 				<aside class="sidebar">
@@ -75,7 +115,28 @@
 				</main>
 			</div>
 	</div>
+	<script src="/js/performance.js"></script>
+	<script src="/js/security.js"></script>
+	<script src="/js/user-features.js"></script>
+	<script src="/js/ui-enhancements.js"></script>
+	<script src="/js/analytics.js"></script>
 	<script src="/js/quote-actions.js"></script>
-	<script src="/js/products-search.js"></script>
+	<script src="/js/products-search-enhanced.js"></script>
+	<!-- Modal container -->
+	<div id="qiq-modal" aria-hidden="true" style="display:none">
+		<div class="qiq-modal__backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.4);"></div>
+		<div class="qiq-modal__dialog" tabindex="-1" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);width:min(880px,92vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;z-index:50">
+			<div class="qiq-modal__header" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e5e7eb">
+				<div class="qiq-modal__title" style="font-weight:600">Modal</div>
+				<div style="display:flex;gap:6px">
+					<button class="qiq-modal__open-tab btn secondary" style="padding:6px 10px">Open in tab</button>
+					<button class="qiq-modal__print btn secondary" style="padding:6px 10px">Print</button>
+					<button class="qiq-modal__close btn" style="padding:6px 10px">Close</button>
+				</div>
+			</div>
+			<iframe id="qiq-modal-frame" style="border:0;flex:1;min-height:300px"></iframe>
+		</div>
+	</div>
+	<script src="/js/modal.js"></script>
 	</body>
 	</html>

@@ -60,10 +60,12 @@
     .search-input{ width:300px; padding:8px; border:1px solid var(--border); border-radius:8px; }
     .preview-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:9999; }
     .preview-overlay img{ max-width:90vw; max-height:90vh; border-radius:8px; }
-    .preview-close{ position:absolute; top:20px; right:20px; background:#fff; border:none; border-radius:50%; width:40px; height:40px; cursor:pointer; font-size:20px; }
+        .print-only{ display:none }
+        .screen-only{ display:block }
     /* Chat-like product row style */
     .compact-quote-table .product-desc{display:flex;flex-direction:column;gap:4px}
-    .compact-quote-table .product-name{font-weight:600}
+          .screen-only{ display:none !important }
+          .print-only{ display:block }
     .compact-quote-table .product-details{display:flex;gap:6px;flex-wrap:wrap}
     .compact-quote-table .product-details .product-pn,
     .compact-quote-table .product-details .product-brand{background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:12px;color:#374151}
@@ -77,6 +79,18 @@
     <!-- Header / Logo + meta -->
     <div class="card">
       <div class="quote-head">
+      <!-- Print header/footer -->
+      <div class="print-only" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <img src="/logo.png" alt="Logo" style="width:120px;height:56px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px" onerror="this.src='https://via.placeholder.com/200x80?text=LOGO'"/>
+          <div style="font-weight:700;font-size:18px">QuickITQuote  Quotation</div>
+          <div style="margin-inline-start:auto;text-align:right;color:#6b7280;font-size:12px">
+            no-reply@quickitquote.com<br/>
+            quickitquote.com
+          </div>
+        </div>
+        <hr style="border:0;border-top:1px solid #e5e7eb;margin:8px 0"/>
+      </div>
         <img id="qo-logo" class="logo" alt="Logo" />
         <div>
           <div style="font-size:18px; font-weight:700">عرض سعر / Quotation</div>
@@ -163,6 +177,8 @@
           <button id="btn-import-excel" class="btn btn-primary">استيراد Excel</button>
           <button id="btn-export-csv" class="btn">تصدير CSV</button>
           <button id="btn-export-excel" class="btn">تصدير XLSX</button>
+            <button id="btn-export-json" class="btn">تصدير JSON</button>
+            <button id="btn-import-json" class="btn">استيراد JSON</button>
           <button id="btn-add-row" class="btn">إضافة بند يدوي</button>
         </div>
       </div>
@@ -222,6 +238,8 @@
       
       <!-- Hidden file input for Excel import -->
       <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none" />
+    <!-- Hidden file input for JSON import -->
+    <input type="file" id="json-file-input" accept="application/json,.json" style="display:none" />
     </div>
 
     <!-- Payments & Terms -->
@@ -268,6 +286,13 @@
       <img id="preview-image" src="" alt="Preview" />
     </div>
 
+  </div>
+  <div class="print-only" style="margin-top:12px">
+    <hr style="border:0;border-top:1px solid #e5e7eb;margin:8px 0"/>
+    <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;color:#6b7280;font-size:12px">
+      <div>Thank you for considering QuickITQuote.</div>
+      <div>Page <span class="pageNumber"></span></div>
+    </div>
   </div>
   <script src="js/toast.js"></script>
   <script src="js/quote.js"></script>

@@ -140,32 +140,57 @@
   if (savedItems.length) {
     savedItems.forEach(addRowFromData);
   } else {
-    // لو مفيش state محفوظ، جرّب تحميل العناصر اللى اتخزنت مؤقتًا من الشات
+    // Check for items from search page first
     try {
-      const stagedRaw = localStorage.getItem(STAGED_KEY);
-      const staged = stagedRaw ? JSON.parse(stagedRaw) : [];
-      if (Array.isArray(staged) && staged.length) {
+      const pendingItems = localStorage.getItem('pendingQuoteItems');
+      if (pendingItems) {
+        const items = JSON.parse(pendingItems);
         let imported = 0;
-        staged.forEach((it) => {
+        items.forEach((item) => {
           addRowFromData({
-            desc: it.Name || it.name || "—",
-            pn: it.PN_SKU || it.pn || it.sku || "",
-            unit: num(it.UnitPrice || it.unitPrice || it.price || 0),
-            qty: Number(it.Qty || it.qty || 1),
-            manufacturer: it.manufacturer || it.brand || it.vendor || ""
+            desc: item.name || "—",
+            pn: item.pn || "",
+            unit: Number(item.price || 0),
+            qty: Number(item.quantity || 1),
+            manufacturer: item.manufacturer || ""
           });
           imported++;
         });
         if (imported > 0) {
           recalcTotals();
           updateEmptyState();
-          showNotification(`تم استيراد ${imported} عنصر من صفحة الشات`, "success");
-          // خزّن كمسوّدة فورًا حتى لا يحصل تكرار عند إعادة التحميل
+          showNotification(`تم استيراد ${imported} عنصر من صفحة البحث`, "success");
           saveState();
+          // Clear pending items after import
+          localStorage.removeItem('pendingQuoteItems');
         }
       } else {
-        // لا يوجد staged → أضف صف فارغ للمستخدم
-        addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
+        // لو مفيش pending items، جرّب تحميل العناصر اللى اتخزنت مؤقتًا من الشات
+        const stagedRaw = localStorage.getItem(STAGED_KEY);
+        const staged = stagedRaw ? JSON.parse(stagedRaw) : [];
+        if (Array.isArray(staged) && staged.length) {
+          let imported = 0;
+          staged.forEach((it) => {
+            addRowFromData({
+              desc: it.Name || it.name || "—",
+              pn: it.PN_SKU || it.pn || it.sku || "",
+              unit: num(it.UnitPrice || it.unitPrice || it.price || 0),
+              qty: Number(it.Qty || it.qty || 1),
+              manufacturer: it.manufacturer || it.brand || it.vendor || ""
+            });
+            imported++;
+          });
+          if (imported > 0) {
+            recalcTotals();
+            updateEmptyState();
+            showNotification(`تم استيراد ${imported} عنصر من صفحة الشات`, "success");
+            // خزّن كمسوّدة فورًا حتى لا يحصل تكرار عند إعادة التحميل
+            saveState();
+          }
+        } else {
+          // لا يوجد staged → أضف صف فارغ للمستخدم
+          addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
+        }
       }
     } catch (err) {
       console.warn("Failed to auto-import staged items:", err);
@@ -287,6 +312,20 @@
   const j = await res.json();
         showNotification('تم حفظ العرض في حسابك. سيتم تنزيل PDF الآن.', 'success');
   logEvent('save-to-account', { id: j.id });
+        // Offer CTA to open account history with copy button
+        try{
+          const quoteRef = j.id || payload.number;
+          if (window.QiqToast && typeof window.QiqToast.showHtml === 'function'){
+            window.QiqToast.showHtml(
+              `<div>تم حفظ العرض <strong>${quoteRef}</strong> في حسابك.</div>
+               <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+                 <a href="/account.html" style="color:#2563eb;text-decoration:underline">اذهب إلى سجل العروض</a>
+                 <button onclick="navigator.clipboard && navigator.clipboard.writeText('${quoteRef}').then(()=>alert('تم نسخ رقم العرض')).catch(()=>prompt('انسخ رقم العرض:','${quoteRef}'))" style="background:#059669;color:#fff;border:none;padding:2px 6px;border-radius:4px;font-size:11px;cursor:pointer">📋 نسخ الرقم</button>
+               </div>`,
+              'success'
+            );
+          }
+        }catch{}
         // Trigger print-to-PDF (user chooses destination)
         window.print();
       }catch(err){
@@ -600,6 +639,20 @@
 
   // ===== Currency Conversion =====
   let ratesCache = {};
+  const RATES_CACHE_KEY = 'qiq_rates_cache_v1';
+  const RATES_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+  // Load cached rates from localStorage
+  (function(){
+    try{
+      const raw = localStorage.getItem(RATES_CACHE_KEY);
+      if (raw){
+        const obj = JSON.parse(raw);
+        if (obj && obj.data && obj.savedAt && (Date.now() - obj.savedAt) < RATES_TTL_MS){
+          ratesCache = obj.data || {};
+        }
+      }
+    }catch{}
+  })();
   const getExchangeRate = async (from, to) => {
     if (from === to) return 1;
     const rateKey = `${from}_${to}`;
@@ -612,11 +665,14 @@
       const rate = data[from.toLowerCase()][to.toLowerCase()];
       if (!rate) throw new Error(`Rate for ${to} not found`);
       ratesCache[rateKey] = rate;
+      try{ localStorage.setItem(RATES_CACHE_KEY, JSON.stringify({ data: ratesCache, savedAt: Date.now() })); }catch{}
       return rate;
     } catch (error) {
       console.error("Could not fetch exchange rate:", error);
       showNotification(`Could not fetch exchange rate for ${to}. Using 1:1.`, 'error');
-      return 1; // Fallback
+      // Fallback: if we have any cached previous rate for this pair, use it; else 1
+      if (ratesCache[rateKey]) return ratesCache[rateKey];
+      return 1;
     }
   };
 
@@ -901,6 +957,57 @@
   }
 
   // ===== New Export/Import Functions =====
+  // JSON export/import for drafts
+  function exportToJSON(){
+    try{
+      const payload = buildPayload({ reason: 'export-json' });
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `quote-${quoteNoEl.textContent}-${todayISO()}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }catch(e){ showNotification('تعذر تصدير JSON', 'error'); }
+  }
+
+  function importFromJSONFile(file){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        const obj = JSON.parse(e.target.result);
+        // Map imported object into state and UI
+        restoreImportedPayload(obj);
+        showNotification('تم استيراد JSON بنجاح', 'success');
+      }catch(err){ showNotification('ملف JSON غير صالح', 'error'); }
+    };
+    reader.readAsText(file);
+  }
+
+  function restoreImportedPayload(p){
+    // Build a synthetic state object compatible with restoreState
+    const s = {
+      number: p.number || quoteNoEl.textContent,
+      date: p.date || todayISO(),
+      currency: p.currency || getCurrency(),
+      client_name: p.client?.name || '',
+      client_contact: p.client?.contact || '',
+      client_email: p.client?.email || '',
+      client_phone: p.client?.phone || '',
+      project_name: p.project?.name || '',
+      project_owner: p.project?.owner || '',
+      main_contractor: p.project?.main_contractor || '',
+      site_location: p.project?.site || '',
+      execution_date: p.project?.execution_date || '',
+      need_assist: !!p.need_assist,
+      payment_terms: p.payment_terms || '',
+      terms: p.terms || '',
+      include_install: !!p.include_installation_5pct,
+      items: Array.isArray(p.items) ? p.items.map(i => ({
+        desc: i.description || '', pn: i.pn || '', unit: Number(i.unit_price||0), qty: Number(i.qty||1)
+      })) : []
+    };
+    restoreState(s);
+    saveState();
+  }
   
   function exportToExcel() {
     const data = getTableData();
@@ -1003,6 +1110,16 @@
       reader.readAsText(file, 'UTF-8');
     }
   }
+
+  // Wire JSON buttons/inputs
+  (function(){
+    const exportBtn = $("btn-export-json");
+    const importBtn = $("btn-import-json");
+    const jsonInput = $("json-file-input");
+    if (exportBtn) exportBtn.addEventListener('click', (e)=>{ e.preventDefault(); exportToJSON(); });
+    if (importBtn) importBtn.addEventListener('click', (e)=>{ e.preventDefault(); jsonInput && jsonInput.click(); });
+    if (jsonInput) jsonInput.addEventListener('change', (e)=>{ const f = e.target.files && e.target.files[0]; if (f) importFromJSONFile(f); jsonInput.value=''; });
+  })();
 
   function processImportedData(jsonData) {
     // Skip header row and process data
