@@ -1,5 +1,38 @@
 // /api/users/quotations.js
+// very simple in-memory store (dev only)
+const store = global.__QIQ_QUOTES__ || (global.__QIQ_QUOTES__ = new Map());
+
 export default async function handler(req, res) {
+  // Auth for both GET and POST
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: "No authorization token provided" });
+  }
+  const token = authHeader.substring(7);
+  if (!token.startsWith('qiq_')) {
+    return res.status(401).json({ error: "Invalid token format" });
+  }
+  let payload;
+  try { payload = JSON.parse(Buffer.from(token.substring(4), 'base64').toString()); }
+  catch { return res.status(401).json({ error: "Invalid token" }); }
+  if (payload.exp && payload.exp < Date.now()) {
+    return res.status(401).json({ error: "Token expired" });
+  }
+
+  if (req.method === 'POST'){
+    try{
+      const body = req.body || {};
+      const arr = store.get(payload.email) || [];
+      const id = body.number || `QT-${new Date().getFullYear()}-${Math.random().toString(36).slice(2,7).toUpperCase()}`;
+      const record = { id, date: body.date || new Date().toISOString().slice(0,10), status: 'مسودة', currency: body.currency||'USD', total: body?.totals?.grand || '-', clientName: body?.client?.name || '', payload: body, savedAt: new Date().toISOString() };
+      arr.unshift(record);
+      store.set(payload.email, arr.slice(0,50));
+      return res.status(200).json({ ok:true, id, record });
+    }catch(e){
+      console.warn('save quotation error', e);
+      return res.status(500).json({ error:'Failed to save quotation' });
+    }
+  }
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
   try {
@@ -25,7 +58,8 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: "Token expired" });
       }
 
-      // Generate mock quotations for the user
+      // Combine stored + mock quotations for the user
+      const stored = store.get(payload.email) || [];
       const mockQuotations = [
         {
           id: "QT-2024-001",
@@ -59,11 +93,8 @@ export default async function handler(req, res) {
         }
       ];
 
-      return res.status(200).json({ 
-        ok: true, 
-        quotations: mockQuotations,
-        total: mockQuotations.length
-      });
+      const result = [...stored, ...mockQuotations];
+      return res.status(200).json({ ok: true, quotations: result, total: result.length });
 
     } catch (decodeError) {
       return res.status(401).json({ error: "Invalid token" });

@@ -193,7 +193,6 @@
   $("payment-terms").addEventListener("input", saveState);
   $("terms").addEventListener("input", saveState);
   $("include-install").addEventListener("change", async () => { 
-    ensureInstallRow();
     await recalcTotals(); // Make it async
     saveState(); 
   });
@@ -245,7 +244,9 @@
 
   $("btn-print").addEventListener("click", (e) => {
     e.preventDefault();
+    if (!validateRequiredBeforePDF()) return;
     recalcTotals();
+    logEvent('print-pdf', { currency: getCurrency() });
     window.print();
   });
 
@@ -254,6 +255,46 @@
     saveState(true);
     showNotification("تم حفظ المسودة محليًا", "success");
   });
+
+  const savePdfAccountBtn = $("btn-save-pdf-account");
+  if (savePdfAccountBtn){
+    savePdfAccountBtn.addEventListener("click", async (e)=>{
+      e.preventDefault();
+      if (!validateRequiredBeforePDF()) return;
+      // Require login
+      const token = localStorage.getItem('qiq_token');
+      if (!token){
+        showNotification("يرجى تسجيل الدخول أولاً لحفظ PDF في حسابك.", 'error');
+        // Optionally open /account.html in modal
+        try { window.QiqModal ? QiqModal.open('/account.html', {title:'تسجيل الدخول'}) : window.open('/account.html','_blank'); } catch {}
+        return;
+      }
+      try{
+        // Build minimal payload, totals included
+        await recalcTotals();
+        const payload = buildPayload({ reason: 'save-pdf' });
+        payload.totals = {
+          subtotal: $("subtotal-cell").textContent,
+          install: $("install-cell").textContent,
+          grand: $("grand-cell").textContent
+        };
+        const res = await fetch('/api/users/quotations', {
+          method:'POST',
+          headers:{ 'content-type':'application/json', 'authorization': `Bearer ${token}` },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('HTTP '+res.status);
+  const j = await res.json();
+        showNotification('تم حفظ العرض في حسابك. سيتم تنزيل PDF الآن.', 'success');
+  logEvent('save-to-account', { id: j.id });
+        // Trigger print-to-PDF (user chooses destination)
+        window.print();
+      }catch(err){
+        console.warn(err);
+        showNotification('تعذر الحفظ في الحساب.', 'error');
+      }
+    });
+  }
 
   $("btn-request-special").addEventListener("click", async (e) => {
     e.preventDefault();
@@ -580,64 +621,15 @@
   };
 
   // Helper: find the install (professional service) row if any
-  function getInstallRow(){
-    return itemsBody.querySelector('tr[data-kind="install"]');
-  }
-
-  // Ensure install row exists/removed according to checkbox
-  function ensureInstallRow(){
-    const checked = $("include-install").checked;
-    const existing = getInstallRow();
-    if (checked && !existing){
-      // Create a synthetic row; price will be set during recalcTotals
-      addRowFromData({
-        desc: 'Professional Service — Installation (5%)',
-        pn: 'SERVICE-INSTALL',
-        unit: 0,
-        qty: 1,
-        manufacturer: 'Services'
-      });
-      const r = itemsBody.lastElementChild;
-      if (r) r.dataset.kind = 'install';
-    } else if (!checked && existing){
-      existing.remove();
-    }
-  }
+  // (removed) install-as-row logic — we'll compute installation as a separate footer amount
 
   // ===== Recalculate Totals =====
   async function recalcTotals() {
     const toCurrency = getCurrency();
     const rate = await getExchangeRate('USD', toCurrency); // USD → selected currency
 
-    // 1) Get subtotal of products in USD (exclude install row)
-    let productsSubtotalUSD = 0;
-    itemsBody.querySelectorAll('tr').forEach((row)=>{
-      if (row.dataset.kind === 'install') return; // exclude service when computing base
-      const unitUSD = num(row.dataset.basePrice || row.querySelector('.in-unit')?.value);
-      const qty = num(row.querySelector('.in-qty')?.value);
-      productsSubtotalUSD += (unitUSD * qty);
-    });
-
-    // 2) If install checked → ensure row and set its base price in USD
-    const installChecked = $("include-install").checked;
-    if (installChecked){
-      ensureInstallRow();
-      const r = getInstallRow();
-      if (r){
-        const minUSD = 200; // one man day
-        const fivePctUSD = productsSubtotalUSD * 0.05;
-        const installUSD = Math.max(minUSD, fivePctUSD);
-        r.dataset.basePrice = String(installUSD);
-        const qtyEl = r.querySelector('.in-qty');
-        if (qtyEl) qtyEl.value = '1'; // fixed qty
-      }
-    } else {
-      const r = getInstallRow();
-      if (r) r.remove();
-    }
-
-    // 3) Render rows (convert to currency, compute totals)
-    let grand = 0;
+    // 1) Convert all item rows to selected currency and compute per-line totals
+    let subtotalConverted = 0;
     itemsBody.querySelectorAll('tr').forEach((row)=>{
       const unitEl = row.querySelector('.in-unit');
       const qtyEl = row.querySelector('.in-qty');
@@ -651,14 +643,21 @@
       if (unitText) unitText.textContent = fmt(unitConverted, toCurrency);
       const line = unitConverted * qty;
       totalEl.textContent = fmt(line, toCurrency);
-      grand += line;
+      subtotalConverted += line;
     });
 
-    // 4) Totals footer: show subtotal of visible rows (including install row)
-    subtotalCell.textContent = fmt(grand, toCurrency);
-    // install shown as item → صفر في الخانة المنفصلة
-    installCell.textContent = fmt(0, toCurrency);
-    grandCell.textContent = fmt(grand, toCurrency);
+    // 2) Optional installation: max(5% of subtotal, $200) — computed in target currency
+    let installAmount = 0;
+    if ($("include-install").checked) {
+      const fivePct = subtotalConverted * 0.05;
+      const minConverted = 200 * rate; // $200 in selected currency
+      installAmount = Math.max(fivePct, minConverted);
+    }
+
+    // 3) Footer totals
+    subtotalCell.textContent = fmt(subtotalConverted, toCurrency);
+    installCell.textContent = fmt(installAmount, toCurrency);
+    grandCell.textContent = fmt(subtotalConverted + installAmount, toCurrency);
   }
 
   function buildPayload(extra) {
@@ -686,7 +685,8 @@
         name: $("project-name").value || "",
         owner: $("project-owner").value || "",
         main_contractor: $("main-contractor").value || "",
-        site: $("site-location").value || ""
+        site: $("site-location").value || "",
+        execution_date: $("execution-date")?.value || ""
       },
       need_assist: $("need-assist").checked,
       payment_terms: $("payment-terms").value || "",
@@ -725,6 +725,7 @@
       project_owner: $("project-owner").value || "",
       main_contractor: $("main-contractor").value || "",
       site_location: $("site-location").value || "",
+  execution_date: $("execution-date")?.value || "",
       need_assist: $("need-assist").checked,
       payment_terms: $("payment-terms").value || "",
       terms: $("terms").value || "",
@@ -753,13 +754,6 @@
       
       const draftsKey = `qiq_drafts_${userToken.slice(-10)}`; // Use last 10 chars of token as key
       let drafts = [];
-      // Optional installation: 5% of subtotal with a minimum of 200 USD equivalent
-      let installCost = 0;
-      if ($("include-install").checked) {
-        const fivePct = sub * 0.05;
-        const minInTarget = 200 * rate; // 200 USD converted to selected currency
-        installCost = Math.max(fivePct, minInTarget);
-      }
       try {
         drafts = JSON.parse(localStorage.getItem(draftsKey) || "[]");
       } catch { drafts = []; }
@@ -787,6 +781,17 @@
     } catch (error) {
       console.warn("Failed to save draft to collection:", error);
     }
+  }
+
+  // Simple local log for important events
+  function logEvent(kind, details){
+    try{
+      const key = 'qiq_quote_events';
+      const arr = JSON.parse(localStorage.getItem(key) || '[]');
+      arr.unshift({ kind, details, at: new Date().toISOString(), number: quoteNoEl.textContent });
+      if (arr.length > 100) arr.length = 100;
+      localStorage.setItem(key, JSON.stringify(arr));
+    }catch{}
   }
 
   // Function to load user drafts
@@ -833,7 +838,8 @@
       if (state.project_owner) $("project-owner").value = state.project_owner;
       if (state.main_contractor) $("main-contractor").value = state.main_contractor;
       if (state.site_location) $("site-location").value = state.site_location;
-      if (state.quote_date) $("quote-date").value = state.date;
+  if (state.quote_date) $("quote-date").value = state.quote_date;
+  if (state.execution_date) $("execution-date").value = state.execution_date;
       if (state.currency) $("currency").value = state.currency;
       if (state.payment_terms) $("payment-terms").value = state.payment_terms;
       if (state.terms) $("terms").value = state.terms;
@@ -869,6 +875,29 @@
 
   function esc(s) {
     return String(s ?? "").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  }
+
+  // Validate required fields before generating PDF or saving to account
+  function validateRequiredBeforePDF(){
+    const required = [
+      {id:'project-name', label:'اسم المشروع'},
+      {id:'execution-date', label:'موعد التنفيذ المتوقع'},
+      {id:'client-contact', label:'الشخص المسؤول'},
+      {id:'client-email', label:'البريد الإلكتروني'},
+      {id:'client-phone', label:'الهاتف'}
+    ];
+    for (const f of required){
+      const el = $(f.id);
+      if (!el) continue;
+      const val = (el.value||'').trim();
+      if (!val){
+        showNotification(`الرجاء إدخال ${f.label} قبل حفظ/طباعة PDF`, 'error');
+        el.focus();
+        el.scrollIntoView({behavior:'smooth', block:'center'});
+        return false;
+      }
+    }
+    return true;
   }
 
   // ===== New Export/Import Functions =====

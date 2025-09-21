@@ -46,6 +46,13 @@ export default async function handler(req, res) {
     // TODO: Generate real JWT token
     const token = generateSimpleToken(userData);
 
+    // Fire-and-forget: send verification email if SENDGRID configured
+    try {
+      const base = req.headers.origin || `http://${req.headers.host}`;
+      // Call our own endpoint
+      await fetch(base + '/api/users/send-verification', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ email }) });
+    } catch {}
+
     return res.status(201).json({ 
       ok: true, 
       message: "تم إنشاء الحساب بنجاح",

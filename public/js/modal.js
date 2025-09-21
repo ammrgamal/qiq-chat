@@ -9,11 +9,38 @@
   const btnOpenTab = modal.querySelector('.qiq-modal__open-tab');
   const btnPrint = modal.querySelector('.qiq-modal__print');
 
+  let lastFocus = null;
+  function lockScroll(){
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+  }
+  function unlockScroll(){
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+  }
+  function centerDialog(){
+    // Force translate center (already in CSS); nudge reflow to avoid appearing at top on open
+    dialog.style.transform = 'translate(-50%, -46%) scale(.98)';
+    requestAnimationFrame(()=>{
+      dialog.style.transform = 'translate(-50%, -50%) scale(1)';
+    });
+  }
+
   function open(url, opts={}){
+    lastFocus = document.activeElement;
     if (titleEl) titleEl.textContent = opts.title || '';
-    frame.src = url || 'about:blank';
+    if (opts.html){
+      // Allow opening inline HTML inside the iframe using srcdoc
+      frame.removeAttribute('src');
+      frame.srcdoc = String(opts.html);
+    } else {
+      frame.srcdoc = '';
+      frame.src = url || 'about:blank';
+    }
     modal.setAttribute('aria-hidden','false');
     modal.style.display = 'block';
+    lockScroll();
+    centerDialog();
     setTimeout(()=> modal.classList.add('is-open'), 10);
     dialog.focus();
     // Wire header buttons
@@ -23,8 +50,8 @@
     if (btnPrint){
       btnPrint.onclick = ()=> {
         try {
-          frame.contentWindow.focus();
-          frame.contentWindow.print();
+          frame.contentWindow?.focus();
+          frame.contentWindow?.print();
         } catch {}
       };
     }
@@ -34,8 +61,13 @@
     modal.classList.remove('is-open');
     setTimeout(()=>{
       frame.src = 'about:blank';
+      frame.removeAttribute('srcdoc');
       modal.style.display = 'none';
       modal.setAttribute('aria-hidden','true');
+      unlockScroll();
+      if (lastFocus && typeof lastFocus.focus === 'function') {
+        lastFocus.focus();
+      }
     }, 150);
   }
 
@@ -43,6 +75,7 @@
   backdrop?.addEventListener('click', close);
   btnClose?.addEventListener('click', close);
   document.addEventListener('keydown', onEsc);
+  window.addEventListener('resize', centerDialog);
 
   window.QiqModal = { open, close };
 })();

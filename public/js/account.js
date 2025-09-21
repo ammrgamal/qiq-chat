@@ -111,6 +111,8 @@
         </div>
       </div>
       
+      <div id="verify-banner-anchor"></div>
+
       <h3>عروض الأسعار السابقة</h3>
       <div id="quotation-history">
         <p style="color: #6b7280;">جاري تحميل عروض الأسعار...</p>
@@ -124,6 +126,9 @@
     
     // Load quotation history
     loadQuotationHistory(user);
+
+    // Show verify email banner/CTA
+    ensureVerifyBanner(user?.email);
   }
 
   function hideUserProfile() {
@@ -171,6 +176,40 @@
         ];
         displayQuotations(mockQuotations, historyDiv);
       });
+  }
+
+  async function ensureVerifyBanner(email){
+    try{
+      const anchor = document.getElementById('verify-banner-anchor');
+      if (!anchor) return;
+      // Simple heuristic: if email domain verified? We don't track server-side state yet, so always show CTA.
+      if (!email) return;
+      // Create banner
+      const banner = document.createElement('div');
+      banner.className = 'qiq-card';
+      banner.style.cssText = 'margin:12px 0; padding:12px; background:#fff7ed; border:1px solid #ffedd5; color:#7c2d12; border-radius:8px;';
+      banner.innerHTML = `
+        <div style="display:flex; gap:8px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+          <div>لم يتم التحقق من بريدك حتى الآن. يرجى تأكيد البريد لضمان استلام عروض الأسعار والإشعارات.</div>
+          <div class="qiq-actions">
+            <button id="btn-resend-verify" class="qiq-btn qiq-primary">إعادة إرسال رابط التحقق</button>
+          </div>
+        </div>`;
+      anchor.replaceWith(banner);
+      const btn = banner.querySelector('#btn-resend-verify');
+      if (btn){
+        btn.addEventListener('click', async ()=>{
+          try{
+            btn.disabled = true;
+            btn.textContent = 'جارٍ الإرسال...';
+            const r = await fetch('/api/users/send-verification', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ email }) });
+            if (!r.ok) throw new Error('HTTP '+r.status);
+            setStatus('تم إرسال رسالة التحقق إلى بريدك الإلكتروني.', 'success');
+          }catch(e){ setStatus('تعذر إرسال رسالة التحقق.', 'error'); }
+          finally{ btn.disabled = false; btn.textContent = 'إعادة إرسال رابط التحقق'; }
+        });
+      }
+    }catch{}
   }
   
   async function loadQuotationsFromAPI(user) {
@@ -251,13 +290,13 @@
   window.viewQuotation = function(id) {
     setStatus(`جاري عرض العرض ${id}...`, "info");
     // Open quote page in new tab/window
-    window.open(`/public/quote.html?view=${encodeURIComponent(id)}`, '_blank');
+    window.open(`/quote.html?view=${encodeURIComponent(id)}`, '_blank');
   };
 
   window.editQuotation = function(id) {
     setStatus(`جاري تحميل العرض ${id} للتعديل...`, "info");
     // Open quote page for editing
-    window.open(`/public/quote.html?edit=${encodeURIComponent(id)}`, '_blank');
+    window.open(`/quote.html?edit=${encodeURIComponent(id)}`, '_blank');
   };
   
   window.downloadQuotation = function(id) {
