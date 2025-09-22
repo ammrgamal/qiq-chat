@@ -242,10 +242,23 @@
     if (detailBtn) {
       detailBtn.addEventListener('click', (ev)=>{
         ev.preventDefault();
-  const url = `/products-list.html?q=${encodeURIComponent(pn || name)}`;
+        const title = 'تفاصيل المنتج';
+        const html = `
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <img src="${img}" alt="${name}" style="width:96px;height:96px;border-radius:10px;object-fit:cover;background:#f3f4f6" onerror="this.src='https://via.placeholder.com/96?text=IMG'"/>
+            <div>
+              <div style="font-weight:700;margin-bottom:6px">${name}</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">
+                ${pn ? `<span style="background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:12px;color:#374151">PN: ${pn}</span>` : ''}
+                ${manufacturer ? `<span style="background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:12px;color:#374151">${manufacturer}</span>` : ''}
+                ${unitNum? `<span style="background:#eef2ff;border-radius:999px;padding:2px 8px;font-size:12px;color:#3730a3">USD ${unitNum}</span>`:''}
+              </div>
+              ${link ? `<a href="${link}" target="_blank" rel="noopener" style="color:#2563eb">Open product page</a>` : ''}
+            </div>
+          </div>`;
         try{
-          if (window.QiqModal) QiqModal.open(url, {title: 'تفاصيل المنتج'});
-          else window.open(url, "_blank", "noopener");
+          if (window.QiqModal) QiqModal.open('#', { title, html });
+          else alert(name);
         }catch{}
       });
     }

@@ -7,63 +7,92 @@
 	<title>Product Catalog</title>
 	<link rel="stylesheet" href="/css/styles.css" />
 		<style>
-			body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:#fff;color:#111}
+			:root{
+				--brand-primary:#1e3a8a; /* navy */
+				--brand-accent:#0ea5e9;  /* sky */
+				--brand-success:#059669; /* green */
+				--brand-danger:#dc2626;  /* red */
+				--brand-muted:#6b7280;   /* gray */
+				--brand-bg:#f8fafc;
+				--card-bg:#ffffff;
+				--border:#e5e7eb;
+			}
+			body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:var(--brand-bg);color:#111}
 			.container{max-width:1200px;margin:16px auto;padding:12px}
-			.header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-			.header a{color:#2563eb;text-decoration:none}
+			.topbar{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border)}
+			.topbar-inner{max-width:1200px;margin:0 auto;padding:10px 12px;display:flex;gap:12px;align-items:center}
+			.brand{display:flex;gap:10px;align-items:center;color:var(--brand-primary);font-weight:700}
+			.brand a{color:var(--brand-primary);text-decoration:none}
+			.brand .dot{width:8px;height:8px;border-radius:50%;background:var(--brand-accent)}
+			.header{display:flex;align-items:center;gap:12px;margin:12px 0}
+			.header a{color:var(--brand-primary);text-decoration:none}
 			.toolbar{display:flex;gap:8px;align-items:center;margin:10px 0}
-			.toolbar input{flex:1;min-width:280px;padding:10px;border:1px solid #e5e7eb;border-radius:10px}
+			.toolbar input{flex:1;min-width:280px;padding:10px;border:1px solid var(--border);border-radius:10px}
+			.view-toggle{margin-inline-start:auto;display:flex;gap:6px}
+			.view-toggle button{padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer}
+			.view-toggle .active{background:var(--brand-primary);color:#fff;border-color:var(--brand-primary)}
 			.layout{display:grid;grid-template-columns:260px 1fr;gap:16px}
-			.sidebar{border:1px solid #e5e7eb;border-radius:12px;padding:12px;height:fit-content}
+			.sidebar{border:1px solid var(--border);border-radius:12px;padding:12px;height:fit-content;background:#fff}
 			.facet{margin-bottom:12px}
 			.facet h3{font-size:14px;margin:6px 0}
 			.facet ul{list-style:none;padding:0;margin:0;max-height:260px;overflow:auto}
 			.facet li{display:flex;align-items:center;gap:8px;padding:4px 0}
 			.range{display:flex;gap:8px}
-			.range input{width:100%;padding:6px;border:1px solid #e5e7eb;border-radius:8px}
+			.range input{width:100%;padding:6px;border:1px solid var(--border);border-radius:8px}
 			.results{display:grid;gap:10px}
-			.card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;display:flex;gap:10px;align-items:flex-start}
+			.results.grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+			.card{border:1px solid var(--border);border-radius:12px;padding:10px;display:flex;gap:10px;align-items:flex-start;background:var(--card-bg)}
+			.card.grid{flex-direction:column}
 			.card img{width:60px;height:60px;border-radius:8px;object-fit:cover;background:#f3f4f6}
+			.card.grid img{width:100%;height:150px}
 			.card .name{font-weight:600;margin-bottom:4px}
 			.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
 			.chip{background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:12px;color:#374151}
 			.price{background:#eef2ff;color:#3730a3}
 			.actions{margin-inline-start:auto;display:flex;gap:6px}
-			.btn{border:0;border-radius:10px;padding:8px 10px;background:#2563eb;color:#fff;cursor:pointer}
-			.btn.secondary{background:#6b7280}
+			.btn{border:0;border-radius:10px;padding:8px 10px;background:var(--brand-primary);color:#fff;cursor:pointer}
+			.btn.secondary{background:var(--brand-muted);color:#fff}
+			.btn.ghost{background:#fff;color:var(--brand-primary);border:1px solid var(--border)}
 			.muted{color:#6b7280}
 			.pagination{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
-			.pagination button{padding:6px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer}
-			.pagination .active{background:#2563eb;color:#fff;border-color:#2563eb}
-			.quick-btn{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;cursor:pointer;transition:all 0.2s;font-size:14px}
+			.pagination button{padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer}
+			.pagination .active{background:var(--brand-primary);color:#fff;border-color:var(--brand-primary)}
+			.quick-btn{background:#f3f4f6;border:1px solid var(--border);border-radius:12px;padding:8px 12px;cursor:pointer;transition:all 0.2s;font-size:14px}
 			.quick-btn:hover{background:#e5e7eb;transform:translateY(-1px)}
-			.quick-btn.active{background:#2563eb;color:#fff;border-color:#2563eb}
+			.quick-btn.active{background:var(--brand-primary);color:#fff;border-color:var(--brand-primary)}
 			@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-			.quote-section{border:1px solid #e5e7eb;border-radius:12px;padding:16px;background:#fafafa}
-			.motivational-message{font-weight:500;border-left:4px solid #10b981}
-			.quick-btn{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:12px;padding:8px 12px;cursor:pointer;transition:all 0.2s;font-size:14px}
-			.quick-btn:hover{background:#e5e7eb;transform:translateY(-1px)}
-			.quick-btn.active{background:#2563eb;color:#fff;border-color:#2563eb}
-			@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-			.quote-section{border:1px solid #e5e7eb;border-radius:12px;padding:16px;background:#fafafa}
-			.motivational-message{font-weight:500;border-left:4px solid #10b981}
+			.quote-section{border:1px solid var(--border);border-radius:12px;padding:16px;background:#fafafa}
+			.motivational-message{font-weight:500;border-left:4px solid var(--brand-success)}
 		</style>
 </head>
 <body>
+	<div class="topbar">
+		<div class="topbar-inner">
+			<div class="brand">
+				<span class="dot"></span>
+				<a href="https://ai.quickitquote.com/" target="_blank" rel="noopener">QuickITQuote</a>
+				<span class="muted" style="font-weight:500">Catalog</span>
+			</div>
+			<div class="view-toggle">
+				<button id="viewList" class="active" title="List view">List</button>
+				<button id="viewGrid" title="Grid view">Grid</button>
+			</div>
+		</div>
+	</div>
 		<div class="container">
 		<div class="header">
 			<h1 style="margin:0">Product Catalog</h1>
 			<div class="muted" id="status"></div>
 			<div style="margin-inline-start:auto; display: flex; gap: 8px; align-items: center;">
-				<button id="favorites-btn" class="btn secondary" style="position: relative;">
-					❤️ المفضلة
+				<button id="favorites-btn" class="btn ghost" style="position: relative;">
+					❤️ Favorites
 					<span class="favorites-badge" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: none;">0</span>
 				</button>
-				<button id="comparison-btn" class="btn secondary" style="position: relative;">
-					⚖️ مقارنة
+				<button id="comparison-btn" class="btn ghost" style="position: relative;">
+					⚖️ Compare
 					<span class="comparison-badge" style="position: absolute; top: -8px; right: -8px; background: #3b82f6; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: none;">0</span>
 				</button>
-				<a href="/quote.html">View Quote</a>
+				<a class="btn secondary" href="/quote.html">View Quote</a>
 			</div>
 		</div>
 		<div class="toolbar">
@@ -72,22 +101,22 @@
 			<button id="clearBtn" class="btn secondary">Clear</button>
 		</div>
 		
-		<!-- Chat-like Quick Action Buttons -->
+		<!-- Chat-like Quick Action Buttons (refined) -->
 		<div class="quick-actions" style="margin: 16px 0; display: flex; gap: 8px; flex-wrap: wrap;">
-			<button class="quick-btn" data-query="LED lights">💡 LED Lights</button>
-			<button class="quick-btn" data-query="cameras">📷 Security Cameras</button>
-			<button class="quick-btn" data-query="switches">🔌 Network Switches</button>
-			<button class="quick-btn" data-query="cables">🔗 Cables & Wiring</button>
-			<button class="quick-btn" data-query="sensors">🌡️ Sensors</button>
-			<button class="quick-btn" data-query="power supply">⚡ Power Supplies</button>
+			<button class="quick-btn" data-query="SFP module">🔌 SFP Modules</button>
+			<button class="quick-btn" data-query="PoE switch">🔧 PoE Switches</button>
+			<button class="quick-btn" data-query="Cat6 cable">🧵 Cat6 Cables</button>
+			<button class="quick-btn" data-query="CCTV camera">📷 CCTV Cameras</button>
+			<button class="quick-btn" data-query="UPS">⚡ UPS & Power</button>
+			<button class="quick-btn" data-query="WiFi access point">📡 Access Points</button>
 		</div>
 		
 		<!-- Motivational Messages -->
 		<div id="motivational-message" class="motivational-message" style="
-			margin: 12px 0; padding: 12px 16px; background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+			margin: 12px 0; padding: 12px 16px; background: linear-gradient(135deg, var(--brand-success) 0%, #037957 100%);
 			color: white; border-radius: 12px; display: none; animation: slideIn 0.5s ease-out;
 		">
-			<span id="message-text">🎯 ابدأ البحث عن المنتجات اللي محتاجها لمشروعك</span>
+			<span id="message-text">🎯 ابحث عن المنتجات المناسبة لمشروعك وابني عرض السعر بسرعة</span>
 		</div>
 			<div class="layout">
 				<aside class="sidebar">
@@ -128,7 +157,7 @@
 	<div id="qiq-modal" aria-hidden="true" style="display:none">
 		<div class="qiq-modal__backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.4);"></div>
 		<div class="qiq-modal__dialog" tabindex="-1" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);width:min(880px,92vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;z-index:50">
-			<div class="qiq-modal__header" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e5e7eb">
+			<div class="qiq-modal__header" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)">
 				<div class="qiq-modal__title" style="font-weight:600">Modal</div>
 				<div style="display:flex;gap:6px">
 					<button class="qiq-modal__open-tab btn secondary" style="padding:6px 10px">Open in tab</button>

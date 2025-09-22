@@ -62,6 +62,7 @@
     const img   = esc(h?.image || 'https://via.placeholder.com/68?text=IMG');
     const brand = esc(h?.brand || h?.manufacturer || '');
     const link  = esc(h?.link || '');
+    const id    = pn || name;
     return `
       <div class="card">
         <img src="${img}" alt="${name}" onerror="this.src='https://via.placeholder.com/68?text=IMG'" />
@@ -83,48 +84,45 @@
             data-link="${link}"
             data-manufacturer="${brand}"
             onclick="AddToQuote(this)">Add</button>
+          <button class="btn secondary fav-btn" type="button" title="Favorite" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${img}" data-pn="${pn}" data-brand="${brand}">❤</button>
+          <button class="btn secondary cmp-btn" type="button" title="Compare" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${img}" data-pn="${pn}" data-brand="${brand}">⚖️</button>
         </div>
       </div>
     `;
   }
 
-  function renderFacets(facets, sel){
-    // brands
-    if (brandsList){
-      const map = facets?.brand || facets?.manufacturer || {};
-      const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,50);
-      brandsList.innerHTML = entries.map(([name,count])=>{
-        const checked = sel.brands.includes(name) ? 'checked' : '';
-        return `<li><input type="checkbox" value="${esc(name)}" ${checked}/> <span>${esc(name)}</span> <span class="muted">(${count})</span></li>`;
-      }).join('');
-    }
-    // categories
-    if (catsList){
-      const map = facets?.categories || facets?.category || {};
-      const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,50);
-      catsList.innerHTML = entries.map(([name,count])=>{
-        const checked = sel.categories.includes(name) ? 'checked' : '';
-        return `<li><input type="checkbox" value="${esc(name)}" ${checked}/> <span>${esc(name)}</span> <span class="muted">(${count})</span></li>`;
-      }).join('');
-    }
-
-    // wire changes
-    brandsList?.querySelectorAll('input').forEach(cb=> cb.addEventListener('change', ()=> render((input?.value||'').trim(), 0)));
-    catsList?.querySelectorAll('input').forEach(cb=> cb.addEventListener('change', ()=> render((input?.value||'').trim(), 0)));
-  }
-
-  function renderPagination(page, nbPages, onGo){
-    if (!pagination) return;
-    pagination.innerHTML = '';
-    if (!nbPages || nbPages <= 1) return;
-    const b = [];
-    const btn = (p,label,active=false)=>`<button data-page="${p}" class="${active?'active':''}">${label}</button>`;
-    if (page>0) b.push(btn(page-1,'Prev'));
-    const start = Math.max(0, page-2), end = Math.min(nbPages-1, page+2);
-    for (let p=start; p<=end; p++) b.push(btn(p, p+1, p===page));
-    if (page<nbPages-1) b.push(btn(page+1,'Next'));
-    pagination.innerHTML = b.join('');
-    pagination.querySelectorAll('button').forEach(x=> x.addEventListener('click', ()=> onGo(Number(x.dataset.page))));
+  function wireCardActions(){
+    // favorites
+    document.querySelectorAll('.fav-btn').forEach(btn=>{
+      const id = btn.dataset.id;
+      if (window.QiqFavorites?.isFavorite && window.QiqFavorites.isFavorite(id)) btn.classList.add('active');
+      btn.onclick = ()=>{
+        try{
+          const product = { id: btn.dataset.id, name: btn.dataset.name, price: btn.dataset.price, image: btn.dataset.image, sku: btn.dataset.pn, manufacturer: btn.dataset.brand };
+          const added = window.QiqFavorites?.toggle(product);
+          if (added) { window.QiqToast?.success?.('تمت الإضافة إلى المفضلة', 1500); btn.classList.add('active'); }
+          else { window.QiqToast?.info?.('تمت الإزالة من المفضلة', 1500); btn.classList.remove('active'); }
+        }catch{}
+      };
+    });
+    // comparison
+    document.querySelectorAll('.cmp-btn').forEach(btn=>{
+      const id = btn.dataset.id;
+      if (window.QiqComparison?.isInComparison && window.QiqComparison.isInComparison(id)) btn.classList.add('active');
+      btn.onclick = ()=>{
+        try{
+          const product = { id: btn.dataset.id, name: btn.dataset.name, price: btn.dataset.price, image: btn.dataset.image, sku: btn.dataset.pn, manufacturer: btn.dataset.brand };
+          if (window.QiqComparison?.isInComparison(product.id)){
+            window.QiqComparison.remove(product.id);
+            btn.classList.remove('active');
+            window.QiqToast?.info?.('تمت الإزالة من المقارنة', 1500);
+          } else {
+            try { window.QiqComparison.add(product); btn.classList.add('active'); window.QiqToast?.success?.('تمت الإضافة إلى المقارنة', 1500); }
+            catch(err){ window.QiqToast?.warning?.(err?.message || 'تعذر الإضافة للمقارنة', 2000); }
+          }
+        }catch{}
+      };
+    });
   }
 
   async function render(q, page=0){
@@ -135,7 +133,6 @@
       const hits = Array.isArray(res?.hits) ? res.hits : [];
       statusEl.textContent = `${res?.nbHits || hits.length} result(s) • via backend`;
 
-      // 2s chat-like toast per new query
       if (q !== lastQuery) {
         try {
           const count = res?.nbHits || hits.length || 0;
@@ -146,6 +143,9 @@
       }
 
       resultsEl.innerHTML = hits.map(hitToCard).join('');
+      wireCardActions();
+      // re-apply view mode to new cards
+      applyView(localStorage.getItem('qiq_view_mode') || 'list');
       renderFacets(res?.facets || {}, getSelected());
       renderPagination(res?.page || 0, res?.nbPages || 1, (p)=>render(q, p));
     }catch(err){
@@ -199,7 +199,56 @@
     render((input?.value||'').trim(), 0);
   });
 
+  // View toggle
+  const viewListBtn = document.getElementById('viewList');
+  const viewGridBtn = document.getElementById('viewGrid');
+  function applyView(mode){
+    const grid = mode === 'grid';
+    if (grid){
+      resultsEl.classList.add('grid');
+      resultsEl.querySelectorAll('.card').forEach(c=> c.classList.add('grid'));
+      viewGridBtn?.classList.add('active');
+      viewListBtn?.classList.remove('active');
+    } else {
+      resultsEl.classList.remove('grid');
+      resultsEl.querySelectorAll('.card').forEach(c=> c.classList.remove('grid'));
+      viewListBtn?.classList.add('active');
+      viewGridBtn?.classList.remove('active');
+    }
+    localStorage.setItem('qiq_view_mode', grid?'grid':'list');
+  }
+  viewListBtn?.addEventListener('click', ()=> applyView('list'));
+  viewGridBtn?.addEventListener('click', ()=> applyView('grid'));
+
+  // Header buttons: open lists in modal
+  document.getElementById('favorites-btn')?.addEventListener('click', ()=>{
+    try{
+      const favs = window.QiqFavorites?.getAll?.() || [];
+      const html = favs.length ? (
+        '<div>' + favs.map(p=> `
+          <div style="display:flex;gap:10px;align-items:center;border-bottom:1px solid #e5e7eb;padding:8px 0">
+            <img src="${p.image || 'https://via.placeholder.com/48'}" style="width:48px;height:48px;border-radius:8px;object-fit:cover"/>
+            <div style="flex:1">
+              <div style="font-weight:600">${p.name}</div>
+              <div style="font-size:12px;color:#6b7280">${p.sku || ''}</div>
+            </div>
+            <button class="btn" onclick="AddToQuote({name:'${p.name.replace(/'/g,"&#39;")}', price:'${p.price||''}', pn:'${p.sku||''}', image:'${p.image||''}', link:'', manufacturer:'${(p.manufacturer||'').replace(/'/g,"&#39;")}', source:'Favorites'})">Add</button>
+          </div>`).join('') + '</div>'
+      ) : '<div style="color:#6b7280">لا توجد عناصر في المفضلة</div>';
+      window.QiqModal?.open('#', { title:'المفضلة', html });
+    }catch{}
+  });
+
+  document.getElementById('comparison-btn')?.addEventListener('click', ()=>{
+    try{
+      const table = window.QiqComparison?.generateComparisonTable?.() || '<div style="color:#6b7280">لا توجد عناصر للمقارنة</div>';
+      window.QiqModal?.open('#', { title:'المقارنة', html: table });
+    }catch{}
+  });
+
   // init
   const q0 = getParam('q');
   if (q0) { input.value = q0; render(q0, 0); } else { render('', 0); }
+  // apply stored view
+  applyView(localStorage.getItem('qiq_view_mode') || 'list');
 })();
