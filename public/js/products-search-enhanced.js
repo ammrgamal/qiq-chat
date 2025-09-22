@@ -29,6 +29,7 @@
   let quoteItems = [];
   let searchCount = 0;
   let addCount = 0;
+  let lastQuery = null; // throttle toasts per query
 
   function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
   const PLACEHOLDER = 'https://via.placeholder.com/68?text=IMG';
@@ -180,6 +181,8 @@
     
     addCount++;
     updateQuoteDisplay();
+  // Toast like chat (2s)
+  try { if (window.QiqToast?.success) window.QiqToast.success('تمت الإضافة إلى عرض السعر', 2000); } catch {}
     
     // Show motivational message
     const messageIndex = Math.min(addCount, motivationalMessages.length - 1);
@@ -358,9 +361,17 @@
     const hits = Array.isArray(res?.hits)? res.hits : [];
     const via = res? (res._source === 'frontend' ? `via Algolia (frontend)${res._index?` • ${res._index}`:''}` : 'via backend') : '';
     statusEl.textContent = `${res?.nbHits||hits.length} result(s)${via?` • ${via}`:''}`;
-    if ((res?.nbHits || hits.length) === 0 && window.QiqToast?.show) {
-      const tip = 'لا توجد نتائج. جرّب كلمة بحث مختلفة، أو مرر algoliaIndex=اسم_الفهرس في الرابط، أو اضبط متغيرات البيئة على الخادم.';
-      window.QiqToast.show(tip, 'warning', 5000);
+    // Chat-like toasts (2s), one per distinct query
+    if (q !== lastQuery) {
+      const count = res?.nbHits || hits.length || 0;
+      try {
+        if (count > 0 && window.QiqToast?.success) {
+          window.QiqToast.success(`تم العثور على ${count} نتيجة`, 2000);
+        } else if (count === 0 && window.QiqToast?.warning) {
+          window.QiqToast.warning('لا توجد نتائج. جرّب كلمة بحث أدق أو استخدم المرشحات.', 2000);
+        }
+      } catch {}
+      lastQuery = q;
     }
     searchCount++;
     
@@ -583,10 +594,12 @@
     paginationEl.innerHTML = '';
     document.querySelectorAll('.quick-btn').forEach(btn => btn.classList.remove('active'));
     render('', 0);
+    try { if (window.QiqToast?.info) window.QiqToast.info('تم مسح البحث', 2000); } catch {}
   });
 
   applyPriceBtn?.addEventListener('click', ()=>{
     render((input?.value||'').trim(), 0);
+    try { if (window.QiqToast?.info) window.QiqToast.info('تم تطبيق نطاق السعر', 2000); } catch {}
   });
 
   // Initialize
