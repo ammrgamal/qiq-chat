@@ -74,6 +74,7 @@ function route(method, routePath, relFile) {
 
 // APIs
 route('post', '/api/search', 'search.js');
+route('get',  '/api/search/health', 'search-health.js');
 route('post', '/api/chat', 'chat.js');
 route('post', '/api/special-quote', 'special-quote.js');
 route('post', '/api/quote', 'quote.js');

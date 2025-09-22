@@ -1,111 +1,46 @@
-// api/search.js (ESM)
+// Clean Algolia search endpoint (ESM)
 import algoliasearch from 'algoliasearch';
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ error: 'Method not allowed' });
   }
-
   try {
-  const { query, hitsPerPage, page, facets, filters } = req.body || {};
-  const q = (query ?? "").toString(); // allow empty query for default listing
+    const { query, hitsPerPage, page, facetFilters, numericFilters, index: indexOverride } = req.body || {};
+    const q = (query ?? '').toString();
 
-    const appId   = process.env.ALGOLIA_APP_ID;
-    const apiKey  = process.env.ALGOLIA_API_KEY; // استخدم Search API Key
-    const indexNm = process.env.ALGOLIA_INDEX || "woocommerce_products";
+    const appId = process.env.ALGOLIA_APP_ID;
+    const apiKey = process.env.ALGOLIA_API_KEY; // Search or Admin key both OK for querying
+    const defaultIndex = process.env.ALGOLIA_INDEX || 'woocommerce_products';
+    const indexName = (indexOverride && typeof indexOverride === 'string' && indexOverride.trim()) ? indexOverride.trim() : defaultIndex;
 
     if (!appId || !apiKey) {
-      // Keep UI responsive: return empty hits with a clear message
-      return res.status(200).json({ hits: [], facets: {}, nbHits: 0, page: 0, nbPages: 0, warning: "Algolia credentials not set" });
+      return res.status(200).json({ hits: [], facets: {}, nbHits: 0, page: 0, nbPages: 0, warning: 'Algolia credentials not set' });
     }
 
-  const client = algoliasearch(appId, apiKey);
-  const index  = client.initIndex(indexNm);
+    const client = algoliasearch(appId, apiKey);
+    const index = client.initIndex(indexName);
 
-    // Compose Algolia search options with facets and filters
-    const facetList = Array.isArray(facets) && facets.length
-      ? facets
-      : ["brand", "manufacturer", "categories", "category"];
-
+    // Keep options minimal and rely on index settings. This prevents accidental 0 results due to mismatched attributes.
     const opts = {
       hitsPerPage: Math.min(50, Number(hitsPerPage) || 20),
       page: Number(page) || 0,
-      facets: facetList,
-      // Make search more tolerant and multi-lingual (ar/en)
-      typoTolerance: 'min',
-      ignorePlurals: true,
-      queryLanguages: ['ar','en'],
-      removeWordsIfNoResults: 'allOptional',
-      advancedSyntax: true,
-      // Ensure we can match when the index settings are not perfect
-      restrictSearchableAttributes: [
-        'name','title','Description','ShortDescription','ExtendedDescription','product_name',
-        'sku','SKU','pn','mpn','Part Number','product_code','objectID',
-        'brand','manufacturer','vendor','company',
-        'categories','category','tags'
-      ],
-      attributesToRetrieve: [
-        'name','title','Description','ShortDescription','ExtendedDescription','product_name','price','Price','List Price','list_price',
-        'image','Image URL','thumbnail','images','sku','SKU','pn','mpn','Part Number','product_code','objectID',
-        'link','product_url','url','permalink','brand','manufacturer','vendor','company','categories','category','tags'
-      ]
+      facets: ['brand', 'manufacturer', 'categories', 'category']
     };
+    if (Array.isArray(facetFilters) && facetFilters.length) opts.facetFilters = facetFilters;
+    if (Array.isArray(numericFilters) && numericFilters.length) opts.numericFilters = numericFilters;
 
-    // facetFilters: array of OR groups => [["brand:Apple","brand:Dell"],["categories:Laptops"]]
-    const facetFilters = [];
-    if (filters && Array.isArray(filters.brands) && filters.brands.length) {
-      facetFilters.push(filters.brands.map((b) => `brand:${b}`));
-    }
-    if (filters && Array.isArray(filters.categories) && filters.categories.length) {
-      facetFilters.push(filters.categories.map((c) => `categories:${c}`));
-    }
-    if (facetFilters.length) opts.facetFilters = facetFilters;
-
-    // numericFilters for price range if the index has numeric 'price'
-    const numericFilters = [];
-    if (filters && filters.priceMin != null && filters.priceMin !== "") {
-      numericFilters.push(`price>=${Number(filters.priceMin)}`);
-    }
-    if (filters && filters.priceMax != null && filters.priceMax !== "") {
-      numericFilters.push(`price<=${Number(filters.priceMax)}`);
-    }
-    if (numericFilters.length) opts.numericFilters = numericFilters;
-
-    let result = await index.search(q, opts);
-
-    // If no hits, try a relaxed second attempt (split tokens as optional)
-    if ((!result?.nbHits || result.nbHits === 0) && q) {
-      const tokens = String(q).split(/\s+/).filter(Boolean);
-      const optionalWords = tokens.length > 1 ? tokens : undefined;
-      try {
-        result = await index.search(q, { ...opts, optionalWords });
-      } catch {}
-    }
-
-    // If still too few hits, do a broader pass without restrictSearchableAttributes
-    if ((result?.nbHits || 0) <= 1 && q) {
-      try {
-        const broadOpts = { ...opts };
-        delete broadOpts.restrictSearchableAttributes;
-        result = await index.search(q, {
-          ...broadOpts,
-          hitsPerPage: Math.max(broadOpts.hitsPerPage || 20, 24),
-          queryType: 'prefixAll',
-          synonyms: true,
-          removeWordsIfNoResults: 'allOptional'
-        });
-      } catch {}
-    }
+    const result = await index.search(q, opts);
 
     const normalized = (result?.hits || []).map(h => ({
-      name: h.name || h.title || h.Description || h.product_name || "",
-      price: h.price ?? h.Price ?? h["List Price"] ?? h.list_price ?? "",
-      image: h.image || h["Image URL"] || h.thumbnail || (Array.isArray(h.images) ? h.images[0] : ""),
-      sku:   h.sku || h.SKU || h.pn || h.mpn || h["Part Number"] || h.product_code || h.objectID || "",
-      pn:    h.pn || h.mpn || h["Part Number"] || h.sku || h.SKU || h.product_code || h.objectID || "",
-      link:  h.link || h.product_url || h.url || h.permalink || "",
-      brand: h.brand || h.manufacturer || h.vendor || h.company || ""
+      name: h.name || h.title || h.Description || h.product_name || '',
+      price: h.price ?? h.Price ?? h['List Price'] ?? h.list_price ?? '',
+      image: h.image || h['Image URL'] || h.thumbnail || (Array.isArray(h.images) ? h.images[0] : ''),
+      sku:   h.sku || h.SKU || h.pn || h.mpn || h['Part Number'] || h.product_code || h.objectID || '',
+      pn:    h.pn || h.mpn || h['Part Number'] || h.sku || h.SKU || h.product_code || h.objectID || '',
+      link:  h.link || h.product_url || h.url || h.permalink || '',
+      brand: h.brand || h.manufacturer || h.vendor || h.company || ''
     }));
 
     return res.status(200).json({
@@ -113,10 +48,11 @@ export default async function handler(req, res) {
       facets: result?.facets || {},
       nbHits: result?.nbHits || 0,
       page: result?.page || 0,
-      nbPages: result?.nbPages || 0,
+      nbPages: result?.nbPages || 0
     });
   } catch (e) {
-    console.error("Algolia search error:", e);
-    return res.status(500).json({ error: e?.message || "Search failed" });
+    console.error('Algolia search error:', e);
+    const status = Number(e?.status) || 500;
+    return res.status(status).json({ error: e?.message || 'Search failed' });
   }
 }
