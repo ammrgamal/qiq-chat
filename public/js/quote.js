@@ -25,7 +25,8 @@
   const showNotification = (message, type = 'info') => {
     // Use the global toast system if available
     if (window.QiqToast && window.QiqToast.show) {
-      window.QiqToast.show(message, type);
+      // enforce minimum duration 2000ms
+      window.QiqToast.show(message, type, 2500);
     } else {
       // Fallback notification system
       const notification = document.createElement('div');

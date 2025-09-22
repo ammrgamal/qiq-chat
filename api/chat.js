@@ -35,13 +35,24 @@ export default async function handler(req, res) {
 
     // Fast path: drive a conversational intake (no auto-search unless user explicitly asks)
     if (FAST_MODE || !openaiKey) {
-      const last = (messages[messages.length - 1]?.content || '').toLowerCase();
-      let reply = 'تمام، خلّيني أفهم احتياجك خطوة بخطوة:\n1) نوع الحل المطلوب؟ (مثال: EDR, Firewall, Wi‑Fi, O365)\n2) العدد/السعة؟\n3) الميزانية التقريبية؟\n4) هل تحب عرض بدائل اقتصادية وممتازة؟';
-      // Nudge with domain-specific follow-ups
-      if (/(kaspersky|edr|endpoint)/i.test(last)) reply = 'لـ Kaspersky: عدد الأجهزة؟ مدة الترخيص؟ وهل في سيرفرات تحتاج حماية؟';
-      if (/(office|microsoft|o365|m365)/i.test(last)) reply = 'Microsoft 365: كم مستخدم؟ هل تحتاج Business Standard ولا E3/E5؟ مساحة التخزين والبريد مهمة؟';
-      if (/(vmware|vsphere)/i.test(last)) reply = 'VMware: كم سيرفر؟ عدد المعالجات/الأنوية؟ تحتاج vCenter؟ مستوى الترخيص (Standard/Enterprise)؟';
-      // Do not search by default; wait for clearer specs or the word "ابحث"/"search"
+      const lastRaw = String(messages[messages.length - 1]?.content || '');
+      const last = lastRaw.toLowerCase();
+      const base = [
+        'تمام — خلّيني أفهم احتياجك خطوة بخطوة:',
+        '1) نوع الحل؟ (EDR/AV, Firewall, Wi‑Fi, O365, Backup, CCTV...)',
+        '2) الكمية/السعة/عدد المستخدمين؟',
+        '3) المدة أو الاشتراك (سنوي/شهري)؟',
+        '4) تفضّل بدائل اقتصادية وممتازة؟',
+        '',
+        'EN: I will collect a few details to tailor a BOQ. What solution, how many users/devices, term, and do you want budget and premium options?'
+      ].join('\n');
+      let reply = base;
+      if (/(kaspersky|edr|endpoint)/i.test(last)) reply = 'Kaspersky/EDR — كم جهاز ومدة الترخيص (1Y/2Y)? هل في سيرفرات/VMs تحتاج حماية؟\nEN: For Kaspersky/EDR, how many endpoints and for how long? Any servers/VMs?';
+      else if (/(office|microsoft|o365|m365)/i.test(last)) reply = 'Microsoft 365 — كم مستخدم؟ تحتاج Business Standard ولا E3/E5؟ مساحة البريد/التخزين؟\nEN: M365 — users count? Plan (Business Standard vs E3/E5)? Mail/storage needs?';
+      else if (/(vmware|vsphere)/i.test(last)) reply = 'VMware — كم سيرفر؟ عدد المعالجات/الأنوية؟ تحتاج vCenter؟ المستوى (Standard/Enterprise)?\nEN: VMware — number of hosts, CPUs/cores, need vCenter, license tier?';
+      else if (/(firewall|fortinet|palo|cisco|checkpoint)/i.test(last)) reply = 'Firewall — سرعة الانترنت/Throughput؟ عدد المستخدمين؟ تفضّل UTM/SD‑WAN؟\nEN: Firewall — Internet speed/throughput, users count, UTM/SD‑WAN preferred?';
+      else if (/(wifi|access point|ap)/i.test(last)) reply = 'Wi‑Fi — المساحة التقريبية/عدد القاعات؟ السرعات المتوقعة؟ Indoor/Outdoor؟\nEN: Wi‑Fi — area coverage, expected speeds, indoor/outdoor?';
+      // no auto-search unless clearly asked
       let hits = [];
       if (/(ابحث|search|هات منتجات|products)/i.test(last)) {
         try { hits = await searchAlgolia({ query: last.replace(/(ابحث|search)/ig, '').trim() || 'kaspersky', hitsPerPage: 6 }); } catch {}

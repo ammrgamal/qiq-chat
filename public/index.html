@@ -61,7 +61,7 @@
   <!-- ====== جدول التجهيز ====== -->
   <div id="qiq-boq-wrap" class="qiq-boq">
     <div class="qiq-boq-top">
-      <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>Add all matched</button>
+      <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>Attach matched</button>
       <div class="qiq-right">
         <button id="qiq-clear-all" class="qiq-btn" type="button" style="background:#dc2626">مسح الكل</button>
         <button id="qiq-export-csv"  class="qiq-btn" type="button">Export CSV</button>
@@ -70,22 +70,23 @@
       </div>
     </div>
     <div class="qiq-table-wrap">
-      <table class="qiq-table" aria-label="Staged items">
+      <table class="compact-quote-table" aria-label="Staged items">
         <thead>
           <tr>
-<th style="width:44px;min-width:44px;max-width:44px;text-align:center">Image</th>
-<th style="width:auto;min-width:200px;max-width:999px">Description / PN / SKU</th>
-<th style="width:60px;min-width:60px;max-width:80px;text-align:center">QTY</th>
-<th style="width:80px;min-width:60px;max-width:100px;text-align:center">Unit price</th>
-<th style="width:80px;min-width:60px;max-width:100px;text-align:center">Line total</th>
-<th style="width:120px;min-width:80px;max-width:160px;text-align:center">Actions</th>
+            <th style="width:48px;text-align:center">صورة</th>
+            <th class="desc-col">الوصف • PN • الشركة</th>
+            <th class="qty-col">الكمية</th>
+            <th class="price-col">سعر الوحدة</th>
+            <th class="total-col">الإجمالي</th>
+            <th class="actions-col">إجراءات</th>
           </tr>
         </thead>
         <tbody id="qiq-body"></tbody>
         <tfoot>
           <tr>
-            <td colspan="3" style="text-align:right"><strong>Grand total:</strong></td>
+            <td colspan="3" style="text-align:right"><strong>الإجمالي الكلي:</strong></td>
             <td id="qiq-grand" colspan="2"><strong>-</strong></td>
+            <td></td>
           </tr>
         </tfoot>
       </table>

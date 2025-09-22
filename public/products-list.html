@@ -40,9 +40,9 @@
 			.range{display:flex;gap:8px}
 			.range input{width:100%;padding:6px;border:1px solid var(--border);border-radius:8px}
 			.results{display:block}
-			.results.grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+			.results.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 			.card{border:1px solid var(--border);border-radius:12px;padding:10px;display:flex;gap:10px;align-items:flex-start;background:var(--card-bg)}
-			.card.grid{flex-direction:column}
+			.card.grid{flex-direction:column;box-shadow:0 4px 12px rgba(0,0,0,0.06)}
 			.card img{width:60px;height:60px;border-radius:8px;object-fit:cover;background:#f3f4f6}
 			.card.grid img{width:100%;height:150px}
 			.card .name{font-weight:600;margin-bottom:4px}
@@ -139,6 +139,15 @@
 						<h3>الفئة</h3>
 						<ul></ul>
 					</div>
+					<div class="facet" id="facet-quick-price">
+						<h3>نطاقات سعر سريعة</h3>
+						<div class="range" style="flex-direction:column;gap:6px">
+							<button class="quick-btn" data-price-min="0" data-price-max="100">حتى 100$</button>
+							<button class="quick-btn" data-price-min="100" data-price-max="500">100–500$</button>
+							<button class="quick-btn" data-price-min="500" data-price-max="2000">500–2000$</button>
+							<button class="quick-btn" data-price-min="2000" data-price-max="">أكثر من 2000$</button>
+						</div>
+					</div>
 					<div class="facet">
 						<h3>نطاق السعر</h3>
 						<div class="range">
@@ -148,6 +157,13 @@
 						<div style="margin-top:8px">
 							<button id="applyPrice" class="btn secondary" style="padding:6px 10px">تطبيق</button>
 						</div>
+					</div>
+					<div class="facet" id="facet-extras">
+						<h3>خصائص أخرى</h3>
+						<ul>
+							<li><label><input type="checkbox" id="hasImage"> به صورة</label></li>
+							<li><label><input type="checkbox" id="inStock"> متوفر (إن وجد)</label></li>
+						</ul>
 					</div>
 				</aside>
 				<main>

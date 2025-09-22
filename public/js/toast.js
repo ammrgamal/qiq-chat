@@ -5,7 +5,7 @@
   // Global Toast Notification System
   window.QiqToast = {
     container: null,
-    defaultDuration: 2000,
+    defaultDuration: 3000,
     
     init() {
       this.container = document.getElementById('qiq-toast-container');

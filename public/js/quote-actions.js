@@ -30,7 +30,7 @@
   // Use the global toast system instead of inline notifications
   const showNotification = (message, type = 'info') => {
     if (window.QiqToast && window.QiqToast.show) {
-      window.QiqToast.show(message, type);
+      window.QiqToast.show(message, type, 2500);
     } else {
       // Fallback for legacy compatibility
       const notification = document.createElement('div');
@@ -172,8 +172,8 @@
     });
     if(grandCell) grandCell.textContent = grand ? fmtUSD(grand) : "-";
     if(addAllBtn){
-      const addables = tbody?.querySelectorAll('button[data-sku]:not(:disabled)')?.length || 0;
-      addAllBtn.disabled = addables === 0;
+      const visibleRows = [...(tbody?.querySelectorAll('tr')||[])].filter(tr=>tr.style.display !== 'none').length;
+      addAllBtn.disabled = visibleRows === 0;
     }
   }
 
@@ -425,10 +425,13 @@
         return;
       }
 
-      // تحقق من القيم الأساسية
-      if (!payload.name || !payload.pn || !payload.price) {
-        showNotification("يجب أن يحتوي المنتج على اسم، رقم PN (objectID)، وسعر.", "error");
+      // تحقق من القيم الأساسية (السعر اختياري)
+      if (!payload.name || !payload.pn) {
+        showNotification("يجب أن يحتوي المنتج على اسم ورقم PN (objectID)", "error");
         return;
+      }
+      if (payload.price === undefined || payload.price === null) {
+        payload.price = '';
       }
       if (!payload.image) {
         payload.image = "https://via.placeholder.com/68?text=IMG";
@@ -645,43 +648,211 @@
   });
 
   function importFromExcel(file) {
+    const isExcel = /\.(xlsx|xls)$/i.test(file?.name || '');
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
       try {
-        const text = e.target.result;
-        const rows = text.split('\n').map(row => 
-          row.split(/[,\t]/).map(cell => cell.trim().replace(/"/g, ''))
-        );
-        
-        let importedCount = 0;
-        // Skip header row and process data
-        for (let i = 1; i < rows.length; i++) {
-          const row = rows[i];
-          if (row.length >= 2 && (row[0] || row[1])) { // At least name or SKU
-            const itemData = {
-              name: String(row[0] || 'Imported Item'),
-              sku: String(row[1] || ''),
-              price: String(row[2] || '0'),
-              source: 'Import'
-            };
-            buildRow(itemData);
-            importedCount++;
+        let rows = [];
+        if (isExcel && typeof XLSX !== 'undefined' && e.target.result) {
+          // Parse as real Excel using SheetJS
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+          rows = (Array.isArray(aoa) ? aoa : []).map(r => Array.isArray(r) ? r : []).filter(r => r.some(c => String(c||'').trim() !== ''));
+        } else {
+          // Fallback: parse as CSV/TSV text
+          const text = e.target.result || '';
+          if (typeof text !== 'string') {
+            showNotification('تعذر قراءة الملف، حاول مرة أخرى كـ CSV', 'error');
+            return;
+          }
+          // Protect against binary Excel loaded as text
+          if (/^PK/.test(text)) {
+            showNotification('تم رفع ملف Excel ثنائي. لو سمحت ارفعه كـ .xlsx (سيتم استخدام SheetJS).', 'error');
+            return;
+          }
+          rows = text
+            .split(/\r?\n/)
+            .map(r => r.split(/[;\t,]/).map(c => String(c||'').trim().replace(/^"|"$/g, '')))
+            .filter(r => r.some(c => c && c.length));
+        }
+
+        if (!rows.length) {
+          showNotification('الملف فارغ أو غير صالح', 'error');
+          return;
+        }
+
+        // Heuristic header detection from first non-empty row
+        const header = rows[0].map(h => h.toLowerCase());
+        const colIndex = { pn: -1, qty: -1, desc: -1, price: -1 };
+
+        function likelyPn(val){
+          const v = String(val||'').trim();
+          // PN/MPN/SKU pattern: letters+digits and often dashes/underscores
+          return /[a-z]{1,3}?\d|\d+[a-z]/i.test(v) && /[a-z0-9]/i.test(v) && v.length >= 3;
+        }
+        function likelyQty(val){
+          if (val===null||val===undefined||val==='') return false;
+          const n = Number(String(val).replace(/[^\d.]/g,''));
+          return Number.isFinite(n) && n>0 && Math.floor(n)===n;
+        }
+        function likelyPrice(val){
+          const s = String(val||'');
+          return /(usd|sar|egp|aed|eur|\$)/i.test(s) || (Number(String(s).replace(/[^\d.]/g,''))>0 && s.includes('.'));
+        }
+
+        // Try header labels first
+        header.forEach((h,i)=>{
+          if (colIndex.pn<0 && /(pn|mpn|sku|part|رقم|كود|موديل)/i.test(h)) colIndex.pn=i;
+          if (colIndex.qty<0 && /(qty|quantity|عدد|كمية)/i.test(h)) colIndex.qty=i;
+          if (colIndex.price<0 && /(price|unit|cost|سعر)/i.test(h)) colIndex.price=i;
+          if (colIndex.desc<0 && /(desc|name|وصف|البند|item)/i.test(h)) colIndex.desc=i;
+        });
+
+        // If still unknown, probe first up to 3 data rows
+        const probeRows = rows.slice(1, 4);
+        if (colIndex.pn<0 || colIndex.qty<0) {
+          for (let i=0;i<(rows[1]?.length||0);i++){
+            const colVals = probeRows.map(r=>r[i]);
+            const pnScore = colVals.filter(v=>likelyPn(v)).length;
+            const qtyScore = colVals.filter(v=>likelyQty(v)).length;
+            if (pnScore>=2 && colIndex.pn<0) colIndex.pn=i;
+            if (qtyScore>=2 && colIndex.qty<0) colIndex.qty=i;
           }
         }
-        
-        if (importedCount > 0) {
-          showNotification(`تم استيراد ${importedCount} عنصر بنجاح`, "success");
-        } else {
-          showNotification("لم يتم العثور على بيانات صالحة للاستيراد", "error");
+        if (colIndex.price<0) {
+          for (let i=0;i<(rows[1]?.length||0);i++){
+            const colVals = probeRows.map(r=>r[i]);
+            const priceScore = colVals.filter(v=>likelyPrice(v)).length;
+            if (priceScore>=1) { colIndex.price=i; break; }
+          }
         }
+        if (colIndex.desc<0) {
+          // Fallback: choose the first non-PN/QTY column as description
+          for (let i=0;i<(rows[1]?.length||0);i++){
+            if (i!==colIndex.pn && i!==colIndex.qty) { colIndex.desc=i; break; }
+          }
+        }
+
+        // If still ambiguous, prompt the user once and proceed
+        if (colIndex.pn<0 || colIndex.qty<0) {
+          try { if(window.QiqToast?.warning) window.QiqToast.warning('تعذر اكتشاف PN/QTY بدقة. سيتم افتراض أول عمود PN وثاني عمود QTY.', 3500);}catch{}
+          if (colIndex.pn<0) colIndex.pn = 0;
+          if (colIndex.qty<0) colIndex.qty = 1;
+        }
+
+        // Helper: search backend for a PN or description
+        async function searchCatalog(q){
+          try{
+            const resp = await fetch('/api/search',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({query:q,hitsPerPage:3})});
+            if(!resp.ok) throw new Error('HTTP '+resp.status);
+            const data = await resp.json();
+            return Array.isArray(data?.hits)? data.hits : [];
+          }catch(err){ console.warn('searchCatalog error',err); return []; }
+        }
+
+        // Helper: add base row
+        function addBaseRow({name,pn,qty,price,manufacturer,image,link,source,note,isAlternative}){
+          const payload = {
+            name: name || (pn? `Item ${pn}` : 'Imported Item'),
+            pn: pn || '',
+            sku: pn || '',
+            price: price || '',
+            manufacturer: manufacturer || '',
+            image: image || '',
+            link: link || '',
+            source: source || 'Import'
+          };
+          buildRow(payload);
+          // set qty if provided
+          const tr = tbody?.lastElementChild;
+          if (tr && qty && Number(qty)>1) {
+            const q = tr.querySelector('.qiq-qty');
+            if (q) { q.value = String(Math.max(1, parseInt(qty,10))); }
+          }
+          if (note) { try{ if(window.QiqToast?.info) window.QiqToast.info(note, 3500);}catch{} }
+          if (isAlternative) { addToLog('إضافة', payload.name, 'بديل مقترح'); }
+        }
+
+        let importedCount = 0;
+        for (let i=1;i<rows.length;i++){
+          const row = rows[i];
+          const pn = row[colIndex.pn] || '';
+          const qty = row[colIndex.qty] || 1;
+          const desc = colIndex.desc>=0 ? row[colIndex.desc] : '';
+          const priceRaw = colIndex.price>=0 ? row[colIndex.price] : '';
+          const price = priceRaw ? String(priceRaw).replace(/[^\d.]/g,'') : '';
+
+          if (!(pn||desc)) continue;
+
+          // 1) Try PN exact/close match
+          let hits = [];
+          if (pn) hits = await searchCatalog(String(pn));
+          if (!hits.length && desc) hits = await searchCatalog(String(desc));
+
+          if (hits.length) {
+            // Take top match
+            const h = hits[0];
+            addBaseRow({
+              name: h?.name || desc || pn,
+              pn: h?.pn || h?.mpn || h?.sku || h?.objectID || pn,
+              qty,
+              price: h?.price || h?.list_price || price || '',
+              manufacturer: h?.brand || h?.manufacturer || h?.vendor || '',
+              image: h?.image || h?.image_url || h?.thumbnail || '',
+              link: (h?.objectID||h?.sku||h?.pn||h?.mpn)? `/products-list.html?q=${encodeURIComponent(h.objectID||h.sku||h.pn||h.mpn)}` : (h?.link||h?.product_url||''),
+              source: 'Import+Catalog'
+            });
+            importedCount++;
+          } else {
+            // Not found: add as-is and try to propose alternative by brand keywords
+            addBaseRow({ name: desc || `Item ${pn}`, pn, qty, price, source:'Import', note:'غير موجود في الكتالوج — يرجى اختيار بديل.' });
+            // Try to fetch alternatives by using partial PN token or description keyword
+            let altQ = '';
+            if (typeof pn==='string' && pn) {
+              const parts = pn.split(/[-_\s]/).filter(Boolean);
+              altQ = parts.slice(0,2).join(' ');
+            }
+            if (!altQ && desc) {
+              const words = String(desc).split(/\s+/).filter(w=>w.length>2);
+              altQ = words.slice(0,3).join(' ');
+            }
+            if (altQ) {
+              const altHits = await searchCatalog(altQ);
+              if (altHits.length) {
+                const a = altHits[0];
+                addBaseRow({
+                  name: `[بديل] ${a?.name || altQ}`,
+                  pn: a?.pn || a?.mpn || a?.sku || a?.objectID || '',
+                  qty,
+                  price: a?.price || a?.list_price || '',
+                  manufacturer: a?.brand || a?.manufacturer || a?.vendor || '',
+                  image: a?.image || a?.image_url || a?.thumbnail || '',
+                  link: (a?.objectID||a?.sku||a?.pn||a?.mpn)? `/products-list.html?q=${encodeURIComponent(a.objectID||a.sku||a.pn||a.mpn)}` : (a?.link||a?.product_url||''),
+                  source: 'Alternative',
+                  isAlternative: true
+                });
+              }
+            }
+          }
+        }
+
+        if (importedCount > 0) {
+          showNotification(`تم استيراد ${importedCount} عنصر بنجاح`, 'success');
+        } else {
+          showNotification('لم يتم العثور على بيانات صالحة للاستيراد', 'error');
+        }
+
+        // Persist staged
+        updateStagedItemsFromTable();
       } catch (error) {
-        showNotification("خطأ في قراءة الملف. تأكد من صحة التنسيق", "error");
+        showNotification('خطأ في قراءة الملف. تأكد من صحة التنسيق', 'error');
         console.error('Import error:', error);
       } finally {
-        fileInput.value = ''; // Clear the input
+        fileInput.value = '';
       }
     };
-    reader.readAsText(file, 'UTF-8');
+    if (isExcel && typeof XLSX !== 'undefined') reader.readAsArrayBuffer(file); else reader.readAsText(file, 'UTF-8');
   }
 
   // ===== Image Preview Functions =====

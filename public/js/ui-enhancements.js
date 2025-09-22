@@ -114,6 +114,31 @@ class ThemeManager {
         background: transparent;
         border-bottom-color: #374151;
       }
+
+      /* Chat container & bubbles */
+      [data-theme="dark"] .qiq { background: var(--bg-secondary); border-color: var(--border-color); }
+      [data-theme="dark"] .qiq-window { background: #111827; color: var(--text-primary); }
+      [data-theme="dark"] .qiq-form { background: var(--bg-secondary); border-top-color: var(--border-color); }
+      [data-theme="dark"] .qiq-input { background: var(--bg-tertiary); border-color: var(--border-color); color: var(--text-primary); }
+      [data-theme="dark"] .qiq-input::placeholder { color: var(--text-muted); }
+      [data-theme="dark"] .qiq-bubble { background: var(--bg-tertiary); border-color: var(--border-color); color: var(--text-primary); }
+      [data-theme="dark"] .qiq-msg.user .qiq-bubble { background: #2563eb; border-color: #2563eb; color: #fff; }
+      [data-theme="dark"] .qiq-btn, [data-theme="dark"] .qiq-send { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+      [data-theme="dark"] .qiq-btn.primary { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
+      [data-theme="dark"] .qiq-success { background: var(--success-color); border-color: var(--success-color); }
+      [data-theme="dark"] .qiq-products-list { background: var(--bg-secondary); border-color: var(--border-color); }
+      [data-theme="dark"] .qiq-result-row { background: #111827; border-color: var(--border-color); color: var(--text-primary); }
+      [data-theme="dark"] .qiq-result-row:hover { background: #0f172a; }
+      [data-theme="dark"] .qiq-result-row .qiq-chip { background: #1f2937; border-color: #374151; color: #e5e7eb; }
+      [data-theme="dark"] .qiq-chip.price { background:#0b1220; border-color:#1e293b; color:#93c5fd; }
+
+      /* BOQ table */
+      [data-theme="dark"] .qiq-boq { background: var(--bg-secondary); border-color: var(--border-color); }
+      [data-theme="dark"] .qiq-table { background: var(--bg-secondary); color: var(--text-primary); }
+      [data-theme="dark"] .qiq-table th { background: #111827; color: var(--text-secondary); border-bottom-color: var(--border-color); }
+      [data-theme="dark"] .qiq-table td { border-bottom-color: var(--border-color); }
+      [data-theme="dark"] .qiq-table tbody tr:hover { background: #1f2937; }
+      [data-theme="dark"] .qiq-link { color: #93c5fd; }
     `;
 
     let styleEl = document.getElementById('dark-theme-styles');
@@ -136,6 +161,7 @@ class ThemeManager {
     const newTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
     this.saveTheme(newTheme);
     this.applyTheme();
+    try { window.dispatchEvent(new CustomEvent('qiq-theme-changed', { detail: { theme: newTheme } })); } catch {}
     
     // Animate the transition
     document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
@@ -534,15 +560,73 @@ class I18nManager {
     this.strings = {
       ar: {
         Catalog: 'الكتالوج', Quote: 'عرض السعر', Account: 'الحساب', Chat: 'الدردشة',
-        Search: 'بحث', Clear: 'مسح', 'View Quote': 'عرض عرض السعر',
-        'Search by name / PN / SKU': 'ابحث بالاسم / PN',
-        'AI Agent': 'الوكيل الذكي'
+        'Product Catalog': 'كتالوج المنتجات',
+        Favorites: 'المفضلة', Comparison: 'المقارنة', 'View Quote': 'عرض عرض السعر',
+        Company: 'الشركة', Category: 'الفئة', 'Price range': 'نطاق السعر', Apply: 'تطبيق',
+        Lines: 'سطور', Grid: 'شبكة',
+        Search: 'بحث', Clear: 'مسح', 'Search by name / PN / SKU': 'ابحث بالاسم / PN / SKU',
+        'Search by name / PN / SKU': 'ابحث بالاسم / PN / SKU',
+        'AI Agent': 'الوكيل الذكي',
+        'Import BOQ (Excel)': 'استيراد BOQ (Excel)',
+        'Search products': 'البحث عن منتجات',
+        Send: 'إرسال',
+  'Add all matched': 'Add all matched',
+  'Attach matched': 'إرفاق المطابقة',
+        'Clear all': 'مسح الكل',
+        'Export CSV': 'تصدير CSV',
+        'Export XLSX': 'تصدير XLSX',
+        'Go to Quote': 'الانتقال لصفحة عرض السعر',
+        'Add to Quote': 'إضافة للعرض',
+        'Product details': 'تفاصيل المنتج',
+        Image: 'الصورة',
+        'Description / PN / SKU': 'الوصف / PN / SKU',
+        QTY: 'الكمية',
+        'Unit price': 'سعر الوحدة',
+        'Line total': 'الإجمالي',
+        Actions: 'إجراءات',
+        'Grand total:': 'الإجمالي الكلي:',
+        'Description • PN • company': 'الوصف • PN • الشركة',
+        'Image (chat)': 'صورة',
+        'Description (chat)': 'الوصف • PN • الشركة',
+        'QTY (chat)': 'الكمية',
+        'Unit price (chat)': 'سعر الوحدة',
+        'Line total (chat)': 'الإجمالي',
+        'Actions (chat)': 'إجراءات'
       },
       en: {
         Catalog: 'Catalog', Quote: 'Quote', Account: 'Account', Chat: 'Chat',
-        Search: 'Search', Clear: 'Clear', 'View Quote': 'View Quote',
+        'Product Catalog': 'Product Catalog',
+        Favorites: 'Favorites', Comparison: 'Comparison', 'View Quote': 'View Quote',
+        Company: 'Company', Category: 'Category', 'Price range': 'Price range', Apply: 'Apply',
+        Lines: 'Lines', Grid: 'Grid',
+        Search: 'Search', Clear: 'Clear', 'Search by name / PN / SKU': 'Search by name / PN / SKU',
         'Search by name / PN / SKU': 'Search by name / PN / SKU',
-        'AI Agent': 'AI Agent'
+        'AI Agent': 'AI Agent',
+        'Import BOQ (Excel)': 'Import BOQ (Excel)',
+        'Search products': 'Search products',
+        Send: 'Send',
+  'Add all matched': 'Add all matched',
+  'Attach matched': 'Attach matched',
+        'Clear all': 'Clear all',
+        'Export CSV': 'Export CSV',
+        'Export XLSX': 'Export XLSX',
+        'Go to Quote': 'Go to Quote page',
+        'Add to Quote': 'Add to Quote',
+        'Product details': 'Product details',
+        Image: 'Image',
+        'Description / PN / SKU': 'Description / PN / SKU',
+        QTY: 'QTY',
+        'Unit price': 'Unit price',
+        'Line total': 'Line total',
+        Actions: 'Actions',
+        'Grand total:': 'Grand total:',
+        'Description • PN • company': 'Description • PN • company',
+        'Image (chat)': 'Image',
+        'Description (chat)': 'Description • PN • company',
+        'QTY (chat)': 'QTY',
+        'Unit price (chat)': 'Unit price',
+        'Line total (chat)': 'Line total',
+        'Actions (chat)': 'Actions'
       }
     };
     this.applyDirection();
@@ -564,8 +648,33 @@ class I18nManager {
     // Minimal: update known buttons/placeholders if found
     const q = document.getElementById('q');
     if (q) q.placeholder = this.t('Search by name / PN / SKU');
+    const ci = document.getElementById('qiq-input'); if (ci) ci.placeholder = this.t('Search by name / PN / SKU');
     const searchBtn = document.getElementById('searchBtn'); if (searchBtn) searchBtn.textContent = this.t('Search');
     const clearBtn = document.getElementById('clearBtn'); if (clearBtn) clearBtn.textContent = this.t('Clear');
+    const importBtn = document.getElementById('qiq-import-btn'); if (importBtn) importBtn.textContent = this.t('Import BOQ (Excel)');
+    const openSearchBtn = document.getElementById('qiq-open-search'); if (openSearchBtn) openSearchBtn.textContent = this.t('Search products');
+    const sendBtn = document.querySelector('.qiq-send'); if (sendBtn) sendBtn.textContent = this.t('Send');
+  const addAll = document.getElementById('qiq-add-all'); if (addAll) addAll.textContent = this.t('Attach matched');
+    const clearAll = document.getElementById('qiq-clear-all'); if (clearAll) clearAll.textContent = this.t('Clear all');
+    const exportCsv = document.getElementById('qiq-export-csv'); if (exportCsv) exportCsv.textContent = this.t('Export CSV');
+    const exportXlsx = document.getElementById('qiq-export-xlsx'); if (exportXlsx) exportXlsx.textContent = this.t('Export XLSX');
+    const goToQuote = document.getElementById('go-to-quote'); if (goToQuote) goToQuote.textContent = this.t('Go to Quote');
+
+    // Chat table headers (by order)
+    // Support both legacy qiq-table and new compact-quote-table
+    let ths = document.querySelectorAll('table.qiq-table thead th');
+    if (!ths || ths.length === 0) ths = document.querySelectorAll('table.compact-quote-table thead th');
+    if (ths && ths.length >= 6) {
+      ths[0].textContent = this.t('Image (chat)');
+      ths[1].textContent = this.t('Description (chat)');
+      ths[2].textContent = this.t('QTY (chat)');
+      ths[3].textContent = this.t('Unit price (chat)');
+      ths[4].textContent = this.t('Line total (chat)');
+      ths[5].textContent = this.t('Actions (chat)');
+    }
+    let tfootGrand = document.querySelector('table.qiq-table tfoot td[colspan="3"] strong');
+    if (!tfootGrand) tfootGrand = document.querySelector('table.compact-quote-table tfoot td[colspan="3"] strong');
+    if (tfootGrand) tfootGrand.textContent = this.t('Grand total:');
     document.querySelectorAll('.topbar .brand .muted').forEach(el => {
       if (el.textContent.includes('Catalog')) el.textContent = this.t('Catalog');
       if (el.textContent.includes('Quote')) el.textContent = this.t('Quote');
@@ -577,6 +686,16 @@ class I18nManager {
       if (/Account/i.test(a.textContent)) a.textContent = this.t('Account');
       if (/AI Agent/i.test(a.textContent)) a.textContent = this.t('AI Agent');
     });
+
+    // Catalog page specific
+    const h1 = document.querySelector('.header h1'); if (h1) h1.textContent = this.t('Product Catalog');
+    const viewList = document.getElementById('viewList'); if (viewList) viewList.textContent = this.t('Lines');
+    const viewGrid = document.getElementById('viewGrid'); if (viewGrid) viewGrid.textContent = this.t('Grid');
+    const favoritesBtn = document.getElementById('favorites-btn'); if (favoritesBtn) favoritesBtn.childNodes[0].textContent = ` ${this.t('Favorites')}`;
+    const comparisonBtn = document.getElementById('comparison-btn'); if (comparisonBtn) comparisonBtn.childNodes[0].textContent = ` ${this.t('Comparison')}`;
+    const applyPrice = document.getElementById('applyPrice'); if (applyPrice) applyPrice.textContent = this.t('Apply');
+    const facetBrands = document.querySelector('#facet-brands h3'); if (facetBrands) facetBrands.textContent = this.t('Company');
+    const facetCats = document.querySelector('#facet-categories h3'); if (facetCats) facetCats.textContent = this.t('Category');
   }
 }
 

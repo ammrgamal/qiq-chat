@@ -8,6 +8,9 @@
   const clearBtn    = $('#clearBtn');
   const brandsList  = document.querySelector('#facet-brands ul');
   const catsList    = document.querySelector('#facet-categories ul');
+  const quickPrice  = document.getElementById('facet-quick-price');
+  const hasImageEl  = document.getElementById('hasImage');
+  const inStockEl   = document.getElementById('inStock');
   const priceMinEl  = $('#priceMin');
   const priceMaxEl  = $('#priceMax');
   const applyPrice  = $('#applyPrice');
@@ -24,7 +27,18 @@
     const categories = Array.from(document.querySelectorAll('#facet-categories input[type="checkbox"]:checked')).map(i=>i.value);
     const priceMin = priceMinEl?.value || '';
     const priceMax = priceMaxEl?.value || '';
-    return { brands, categories, priceMin, priceMax };
+    const flags = {
+      hasImage: !!hasImageEl?.checked,
+      inStock: !!inStockEl?.checked
+    };
+    // quick price (if any active button has data-price-*)
+    const activeQuick = quickPrice?.querySelector('.quick-btn.active');
+    if (activeQuick) {
+      const qpMin = activeQuick.getAttribute('data-price-min') || '';
+      const qpMax = activeQuick.getAttribute('data-price-max') || '';
+      return { brands, categories, priceMin: qpMin || priceMin, priceMax: qpMax || priceMax, flags };
+    }
+    return { brands, categories, priceMin, priceMax, flags };
   }
 
   function buildFacetFilters(sel){
@@ -48,8 +62,10 @@
       page,
       hitsPerPage,
       facetFilters: buildFacetFilters(sel),
-      numericFilters: buildNumericFilters(sel)
+      numericFilters: buildNumericFilters(sel),
+      filters: sel.flags?.hasImage ? 'image:*' : undefined
     };
+    // Optional: we could pass custom filters; backend may ignore unknown keys
     const r = await fetch('/api/search', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
     if (!r.ok) throw new Error('HTTP '+r.status);
     return r.json();
@@ -240,6 +256,17 @@
     render((input?.value||'').trim(), 0);
   });
 
+  // Quick price range wiring
+  quickPrice?.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.quick-btn');
+    if (!btn) return;
+    quickPrice.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    render((input?.value||'').trim(), 0);
+  });
+  hasImageEl?.addEventListener('change', ()=> render((input?.value||'').trim(), 0));
+  inStockEl?.addEventListener('change', ()=> render((input?.value||'').trim(), 0));
+
   // View toggle
   const viewListBtn = document.getElementById('viewList');
   const viewGridBtn = document.getElementById('viewGrid');
@@ -293,6 +320,19 @@
       const products = items.map(p=>({ name: p.name, pn: p.sku, brand: p.manufacturer, price: Number(p.price||0) }));
       const modalId = 'cmp-modal-'+Date.now();
       window.QiqModal?.open('#', { title:'المقارنة (جارية...)', html: '<div id="'+modalId+'" style="padding:12px">جاري التحليل...</div>' });
+      let resolved = false;
+      const safety = setTimeout(()=>{
+        if (resolved) return;
+        const fallback = `
+          <div style="padding:12px; display:flex; flex-direction:column; gap:12px">
+            <div style="color:#6b7280">التجميع يأخذ وقتًا أطول من المتوقع أو تعذّر الاتصال الآن.</div>
+            <div style="display:flex; gap:8px; justify-content:flex-end">
+              <button class="btn secondary" id="cmp-close">إغلاق</button>
+            </div>
+          </div>`;
+        const el = document.getElementById(modalId);
+        if (el && el.parentElement) { el.parentElement.innerHTML = fallback; document.getElementById('cmp-close')?.addEventListener('click', ()=> window.QiqModal?.close?.()); }
+      }, 10000);
       const r = await fetch('/api/compare', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ products }) });
       let md = 'No comparison available';
       try{ const data = await r.json(); md = data?.summaryMarkdown || md; }catch{}
@@ -306,6 +346,7 @@
         </div>`;
       const modalEl = document.getElementById(modalId);
       if (modalEl) modalEl.parentElement.innerHTML = html;
+      resolved = true; clearTimeout(safety);
       // wire buttons
       setTimeout(()=>{
         const copyBtn = document.getElementById('cmp-copy');
