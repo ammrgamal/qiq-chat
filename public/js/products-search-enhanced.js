@@ -145,7 +145,7 @@
       resultsEl.innerHTML = hits.map(hitToCard).join('');
       wireCardActions();
       // re-apply view mode to new cards
-      applyView(localStorage.getItem('qiq_view_mode') || 'list');
+      applyView(localStorage.getItem('qiq_view_mode') || 'list-lines');
       renderFacets(res?.facets || {}, getSelected());
       renderPagination(res?.page || 0, res?.nbPages || 1, (p)=>render(q, p));
     }catch(err){
@@ -204,20 +204,22 @@
   const viewGridBtn = document.getElementById('viewGrid');
   function applyView(mode){
     const grid = mode === 'grid';
+    const listLines = mode === 'list-lines' || (!grid && mode==='list-lines');
+    resultsEl.classList.toggle('grid', grid);
+    resultsEl.classList.toggle('list-lines', listLines);
+    resultsEl.querySelectorAll('.card').forEach(c=>{
+      c.classList.toggle('grid', grid);
+    });
     if (grid){
-      resultsEl.classList.add('grid');
-      resultsEl.querySelectorAll('.card').forEach(c=> c.classList.add('grid'));
       viewGridBtn?.classList.add('active');
       viewListBtn?.classList.remove('active');
     } else {
-      resultsEl.classList.remove('grid');
-      resultsEl.querySelectorAll('.card').forEach(c=> c.classList.remove('grid'));
       viewListBtn?.classList.add('active');
       viewGridBtn?.classList.remove('active');
     }
-    localStorage.setItem('qiq_view_mode', grid?'grid':'list');
+    localStorage.setItem('qiq_view_mode', grid?'grid':'list-lines');
   }
-  viewListBtn?.addEventListener('click', ()=> applyView('list'));
+  viewListBtn?.addEventListener('click', ()=> applyView('list-lines'));
   viewGridBtn?.addEventListener('click', ()=> applyView('grid'));
 
   // Header buttons: open lists in modal
@@ -250,5 +252,5 @@
   const q0 = getParam('q');
   if (q0) { input.value = q0; render(q0, 0); } else { render('', 0); }
   // apply stored view
-  applyView(localStorage.getItem('qiq_view_mode') || 'list');
+  applyView(localStorage.getItem('qiq_view_mode') || 'list-lines');
 })();

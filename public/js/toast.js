@@ -5,6 +5,7 @@
   // Global Toast Notification System
   window.QiqToast = {
     container: null,
+    defaultDuration: 2000,
     
     init() {
       this.container = document.getElementById('qiq-toast-container');
@@ -18,8 +19,9 @@
       }
     },
 
-  show(message, type = 'info', duration = 3000) {
+  show(message, type = 'info', duration) {
       this.init();
+      const d = typeof duration === 'number' ? duration : this.defaultDuration;
       
       const toast = document.createElement('div');
       toast.className = `item ${type}`;
@@ -41,7 +43,7 @@
       // Auto remove after duration
       const timeoutId = setTimeout(() => {
         this.remove(toast);
-      }, duration);
+      }, d);
       
       // Manual close
       closeBtn.addEventListener('click', () => {

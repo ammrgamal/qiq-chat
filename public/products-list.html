@@ -63,6 +63,10 @@
 			@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 			.quote-section{border:1px solid var(--border);border-radius:12px;padding:16px;background:#fafafa}
 			.motivational-message{font-weight:500;border-left:4px solid var(--brand-success)}
+			/* List line style */
+			.results.list-lines .card{display:grid;grid-template-columns:60px 1fr auto;align-items:center;gap:10px;padding:10px;border-bottom:1px solid var(--border);border-radius:0}
+			.results.list-lines .card img{width:48px;height:48px}
+			.results.list-lines .card .actions{margin-inline-start:0}
 		</style>
 </head>
 <body>
@@ -76,6 +80,7 @@
 			<div class="view-toggle">
 				<button id="viewList" class="active" title="List view">List</button>
 				<button id="viewGrid" title="Grid view">Grid</button>
+				<button id="themeToggle" title="Theme" style="margin-inline-start:8px">🌙</button>
 			</div>
 		</div>
 	</div>
@@ -153,6 +158,16 @@
 		<script src="/js/analytics.js"></script>
 		<script src="/js/quote-actions.js"></script>
 		<script src="/js/products-search-enhanced.js"></script>
+	<script>
+	// Theme toggle hook
+	document.addEventListener('DOMContentLoaded', function(){
+	  const btn = document.getElementById('themeToggle');
+	  if (!btn) return;
+	  const applyIcon = ()=> btn.textContent = (window.QiqTheme?.currentTheme === 'dark') ? '☀️' : '🌙';
+	  applyIcon();
+	  btn.addEventListener('click', ()=>{ try{ const t = window.QiqTheme?.toggle(); btn.textContent = (t==='dark')?'☀️':'🌙'; }catch{} });
+	});
+	</script>
 	<!-- Modal container -->
 	<div id="qiq-modal" aria-hidden="true" style="display:none">
 		<div class="qiq-modal__backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.4);"></div>
