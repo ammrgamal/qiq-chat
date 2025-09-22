@@ -41,7 +41,7 @@ class ThemeManager {
         --bg-tertiary: #4b5563;
         --text-primary: #f9fafb;
         --text-secondary: #e5e7eb;
-        --text-muted: #9ca3af;
+        --text-muted: #cbd5e1;
         --border-color: #4b5563;
         --accent-color: #3b82f6;
         --success-color: #10b981;
@@ -62,6 +62,13 @@ class ThemeManager {
         color: var(--text-primary);
       }
 
+      [data-theme="dark"] .topbar {
+        background-color: #111827;
+        border-bottom-color: #374151;
+      }
+      [data-theme="dark"] .topbar .brand, 
+      [data-theme="dark"] .topbar a { color: var(--text-primary); }
+
       [data-theme="dark"] input,
       [data-theme="dark"] textarea,
       [data-theme="dark"] select {
@@ -79,10 +86,10 @@ class ThemeManager {
         color: var(--text-primary);
       }
 
-      [data-theme="dark"] .chip {
-        background-color: var(--bg-tertiary);
-        color: var(--text-secondary);
-      }
+      [data-theme="dark"] .chip { background-color: #374151; color: #e5e7eb; }
+      [data-theme="dark"] .price { background: #1f2937; color: #93c5fd; }
+      [data-theme="dark"] .muted { color: var(--text-muted); }
+      [data-theme="dark"] .name { color: var(--text-primary); }
 
       [data-theme="dark"] .sidebar {
         background-color: var(--bg-secondary);
@@ -97,6 +104,10 @@ class ThemeManager {
 
       [data-theme="dark"] .motivational-message {
         background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      }
+      [data-theme="dark"] .results.list-lines .card {
+        background: transparent;
+        border-bottom-color: #374151;
       }
     `;
 

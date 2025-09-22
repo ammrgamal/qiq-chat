@@ -221,6 +221,22 @@
   recalcTotals();
   updateEmptyState();
 
+  // Load attached AI comparison if present
+  try {
+    const attRaw = localStorage.getItem('qiq_attached_comparison');
+    if (attRaw) {
+      const att = JSON.parse(attRaw);
+      if (att && att.markdown) {
+        const card = document.getElementById('ai-comparison-card');
+        const content = document.getElementById('ai-comparison-content');
+        if (card && content) {
+          content.textContent = att.markdown;
+          card.style.display = '';
+        }
+      }
+    }
+  } catch {}
+
   // ===== Events =====
   $("currency").addEventListener("change", async () => {
     currencyViewEl.textContent = getCurrency();
@@ -240,6 +256,23 @@
   $("include-install").addEventListener("change", async () => { 
     await recalcTotals(); // Make it async
     saveState(); 
+  });
+
+  // Remove attachment
+  document.getElementById('btn-remove-attachment')?.addEventListener('click', (e)=>{
+    e.preventDefault();
+    try { localStorage.removeItem('qiq_attached_comparison'); } catch {}
+    const card = document.getElementById('ai-comparison-card');
+    if (card) card.style.display = 'none';
+  });
+
+  // Theme toggle in topbar
+  document.getElementById('themeToggleQuote')?.addEventListener('click', ()=>{
+    try{
+      const newTheme = window.QiqTheme?.toggle?.();
+      const btn = document.getElementById('themeToggleQuote');
+      if (btn) btn.textContent = (newTheme==='dark') ? '☀️' : '🌙';
+    }catch{}
   });
 
   if ($("btn-add-row")) {

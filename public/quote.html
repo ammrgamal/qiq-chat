@@ -88,6 +88,19 @@
   </style>
 </head>
 <body>
+  <div class="topbar" style="position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #e5e7eb">
+    <div class="topbar-inner" style="max-width:1000px;margin:0 auto;padding:10px 12px;display:flex;gap:12px;align-items:center">
+      <div class="brand" style="display:flex;gap:10px;align-items:center;color:#1e3a8a;font-weight:700">
+        <span class="dot" style="width:8px;height:8px;border-radius:50%;background:#0ea5e9"></span>
+        <a href="https://ai.quickitquote.com/" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">QuickITQuote</a>
+        <span class="muted" style="font-weight:500">Quote</span>
+      </div>
+      <div class="view-toggle" style="margin-inline-start:auto;display:flex;gap:6px">
+        <a class="btn ghost" href="/index.html" title="AI Agent">AI Agent</a>
+        <button id="themeToggleQuote" class="btn secondary" title="Theme">🌙</button>
+      </div>
+    </div>
+  </div>
   <div class="container">
     <!-- Header / Logo + meta -->
     <div class="card">
@@ -283,6 +296,15 @@
           <span class="proceed-text">Proceed to Request Quote</span>
         </button>
       </div>
+    </div>
+
+    <!-- AI Comparison (if attached) -->
+    <div id="ai-comparison-card" class="card" style="display:none">
+      <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+        <div style="font-weight:700">AI Comparison</div>
+        <button id="btn-remove-attachment" class="btn secondary no-print">Remove</button>
+      </div>
+      <div id="ai-comparison-content" style="white-space:pre-wrap;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-top:8px"></div>
     </div>
 
     <!-- Hidden payload preview (for debug) -->

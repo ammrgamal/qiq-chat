@@ -241,11 +241,43 @@
     }catch{}
   });
 
-  document.getElementById('comparison-btn')?.addEventListener('click', ()=>{
+  document.getElementById('comparison-btn')?.addEventListener('click', async ()=>{
     try{
-      const table = window.QiqComparison?.generateComparisonTable?.() || '<div style="color:#6b7280">لا توجد عناصر للمقارنة</div>';
-      window.QiqModal?.open('#', { title:'المقارنة', html: table });
-    }catch{}
+      const items = (window.QiqComparison?.getAll?.() || []).slice(0, 6);
+      if (!items.length) {
+        return window.QiqModal?.open('#', { title:'المقارنة', html: '<div style="color:#6b7280">لا توجد عناصر للمقارنة</div>' });
+      }
+      // build minimal payload
+      const products = items.map(p=>({ name: p.name, pn: p.sku, brand: p.manufacturer, price: Number(p.price||0) }));
+      const modalId = 'cmp-modal-'+Date.now();
+      window.QiqModal?.open('#', { title:'المقارنة (جارية...)', html: '<div id="'+modalId+'" style="padding:12px">جاري التحليل...</div>' });
+      const r = await fetch('/api/compare', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ products }) });
+      const data = await r.json();
+      const md = data?.summaryMarkdown || 'No comparison available';
+      const html = `
+        <div style="padding:12px; display:flex; flex-direction:column; gap:12px">
+          <div style="white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e5e7eb; max-height:60vh; overflow:auto">${md.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+          <div style="display:flex; gap:8px; justify-content:flex-end">
+            <button class="btn secondary" id="cmp-copy">Copy</button>
+            <button class="btn" id="cmp-attach">Attach to Quote</button>
+          </div>
+        </div>`;
+      const modalEl = document.getElementById(modalId);
+      if (modalEl) modalEl.parentElement.innerHTML = html;
+      // wire buttons
+      setTimeout(()=>{
+        const copyBtn = document.getElementById('cmp-copy');
+        const attachBtn = document.getElementById('cmp-attach');
+        copyBtn?.addEventListener('click', ()=>{ navigator.clipboard.writeText(md).then(()=>window.QiqToast?.success?.('Copied',1500)).catch(()=>{}); });
+        attachBtn?.addEventListener('click', ()=>{
+          try{
+            const att = { kind:'ai-comparison', createdAt: new Date().toISOString(), markdown: md };
+            localStorage.setItem('qiq_attached_comparison', JSON.stringify(att));
+            window.QiqToast?.success?.('تم إرفاق المقارنة بصفحة العرض', 2000);
+          }catch{}
+        });
+      }, 0);
+    }catch(err){ console.warn(err); window.QiqToast?.error?.('تعذر إنشاء المقارنة الآن', 2000); }
   });
 
   // init
