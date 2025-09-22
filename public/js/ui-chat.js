@@ -63,6 +63,18 @@
     }
   ];
 
+  // TEMP: Direct Algolia fallback aligned with catalog page (index defaults to 'woocommerce_products')
+  const TEMP_ALGOLIA = (function(){
+    try {
+      if (window.QIQ_DISABLE_TEMP_ALGOLIA) return null;
+      const urlIndex = (function(){ try{ return new URL(window.location.href).searchParams.get('algoliaIndex') || ''; }catch{ return ''; } })();
+      const storedIndex = (function(){ try{ return localStorage.getItem('qiq_algolia_index') || ''; }catch{ return ''; } })();
+      const indexName = (urlIndex || storedIndex || window.QIQ_ALGOLIA_INDEX || 'woocommerce_products');
+      if (urlIndex) { try { localStorage.setItem('qiq_algolia_index', indexName); } catch {} }
+      return { appId: 'R4ZBQN1VE', apiKey: '84b7868e7375eac68c15db81fc129962', index: indexName };
+    } catch { return null; }
+  })();
+
   /* ---- بناء كارت نتيجة واحدة ---- */
   function hitToCard(hit) {
     // محاولة استخراج أهم الحقول الشائعة
@@ -173,16 +185,98 @@
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const json = await r.json();
+      // If backend warns about Algolia or returns no hits, try TEMP fallback
+      if ((json?.warning || (json?.nbHits === 0)) && TEMP_ALGOLIA) {
+        try {
+          const fb = await algoliaDirectSearch(query, { hitsPerPage });
+          if (fb?.hits?.length) return fb.hits.slice(0, hitsPerPage);
+        } catch {}
+      }
       return Array.isArray(json?.hits) ? json.hits : [];
     } catch (e) {
       console.warn("Search error:", e);
-      // Return sample data when API is not available
-      return sampleProducts.filter(product => 
+      // Try TEMP Algolia direct when backend fails
+      if (TEMP_ALGOLIA) {
+        try {
+          const fb = await algoliaDirectSearch(query, { hitsPerPage });
+          if (fb?.hits?.length) return fb.hits.slice(0, hitsPerPage);
+        } catch {}
+      }
+      // Return sample data when API is not available and fallback failed
+      return sampleProducts.filter(product =>
         product.name.toLowerCase().includes(query.toLowerCase()) ||
         product.sku.toLowerCase().includes(query.toLowerCase()) ||
         product.manufacturer.toLowerCase().includes(query.toLowerCase())
       ).slice(0, hitsPerPage);
     }
+  }
+
+  // TEMP: direct Algolia query similar to catalog fallback
+  async function algoliaDirectSearch(q, { hitsPerPage = 5 } = {}) {
+    if (!TEMP_ALGOLIA) return null;
+    const baseOpts = {
+      hitsPerPage: Math.min(50, Number(hitsPerPage) || 5),
+      page: 0,
+      facets: ["brand","manufacturer","categories","category"],
+      typoTolerance: 'min', ignorePlurals: true, queryLanguages: ['ar','en'],
+      removeWordsIfNoResults: 'allOptional', advancedSyntax: true,
+      restrictSearchableAttributes: [
+        'name','title','Description','ShortDescription','ExtendedDescription','product_name',
+        'sku','SKU','pn','mpn','Part Number','product_code','objectID',
+        'brand','manufacturer','vendor','company','categories','category','tags'
+      ],
+      attributesToRetrieve: [
+        'name','title','Description','ShortDescription','ExtendedDescription','product_name','price','Price','List Price','list_price',
+        'image','Image URL','thumbnail','images','sku','SKU','pn','mpn','Part Number','product_code','objectID',
+        'link','product_url','url','permalink','brand','manufacturer','vendor','company','categories','category','tags'
+      ]
+    };
+    const buildParams = (opts) => {
+      const p = new URLSearchParams();
+      p.set('query', q || '');
+      Object.entries(opts).forEach(([k,v])=>{
+        if (v===undefined||v===null||v==='') return;
+        if (Array.isArray(v) || typeof v==='object') p.set(k, JSON.stringify(v)); else p.set(k, String(v));
+      });
+      return p.toString();
+    };
+    const url = `https://${TEMP_ALGOLIA.appId}-dsn.algolia.net/1/indexes/${encodeURIComponent(TEMP_ALGOLIA.index)}/query`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Algolia-Application-Id': TEMP_ALGOLIA.appId,
+        'X-Algolia-API-Key': TEMP_ALGOLIA.apiKey
+      },
+      body: JSON.stringify({ params: buildParams(baseOpts) })
+    });
+    if (!resp.ok) throw new Error('Algolia HTTP ' + resp.status);
+    let result = await resp.json();
+
+    if ((!result?.nbHits || result.nbHits === 0) && q) {
+      const tokens = String(q).split(/\s+/).filter(Boolean);
+      const optionalWords = tokens.length > 1 ? tokens : undefined;
+      try {
+        const relaxed = { ...baseOpts, optionalWords };
+        const resp2 = await fetch(url, { method: 'POST', headers: {
+          'Content-Type': 'application/json',
+          'X-Algolia-Application-Id': TEMP_ALGOLIA.appId,
+          'X-Algolia-API-Key': TEMP_ALGOLIA.apiKey
+        }, body: JSON.stringify({ params: buildParams(relaxed) }) });
+        if (resp2.ok) result = await resp2.json();
+      } catch {}
+    }
+
+    const normalized = (result?.hits || []).map(h => ({
+      name: h.name || h.title || h.Description || h.product_name || "",
+      price: h.price ?? h.Price ?? h["List Price"] ?? h.list_price ?? "",
+      image: h.image || h["Image URL"] || h.thumbnail || (Array.isArray(h.images) ? h.images[0] : ""),
+      sku:   h.sku || h.SKU || h.pn || h.mpn || h["Part Number"] || h.product_code || h.objectID || "",
+      pn:    h.pn || h.mpn || h["Part Number"] || h.sku || h.SKU || h.product_code || h.objectID || "",
+      link:  h.link || h.product_url || h.url || h.permalink || "",
+      brand: h.brand || h.manufacturer || h.vendor || h.company || ""
+    }));
+    return { hits: normalized, nbHits: result?.nbHits || normalized.length };
   }
 
   /* ---- استدعاء /api/chat (نفس الموجود قبل كده) ---- */

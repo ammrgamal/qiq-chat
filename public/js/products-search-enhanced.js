@@ -34,7 +34,7 @@
       const indexName = (urlIndex || storedIndex || window.QIQ_ALGOLIA_INDEX || 'woocommerce_products');
       if (urlIndex) { try { localStorage.setItem('qiq_algolia_index', indexName); } catch {} }
       return {
-        appId: 'R4ZBQNB1VE',
+        appId: 'R4ZBQN1VE',
         apiKey: '84b7868e7375eac68c15db81fc129962', // Search-Only key (OK for client-side testing)
         index: indexName
       };
