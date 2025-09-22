@@ -80,6 +80,7 @@ route('post', '/api/special-quote', 'special-quote.js');
 route('post', '/api/quote', 'quote.js');
 route('post', '/api/agent', 'agent.js');
 route('post', '/api/compare', 'compare.js');
+route('post', '/api/maintenance', 'maintenance.js');
 // Users/auth/dev endpoints
 route('post', '/api/users/register', 'users/register.js');
 route('post', '/api/users/login', 'users/login.js');

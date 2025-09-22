@@ -31,6 +31,10 @@
     .table-wrap{ overflow:auto }
   table{ width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed }
   th,td{ border-bottom:1px solid var(--border); padding:8px 10px; vertical-align:middle; text-align:right }
+  thead th{ background:#f8fafc; font-weight:600 }
+  tbody td{ line-height:1.35 }
+  .desc-col .product-name{ font-weight:600 }
+  .desc-col .product-details{ opacity:.9 }
     tfoot td{ font-weight:700 }
     .totals{ display:grid; gap:8px; grid-template-columns:1fr auto; align-items:center; margin-top:10px }
     .quote-head{ display:flex; align-items:center; gap:14px; margin:8px 0 14px }
@@ -55,7 +59,7 @@
     .btn-danger:hover{ background:#b91c1c !important; }
     .loading-spinner{ display:inline-block; width:16px; height:16px; border:2px solid #fff; border-top:2px solid transparent; border-radius:50%; animation:spin 1s linear infinite; margin-right:8px; }
     @keyframes spin{ 0%{ transform:rotate(0deg); } 100%{ transform:rotate(360deg); } }
-    .sticky-header thead th{ position:sticky; top:0; background:#f5f7fa; z-index:10; }
+  .sticky-header thead th{ position:sticky; top:0; background:#f5f7fa; z-index:10; }
     .search-container{ margin:10px 0; }
     .search-input{ width:300px; padding:8px; border:1px solid var(--border); border-radius:8px; }
     .preview-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:9999; }
@@ -285,6 +289,7 @@
         <div class="right flex">
           <button id="btn-generate" class="btn btn-primary">تحديث الإجماليات</button>
           <button id="btn-request-special" class="btn">طلب سعر مُخصّص بعد التحقق</button>
+          <button id="btn-request-maintenance" class="btn">طلب عقد صيانة</button>
           <button id="btn-submit" class="btn btn-ok">إرسال الطلب</button>
         </div>
       </div>

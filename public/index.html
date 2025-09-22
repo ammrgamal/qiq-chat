@@ -18,12 +18,22 @@
   <script src="js/ui-chat.js" defer></script>
 </head>
 <body>
-  <!-- ====== شريط علوي بسيط ====== -->
-  <div style="max-width:980px;margin:12px auto 0;padding:8px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#0f172a;color:#fff;text-align:center">
-    <a href="/" style="color:#fff;text-decoration:none;font-weight:700">QuickITQuote</a>
-    — <a href="#" id="btn-open-catalog" style="color:#93c5fd">بحث</a>
-    — <a href="/quote.html" style="color:#93c5fd">طلب عرض سعر مخصص</a>
-    — <a href="/account.html" style="color:#93c5fd">حسابي</a>
+  <!-- Unified topbar -->
+  <div class="topbar" style="position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #e5e7eb">
+    <div class="topbar-inner" style="max-width:980px;margin:0 auto;padding:10px 12px;display:flex;gap:12px;align-items:center">
+      <div class="brand" style="display:flex;gap:10px;align-items:center;color:#1e3a8a;font-weight:700">
+        <span class="dot" style="width:8px;height:8px;border-radius:50%;background:#0ea5e9"></span>
+        <a href="/" style="color:inherit;text-decoration:none">QuickITQuote</a>
+        <span class="muted" style="font-weight:500">Chat</span>
+      </div>
+      <div style="margin-inline-start:auto;display:flex;gap:8px;align-items:center">
+        <a class="btn ghost" href="/products-list.html">Catalog</a>
+        <a class="btn ghost" href="/quote.html">Quote</a>
+        <a class="btn ghost" href="/account.html">Account</a>
+        <button id="themeToggleChat" class="btn secondary" title="Theme">🌙</button>
+        <button id="langToggle" class="btn secondary" title="Language">AR/EN</button>
+      </div>
+    </div>
   </div>
 
   <!-- ====== نافذة الشات ====== -->
@@ -122,10 +132,17 @@
   document.getElementById('go-to-quote').addEventListener('click', function() {
     window.location.href = '/quote.html';
   });
-  // Open catalog from header link
-  document.getElementById('btn-open-catalog')?.addEventListener('click', function(e){
-    e.preventDefault();
-  window.location.href = '/products-list.html';
+  // Theme toggle for chat page
+  document.getElementById('themeToggleChat')?.addEventListener('click', ()=>{
+    try{
+      const t = window.QiqTheme?.toggle?.();
+      const btn = document.getElementById('themeToggleChat');
+      if (btn) btn.textContent = (t==='dark')?'☀️':'🌙';
+    }catch{}
+  });
+  // Language toggle placeholder (implemented globally in next edits)
+  document.getElementById('langToggle')?.addEventListener('click', ()=>{
+    try { window.QiqI18n?.toggle?.(); } catch {}
   });
   // Open catalog from chat toolbar button
   document.getElementById('qiq-open-search')?.addEventListener('click', function(){

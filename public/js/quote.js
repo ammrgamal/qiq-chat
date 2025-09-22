@@ -408,6 +408,32 @@
     }
   });
 
+  // Request Maintenance Contract
+  $("btn-request-maintenance").addEventListener("click", async (e) => {
+    e.preventDefault();
+    const payload = buildPayload({ reason: "maintenance-request" });
+    // Trim payload: include items minimally, client, project, and meta
+    const slim = {
+      client: payload.client,
+      project: payload.project,
+      items: payload.items.map(it => ({ description: it.description, pn: it.pn, qty: it.qty })),
+      meta: { number: payload.number, date: payload.date, currency: payload.currency }
+    };
+    setLoadingState(e.target, true);
+    try {
+      const r = await fetch('/api/maintenance', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(slim) });
+      if (r.ok) {
+        showNotification('تم إرسال طلب عقد الصيانة. سنتواصل معك قريبًا.', 'success');
+      } else {
+        showNotification('تعذر إرسال طلب عقد الصيانة.', 'error');
+      }
+    } catch(err){
+      showNotification('تعذر الاتصال بالخادم', 'error');
+    } finally {
+      setLoadingState(e.target, false);
+    }
+  });
+
   $("btn-submit").addEventListener("click", async (e) => {
     e.preventDefault();
     const payload = buildPayload({ reason: "standard-quote" });

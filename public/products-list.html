@@ -64,9 +64,12 @@
 			.quote-section{border:1px solid var(--border);border-radius:12px;padding:16px;background:#fafafa}
 			.motivational-message{font-weight:500;border-left:4px solid var(--brand-success)}
 			/* List line style */
-			.results.list-lines .card{display:grid;grid-template-columns:60px 1fr auto;align-items:center;gap:10px;padding:10px;border-bottom:1px solid var(--border);border-radius:0}
-			.results.list-lines .card img{width:48px;height:48px}
+			.results.list-lines .card{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);border-radius:0}
+			.results.list-lines .card img{width:44px;height:44px}
+			.results.list-lines .card .name{line-height:1.25}
+			.results.list-lines .card .chips{margin:4px 0}
 			.results.list-lines .card .actions{margin-inline-start:0}
+			/* Ghost button contrast in dark mode will be handled by ui-enhancements */
 		</style>
 </head>
 <body>
@@ -82,6 +85,7 @@
 				<button id="viewList" class="active" title="List view">List</button>
 				<button id="viewGrid" title="Grid view">Grid</button>
 				<button id="themeToggle" title="Theme" style="margin-inline-start:8px">🌙</button>
+				<button id="langToggleCatalog" title="Language">AR/EN</button>
 			</div>
 		</div>
 	</div>
@@ -167,6 +171,9 @@
 	  const applyIcon = ()=> btn.textContent = (window.QiqTheme?.currentTheme === 'dark') ? '☀️' : '🌙';
 	  applyIcon();
 	  btn.addEventListener('click', ()=>{ try{ const t = window.QiqTheme?.toggle(); btn.textContent = (t==='dark')?'☀️':'🌙'; }catch{} });
+	  // Language toggle
+	  const langBtn = document.getElementById('langToggleCatalog');
+	  langBtn?.addEventListener('click', ()=>{ try{ window.QiqI18n?.toggle?.(); }catch{} });
 	});
 	</script>
 	<!-- Modal container -->

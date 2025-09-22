@@ -105,6 +105,11 @@ class ThemeManager {
       [data-theme="dark"] .motivational-message {
         background: linear-gradient(135deg, #059669 0%, #047857 100%);
       }
+      [data-theme="dark"] .btn.ghost, [data-theme="dark"] a.btn.ghost {
+        background: transparent;
+        color: #e5e7eb;
+        border-color: #6b7280;
+      }
       [data-theme="dark"] .results.list-lines .card {
         background: transparent;
         border-bottom-color: #374151;
@@ -522,6 +527,59 @@ class PrintOptimizer {
   }
 }
 
+class I18nManager {
+  constructor() {
+    this.storageKey = 'qiq_lang';
+    this.lang = localStorage.getItem(this.storageKey) || 'ar';
+    this.strings = {
+      ar: {
+        Catalog: 'الكتالوج', Quote: 'عرض السعر', Account: 'الحساب', Chat: 'الدردشة',
+        Search: 'بحث', Clear: 'مسح', 'View Quote': 'عرض عرض السعر',
+        'Search by name / PN / SKU': 'ابحث بالاسم / PN',
+        'AI Agent': 'الوكيل الذكي'
+      },
+      en: {
+        Catalog: 'Catalog', Quote: 'Quote', Account: 'Account', Chat: 'Chat',
+        Search: 'Search', Clear: 'Clear', 'View Quote': 'View Quote',
+        'Search by name / PN / SKU': 'Search by name / PN / SKU',
+        'AI Agent': 'AI Agent'
+      }
+    };
+    this.applyDirection();
+  }
+  set(lang) {
+    this.lang = lang;
+    localStorage.setItem(this.storageKey, lang);
+    this.applyDirection();
+    this.translatePage();
+    return this.lang;
+  }
+  toggle(){ return this.set(this.lang === 'ar' ? 'en' : 'ar'); }
+  t(s){ return (this.strings[this.lang] && this.strings[this.lang][s]) || s; }
+  applyDirection(){
+    if (this.lang === 'ar') { document.documentElement.lang='ar'; document.documentElement.dir='rtl'; }
+    else { document.documentElement.lang='en'; document.documentElement.dir='ltr'; }
+  }
+  translatePage(){
+    // Minimal: update known buttons/placeholders if found
+    const q = document.getElementById('q');
+    if (q) q.placeholder = this.t('Search by name / PN / SKU');
+    const searchBtn = document.getElementById('searchBtn'); if (searchBtn) searchBtn.textContent = this.t('Search');
+    const clearBtn = document.getElementById('clearBtn'); if (clearBtn) clearBtn.textContent = this.t('Clear');
+    document.querySelectorAll('.topbar .brand .muted').forEach(el => {
+      if (el.textContent.includes('Catalog')) el.textContent = this.t('Catalog');
+      if (el.textContent.includes('Quote')) el.textContent = this.t('Quote');
+      if (el.textContent.includes('Chat')) el.textContent = this.t('Chat');
+    });
+    document.querySelectorAll('a.btn.ghost').forEach(a=>{
+      if (/Catalog/i.test(a.textContent)) a.textContent = this.t('Catalog');
+      if (/Quote/i.test(a.textContent)) a.textContent = this.t('Quote');
+      if (/Account/i.test(a.textContent)) a.textContent = this.t('Account');
+      if (/AI Agent/i.test(a.textContent)) a.textContent = this.t('AI Agent');
+    });
+  }
+}
+
 // Initialize UI enhancements
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize theme manager
@@ -538,6 +596,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (quoteContainer) {
     window.QiqDragDrop = new DragDropManager('#quote-items-tbody');
   }
+  
+  // Initialize language manager
+  window.QiqI18n = new I18nManager();
+  window.QiqI18n.translatePage();
 });
 
 // Global utilities

@@ -100,8 +100,8 @@
         try{
           const product = { id: btn.dataset.id, name: btn.dataset.name, price: btn.dataset.price, image: btn.dataset.image, sku: btn.dataset.pn, manufacturer: btn.dataset.brand };
           const added = window.QiqFavorites?.toggle(product);
-          if (added) { window.QiqToast?.success?.('تمت الإضافة إلى المفضلة', 1500); btn.classList.add('active'); }
-          else { window.QiqToast?.info?.('تمت الإزالة من المفضلة', 1500); btn.classList.remove('active'); }
+          if (added) { window.QiqToast?.success?.('تمت الإضافة إلى المفضلة', 2000); btn.classList.add('active'); }
+          else { window.QiqToast?.info?.('تمت الإزالة من المفضلة', 2000); btn.classList.remove('active'); }
         }catch{}
       };
     });
@@ -115,9 +115,9 @@
           if (window.QiqComparison?.isInComparison(product.id)){
             window.QiqComparison.remove(product.id);
             btn.classList.remove('active');
-            window.QiqToast?.info?.('تمت الإزالة من المقارنة', 1500);
+            window.QiqToast?.info?.('تمت الإزالة من المقارنة', 2000);
           } else {
-            try { window.QiqComparison.add(product); btn.classList.add('active'); window.QiqToast?.success?.('تمت الإضافة إلى المقارنة', 1500); }
+            try { window.QiqComparison.add(product); btn.classList.add('active'); window.QiqToast?.success?.('تمت الإضافة إلى المقارنة', 2000); }
             catch(err){ window.QiqToast?.warning?.(err?.message || 'تعذر الإضافة للمقارنة', 2000); }
           }
         }catch{}
@@ -268,7 +268,7 @@
       setTimeout(()=>{
         const copyBtn = document.getElementById('cmp-copy');
         const attachBtn = document.getElementById('cmp-attach');
-        copyBtn?.addEventListener('click', ()=>{ navigator.clipboard.writeText(md).then(()=>window.QiqToast?.success?.('Copied',1500)).catch(()=>{}); });
+  copyBtn?.addEventListener('click', ()=>{ navigator.clipboard.writeText(md).then(()=>window.QiqToast?.success?.('Copied',2000)).catch(()=>{}); });
         attachBtn?.addEventListener('click', ()=>{
           try{
             const att = { kind:'ai-comparison', createdAt: new Date().toISOString(), markdown: md };
