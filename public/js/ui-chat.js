@@ -188,7 +188,7 @@
   }
   // (Removed) any direct Algolia calls from chat UI.
 
-  /* ---- استدعاء /api/chat (نفس الموجود قبل كده) ---- */
+  /* ---- استدعاء /api/chat: يرجع كائن { reply, hits? } ---- */
   async function runChat(messages) {
     try {
       const r = await fetch("/api/chat", {
@@ -197,21 +197,27 @@
         body: JSON.stringify({ messages })
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const text = await r.text();
-      return text || "";
+      // Prefer JSON. If server sends text, normalize it.
+      const contentType = r.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const data = await r.json();
+        const reply = typeof data?.reply === 'string' ? data.reply : '';
+        const hits  = Array.isArray(data?.hits) ? data.hits : [];
+        return { reply, hits };
+      } else {
+        const text = await r.text();
+        return { reply: text || '', hits: [] };
+      }
     } catch (e) {
       console.warn("Chat error:", e);
-      // Return a helpful fallback response when API is not available
+      // Fallback: conversational response only (no auto-search)
       const userMessage = messages[messages.length - 1]?.content || "";
-      if (userMessage.toLowerCase().includes('kaspersky')) {
-        return "ممتاز! لدينا حلول Kaspersky متنوعة. يمكنك الاطلاع على النتائج أدناه واختيار ما يناسبك.";
-      } else if (userMessage.toLowerCase().includes('microsoft') || userMessage.toLowerCase().includes('office')) {
-        return "لدينا مجموعة شاملة من منتجات Microsoft Office. راجع الخيارات المتاحة أدناه.";
-      } else if (userMessage.toLowerCase().includes('vmware')) {
-        return "حلول VMware للافتراضية متوفرة. تحقق من المنتجات أدناه.";
-      } else {
-        return "تم البحث عن منتجات مطابقة لاستفسارك. راجع النتائج أدناه.";
-      }
+      let reply = "أحتاج تفاصيل أكثر عشان أساعدك بشكل دقيق. ما نوع الحل المطلوب وكم مستخدم؟";
+      const t = userMessage.toLowerCase();
+      if (t.includes('kaspersky')) reply = "هل تحتاج حماية Endpoint أم EDR؟ ما عدد الأجهزة ومدة الترخيص؟";
+      else if (t.includes('microsoft') || t.includes('office')) reply = "للتراخيص: كم مستخدم واحتياج البريد/التخزين؟ اشتراك شهري أم سنوي؟";
+      else if (t.includes('vmware')) reply = "كم سيرفر وفيه احتياج vCenter؟ عدد المعالجات/الأنوية والتراخيص المطلوبة؟";
+      return { reply, hits: [] };
     }
   }
 
@@ -238,7 +244,7 @@
     }
   ];
 
-  // إرسال الرسالة
+  // إرسال الرسالة (سلوك حواري: لا بحث تلقائي)
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const userText = (input?.value || "").trim();
@@ -248,39 +254,20 @@
     addMsg("user", userText);
     messages.push({ role: "user", content: userText });
 
-    // 1) رد الشات
+    // 1) رد الشات من الخادم (قد يحتوي على hits اختيارياً)
     const thinking = addMsg("bot", "…");
     sendBtn && (sendBtn.disabled = true);
     try {
-      const reply = await runChat(messages);
-      let showReply = reply;
-      // إذا كان الرد JSON أو يحتوي على hits، تجاهله
-      try {
-        const parsed = JSON.parse(reply);
-        if (parsed && (parsed.hits || parsed.reply)) {
-          showReply = parsed.reply || "";
-        }
-      } catch {}
-      // إذا كان الرد نفسه JSON أو طويل وغير مفهوم، لا تعرضه
-      if (showReply && showReply.length < 400 && !showReply.startsWith("{")) {
-        thinking.textContent = showReply;
-      } else {
-        thinking.remove();
+      const resp = await runChat(messages);
+      const showReply = (resp.reply || '').toString();
+      if (showReply && showReply.length < 1200) thinking.textContent = showReply; else thinking.remove();
+      // 2) عرض النتائج فقط لو الخادم رجّع hits
+      if (Array.isArray(resp.hits) && resp.hits.length) {
+        displayProductsInTable(resp.hits, "Matches & alternatives");
+        addMsg("bot", `تم العثور على ${resp.hits.length} نتيجة مطابقة. تحقق من الجدول أدناه.`);
       }
     } finally {
       sendBtn && (sendBtn.disabled = false);
-    }
-
-    // 2) نتائج البحث (نفس النص) – نعرض في الجدول مباشرة
-    const hits = await runSearch(userText, 6);
-    if (hits.length) {
-      // إضافة النتائج مباشرة إلى الجدول بدلاً من إظهارها في الشات
-      displayProductsInTable(hits, "Matches & alternatives");
-      // رسالة قصيرة في الشات
-      addMsg("bot", `تم العثور على ${hits.length} نتيجة مطابقة. تحقق من الجدول أدناه.`);
-    } else {
-      displayProductsInTable([]); // مسح النتائج السابقة
-      addMsg("bot", "لم نجد تطابقًا مباشرًا. حاول كتابة اسم المنتج/الموديل بدقة أكبر أو جرّب رفع BOQ.");
     }
   });
 

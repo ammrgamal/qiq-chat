@@ -55,6 +55,44 @@
     return r.json();
   }
 
+  // Render facets (brands/categories)
+  function renderFacets(facets = {}, selected) {
+    try{
+      const brands = Object.entries(facets.brand || facets.manufacturer || {}).sort((a,b)=>b[1]-a[1]).slice(0, 30);
+      const cats   = Object.entries(facets.categories || facets.category || {}).sort((a,b)=>b[1]-a[1]).slice(0, 30);
+      if (brandsList) brandsList.innerHTML = brands.map(([name,count])=>{
+        const checked = selected.brands.includes(name) ? 'checked' : '';
+        const id = 'b_'+name.replace(/[^a-z0-9]/gi,'');
+        return `<li><input id="${id}" type="checkbox" value="${esc(name)}" ${checked}/> <label for="${id}">${esc(name)} <span class="muted">(${count})</span></label></li>`;
+      }).join('') || '<li class="muted">لا توجد شركات</li>';
+      if (catsList) catsList.innerHTML = cats.map(([name,count])=>{
+        const checked = selected.categories.includes(name) ? 'checked' : '';
+        const id = 'c_'+name.replace(/[^a-z0-9]/gi,'');
+        return `<li><input id="${id}" type="checkbox" value="${esc(name)}" ${checked}/> <label for="${id}">${esc(name)} <span class="muted">(${count})</span></label></li>`;
+      }).join('') || '<li class="muted">لا توجد فئات</li>';
+
+      // Re-wire change events to re-run search
+      brandsList?.querySelectorAll('input[type="checkbox"]').forEach(cb=> cb.addEventListener('change', ()=> render((input?.value||'').trim(), 0)));
+      catsList?.querySelectorAll('input[type="checkbox"]').forEach(cb=> cb.addEventListener('change', ()=> render((input?.value||'').trim(), 0)));
+    }catch{}
+  }
+
+  function renderPagination(page = 0, nbPages = 1, onPage){
+    if (!pagination) return;
+    const items = [];
+    const total = Math.max(1, Number(nbPages) || 1);
+    const curr = Math.max(0, Number(page) || 0);
+    const start = Math.max(0, curr - 2);
+    const end = Math.min(total - 1, curr + 2);
+    if (curr > 0) items.push(`<button data-p="${curr-1}">‹</button>`);
+    for (let p = start; p <= end; p++){
+      items.push(`<button data-p="${p}" class="${p===curr?'active':''}">${p+1}</button>`);
+    }
+    if (curr < total - 1) items.push(`<button data-p="${curr+1}">›</button>`);
+    pagination.innerHTML = items.join('');
+    pagination.querySelectorAll('button[data-p]')?.forEach(btn=> btn.addEventListener('click', ()=> onPage?.(Number(btn.dataset.p)||0)));
+  }
+
   function hitToCard(h){
     const name  = esc(h?.name || '(No name)');
     const price = h?.price !== undefined && h?.price !== '' ? Number(h.price) : '';
@@ -142,10 +180,13 @@
         lastQuery = q;
       }
 
-      resultsEl.innerHTML = hits.map(hitToCard).join('');
+  // Ensure list-lines default
+  resultsEl.classList.remove('grid');
+  resultsEl.classList.add('list-lines');
+  resultsEl.innerHTML = hits.map(hitToCard).join('');
       wireCardActions();
       // re-apply view mode to new cards
-      applyView(localStorage.getItem('qiq_view_mode') || 'list-lines');
+  applyView(localStorage.getItem('qiq_view_mode') || 'list-lines');
       renderFacets(res?.facets || {}, getSelected());
       renderPagination(res?.page || 0, res?.nbPages || 1, (p)=>render(q, p));
     }catch(err){
@@ -243,6 +284,7 @@
 
   document.getElementById('comparison-btn')?.addEventListener('click', async ()=>{
     try{
+      if (window.__cmpBusy) return; window.__cmpBusy = true;
       const items = (window.QiqComparison?.getAll?.() || []).slice(0, 6);
       if (!items.length) {
         return window.QiqModal?.open('#', { title:'المقارنة', html: '<div style="color:#6b7280">لا توجد عناصر للمقارنة</div>' });
@@ -252,14 +294,14 @@
       const modalId = 'cmp-modal-'+Date.now();
       window.QiqModal?.open('#', { title:'المقارنة (جارية...)', html: '<div id="'+modalId+'" style="padding:12px">جاري التحليل...</div>' });
       const r = await fetch('/api/compare', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ products }) });
-      const data = await r.json();
-      const md = data?.summaryMarkdown || 'No comparison available';
+      let md = 'No comparison available';
+      try{ const data = await r.json(); md = data?.summaryMarkdown || md; }catch{}
       const html = `
         <div style="padding:12px; display:flex; flex-direction:column; gap:12px">
           <div style="white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e5e7eb; max-height:60vh; overflow:auto">${md.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
           <div style="display:flex; gap:8px; justify-content:flex-end">
-            <button class="btn secondary" id="cmp-copy">Copy</button>
-            <button class="btn" id="cmp-attach">Attach to Quote</button>
+            <button class="btn secondary" id="cmp-copy">نسخ</button>
+            <button class="btn" id="cmp-attach">إرفاق لعرض السعر</button>
           </div>
         </div>`;
       const modalEl = document.getElementById(modalId);
@@ -268,7 +310,7 @@
       setTimeout(()=>{
         const copyBtn = document.getElementById('cmp-copy');
         const attachBtn = document.getElementById('cmp-attach');
-  copyBtn?.addEventListener('click', ()=>{ navigator.clipboard.writeText(md).then(()=>window.QiqToast?.success?.('Copied',2000)).catch(()=>{}); });
+        copyBtn?.addEventListener('click', ()=>{ navigator.clipboard.writeText(md).then(()=>window.QiqToast?.success?.('تم النسخ',2000)).catch(()=>{}); });
         attachBtn?.addEventListener('click', ()=>{
           try{
             const att = { kind:'ai-comparison', createdAt: new Date().toISOString(), markdown: md };
@@ -278,6 +320,7 @@
         });
       }, 0);
     }catch(err){ console.warn(err); window.QiqToast?.error?.('تعذر إنشاء المقارنة الآن', 2000); }
+    finally { window.__cmpBusy = false; }
   });
 
   // init

@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="ar" dir="rtl">
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width,initial-scale=1" />
 	<base href="/" />
-	<title>Product Catalog</title>
+	<title>كتالوج المنتجات</title>
 	<link rel="stylesheet" href="/css/styles.css" />
 		<style>
 			:root{
@@ -39,7 +39,7 @@
 			.facet li{display:flex;align-items:center;gap:8px;padding:4px 0}
 			.range{display:flex;gap:8px}
 			.range input{width:100%;padding:6px;border:1px solid var(--border);border-radius:8px}
-			.results{display:grid;gap:10px}
+			.results{display:block}
 			.results.grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 			.card{border:1px solid var(--border);border-radius:12px;padding:10px;display:flex;gap:10px;align-items:flex-start;background:var(--card-bg)}
 			.card.grid{flex-direction:column}
@@ -63,12 +63,13 @@
 			@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 			.quote-section{border:1px solid var(--border);border-radius:12px;padding:16px;background:#fafafa}
 			.motivational-message{font-weight:500;border-left:4px solid var(--brand-success)}
-			/* List line style */
-			.results.list-lines .card{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);border-radius:0}
-			.results.list-lines .card img{width:44px;height:44px}
-			.results.list-lines .card .name{line-height:1.25}
-			.results.list-lines .card .chips{margin:4px 0}
-			.results.list-lines .card .actions{margin-inline-start:0}
+			/* List line style (true lines) */
+			#results.list-lines{display:block}
+			#results.list-lines .card{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);border-radius:0;box-shadow:none}
+			#results.list-lines .card img{width:44px;height:44px}
+			#results.list-lines .card .name{line-height:1.25}
+			#results.list-lines .card .chips{margin:4px 0}
+			#results.list-lines .card .actions{margin-inline-start:0}
 			/* Ghost button contrast in dark mode will be handled by ui-enhancements */
 		</style>
 </head>
@@ -77,48 +78,48 @@
 		<div class="topbar-inner">
 			<div class="brand">
 				<span class="dot"></span>
-				<a href="https://ai.quickitquote.com/" target="_blank" rel="noopener">QuickITQuote</a>
-				<span class="muted" style="font-weight:500">Catalog</span>
+				<a href="https://ai.quickitquote.com/" target="*_blank" rel="noopener">QuickITQuote</a>
+				<span class="muted" style="font-weight:500">الكتالوج</span>
 			</div>
 			<div class="view-toggle">
-				<a class="btn ghost" href="/index.html" title="AI Agent">AI Agent</a>
-				<button id="viewList" class="active" title="List view">List</button>
-				<button id="viewGrid" title="Grid view">Grid</button>
-				<button id="themeToggle" title="Theme" style="margin-inline-start:8px">🌙</button>
-				<button id="langToggleCatalog" title="Language">AR/EN</button>
+				<a class="btn ghost" href="/index.html" title="AI Agent">الوكيل الذكي</a>
+				<button id="viewList" class="active" title="عرض على شكل سطور">سطور</button>
+				<button id="viewGrid" title="عرض شبكي">شبكة</button>
+				<button id="themeToggle" title="الوضع الليلي" style="margin-inline-start:8px">🌙</button>
+				<button id="langToggleCatalog" title="اللغة">AR/EN</button>
 			</div>
 		</div>
 	</div>
 		<div class="container">
 		<div class="header">
-			<h1 style="margin:0">Product Catalog</h1>
+			<h1 style="margin:0">كتالوج المنتجات</h1>
 			<div class="muted" id="status"></div>
 			<div style="margin-inline-start:auto; display: flex; gap: 8px; align-items: center;">
 				<button id="favorites-btn" class="btn ghost" style="position: relative;">
-					❤️ Favorites
+					❤️ المفضلة
 					<span class="favorites-badge" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: none;">0</span>
 				</button>
 				<button id="comparison-btn" class="btn ghost" style="position: relative;">
-					⚖️ Compare
+					⚖️ المقارنة
 					<span class="comparison-badge" style="position: absolute; top: -8px; right: -8px; background: #3b82f6; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: none;">0</span>
 				</button>
-				<a class="btn secondary" href="/quote.html">View Quote</a>
+				<a class="btn secondary" href="/quote.html">عرض السعر</a>
 			</div>
 		</div>
 		<div class="toolbar">
-			<input id="q" type="search" placeholder="Search by name / PN / SKU" />
-			<button id="searchBtn" class="btn">Search</button>
-			<button id="clearBtn" class="btn secondary">Clear</button>
+			<input id="q" type="search" placeholder="ابحث بالاسم / PN / SKU" />
+			<button id="searchBtn" class="btn">بحث</button>
+			<button id="clearBtn" class="btn secondary">مسح</button>
 		</div>
 		
 		<!-- Chat-like Quick Action Buttons (refined) -->
 		<div class="quick-actions" style="margin: 16px 0; display: flex; gap: 8px; flex-wrap: wrap;">
-			<button class="quick-btn" data-query="SFP module">🔌 SFP Modules</button>
-			<button class="quick-btn" data-query="PoE switch">🔧 PoE Switches</button>
-			<button class="quick-btn" data-query="Cat6 cable">🧵 Cat6 Cables</button>
-			<button class="quick-btn" data-query="CCTV camera">📷 CCTV Cameras</button>
-			<button class="quick-btn" data-query="UPS">⚡ UPS & Power</button>
-			<button class="quick-btn" data-query="WiFi access point">📡 Access Points</button>
+			<button class="quick-btn" data-query="SFP module">🔌 وحدات SFP</button>
+			<button class="quick-btn" data-query="PoE switch">🔧 سويتشات PoE</button>
+			<button class="quick-btn" data-query="Cat6 cable">🧵 كابلات Cat6</button>
+			<button class="quick-btn" data-query="CCTV camera">📷 كاميرات مراقبة</button>
+			<button class="quick-btn" data-query="UPS">⚡ UPS والطاقة</button>
+			<button class="quick-btn" data-query="WiFi access point">📡 نقاط وصول Wi‑Fi</button>
 		</div>
 		
 		<!-- Motivational Messages -->
@@ -131,21 +132,21 @@
 			<div class="layout">
 				<aside class="sidebar">
 					<div class="facet" id="facet-brands">
-						<h3>Brand</h3>
+						<h3>الشركة</h3>
 						<ul></ul>
 					</div>
 					<div class="facet" id="facet-categories">
-						<h3>Category</h3>
+						<h3>الفئة</h3>
 						<ul></ul>
 					</div>
 					<div class="facet">
-						<h3>Price range</h3>
+						<h3>نطاق السعر</h3>
 						<div class="range">
-							<input id="priceMin" type="number" placeholder="Min" />
-							<input id="priceMax" type="number" placeholder="Max" />
+							<input id="priceMin" type="number" placeholder="الأدنى" />
+							<input id="priceMax" type="number" placeholder="الأقصى" />
 						</div>
 						<div style="margin-top:8px">
-							<button id="applyPrice" class="btn secondary" style="padding:6px 10px">Apply</button>
+							<button id="applyPrice" class="btn secondary" style="padding:6px 10px">تطبيق</button>
 						</div>
 					</div>
 				</aside>
@@ -159,6 +160,7 @@
 		<script src="/js/toast.js"></script>
 		<script src="/js/security.js"></script>
 		<script src="/js/user-features.js"></script>
+		<script src="/js/experimental-banner.js"></script>
 		<script src="/js/ui-enhancements.js"></script>
 		<script src="/js/analytics.js"></script>
 		<script src="/js/quote-actions.js"></script>

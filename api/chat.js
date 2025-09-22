@@ -33,21 +33,20 @@ export default async function handler(req, res) {
     const FAST_MODE = /^(1|true|yes)$/i.test(String(process.env.FAST_MODE || process.env.AUTO_APPROVE || ""));
     const openaiKey = process.env.OPENAI_API_KEY;
 
-    // Fast path: skip external LLM when FAST_MODE or no key
+    // Fast path: drive a conversational intake (no auto-search unless user explicitly asks)
     if (FAST_MODE || !openaiKey) {
-      const last = messages[messages.length - 1]?.content || "";
+      const last = (messages[messages.length - 1]?.content || '').toLowerCase();
+      let reply = 'تمام، خلّيني أفهم احتياجك خطوة بخطوة:\n1) نوع الحل المطلوب؟ (مثال: EDR, Firewall, Wi‑Fi, O365)\n2) العدد/السعة؟\n3) الميزانية التقريبية؟\n4) هل تحب عرض بدائل اقتصادية وممتازة؟';
+      // Nudge with domain-specific follow-ups
+      if (/(kaspersky|edr|endpoint)/i.test(last)) reply = 'لـ Kaspersky: عدد الأجهزة؟ مدة الترخيص؟ وهل في سيرفرات تحتاج حماية؟';
+      if (/(office|microsoft|o365|m365)/i.test(last)) reply = 'Microsoft 365: كم مستخدم؟ هل تحتاج Business Standard ولا E3/E5؟ مساحة التخزين والبريد مهمة؟';
+      if (/(vmware|vsphere)/i.test(last)) reply = 'VMware: كم سيرفر؟ عدد المعالجات/الأنوية؟ تحتاج vCenter؟ مستوى الترخيص (Standard/Enterprise)؟';
+      // Do not search by default; wait for clearer specs or the word "ابحث"/"search"
       let hits = [];
-      try {
-        if (process.env.ALGOLIA_APP_ID && process.env.ALGOLIA_API_KEY) {
-          hits = await searchAlgolia({ query: last || "kaspersky", hitsPerPage: 5 });
-        } else {
-          hits = [
-            { name: "Kaspersky Endpoint Detection and Response", sku: "KES-EDR-120-2Y", price: "2500", image: "", link: "#" },
-            { name: "Microsoft Office 365 Business Premium", sku: "O365-BP-100U", price: "1200", image: "", link: "#" },
-          ];
-        }
-      } catch {}
-      return res.status(200).json({ reply: "تم — رد سريع بدون انتظار خدمات خارجية.", hits });
+      if (/(ابحث|search|هات منتجات|products)/i.test(last)) {
+        try { hits = await searchAlgolia({ query: last.replace(/(ابحث|search)/ig, '').trim() || 'kaspersky', hitsPerPage: 6 }); } catch {}
+      }
+      return res.status(200).json({ reply, hits });
     }
 
     const systemPrompt = [
