@@ -223,6 +223,7 @@
       <td><input type="number" min="1" step="1" value="1" class="qiq-qty qty-input"></td>
       <td class="numeric">${price? fmtUSD(price) : "-"}</td>
       <td class="qiq-line numeric">${unitNum? fmtUSD(unitNum*1) : "-"}</td>
+      <td class="qiq-notes">${buildNoteText(data)}</td>
       <td>
         <div class="action-icons">
           <button class="action-btn edit" type="button" data-detail-pn="${pn}" title="تفاصيل المنتج">ℹ️</button>
@@ -257,7 +258,7 @@
             </div>
           </div>`;
         try{
-          if (window.QiqModal) QiqModal.open('#', { title, html });
+          if (window.QiqModal) QiqModal.open('#', { title, html, size: 'sm' });
           else alert(name);
         }catch{}
       });
@@ -326,6 +327,13 @@
     
     // إضافة إلى السجل
     addToLog('إضافة', name, `المصدر: ${source}`);
+  }
+  function buildNoteText(data){
+    const notes = [];
+    if (data.isAlternative) notes.push('بديل');
+    if (data.availability === 'in-stock') notes.push('متوفر');
+    if (data.availability === 'backorder') notes.push('على طلب');
+    return notes.join(' • ');
   }
   // حفظ كل المنتجات الحالية في الجدول في localStorage
   function updateStagedItemsFromTable() {
@@ -752,7 +760,7 @@
         }
 
         // Helper: add base row
-        function addBaseRow({name,pn,qty,price,manufacturer,image,link,source,note,isAlternative}){
+        function addBaseRow({name,pn,qty,price,manufacturer,image,link,source,note,isAlternative,availability}){
           const payload = {
             name: name || (pn? `Item ${pn}` : 'Imported Item'),
             pn: pn || '',
@@ -761,7 +769,9 @@
             manufacturer: manufacturer || '',
             image: image || '',
             link: link || '',
-            source: source || 'Import'
+            source: source || 'Import',
+            isAlternative: !!isAlternative,
+            availability: availability || ''
           };
           buildRow(payload);
           // set qty if provided
@@ -801,7 +811,8 @@
               manufacturer: h?.brand || h?.manufacturer || h?.vendor || '',
               image: h?.image || h?.image_url || h?.thumbnail || '',
               link: (h?.objectID||h?.sku||h?.pn||h?.mpn)? `/products-list.html?q=${encodeURIComponent(h.objectID||h.sku||h.pn||h.mpn)}` : (h?.link||h?.product_url||''),
-              source: 'Import+Catalog'
+              source: 'Import+Catalog',
+              availability: h?.availability || ''
             });
             importedCount++;
           } else {
@@ -830,7 +841,8 @@
                   image: a?.image || a?.image_url || a?.thumbnail || '',
                   link: (a?.objectID||a?.sku||a?.pn||a?.mpn)? `/products-list.html?q=${encodeURIComponent(a.objectID||a.sku||a.pn||a.mpn)}` : (a?.link||a?.product_url||''),
                   source: 'Alternative',
-                  isAlternative: true
+                  isAlternative: true,
+                  availability: a?.availability || ''
                 });
               }
             }

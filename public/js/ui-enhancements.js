@@ -118,12 +118,12 @@ class ThemeManager {
       /* Chat container & bubbles */
       [data-theme="dark"] .qiq { background: var(--bg-secondary); border-color: var(--border-color); }
       [data-theme="dark"] .qiq-window { background: #111827; color: var(--text-primary); }
-      [data-theme="dark"] .qiq-form { background: var(--bg-secondary); border-top-color: var(--border-color); }
-      [data-theme="dark"] .qiq-input { background: var(--bg-tertiary); border-color: var(--border-color); color: var(--text-primary); }
+  [data-theme="dark"] .qiq-form { background: #0b1220; border-top-color: #253046; }
+  [data-theme="dark"] .qiq-input { background: #1f2937; border-color: #334155; color: #f3f4f6; }
       [data-theme="dark"] .qiq-input::placeholder { color: var(--text-muted); }
-      [data-theme="dark"] .qiq-bubble { background: var(--bg-tertiary); border-color: var(--border-color); color: var(--text-primary); }
+  [data-theme="dark"] .qiq-bubble { background: #1f2937; border-color: #334155; color: #f9fafb; }
       [data-theme="dark"] .qiq-msg.user .qiq-bubble { background: #2563eb; border-color: #2563eb; color: #fff; }
-      [data-theme="dark"] .qiq-btn, [data-theme="dark"] .qiq-send { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+  [data-theme="dark"] .qiq-btn, [data-theme="dark"] .qiq-send { background: #253046; color: #e5e7eb; border: 1px solid #334155; }
       [data-theme="dark"] .qiq-btn.primary { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
       [data-theme="dark"] .qiq-success { background: var(--success-color); border-color: var(--success-color); }
       [data-theme="dark"] .qiq-products-list { background: var(--bg-secondary); border-color: var(--border-color); }
@@ -134,10 +134,10 @@ class ThemeManager {
 
       /* BOQ table */
       [data-theme="dark"] .qiq-boq { background: var(--bg-secondary); border-color: var(--border-color); }
-      [data-theme="dark"] .qiq-table { background: var(--bg-secondary); color: var(--text-primary); }
-      [data-theme="dark"] .qiq-table th { background: #111827; color: var(--text-secondary); border-bottom-color: var(--border-color); }
-      [data-theme="dark"] .qiq-table td { border-bottom-color: var(--border-color); }
-      [data-theme="dark"] .qiq-table tbody tr:hover { background: #1f2937; }
+  [data-theme="dark"] .qiq-table, [data-theme="dark"] .compact-quote-table { background: #0b1220; color: #e5e7eb; }
+  [data-theme="dark"] .compact-quote-table th { background: #0f172a; color: #cbd5e1; border-bottom-color: #1f2937; }
+  [data-theme="dark"] .compact-quote-table td { border-bottom-color: #1f2937; }
+  [data-theme="dark"] .compact-quote-table tbody tr:hover { background: #111827; }
       [data-theme="dark"] .qiq-link { color: #93c5fd; }
     `;
 

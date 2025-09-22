@@ -26,19 +26,45 @@
     });
   }
 
+  function buildSrcdoc(innerHtml){
+    const bridge = `
+      <script>
+        (function(){
+          try{
+            // Bridge AddToQuote to parent
+            window.AddToQuote = function(arg){ try{ window.parent.AddToQuote?.(arg); }catch(e){} };
+            // Toast proxy
+            window.QiqToast = window.parent.QiqToast;
+            // Close modal from inner content
+            window.QiqModalClose = function(){ try{ window.parent.QiqModal?.close?.(); }catch(e){} };
+            // Copy to clipboard via parent
+            window.__parentCopy = function(txt){ try{ window.parent.navigator.clipboard.writeText(String(txt||''))
+              .then(()=>{ try{ window.parent.QiqToast?.success?.('تم النسخ',2000); }catch(e){} }); }catch(e){} };
+            // Attach comparison markdown to parent storage and toast
+            window.__parentAttachComparison = function(md){ try{ const att = { kind:'ai-comparison', createdAt: new Date().toISOString(), markdown: String(md||'') };
+              window.parent.localStorage.setItem('qiq_attached_comparison', JSON.stringify(att)); window.parent.QiqToast?.success?.('تم إرفاق المقارنة بصفحة العرض', 2000); }catch(e){} };
+          }catch(e){}
+        })();
+      <\/script>`;
+    return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8" />
+      <base target="_blank" />
+      <style>html,body{height:100%}body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;padding:16px;background:#fff;color:#111;line-height:1.5} .muted{color:#6b7280}</style>
+    </head><body>${String(innerHtml||'')}${bridge}</body></html>`;
+  }
+
   function open(url, opts={}){
     lastFocus = document.activeElement;
     if (titleEl) titleEl.textContent = opts.title || '';
+    // apply size variant (default large)
+    dialog.style.width = opts.size === 'sm' ? 'min(760px, 92vw)' : 'min(1100px, 96vw)';
+    dialog.style.height = opts.size === 'sm' ? 'min(70vh, 720px)' : 'min(88vh, 860px)';
     // Reset previous handlers/state
     frame.onload = null;
     frame.onerror = null;
-    if (opts.html){
+  if (opts.html){
       // Allow opening inline HTML inside the iframe using srcdoc
       // Wrap provided HTML in a minimal document to avoid blank rendering on some browsers
-      const content = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8" />
-        <base target="_blank" />
-        <style>html,body{height:100%}body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;padding:16px;background:#fff;color:#111;line-height:1.5}</style>
-      </head><body>${String(opts.html)}</body></html>`;
+      const content = buildSrcdoc(opts.html);
       frame.removeAttribute('src');
       frame.srcdoc = content;
     } else {
@@ -69,9 +95,11 @@
     centerDialog();
     setTimeout(()=> modal.classList.add('is-open'), 10);
     dialog.focus();
-    // Wire header buttons
+    // Wire header buttons and compact styling
     if (btnOpenTab){
       btnOpenTab.onclick = ()=> window.open(url || 'about:blank', '_blank', 'noopener');
+      btnOpenTab.style.borderRadius = '8px';
+      btnOpenTab.style.minWidth = '100px';
     }
     if (btnPrint){
       btnPrint.onclick = ()=> {
@@ -80,6 +108,8 @@
           frame.contentWindow?.print();
         } catch {}
       };
+      btnPrint.style.borderRadius = '8px';
+      btnPrint.style.minWidth = '80px';
     }
   }
 
@@ -103,5 +133,10 @@
   document.addEventListener('keydown', onEsc);
   window.addEventListener('resize', centerDialog);
 
-  window.QiqModal = { open, close };
+  function setHtml(innerHtml){
+    try{ frame.removeAttribute('src'); frame.srcdoc = buildSrcdoc(innerHtml); }catch{}
+  }
+  function getFrame(){ return frame; }
+
+  window.QiqModal = { open, close, setHtml, getFrame };
 })();

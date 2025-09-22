@@ -40,7 +40,8 @@
         <a href="#dashboard" class="tab-link active">Dashboard</a>
         <a href="#users" class="tab-link">المستخدمين</a>
         <a href="#quotations" class="tab-link">العروض</a>
-        <a href="#activity" class="tab-link">النشاط</a>
+  <a href="#activity" class="tab-link">النشاط</a>
+  <a href="#config" class="tab-link">الإعدادات الذكية</a>
         <div style="margin-inline-start: auto;">
           <span id="admin-user">Admin User</span>
           <button id="btn-logout" class="btn-admin">خروج</button>
@@ -176,6 +177,23 @@
       </table>
     </div>
   </main>
+
+  <!-- Config Tab -->
+  <div id="config" class="tab-content">
+    <h2>الإعدادات الذكية (تعليمات + Bundles)</h2>
+    <div class="qiq-card">
+      <div style="display:grid;gap:8px">
+        <label>تعليمات ديناميكية:</label>
+        <textarea id="cfg-instructions" rows="8" style="width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:8px"></textarea>
+        <label>Bundles (JSON Array):</label>
+        <textarea id="cfg-bundles" rows="6" placeholder='[{"name":"10 data points","description":"Includes cabling & termination"}]' style="width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:8px"></textarea>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn-admin" id="cfg-load">تحميل</button>
+          <button class="btn-admin" id="cfg-save">حفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Admin Login Modal -->
   <div id="admin-login-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999">

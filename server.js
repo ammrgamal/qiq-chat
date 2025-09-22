@@ -81,6 +81,9 @@ route('post', '/api/quote', 'quote.js');
 route('post', '/api/agent', 'agent.js');
 route('post', '/api/compare', 'compare.js');
 route('post', '/api/maintenance', 'maintenance.js');
+// Admin config endpoints
+route('get',  '/api/admin/config', 'admin/config.js');
+route('post', '/api/admin/config', 'admin/config.js');
 // Users/auth/dev endpoints
 route('post', '/api/users/register', 'users/register.js');
 route('post', '/api/users/login', 'users/login.js');

@@ -1,5 +1,17 @@
 // api/chat.js — clean ESM with FAST_MODE fallback
 import algoliasearch from "algoliasearch";
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const STORAGE_DIR = process.env.NODE_ENV === 'production' ? '/tmp/qiq-storage' : path.join(__dirname, '../.storage');
+const CONFIG_FILE = path.join(STORAGE_DIR, 'admin-config.json');
+
+async function readAdminConfig(){
+  try{ const txt = await fs.readFile(CONFIG_FILE,'utf8'); return JSON.parse(txt); }catch{ return { instructions:'', bundles:[] }; }
+}
 
 async function searchAlgolia({ query, hitsPerPage = 5 }) {
   const appId = process.env.ALGOLIA_APP_ID;
@@ -30,7 +42,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "messages required" });
     }
 
-    const FAST_MODE = /^(1|true|yes)$/i.test(String(process.env.FAST_MODE || process.env.AUTO_APPROVE || ""));
+  const FAST_MODE = /^(1|true|yes)$/i.test(String(process.env.FAST_MODE || process.env.AUTO_APPROVE || ""));
+  const adminCfg = await readAdminConfig();
     const openaiKey = process.env.OPENAI_API_KEY;
 
     // Fast path: drive a conversational intake (no auto-search unless user explicitly asks)
@@ -45,7 +58,7 @@ export default async function handler(req, res) {
         '4) تفضّل بدائل اقتصادية وممتازة؟',
         '',
         'EN: I will collect a few details to tailor a BOQ. What solution, how many users/devices, term, and do you want budget and premium options?'
-      ].join('\n');
+  ].join('\n') + (adminCfg.instructions? ('\n\n[إرشادات المدير]\n'+adminCfg.instructions) : '');
       let reply = base;
       if (/(kaspersky|edr|endpoint)/i.test(last)) reply = 'Kaspersky/EDR — كم جهاز ومدة الترخيص (1Y/2Y)? هل في سيرفرات/VMs تحتاج حماية؟\nEN: For Kaspersky/EDR, how many endpoints and for how long? Any servers/VMs?';
       else if (/(office|microsoft|o365|m365)/i.test(last)) reply = 'Microsoft 365 — كم مستخدم؟ تحتاج Business Standard ولا E3/E5؟ مساحة البريد/التخزين؟\nEN: M365 — users count? Plan (Business Standard vs E3/E5)? Mail/storage needs?';
@@ -66,11 +79,17 @@ export default async function handler(req, res) {
       "- إن كان سؤال المستخدم عن منتج/موديل/سعر/بدائل، استدعِ أداة البحث (searchProducts) بكلمة بحث مناسبة.",
       "- إن لم يكن طلبًا عن منتجات، اكمل محادثة جمع البيانات (اسم الشركة، الصناعة، عدد المستخدمين، الأولوية، الميزانية، الإيميل، الهاتف) خطوة بخطوة، ثم لخّص واطلب تأكيد الإرسال.",
       "- عند إرجاع نتائج، اذكر 3 إلى 5 عناصر فقط وروابطها إن توفرت، ثم اقترح إضافة العناصر للعرض (quotation).",
+      adminCfg.instructions ? ("\n[إرشادات المدير مضافة ديناميكيًا]\n"+adminCfg.instructions) : ''
     ].join("\n");
 
     const openaiURL = "https://api.openai.com/v1/chat/completions";
     const enableGpt5 = String(process.env.ENABLE_GPT5_ALL || "").toLowerCase() === "true";
     const chatModel = enableGpt5 ? (process.env.OPENAI_GPT5_MODEL || "gpt-5") : (process.env.OPENAI_MODEL || "gpt-4o-mini");
+
+    // Include bundles as tool instructions if provided
+    const bundlesNote = Array.isArray(adminCfg.bundles) && adminCfg.bundles.length
+      ? ("\n[Bundles]\n" + adminCfg.bundles.map(b=>`- ${b.name||'Bundle'}: ${b.description||''}`).join('\n'))
+      : '';
 
     const tools = [
       {
@@ -99,7 +118,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: chatModel,
         temperature: 0.4,
-        messages: [{ role: "system", content: systemPrompt }, ...messages],
+        messages: [{ role: "system", content: systemPrompt + bundlesNote }, ...messages],
         tools,
       }),
     });
@@ -126,7 +145,7 @@ export default async function handler(req, res) {
           model: chatModel,
           temperature: 0.4,
           messages: [
-            { role: "system", content: systemPrompt },
+            { role: "system", content: systemPrompt + bundlesNote },
             ...messages,
             {
               role: "tool",

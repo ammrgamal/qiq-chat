@@ -1,4 +1,5 @@
 import { quotationStorage, activityStorage } from '../storage/quotations.js';
+import { sendEmail } from '../_lib/email.js';
 
 export default async function handler(req, res) {
   // Auth for both GET and POST
@@ -78,6 +79,24 @@ export default async function handler(req, res) {
           }
         });
         
+        // Try to notify via email (admin + user) if configured
+        try{
+          const adminTo = process.env.QUOTE_NOTIFY_EMAIL || process.env.EMAIL_TO || ''; // destination for admin
+          const userTo  = quotationData.userEmail;
+          const items   = Array.isArray(quotationData?.payload?.items) ? quotationData.payload.items : [];
+          const lines   = items.slice(0,20).map((it,i)=> `${i+1}. ${it.description||it.name||'-'} ${it.pn?`(${it.pn})`:''} x${it.qty||1} @ ${it.unit||it.price||''}`).join('<br/>');
+          const html = `
+            <div style="font-family:Segoe UI,Arial">
+              <h3 style="margin:0 0 8px">New quotation saved: ${id}</h3>
+              <div>Date: ${quotationData.date} • Currency: ${quotationData.currency}</div>
+              <div>Client: ${quotationData.clientName || '-'}</div>
+              <hr style="border:0;border-top:1px solid #e5e7eb;margin:10px 0"/>
+              <div>${lines || 'No items provided'}</div>
+            </div>`;
+          if (adminTo) { try{ await sendEmail({ to: adminTo, subject: `New quotation ${id}`, html }); }catch{} }
+          if (userTo)  { try{ await sendEmail({ to: userTo, subject: `Your quotation ${id}`, html }); }catch{} }
+        }catch{}
+
         return res.status(200).json({ ok:true, id, record: savedQuotation });
       } else {
         return res.status(500).json({ error: 'Failed to save quotation' });

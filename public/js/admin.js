@@ -42,6 +42,10 @@
 
     // Search and filter inputs
     setupFilters();
+
+    // Config tab buttons
+    document.getElementById('cfg-load')?.addEventListener('click', loadConfig);
+    document.getElementById('cfg-save')?.addEventListener('click', saveConfig);
   }
 
   function setupFilters() {
@@ -162,6 +166,30 @@
     } catch (error) {
       console.error('Error loading dashboard:', error);
     }
+  }
+
+  async function loadConfig(){
+    if (!isAdminAuthenticated) return;
+    try{
+      const res = await fetch('/api/admin/config', { headers:{ 'Authorization': `Bearer ${adminToken}`, 'content-type':'application/json' }});
+      if (!res.ok) throw new Error('HTTP '+res.status);
+      const cfg = await res.json();
+      document.getElementById('cfg-instructions').value = cfg.instructions || '';
+      document.getElementById('cfg-bundles').value = JSON.stringify(cfg.bundles || [], null, 2);
+      try{ window.QiqToast?.success?.('تم التحميل', 1500); }catch{}
+    }catch(e){ console.warn(e); try{ window.QiqToast?.error?.('تعذر التحميل', 2000);}catch{} }
+  }
+
+  async function saveConfig(){
+    if (!isAdminAuthenticated) return;
+    try{
+      const instructions = document.getElementById('cfg-instructions').value || '';
+      let bundles = [];
+      try{ bundles = JSON.parse(document.getElementById('cfg-bundles').value || '[]'); }catch{ bundles = []; }
+      const res = await fetch('/api/admin/config', { method:'POST', headers:{ 'Authorization': `Bearer ${adminToken}`, 'content-type':'application/json' }, body: JSON.stringify({ instructions, bundles }) });
+      if (!res.ok) throw new Error('HTTP '+res.status);
+      try{ window.QiqToast?.success?.('تم الحفظ', 1500); }catch{}
+    }catch(e){ console.warn(e); try{ window.QiqToast?.error?.('تعذر الحفظ', 2000);}catch{} }
   }
 
   async function loadUsers() {

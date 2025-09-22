@@ -81,10 +81,11 @@
 				<a href="https://ai.quickitquote.com/" target="*_blank" rel="noopener">QuickITQuote</a>
 				<span class="muted" style="font-weight:500">الكتالوج</span>
 			</div>
-			<div class="view-toggle">
+						<div class="view-toggle">
 				<a class="btn ghost" href="/index.html" title="AI Agent">الوكيل الذكي</a>
 				<button id="viewList" class="active" title="عرض على شكل سطور">سطور</button>
 				<button id="viewGrid" title="عرض شبكي">شبكة</button>
+							<button id="viewTable" title="عرض كجدول">جدول</button>
 				<button id="themeToggle" title="الوضع الليلي" style="margin-inline-start:8px">🌙</button>
 				<button id="langToggleCatalog" title="اللغة">AR/EN</button>
 			</div>
@@ -166,8 +167,23 @@
 						</ul>
 					</div>
 				</aside>
-				<main>
-					<div class="results" id="results"></div>
+								<main>
+										<div class="results" id="results"></div>
+										<div class="table-container" id="resultsTableWrap" style="display:none;overflow:auto;border:1px solid var(--border);border-radius:12px;background:#fff">
+											<table id="resultsTable" style="width:100%;border-collapse:collapse">
+												<thead style="background:#f8fafc;position:sticky;top:0">
+													<tr>
+														<th style="text-align:right;padding:8px 10px;border-bottom:1px solid var(--border)">الصورة</th>
+														<th style="text-align:right;padding:8px 10px;border-bottom:1px solid var(--border)">الوصف</th>
+														<th style="text-align:right;padding:8px 10px;border-bottom:1px solid var(--border)">PN</th>
+														<th style="text-align:right;padding:8px 10px;border-bottom:1px solid var(--border)">الشركة</th>
+														<th style="text-align:right;padding:8px 10px;border-bottom:1px solid var(--border)">السعر</th>
+														<th style="text-align:center;padding:8px 10px;border-bottom:1px solid var(--border)">إجراءات</th>
+													</tr>
+												</thead>
+												<tbody id="resultsTbody"></tbody>
+											</table>
+										</div>
 					<div class="pagination" id="pagination"></div>
 				</main>
 			</div>

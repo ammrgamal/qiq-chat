@@ -15,6 +15,8 @@
   const priceMaxEl  = $('#priceMax');
   const applyPrice  = $('#applyPrice');
   const pagination  = $('#pagination');
+  const resultsTableWrap = document.getElementById('resultsTableWrap');
+  const resultsTbody = document.getElementById('resultsTbody');
 
   let lastQuery = null; // throttle 2s toast per new query
 
@@ -145,6 +147,34 @@
     `;
   }
 
+  // Table row renderer for table view
+  function hitToRow(h){
+    const name  = esc(h?.name || '(No name)');
+    const price = h?.price !== undefined && h?.price !== '' ? Number(h.price) : '';
+    const pn    = esc(h?.pn || h?.sku || h?.objectID || '');
+    const img   = esc(h?.image || 'https://via.placeholder.com/68?text=IMG');
+    const brand = esc(h?.brand || h?.manufacturer || '');
+    const link  = esc(h?.link || '');
+    return `
+      <tr>
+        <td style="padding:8px 10px;border-bottom:1px solid var(--border)"><img src="${img}" alt="${name}" style="width:44px;height:44px;border-radius:8px;object-fit:cover" onerror="this.src='https://via.placeholder.com/44?text=IMG'"/></td>
+        <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${link?`<a href="${link}" target="_blank" rel="noopener">${name}</a>`:name}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${pn}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${brand}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${price!==''?`USD ${price}`:'-'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:center">
+          <button class="btn" type="button"
+            data-name="${name}"
+            data-price="${price!==''?price:''}"
+            data-pn="${pn}"
+            data-image="${img}"
+            data-link="${link}"
+            data-manufacturer="${brand}"
+            onclick="AddToQuote(this)">Add</button>
+        </td>
+      </tr>`;
+  }
+
   function wireCardActions(){
     // favorites
     document.querySelectorAll('.fav-btn').forEach(btn=>{
@@ -196,13 +226,19 @@
         lastQuery = q;
       }
 
-  // Ensure list-lines default
-  resultsEl.classList.remove('grid');
-  resultsEl.classList.add('list-lines');
-  resultsEl.innerHTML = hits.map(hitToCard).join('');
-      wireCardActions();
-      // re-apply view mode to new cards
-  applyView(localStorage.getItem('qiq_view_mode') || 'list-lines');
+      const mode = localStorage.getItem('qiq_view_mode') || 'list-lines';
+      if (mode === 'table' && resultsTbody) {
+        resultsEl.innerHTML = '';
+        resultsTbody.innerHTML = hits.map(hitToRow).join('');
+      } else {
+        // Ensure list-lines default
+        resultsEl.classList.remove('grid');
+        resultsEl.classList.add('list-lines');
+        resultsEl.innerHTML = hits.map(hitToCard).join('');
+        wireCardActions();
+      }
+      // re-apply view mode to new cards/rows
+      applyView(mode);
       renderFacets(res?.facets || {}, getSelected());
       renderPagination(res?.page || 0, res?.nbPages || 1, (p)=>render(q, p));
     }catch(err){
@@ -227,6 +263,13 @@
 
   // Add to quote toast (delegate)
   resultsEl?.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button.btn');
+    if (btn && btn.dataset && btn.dataset.name) {
+      setTimeout(()=>{ try { window.QiqToast?.success?.('تمت الإضافة إلى عرض السعر', 2000); } catch {} }, 0);
+    }
+  });
+  // Delegate for table view as well
+  resultsTableWrap?.addEventListener('click', (e)=>{
     const btn = e.target.closest('button.btn');
     if (btn && btn.dataset && btn.dataset.name) {
       setTimeout(()=>{ try { window.QiqToast?.success?.('تمت الإضافة إلى عرض السعر', 2000); } catch {} }, 0);
@@ -270,42 +313,69 @@
   // View toggle
   const viewListBtn = document.getElementById('viewList');
   const viewGridBtn = document.getElementById('viewGrid');
+  const viewTableBtn = document.getElementById('viewTable');
   function applyView(mode){
     const grid = mode === 'grid';
-    const listLines = mode === 'list-lines' || (!grid && mode==='list-lines');
+    const table = mode === 'table';
+    const listLines = mode === 'list-lines' || (!grid && !table && mode==='list-lines');
+    // show/hide containers
+    if (resultsTableWrap) resultsTableWrap.style.display = table ? 'block' : 'none';
+    if (resultsEl) resultsEl.style.display = table ? 'none' : 'block';
+    // toggle classes on cards list
     resultsEl.classList.toggle('grid', grid);
     resultsEl.classList.toggle('list-lines', listLines);
     resultsEl.querySelectorAll('.card').forEach(c=>{
       c.classList.toggle('grid', grid);
     });
+    // button states
     if (grid){
       viewGridBtn?.classList.add('active');
       viewListBtn?.classList.remove('active');
+      viewTableBtn?.classList.remove('active');
+    } else if (table){
+      viewTableBtn?.classList.add('active');
+      viewListBtn?.classList.remove('active');
+      viewGridBtn?.classList.remove('active');
     } else {
       viewListBtn?.classList.add('active');
       viewGridBtn?.classList.remove('active');
+      viewTableBtn?.classList.remove('active');
     }
-    localStorage.setItem('qiq_view_mode', grid?'grid':'list-lines');
+    localStorage.setItem('qiq_view_mode', table ? 'table' : (grid ? 'grid' : 'list-lines'));
   }
-  viewListBtn?.addEventListener('click', ()=> applyView('list-lines'));
-  viewGridBtn?.addEventListener('click', ()=> applyView('grid'));
+  viewListBtn?.addEventListener('click', ()=> {
+    applyView('list-lines');
+    if (!resultsEl?.innerHTML?.trim()) render((input?.value||'').trim(), 0);
+  });
+  viewGridBtn?.addEventListener('click', ()=> {
+    applyView('grid');
+    if (!resultsEl?.innerHTML?.trim()) render((input?.value||'').trim(), 0);
+  });
+  viewTableBtn?.addEventListener('click', ()=> {
+    applyView('table');
+    // Always render to populate table body for current query
+    render((input?.value||'').trim(), 0);
+  });
 
   // Header buttons: open lists in modal
   document.getElementById('favorites-btn')?.addEventListener('click', ()=>{
     try{
       const favs = window.QiqFavorites?.getAll?.() || [];
       const html = favs.length ? (
-        '<div>' + favs.map(p=> `
-          <div style="display:flex;gap:10px;align-items:center;border-bottom:1px solid #e5e7eb;padding:8px 0">
+        '<div style="display:flex;flex-direction:column;gap:8px">' + favs.map(p=> `
+          <div style="display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;border-bottom:1px solid #e5e7eb;padding:8px 0">
             <img src="${p.image || 'https://via.placeholder.com/48'}" style="width:48px;height:48px;border-radius:8px;object-fit:cover"/>
-            <div style="flex:1">
-              <div style="font-weight:600">${p.name}</div>
+            <div style="min-width:0">
+              <div style="font-weight:600;white-space:nowrap;text-overflow:ellipsis;overflow:hidden">${p.name}</div>
               <div style="font-size:12px;color:#6b7280">${p.sku || ''}</div>
             </div>
-            <button class="btn" onclick="AddToQuote({name:'${p.name.replace(/'/g,"&#39;")}', price:'${p.price||''}', pn:'${p.sku||''}', image:'${p.image||''}', link:'', manufacturer:'${(p.manufacturer||'').replace(/'/g,"&#39;")}', source:'Favorites'})">Add</button>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span class="muted" style="font-size:12px">${p.price?('USD '+p.price):''}</span>
+              <button class="btn" onclick="AddToQuote({name:'${p.name.replace(/'/g,"&#39;")}', price:'${p.price||''}', pn:'${p.sku||''}', image:'${p.image||''}', link:'', manufacturer:'${(p.manufacturer||'').replace(/'/g,"&#39;")}', source:'Favorites'})">Add</button>
+            </div>
           </div>`).join('') + '</div>'
       ) : '<div style="color:#6b7280">لا توجد عناصر في المفضلة</div>';
-      window.QiqModal?.open('#', { title:'المفضلة', html });
+      window.QiqModal?.open('#', { title:'المفضلة', html, size:'sm' });
     }catch{}
   });
 
@@ -314,52 +384,42 @@
       if (window.__cmpBusy) return; window.__cmpBusy = true;
       const items = (window.QiqComparison?.getAll?.() || []).slice(0, 6);
       if (!items.length) {
-        return window.QiqModal?.open('#', { title:'المقارنة', html: '<div style="color:#6b7280">لا توجد عناصر للمقارنة</div>' });
+        return window.QiqModal?.open('#', { title:'المقارنة', html: '<div style="color:#6b7280">لا توجد عناصر للمقارنة</div>', size:'sm' });
       }
       // build minimal payload
       const products = items.map(p=>({ name: p.name, pn: p.sku, brand: p.manufacturer, price: Number(p.price||0) }));
-      const modalId = 'cmp-modal-'+Date.now();
-      window.QiqModal?.open('#', { title:'المقارنة (جارية...)', html: '<div id="'+modalId+'" style="padding:12px">جاري التحليل...</div>' });
+      window.QiqModal?.open('#', { title:'المقارنة (جارية...)', html: '<div style="padding:16px;color:#374151">جاري التحليل…</div>' });
       let resolved = false;
-      const safety = setTimeout(()=>{
-        if (resolved) return;
-        const fallback = `
-          <div style="padding:12px; display:flex; flex-direction:column; gap:12px">
-            <div style="color:#6b7280">التجميع يأخذ وقتًا أطول من المتوقع أو تعذّر الاتصال الآن.</div>
-            <div style="display:flex; gap:8px; justify-content:flex-end">
-              <button class="btn secondary" id="cmp-close">إغلاق</button>
-            </div>
-          </div>`;
-        const el = document.getElementById(modalId);
-        if (el && el.parentElement) { el.parentElement.innerHTML = fallback; document.getElementById('cmp-close')?.addEventListener('click', ()=> window.QiqModal?.close?.()); }
-      }, 10000);
+      const timeoutHtml = `
+        <div style="padding:16px; display:flex; flex-direction:column; gap:12px">
+          <div class="muted">التجميع يأخذ وقتًا أطول من المتوقع أو تعذّر الاتصال الآن.</div>
+          <div style="display:flex; gap:8px; justify-content:flex-end">
+            <button class="btn secondary" onclick="QiqModalClose()">إغلاق</button>
+            <button class="btn" onclick="location.hash='#retry'">إعادة المحاولة</button>
+          </div>
+        </div>`;
+      const safety = setTimeout(()=>{ if (!resolved) window.QiqModal?.setHtml?.(timeoutHtml); }, 10000);
       const r = await fetch('/api/compare', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ products }) });
       let md = 'No comparison available';
       try{ const data = await r.json(); md = data?.summaryMarkdown || md; }catch{}
       const html = `
-        <div style="padding:12px; display:flex; flex-direction:column; gap:12px">
+        <div style="padding:16px; display:flex; flex-direction:column; gap:12px">
           <div style="white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e5e7eb; max-height:60vh; overflow:auto">${md.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
           <div style="display:flex; gap:8px; justify-content:flex-end">
-            <button class="btn secondary" id="cmp-copy">نسخ</button>
-            <button class="btn" id="cmp-attach">إرفاق لعرض السعر</button>
+            <button class="btn secondary" onclick="__parentCopy(${JSON.stringify(md).replace(/</g,'&lt;').replace(/>/g,'&gt;')})">نسخ</button>
+            <button class="btn" onclick="__parentAttachComparison(${JSON.stringify(md).replace(/</g,'&lt;').replace(/>/g,'&gt;')})">إرفاق لعرض السعر</button>
           </div>
         </div>`;
-      const modalEl = document.getElementById(modalId);
-      if (modalEl) modalEl.parentElement.innerHTML = html;
+      window.QiqModal?.setHtml?.(html);
       resolved = true; clearTimeout(safety);
-      // wire buttons
-      setTimeout(()=>{
-        const copyBtn = document.getElementById('cmp-copy');
-        const attachBtn = document.getElementById('cmp-attach');
-        copyBtn?.addEventListener('click', ()=>{ navigator.clipboard.writeText(md).then(()=>window.QiqToast?.success?.('تم النسخ',2000)).catch(()=>{}); });
-        attachBtn?.addEventListener('click', ()=>{
-          try{
-            const att = { kind:'ai-comparison', createdAt: new Date().toISOString(), markdown: md };
-            localStorage.setItem('qiq_attached_comparison', JSON.stringify(att));
-            window.QiqToast?.success?.('تم إرفاق المقارنة بصفحة العرض', 2000);
-          }catch{}
-        });
-      }, 0);
+      // Handle Retry via location hash inside iframe timeout content
+      const frame = window.QiqModal?.getFrame?.();
+      const retryWatch = setInterval(()=>{
+        try{
+          const h = frame?.contentWindow?.location?.hash || '';
+          if (h === '#retry') { clearInterval(retryWatch); window.__cmpBusy = false; window.QiqModal?.open('#',{ title:'المقارنة (جارية...)', html: '<div style="padding:16px;color:#374151">جاري التحليل…</div>' }); document.getElementById('comparison-btn')?.click(); }
+        }catch{}
+      }, 500);
     }catch(err){ console.warn(err); window.QiqToast?.error?.('تعذر إنشاء المقارنة الآن', 2000); }
     finally { window.__cmpBusy = false; }
   });

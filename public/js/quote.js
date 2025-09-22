@@ -356,6 +356,48 @@
     showNotification("تم حفظ المسودة محليًا", "success");
   });
 
+  // Export PDF (pdfmake)
+  document.getElementById('btn-export-pdfmake')?.addEventListener('click', async (e)=>{
+    e.preventDefault();
+    if (!validateRequiredBeforePDF()) return;
+    await recalcTotals();
+    try{
+      const payload = buildPayload({ reason: 'export-pdf' });
+      const items = (payload.items||[]).map((it,i)=>[
+        { text: String(i+1), alignment:'right' },
+        { text: it.description||'-', alignment:'right' },
+        { text: it.pn||'', alignment:'right' },
+        { text: String(it.qty||1), alignment:'right' },
+        { text: String(it.unit||''), alignment:'right' },
+        { text: String(it.total||''), alignment:'right' },
+      ]);
+      const dd = {
+        info: { title: `Quotation ${payload.number}` },
+        pageMargins: [30, 40, 30, 40],
+        defaultStyle: { fontSize: 9 },
+        styles: {
+          header: { fontSize: 16, bold: true, margin: [0,0,0,6] },
+          muted: { color: '#6b7280' },
+          tableHeader: { bold: true, fillColor: '#f3f4f6' }
+        },
+        content: [
+          { text: 'QuickITQuote — Quotation', style: 'header' },
+          { text: `Number: ${payload.number}    Date: ${payload.date}`, style:'muted' },
+          { text: `Client: ${payload.client?.name || ''}    Currency: ${payload.currency}`, style:'muted', margin:[0,0,0,8] },
+          {
+            table:{ headerRows:1, widths:['auto','*','auto','auto','auto','auto'], body:[
+              [ {text:'#',style:'tableHeader'}, {text:'Description',style:'tableHeader'}, {text:'PN',style:'tableHeader'}, {text:'Qty',style:'tableHeader'}, {text:'Unit',style:'tableHeader'}, {text:'Line',style:'tableHeader'} ],
+              ...items
+            ]}, layout:'lightHorizontalLines'
+          },
+          { text: `Grand Total: ${payload.totals?.grand || ''}`, margin:[0,8,0,0] }
+        ]
+      };
+      window.pdfMake?.createPdf(dd).download(`${payload.number || 'quotation'}.pdf`);
+      try{ window.QiqToast?.success?.('تم إنشاء PDF', 2000);}catch{}
+    }catch(err){ console.warn(err); try{ window.QiqToast?.error?.('تعذر إنشاء PDF', 2000);}catch{} }
+  });
+
   const savePdfAccountBtn = $("btn-save-pdf-account");
   if (savePdfAccountBtn){
     savePdfAccountBtn.addEventListener("click", async (e)=>{

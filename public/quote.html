@@ -11,6 +11,9 @@
     window.XLSX_FALLBACK = true;
   </script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" onerror="console.warn('XLSX library failed to load, using fallback')"></script>
+  <!-- pdfmake for PDF generation -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.10/build/pdfmake.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.10/build/vfs_fonts.js"></script>
   <style>
     :root{ --border:#e5e7eb; --muted:#6b7280; --accent:#2563eb; --bg:#f8fafc; --ok:#059669; }
     body{ font-family:Inter,system-ui,Segoe UI,Arial; background:#fff; color:#111; margin:0 }
@@ -130,6 +133,7 @@
         <div class="right no-print flex">
           <button id="btn-load-staged" class="btn">تحميل من الشات</button>
           <button id="btn-print" class="btn">طباعة / PDF</button>
+          <button id="btn-export-pdfmake" class="btn btn-primary">تصدير PDF (Branded)</button>
           <button id="btn-save-pdf-account" class="btn btn-primary">حفظ في حسابي كـ PDF</button>
           <button id="btn-save" class="btn btn-ok">حفظ كمسودة</button>
         </div>
