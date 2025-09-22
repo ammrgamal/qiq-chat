@@ -60,12 +60,9 @@
     .search-input{ width:300px; padding:8px; border:1px solid var(--border); border-radius:8px; }
     .preview-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:9999; }
     .preview-overlay img{ max-width:90vw; max-height:90vh; border-radius:8px; }
-        .print-only{ display:none }
-        .screen-only{ display:block }
+  .screen-only{ display:block }
     /* Chat-like product row style */
     .compact-quote-table .product-desc{display:flex;flex-direction:column;gap:4px}
-          .screen-only{ display:none !important }
-          .print-only{ display:block }
     .compact-quote-table .product-details{display:flex;gap:6px;flex-wrap:wrap}
     .compact-quote-table .product-details .product-pn,
     .compact-quote-table .product-details .product-brand{background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:12px;color:#374151}
@@ -107,7 +104,7 @@
         </div>
         <hr style="border:0;border-top:1px solid #e5e7eb;margin:8px 0"/>
       </div>
-        <img id="qo-logo" class="logo" alt="Logo" />
+  <img id="qo-logo" class="logo no-print" alt="Logo" />
         <div>
           <div style="font-size:18px; font-weight:700">عرض سعر / Quotation</div>
           <div class="muted">رقم العرض: <span id="qo-number"></span> • التاريخ: <span id="qo-date"></span></div>
@@ -193,27 +190,24 @@
           <button id="btn-import-excel" class="btn btn-primary">استيراد Excel</button>
           <button id="btn-export-csv" class="btn">تصدير CSV</button>
           <button id="btn-export-excel" class="btn">تصدير XLSX</button>
-            <button id="btn-export-json" class="btn">تصدير JSON</button>
-            <button id="btn-import-json" class="btn">استيراد JSON</button>
-          <button id="btn-add-row" class="btn">إضافة بند يدوي</button>
         </div>
       </div>
       
       <!-- User Guidance Note -->
       <div class="quote-guidance no-print">
-        Add products, edit quantities, then request your quote.
+        أضِف المنتجات وعدّل الكميات، ثم أرسِل طلب عرض السعر.
       </div>
       
       <!-- Search/Filter -->
       <div class="search-container no-print">
-        <input id="search-input" class="search-input" placeholder="البحث في البنود (الوصف أو PN/SKU)..." />
+  <input id="search-input" class="search-input" placeholder="ابحث في البنود (الوصف أو PN)..." />
       </div>
       
       <!-- Empty State -->
       <div id="empty-state" class="empty-state" style="display:none">
         <div class="empty-state-content">
           <div class="empty-icon">📦</div>
-          <div class="empty-message">Add products to start your quote.</div>
+          <div class="empty-message">أضِف منتجات لبدء عرض السعر.</div>
         </div>
       </div>
       
@@ -221,7 +215,7 @@
         <table id="items-table" class="compact-quote-table sticky-header" aria-label="Quote items">
           <thead>
             <tr>
-              <th style="width:86%">Description / PN / SKU</th>
+              <th style="width:86%">Description / PN</th>
               <th style="width:3%">QTY</th>
               <th style="width:4%">Price</th>
               <th style="width:4%">Total</th>
@@ -254,8 +248,6 @@
       
       <!-- Hidden file input for Excel import -->
       <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none" />
-    <!-- Hidden file input for JSON import -->
-    <input type="file" id="json-file-input" accept="application/json,.json" style="display:none" />
     </div>
 
     <!-- Payments & Terms -->

@@ -242,12 +242,14 @@
     saveState(); 
   });
 
-  $("btn-add-row").addEventListener("click", (e) => {
-    e.preventDefault();
-    addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
-    recalcTotals();
-    showNotification("Product added! You can add more or proceed.", "success");
-  });
+  if ($("btn-add-row")) {
+    $("btn-add-row").addEventListener("click", (e) => {
+      e.preventDefault();
+      addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
+      recalcTotals();
+      showNotification("تمت إضافة بند جديد.", "success");
+    });
+  }
 
   $("btn-load-staged").addEventListener("click", (e) => {
     e.preventDefault();
@@ -422,7 +424,7 @@
       recalcTotals();
       saveState();
       updateEmptyState();
-      showNotification("Add products to start your quote.", "info");
+  showNotification("أضِف منتجات لبدء عرض السعر.", "info");
     }
   });
 
@@ -972,58 +974,7 @@
     return true;
   }
 
-  // ===== New Export/Import Functions =====
-  // JSON export/import for drafts
-  function exportToJSON(){
-    try{
-      const payload = buildPayload({ reason: 'export-json' });
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `quote-${quoteNoEl.textContent}-${todayISO()}.json`;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    }catch(e){ showNotification('تعذر تصدير JSON', 'error'); }
-  }
-
-  function importFromJSONFile(file){
-    const reader = new FileReader();
-    reader.onload = function(e){
-      try{
-        const obj = JSON.parse(e.target.result);
-        // Map imported object into state and UI
-        restoreImportedPayload(obj);
-        showNotification('تم استيراد JSON بنجاح', 'success');
-      }catch(err){ showNotification('ملف JSON غير صالح', 'error'); }
-    };
-    reader.readAsText(file);
-  }
-
-  function restoreImportedPayload(p){
-    // Build a synthetic state object compatible with restoreState
-    const s = {
-      number: p.number || quoteNoEl.textContent,
-      date: p.date || todayISO(),
-      currency: p.currency || getCurrency(),
-      client_name: p.client?.name || '',
-      client_contact: p.client?.contact || '',
-      client_email: p.client?.email || '',
-      client_phone: p.client?.phone || '',
-      project_name: p.project?.name || '',
-      project_owner: p.project?.owner || '',
-      main_contractor: p.project?.main_contractor || '',
-      site_location: p.project?.site || '',
-      execution_date: p.project?.execution_date || '',
-      need_assist: !!p.need_assist,
-      payment_terms: p.payment_terms || '',
-      terms: p.terms || '',
-      include_install: !!p.include_installation_5pct,
-      items: Array.isArray(p.items) ? p.items.map(i => ({
-        desc: i.description || '', pn: i.pn || '', unit: Number(i.unit_price||0), qty: Number(i.qty||1)
-      })) : []
-    };
-    restoreState(s);
-    saveState();
-  }
+  // JSON import/export removed per UX simplification
   
   function exportToExcel() {
     const data = getTableData();
@@ -1032,7 +983,7 @@
     if (typeof XLSX !== 'undefined') {
       // Use XLSX library
       const ws = XLSX.utils.aoa_to_sheet([
-        ['الوصف', 'PN/SKU', 'سعر الوحدة', 'الكمية', 'الإجمالي'],
+        ['الوصف', 'PN', 'سعر الوحدة', 'الكمية', 'الإجمالي'],
         ...data.map(row => [row.desc, row.pn, row.unit, row.qty, row.total])
       ]);
       
@@ -1044,7 +995,7 @@
     } else {
       // Fallback: Export as Excel-compatible CSV with .xls extension
       const csvContent = [
-        ['الوصف', 'PN/SKU', 'سعر الوحدة', 'الكمية', 'الإجمالي'].join('\t'),
+        ['الوصف', 'PN', 'سعر الوحدة', 'الكمية', 'الإجمالي'].join('\t'),
         ...data.map(row => [
           row.desc,
           row.pn,
@@ -1069,7 +1020,7 @@
   function exportToCSV() {
     const data = getTableData();
     const csvContent = [
-      ['الوصف', 'PN/SKU', 'سعر الوحدة', 'الكمية', 'الإجمالي'].join(','),
+      ['الوصف', 'PN', 'سعر الوحدة', 'الكمية', 'الإجمالي'].join(','),
       ...data.map(row => [
         `"${row.desc.replace(/"/g, '""')}"`,
         `"${row.pn.replace(/"/g, '""')}"`,
@@ -1127,15 +1078,7 @@
     }
   }
 
-  // Wire JSON buttons/inputs
-  (function(){
-    const exportBtn = $("btn-export-json");
-    const importBtn = $("btn-import-json");
-    const jsonInput = $("json-file-input");
-    if (exportBtn) exportBtn.addEventListener('click', (e)=>{ e.preventDefault(); exportToJSON(); });
-    if (importBtn) importBtn.addEventListener('click', (e)=>{ e.preventDefault(); jsonInput && jsonInput.click(); });
-    if (jsonInput) jsonInput.addEventListener('change', (e)=>{ const f = e.target.files && e.target.files[0]; if (f) importFromJSONFile(f); jsonInput.value=''; });
-  })();
+  // JSON buttons/inputs removed
 
   function processImportedData(jsonData) {
     // Skip header row and process data
