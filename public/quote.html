@@ -81,6 +81,9 @@
   .compact-quote-table tbody tr:nth-child(odd){background:#fafafa}
   .compact-quote-table tbody tr:hover{background:#f3f4f6}
 
+  /* Required field marker */
+  .req-star{ color:#dc2626; margin-inline-start:4px; font-weight:700 }
+
     /* Improved spacing + thumbnail in description */
     .compact-quote-table .desc-flex{display:flex;gap:10px;align-items:flex-start}
     .compact-quote-table .thumb{width:40px;height:40px;border-radius:8px;object-fit:cover;flex:0 0 auto;cursor:zoom-in;border:1px solid var(--border);background:#fff}
@@ -141,8 +144,8 @@
           <div class="muted">العملة: <span id="qo-currency-view"></span> • شروط السداد الافتراضية: 50% مقدمة + 50% بعد الاستلام</div>
         </div>
         <div class="right no-print flex">
-          <button id="btn-load-staged" class="btn">تحميل من الشات</button>
-          <button id="btn-print" class="btn">طباعة / PDF</button>
+          <button id="btn-load-staged" class="btn" style="display:none">تحميل من الشات</button>
+          <button id="btn-print" class="btn" style="display:none">طباعة / PDF</button>
           <button id="btn-export-pdfmake" class="btn btn-primary">تصدير PDF (Branded)</button>
           <button id="btn-save-pdf-account" class="btn btn-primary">حفظ في حسابي كـ PDF</button>
           <button id="btn-save" class="btn btn-ok">حفظ كمسودة</button>
@@ -159,25 +162,25 @@
           <input id="client-name" placeholder="مثال: ACME Systems" />
         </div>
         <div class="col-3">
-          <label>الشخص المسؤول</label>
-          <input id="client-contact" placeholder="الاسم" />
+          <label>الشخص المسؤول <span class="req-star">*</span></label>
+          <input id="client-contact" placeholder="الاسم" required />
         </div>
         <div class="col-3">
-          <label>البريد الإلكتروني (Business)</label>
-          <input id="client-email" type="email" placeholder="name@company.com" />
+          <label>البريد الإلكتروني (Business) <span class="req-star">*</span></label>
+          <input id="client-email" type="email" placeholder="name@company.com" required />
           <div class="email-hint">Please use your business email for faster response.</div>
         </div>
         <div class="col-3">
-          <label>الهاتف</label>
-          <input id="client-phone" placeholder="+20..." />
+          <label>الهاتف <span class="req-star">*</span></label>
+          <input id="client-phone" placeholder="+20..." required />
         </div>
         <div class="col-3">
-          <label>اسم المشروع</label>
-          <input id="project-name" placeholder="Project X" />
+          <label>اسم المشروع <span class="req-star">*</span></label>
+          <input id="project-name" placeholder="Project X" required />
         </div>
         <div class="col-3">
-          <label>صفة الطالب (Requester Role)</label>
-          <select id="requester-role">
+          <label>صفة الطالب (Requester Role) <span class="req-star">*</span></label>
+          <select id="requester-role" required>
             <option value="">— اختر —</option>
             <option>IT Manager</option>
             <option>Procurement</option>
@@ -214,12 +217,12 @@
           <input id="quote-date" type="date" />
         </div>
         <div class="col-3">
-          <label>موعد التنفيذ المتوقع</label>
-          <input id="execution-date" type="date" />
+          <label>موعد التنفيذ المتوقع <span class="req-star">*</span></label>
+          <input id="execution-date" type="date" required />
         </div>
         <div class="col-3">
-          <label>موعد الإغلاق المتوقع (Expected Closing)</label>
-          <input id="expected-close" type="date" />
+          <label>موعد الإغلاق المتوقع (Expected Closing) <span class="req-star">*</span></label>
+          <input id="expected-close" type="date" required />
         </div>
         <div class="col-6 checkbox">
           <input id="need-assist" type="checkbox" />
@@ -318,9 +321,9 @@
       <div class="flex">
         <div class="muted">سيتّم تضمين اللوجو والعناوين والبيانات أعلاه في عرض السعر المطبوع/المحفوظ PDF.</div>
         <div class="right flex">
-          <button id="btn-generate" class="btn btn-primary">تحديث الإجماليات</button>
-          <button id="btn-request-special" class="btn">طلب سعر مُخصّص بعد التحقق</button>
-          <button id="btn-request-maintenance" class="btn">طلب عقد صيانة</button>
+          <button id="btn-generate" class="btn btn-primary" style="display:none">تحديث الإجماليات</button>
+          <button id="btn-request-special" class="btn" style="display:none">طلب سعر مُخصّص بعد التحقق</button>
+          <button id="btn-request-maintenance" class="btn" style="display:none">طلب عقد صيانة</button>
           <button id="btn-submit" class="btn btn-ok">إرسال الطلب</button>
         </div>
       </div>

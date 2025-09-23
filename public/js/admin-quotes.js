@@ -200,9 +200,9 @@
       const q = await getQ(id);
       document.getElementById('qmod-title').textContent = `تفاصيل العرض: ${id}`;
       box.innerHTML = renderDetails(q);
-      // Initialize BOQ images toggle from session (default: ON)
+      // Initialize BOQ images toggle from localStorage (default: ON)
       try{
-        const pref = sessionStorage.getItem('qiq_admin_boq_images');
+        const pref = localStorage.getItem('qiq_admin_boq_images');
         const chk = box.querySelector('#qmod-boq-images');
         if (chk) chk.checked = (pref == null) ? true : (pref === '1');
       }catch{}
@@ -219,7 +219,7 @@
       });
       box.querySelector('#qmod-pdf').addEventListener('click', async ()=>{
         const includeImages = !!box.querySelector('#qmod-boq-images')?.checked;
-        try{ sessionStorage.setItem('qiq_admin_boq_images', includeImages ? '1' : '0'); }catch{}
+        try{ localStorage.setItem('qiq_admin_boq_images', includeImages ? '1' : '0'); }catch{}
         try{ await window.QiqAdminPdf?.buildAndDownload(q, { includeImages }); }
         catch{ buildAndDownloadSimplePdf(q); }
       });
