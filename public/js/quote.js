@@ -534,7 +534,7 @@
           }
           return {
             columns: [
-              logoDataUrl ? { image: logoDataUrl, width: 80 } : { text: 'QuickITQuote', style: 'small' },
+              logoDataUrl ? { image: logoDataUrl, width: 32 } : { text: 'QuickITQuote', style: 'small' },
               { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', style: 'small' }
             ],
             // Increased bottom margin to push content down so it doesn't sit under the logo
@@ -563,7 +563,7 @@
           { tocItem: true, text: 'Cover', style: 'h2' },
           {
             columns: [
-              logoDataUrl ? { image: logoDataUrl, width: 140, margin:[0,0,0,12] } : { text: 'QuickITQuote', style:'title' },
+              logoDataUrl ? { image: logoDataUrl, width: 56, margin:[0,0,0,12] } : { text: 'QuickITQuote', style:'title' },
               {
                 alignment: 'right',
                 stack: [
@@ -626,7 +626,18 @@
                   {text:'Unit',style:'tableHeader', alignment:'right'},
                   {text:'Line',style:'tableHeader', alignment:'right'}
                 ],
-                ...lines
+                ...lines,
+                // Totals rows
+                (function(){
+                  const subtotalN = (payload.items||[]).reduce((s,it)=> s + Number(it.unit_price||it.unit||0) * Number(it.qty||1), 0);
+                  const installN = payload.include_installation_5pct ? subtotalN * 0.05 : 0;
+                  const grandN = subtotalN + installN;
+                  return [
+                    [ {text:'', colSpan:4}, {}, {}, {}, { text:'Subtotal', style:'tableHeader', alignment:'right' }, { text: fmt(subtotalN, payload.currency), alignment:'right' } ],
+                    ...(payload.include_installation_5pct ? [ [ {text:'', colSpan:4}, {}, {}, {}, { text:'Professional Services', color:'#2563eb', alignment:'right' }, { text: fmt(installN, payload.currency), alignment:'right', color:'#2563eb' } ] ] : []),
+                    [ {text:'', colSpan:4}, {}, {}, {}, { text:'Grand Total', bold:true, fillColor:'#fef3c7', alignment:'right' }, { text: fmt(grandN, payload.currency), bold:true, fillColor:'#fef3c7', alignment:'right' } ]
+                  ];
+                })()
               ]
             },
             layout: {
@@ -1754,7 +1765,8 @@
           qty: Number(it.Qty || it.qty || 1),
           image: it.image || '',
           brand: it.manufacturer || it.brand || '',
-          spec_sheet: it.spec_sheet || it.specsheet || ''
+          spec_sheet: it.spec_sheet || it.specsheet || '',
+          availability: it.availability || ''
         });
         loadedCount++;
       });

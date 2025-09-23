@@ -169,7 +169,7 @@
         if (currentPage === 1) {
           return { text:'', margin:[36,20,36,0] };
         }
-        return { columns:[ logoDataUrl ? { image: logoDataUrl, width: 80 } : { text:'QuickITQuote', style:'small' }, { text:`Page ${currentPage} of ${pageCount}`, alignment:'right', style:'small' } ], margin:[36,20,36,12] };
+        return { columns:[ logoDataUrl ? { image: logoDataUrl, width: 32 } : { text:'QuickITQuote', style:'small' }, { text:`Page ${currentPage} of ${pageCount}`, alignment:'right', style:'small' } ], margin:[36,20,36,12] };
       },
       styles: {
         title: { fontSize: 22, bold: true, color:'#111827' },
@@ -189,7 +189,7 @@
         { tocItem: true, text: 'Cover', style: 'h2' },
         {
           columns: [
-            logoDataUrl ? { image: logoDataUrl, width: 140, margin:[0,0,0,12] } : { text: 'QuickITQuote', style:'title' },
+            logoDataUrl ? { image: logoDataUrl, width: 56, margin:[0,0,0,12] } : { text: 'QuickITQuote', style:'title' },
             { alignment: 'right', stack: [ { text: coverTitle, style:'title' }, { text: `Number: ${payload.number}`, style:'subtitle' }, { text: `Date: ${payload.date}` , style:'subtitle' }, { text: `Currency: ${payload.currency}`, style:'subtitle' } ] }
           ], margin:[0,0,0,12]
         },
@@ -207,7 +207,7 @@
         { text:'', pageBreak:'after' },
 
   { tocItem:true, text: englishOnly(headings.boq || 'Bill of Quantities'), style:'h2' },
-        { table:{ headerRows:1, widths:['auto','*','auto','auto','auto','auto'], body:[ [ {text:'#',style:'tableHeader', alignment:'right'}, {text:'Description',style:'tableHeader'}, {text:'PN',style:'tableHeader', alignment:'right'}, {text:'Qty',style:'tableHeader', alignment:'right'}, {text:'Unit',style:'tableHeader', alignment:'right'}, {text:'Line',style:'tableHeader', alignment:'right'} ], ...lines ] }, layout:{ fillColor:(rowIndex)=> rowIndex===0?'#f3f4f6':(rowIndex%2===0?'#fafafa':null), hLineColor:'#e5e7eb', vLineColor:'#e5e7eb' } },
+  { table:{ headerRows:1, widths:['auto','*','auto','auto','auto','auto'], body:[ [ {text:'#',style:'tableHeader', alignment:'right'}, {text:'Description',style:'tableHeader'}, {text:'PN',style:'tableHeader', alignment:'right'}, {text:'Qty',style:'tableHeader', alignment:'right'}, {text:'Unit',style:'tableHeader', alignment:'right'}, {text:'Line',style:'tableHeader', alignment:'right'} ], ...lines, ...(() => { const subtotalN = (payload.items||[]).reduce((s,it)=> s + Number(it.unit||it.unit_price||0) * Number(it.qty||1), 0); const installN = payload.include_installation_5pct ? subtotalN * 0.05 : 0; const grandN = subtotalN + installN; const rows = [ [ {text:'', colSpan:4}, {}, {}, {}, { text:'Subtotal', style:'tableHeader', alignment:'right' }, { text: fmt(subtotalN, payload.currency), alignment:'right' } ] ]; if (payload.include_installation_5pct) rows.push([ {text:'', colSpan:4}, {}, {}, {}, { text:'Professional Services', color:'#2563eb', alignment:'right' }, { text: fmt(installN, payload.currency), alignment:'right', color:'#2563eb' } ]); rows.push([ {text:'', colSpan:4}, {}, {}, {}, { text:'Grand Total', bold:true, fillColor:'#fef3c7', alignment:'right' }, { text: fmt(grandN, payload.currency), bold:true, fillColor:'#fef3c7', alignment:'right' } ]); return rows; })() ] }, layout:{ fillColor:(rowIndex)=> rowIndex===0?'#f3f4f6':(rowIndex%2===0?'#fafafa':null), hLineColor:'#e5e7eb', vLineColor:'#e5e7eb' } },
         { text:'', pageBreak:'after' },
 
   { tocItem:true, text: englishOnly(headings.productDetails || 'Product Details'), style:'h2' },

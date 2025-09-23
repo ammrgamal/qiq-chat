@@ -197,8 +197,8 @@
             </div>`;
         }
       }catch{}
-      try{ window.QiqToast?.success?.('تم التحميل', 1500); }catch{}
-    }catch(e){ console.warn(e); try{ window.QiqToast?.error?.('تعذر التحميل', 2000);}catch{} }
+      try{ window.QiqToast?.success?.('تم التحميل', 2200); }catch{}
+    }catch(e){ console.warn(e); try{ window.QiqToast?.error?.('تعذر التحميل', 3000);}catch{} }
   }
 
   async function saveConfig(){
@@ -217,8 +217,8 @@
       const ai = { autoApproveOverride: !!(overrideEl && overrideEl.checked), allowedDomains };
       const res = await fetch('/api/admin/config', { method:'POST', headers:{ 'Authorization': `Bearer ${adminToken}`, 'content-type':'application/json' }, body: JSON.stringify({ instructions, bundles, ai }) });
       if (!res.ok) throw new Error('HTTP '+res.status);
-      try{ window.QiqToast?.success?.('تم الحفظ', 1500); }catch{}
-    }catch(e){ console.warn(e); try{ window.QiqToast?.error?.('تعذر الحفظ', 2000);}catch{} }
+      try{ window.QiqToast?.success?.('تم الحفظ', 2200); }catch{}
+    }catch(e){ console.warn(e); try{ window.QiqToast?.error?.('تعذر الحفظ', 3000);}catch{} }
   }
 
   async function loadUsers() {
@@ -620,7 +620,7 @@
       });
       // Resend
       box.querySelector('#qmod-resend').addEventListener('click', async ()=>{
-        try{ await postAdmin(`/api/admin/quotation/${encodeURIComponent(id)}/resend-email`, {}); window.QiqToast?.success?.('تم الإرسال', 1500);}catch{ window.QiqToast?.error?.('تعذر الإرسال', 2000);} 
+        try{ await postAdmin(`/api/admin/quotation/${encodeURIComponent(id)}/resend-email`, {}); window.QiqToast?.success?.('تم الإرسال', 2200);}catch{ window.QiqToast?.error?.('تعذر الإرسال', 3000);} 
       });
       // PDF (advanced with fallback)
       box.querySelector('#qmod-pdf').addEventListener('click', async ()=>{

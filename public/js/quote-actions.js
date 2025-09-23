@@ -380,6 +380,7 @@
       image : el.getAttribute("data-image") || "",
       link  : el.getAttribute("data-link")  || "",
       spec_sheet: el.getAttribute("data-specsheet") || "",
+      availability: el.getAttribute("data-availability") || "",
       manufacturer: el.getAttribute("data-manufacturer") || "غير محدد",
       source: el.getAttribute("data-source")|| "Add"
     };
@@ -405,6 +406,7 @@
         image: payload.image || '',
         link: payload.link || '',
         spec_sheet: payload.spec_sheet || '',
+        availability: payload.availability || '',
         manufacturer: payload.manufacturer || '',
         source: payload.source || 'Chat',
         qty: 1,
