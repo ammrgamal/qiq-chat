@@ -115,9 +115,11 @@ async function main(){
   const api = await apiOverview(ROOT);
   const setup = await readIfExists(path.join(ROOT, 'docs', 'SETUP.md'));
   const copilot = await readIfExists(path.join(ROOT, 'docs', 'COPILOT_INSTRUCTIONS.md'));
+  const projInstr = await readIfExists(path.join(ROOT, 'project-instructions.md'));
   const setupSection = setup ? `## Setup notes\n\n${setup}\n\n` : '';
   const copilotSection = copilot ? `## Copilot instructions / tasks\n\n${copilot}\n\n` : '';
-  const md = title + stats + guidance + api + treeSection + setupSection + copilotSection;
+  const projectInstructionsSection = projInstr ? `## Project instructions\n\n${projInstr}\n\n` : '';
+  const md = title + stats + guidance + api + treeSection + setupSection + copilotSection + projectInstructionsSection;
   await fsp.writeFile(OUT, md, 'utf8');
   console.log(`Wrote: ${OUT}`);
 }
