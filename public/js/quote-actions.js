@@ -194,7 +194,8 @@
     const price   = data.price || "";
     const unitNum = numFromPrice(price);
     const img     = data.image || "https://via.placeholder.com/68?text=IMG";
-    const link    = data.link  || "";
+  const link    = data.link  || "";
+  const spec    = data.spec_sheet || "";
     const source  = data.source|| "Add";
     const pn      = data.pn    || "";
     const manufacturer = data.manufacturer || data.brand || data.vendor || "غير محدد";
@@ -217,6 +218,7 @@
           <div class="product-details">
             ${pn ? `<span class="product-pn">${pn}</span>` : ''}
             ${manufacturer ? `<span class="product-brand">${manufacturer}</span>` : ''}
+            ${spec ? `<a class="qiq-spec" href="${spec}" target="_blank" rel="noopener" title="Spec Sheet" aria-label="Spec Sheet" style="margin-left:6px;display:inline-flex;align-items:center;color:#2563eb"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" style=\"vertical-align:middle\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><polyline points=\"14 2 14 8 20 8\"/><text x=\"7\" y=\"17\" font-size=\"8\" fill=\"#dc2626\" font-family=\"sans-serif\">PDF</text></svg></a>` : ''}
           </div>
         </div>
       </td>
@@ -348,6 +350,7 @@
       const manufacturer = row.querySelector('.product-brand')?.textContent?.trim() || '';
       const image = row.querySelector('.qiq-img')?.src || '';
       const link = row.querySelector('.qiq-link')?.href || '';
+      const spec = row.querySelector('.qiq-spec')?.href || row.getAttribute('data-specsheet') || '';
       if (name) {
         products.push({
           name,
@@ -359,6 +362,7 @@
           manufacturer,
           image,
           link,
+          spec_sheet: spec,
           source: 'Staged'
         });
       }
@@ -375,6 +379,7 @@
       pn    : el.getAttribute("data-pn")    || "",
       image : el.getAttribute("data-image") || "",
       link  : el.getAttribute("data-link")  || "",
+      spec_sheet: el.getAttribute("data-specsheet") || "",
       manufacturer: el.getAttribute("data-manufacturer") || "غير محدد",
       source: el.getAttribute("data-source")|| "Add"
     };
@@ -399,6 +404,7 @@
         unit: payload.price || '',
         image: payload.image || '',
         link: payload.link || '',
+        spec_sheet: payload.spec_sheet || '',
         manufacturer: payload.manufacturer || '',
         source: payload.source || 'Chat',
         qty: 1,

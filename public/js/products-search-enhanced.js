@@ -117,7 +117,8 @@
     const pn    = esc(h?.pn || h?.sku || h?.objectID || '');
     const img   = esc(h?.image || 'https://via.placeholder.com/68?text=IMG');
     const brand = esc(h?.brand || h?.manufacturer || '');
-    const link  = esc(h?.link || '');
+  const link  = esc(h?.link || '');
+  const spec  = esc(h?.spec_sheet || h?.specsheet || h?.datasheet || '');
     const id    = pn || name;
     return `
       <div class="card">
@@ -130,6 +131,7 @@
             ${price!==''? `<span class="chip price">USD ${price}</span>`:''}
           </div>
           ${link ? `<a href="${link}" target="_blank" rel="noopener" class="muted">Product page</a>` : ''}
+          ${spec ? ` • <a href="${spec}" target="_blank" rel="noopener" class="muted">Spec Sheet</a>` : ''}
         </div>
         <div class="actions">
           <button class="btn" type="button"
@@ -138,6 +140,7 @@
             data-pn="${pn}"
             data-image="${img}"
             data-link="${link}"
+            data-specsheet="${spec}"
             data-manufacturer="${brand}"
             onclick="AddToQuote(this)">Add</button>
           <button class="btn secondary fav-btn" type="button" title="Favorite" data-id="${id}" data-name="${name}" data-price="${price}" data-image="${img}" data-pn="${pn}" data-brand="${brand}">❤</button>
@@ -155,10 +158,11 @@
     const img   = esc(h?.image || 'https://via.placeholder.com/68?text=IMG');
     const brand = esc(h?.brand || h?.manufacturer || '');
     const link  = esc(h?.link || '');
+    const spec  = esc(h?.spec_sheet || h?.specsheet || h?.datasheet || '');
     return `
       <tr>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)"><img src="${img}" alt="${name}" style="width:44px;height:44px;border-radius:8px;object-fit:cover" onerror="this.src='https://via.placeholder.com/44?text=IMG'"/></td>
-        <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${link?`<a href="${link}" target="_blank" rel="noopener">${name}</a>`:name}</td>
+  <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${link?`<a href="${link}" target="_blank" rel="noopener">${name}</a>`:name}${spec?` <a href="${spec}" target="_blank" rel="noopener" class="muted" title="Spec Sheet" aria-label="Spec Sheet" style="margin-left:6px;display:inline-flex;align-items:center;color:#2563eb"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" style=\"vertical-align:middle\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><polyline points=\"14 2 14 8 20 8\"/><text x=\"7\" y=\"17\" font-size=\"8\" fill=\"#dc2626\" font-family=\"sans-serif\">PDF</text></svg></a>`:''}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${pn}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${brand}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${price!==''?`USD ${price}`:'-'}</td>
@@ -169,6 +173,7 @@
             data-pn="${pn}"
             data-image="${img}"
             data-link="${link}"
+            data-specsheet="${spec}"
             data-manufacturer="${brand}"
             onclick="AddToQuote(this)">Add</button>
         </td>

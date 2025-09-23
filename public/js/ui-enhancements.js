@@ -10,11 +10,7 @@ class ThemeManager {
   loadTheme() {
     const saved = localStorage.getItem(this.storageKey);
     if (saved) return saved;
-    
-    // Auto-detect system preference
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
+    // Default to light mode regardless of system preference
     return 'light';
   }
 

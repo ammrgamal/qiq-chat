@@ -66,7 +66,7 @@
     const payload = payloadFromQuotation(q);
     // Server-assisted translation to English for fields that may contain Arabic
     try{
-      const tRes = await fetch('/api/pdf-ai', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ translate: {
+      const translateMap = {
         client_name: payload.client?.name||'',
         client_contact: payload.client?.contact||'',
         client_email: payload.client?.email||'',
@@ -75,7 +75,10 @@
         project_site: payload.project?.site||'',
         payment_terms: payload.paymentTerms || '',
         terms: payload.terms || ''
-      } }) });
+      };
+      const maxTrans = Math.min((payload.items||[]).length, 100);
+      for (let i=0;i<maxTrans;i++) translateMap[`item_desc_${i}`] = payload.items[i]?.description || '';
+      const tRes = await fetch('/api/pdf-ai', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ translate: translateMap }) });
       if (tRes.ok){
         const tj = await tRes.json().catch(()=>({}));
         const tr = tj?.translations || {};
@@ -88,6 +91,10 @@
           if (tr.project_site) payload.project.site = tr.project_site;
           if (tr.payment_terms) payload.paymentTerms = tr.payment_terms;
           if (tr.terms) payload.terms = tr.terms;
+          for (let i=0;i<maxTrans;i++){
+            const k = `item_desc_${i}`;
+            if (tr[k]) payload.items[i].description = tr[k];
+          }
         }
       }
     }catch{}
@@ -132,13 +139,18 @@
       const line = unit * qty;
       const maybeImg = includeImages ? (itemsWithDataImages[i]?._img || null) : null;
   const descText = englishOnly(it.description||it.name||'-');
+  const brandText = englishOnly(it.brand||'');
+  const availText = englishOnly(it.availability||'');
+  const subLine = [brandText, availText].filter(Boolean).join(' • ');
   const pnText = englishOnly(it.pn||it.sku||'');
+      const specUrl = (it.spec_sheet || it.specsheet || '').toString();
+      const specLink = specUrl ? { text:'Spec Sheet', link: specUrl, color:'#2563eb', style:'small' } : null;
       const descStack = maybeImg ? {
         columns:[
           { image: maybeImg, width: 24, height: 24, margin:[0,2,6,0] },
-          { text: descText || '-' }
+          { stack: [ { text: descText || '-' }, subLine ? { text: subLine, style:'small' } : null, specLink ].filter(Boolean) }
         ]
-      } : { text: descText || '-' };
+      } : { stack: [ { text: descText || '-' }, subLine ? { text: subLine, style:'small' } : null, specLink ].filter(Boolean) };
       return [
         { text: String(i+1), alignment:'right' },
         descStack,
@@ -157,7 +169,7 @@
         if (currentPage === 1) {
           return { text:'', margin:[36,20,36,0] };
         }
-        return { columns:[ logoDataUrl ? { image: logoDataUrl, width: 80 } : { text:'QuickITQuote', style:'small' }, { text:`Page ${currentPage} of ${pageCount}`, alignment:'right', style:'small' } ], margin:[36,20,36,0] };
+        return { columns:[ logoDataUrl ? { image: logoDataUrl, width: 80 } : { text:'QuickITQuote', style:'small' }, { text:`Page ${currentPage} of ${pageCount}`, alignment:'right', style:'small' } ], margin:[36,20,36,12] };
       },
       styles: {
         title: { fontSize: 22, bold: true, color:'#111827' },
@@ -198,19 +210,24 @@
         { table:{ headerRows:1, widths:['auto','*','auto','auto','auto','auto'], body:[ [ {text:'#',style:'tableHeader', alignment:'right'}, {text:'Description',style:'tableHeader'}, {text:'PN',style:'tableHeader', alignment:'right'}, {text:'Qty',style:'tableHeader', alignment:'right'}, {text:'Unit',style:'tableHeader', alignment:'right'}, {text:'Line',style:'tableHeader', alignment:'right'} ], ...lines ] }, layout:{ fillColor:(rowIndex)=> rowIndex===0?'#f3f4f6':(rowIndex%2===0?'#fafafa':null), hLineColor:'#e5e7eb', vLineColor:'#e5e7eb' } },
         { text:'', pageBreak:'after' },
 
-  (ai?.products && ai.products.length) ? { tocItem:true, text: englishOnly(headings.productDetails || 'Product Details'), style:'h2' } : null,
-        ...(ai?.products || []).flatMap(p => {
-          const t = englishOnly(p.title || '');
-          const bullets = Array.isArray(p.bullets) ? p.bullets.map(b=>englishOnly(b)).filter(Boolean) : [];
-          return ([ { text: t, style:'h3' }, bullets.length ? { ul: bullets } : { text:'' } ]);
-        }),
-        ai?.products?.length ? { text:'', pageBreak:'after' } : null,
+  { tocItem:true, text: englishOnly(headings.productDetails || 'Product Details'), style:'h2' },
+    { table:{ headerRows:1, widths: includeImages ? ['auto','*','auto','auto'] : ['*','auto','auto'], body:[ includeImages ? [ {text:'Image',style:'tableHeader'}, {text:'Description',style:'tableHeader'}, {text:'Brand',style:'tableHeader'}, {text:'Availability',style:'tableHeader'} ] : [ {text:'Description',style:'tableHeader'}, {text:'Brand',style:'tableHeader'}, {text:'Availability',style:'tableHeader'} ], ...((payload.items||[]).map((it, idx)=>{ const img = includeImages ? (itemsWithDataImages[idx]?._img || null) : null; const desc = englishOnly(it.description||it.name||'-'); const pn = englishOnly(it.pn||it.sku||''); const brand = englishOnly(it.brand||''); const avail = englishOnly(it.availability||''); const specUrl = (it.spec_sheet || it.specsheet || '').toString(); const specLink = specUrl ? { text:'Spec Sheet', link: specUrl, color:'#2563eb', style:'small' } : null; const descCell = { stack:[ { text: desc }, pn ? { text:`PN: ${pn}`, style:'small' } : null, specLink ].filter(Boolean) }; return includeImages ? [ img ? { image: img, width:28, height:28, margin:[0,2,6,0] } : { text:'' }, descCell, { text: brand||'-' }, { text: avail||'-' } ] : [ descCell, { text: brand||'-' }, { text: avail||'-' } ]; })) ] }, layout:{ hLineColor:'#e5e7eb', vLineColor:'#e5e7eb' } },
+        { text:'', margin:[0,6,0,0] },
+        ...(ai?.products || []).flatMap(p => { const t = englishOnly(p.title || ''); const bullets = Array.isArray(p.bullets) ? p.bullets.map(b=>englishOnly(b)).filter(Boolean) : []; return ([ { text: t, style:'h3' }, bullets.length ? { ul: bullets } : { text:'' } ]); }),
+        { text:'', pageBreak:'after' },
 
   { tocItem:true, text: englishOnly(headings.terms || 'Terms & Conditions'), style:'h2' },
         { text:'Payment Terms', style:'h3' },
         { text: englishOnly(payload.paymentTerms || ''), margin:[0,0,0,8] },
         { text:'Terms & Conditions', style:'h3' },
-        { text: englishOnly(payload.terms || '') }
+  { text: englishOnly(payload.terms || '') },
+
+  // Proposal pages with strong branding
+  { text:'', pageBreak:'after' },
+  { tocItem:true, text:'Proposal', style:'h2' },
+  { stack:[ { canvas:[{ type:'rect', x:0, y:0, w:515, h:40, color:'#2563eb' }] , margin:[0,0,0,12] }, { text: englishOnly(ai?.proposal?.title || 'QuickITQuote — Solution Proposal'), style:'h3' }, ...(Array.isArray(ai?.proposal?.sections) && ai.proposal.sections[0] ? [ { text: englishOnly(ai.proposal.sections[0].heading || 'Overview'), style:'h3' }, ...(ai.proposal.sections[0].paragraphs||[]).map(s=>({ text: englishOnly(s), margin:[0,0,0,6] })) ] : [ { text:'We deliver IT supply, installation, and support services tailored to your project with fast lead times and professional warranty.', margin:[0,0,0,6] } ]) ] },
+  { text:'', pageBreak:'after' },
+  { stack:[ { canvas:[{ type:'rect', x:0, y:0, w:515, h:40, color:'#2563eb' }] , margin:[0,0,0,12] }, ...(Array.isArray(ai?.proposal?.sections) && ai.proposal.sections[1] ? [ { text: englishOnly(ai.proposal.sections[1].heading || 'Services'), style:'h3' }, ...(ai.proposal.sections[1].paragraphs||[]).map(s=>({ text: englishOnly(s), margin:[0,0,0,6] })) ] : [ { text:'Services we can provide', style:'h3' }, { ul:[ 'Supply & Installation', 'Maintenance Contracts', 'Network & Security', 'Cloud & Productivity', 'Support & Training' ] } ]) ] }
       ].filter(Boolean)
     };
 

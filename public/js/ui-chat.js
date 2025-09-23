@@ -74,7 +74,8 @@
     const img   = hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || PLACEHOLDER_IMG;
   // Prefer our internal catalog page filtered by PN for details
   const linkTarget = (hit?.objectID || hit?.sku || hit?.pn || hit?.mpn) ? `/products-list.html?q=${encodeURIComponent(hit.objectID || hit.sku || hit.pn || hit.mpn)}` : (hit?.link || hit?.product_url || hit?.permalink || "");
-    const brand = hit?.brand || hit?.manufacturer || hit?.vendor || hit?.company || "غير محدد";
+  const brand = hit?.brand || hit?.manufacturer || hit?.vendor || hit?.company || "غير محدد";
+  const spec  = hit?.spec_sheet || hit?.specsheet || hit?.datasheet || "";
 
     const safeName = esc(String(name));
     const safePrice = esc(String(price));
@@ -102,6 +103,7 @@
               data-pn="${safePn}"
               data-image="${safeImg}"
               data-link="${safeLink}"
+              data-specsheet="${esc(spec)}"
               data-manufacturer="${safeBrand}"
               data-source="Search"
               onclick="AddToQuote(this)">
@@ -121,7 +123,8 @@
   const pn    = hit?.pn || hit?.mpn || hit?.sku || hit?.objectID || "";
     const img   = hit?.image || hit?.image_url || hit?.thumbnail || (Array.isArray(hit?.images) ? hit.images[0] : "") || PLACEHOLDER_IMG;
   const linkTarget2 = (hit?.objectID || hit?.sku || hit?.pn || hit?.mpn) ? `/products-list.html?q=${encodeURIComponent(hit.objectID || hit.sku || hit.pn || hit.mpn)}` : (hit?.link || hit?.product_url || hit?.permalink || "");
-    const brand = hit?.brand || hit?.manufacturer || hit?.vendor || hit?.company || "غير محدد";
+  const brand = hit?.brand || hit?.manufacturer || hit?.vendor || hit?.company || "غير محدد";
+  const spec  = hit?.spec_sheet || hit?.specsheet || hit?.datasheet || "";
 
     const safeName = esc(String(name));
     const safePrice = esc(String(price));
@@ -145,6 +148,7 @@
             data-pn="${safePn}"
             data-image="${safeImg}"
             data-link="${safeLink}"
+            data-specsheet="${esc(spec)}"
             data-manufacturer="${safeBrand}"
             data-source="Search"
             onclick="AddToQuote(this)">

@@ -411,7 +411,7 @@
       const payload = buildPayload({ reason: 'export-pdf' });
       // Auto-translate potentially Arabic fields to English via server (fallback to local filter inside API)
       try{
-        const tRes = await fetch('/api/pdf-ai', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ translate: {
+        const translateMap = {
           client_name: payload.client?.name||'',
           client_contact: payload.client?.contact||'',
           client_email: payload.client?.email||'',
@@ -420,7 +420,13 @@
           project_site: payload.project?.site||'',
           payment_terms: document.getElementById('payment-terms')?.value || '',
           terms: document.getElementById('terms')?.value || ''
-        } }) });
+        };
+        // Include item descriptions (cap 100)
+        const maxItems = Math.min((payload.items||[]).length, 100);
+        for (let i=0;i<maxItems;i++){
+          translateMap[`item_desc_${i}`] = payload.items[i]?.description || '';
+        }
+        const tRes = await fetch('/api/pdf-ai', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ translate: translateMap }) });
         if (tRes.ok){
           const tj = await tRes.json().catch(()=>({}));
           const tr = tj?.translations || {};
@@ -433,6 +439,12 @@
             if (tr.project_site) payload.project.site = tr.project_site;
             if (tr.payment_terms) document.getElementById('payment-terms').value = tr.payment_terms;
             if (tr.terms) document.getElementById('terms').value = tr.terms;
+            // Map back item descriptions
+            const max = Math.min((payload.items||[]).length, 100);
+            for (let i=0;i<max;i++){
+              const k = `item_desc_${i}`;
+              if (tr[k]) payload.items[i].description = tr[k];
+            }
           }
         }
       }catch{}
@@ -460,13 +472,18 @@
         const line = unit * qty;
         const maybeImg = includeImages ? (itemsWithDataImages[i]?._img || null) : null;
         const descText = englishOnly(it.description||'-');
+        const brandText = englishOnly(it.brand||'');
+        const availText = englishOnly(it.availability||'');
+        const subLine = [brandText, availText].filter(Boolean).join(' • ');
         const pnText = englishOnly(it.pn||'');
+        const specUrl = (it.spec_sheet || it.specsheet || '').toString();
+        const specLink = specUrl ? { text:'Spec Sheet', link: specUrl, color:'#2563eb', style:'small' } : null;
         const descStack = maybeImg ? {
           columns:[
             { image: maybeImg, width: 24, height: 24, margin:[0,2,6,0] },
-            { text: descText || '-' }
+            { stack: [ { text: descText || '-' }, subLine ? { text: subLine, style:'small' } : null, specLink ].filter(Boolean) }
           ]
-        } : { text: descText || '-' };
+        } : { stack: [ { text: descText || '-' }, subLine ? { text: subLine, style:'small' } : null, specLink ].filter(Boolean) };
         return [
           { text: String(i+1), alignment:'right' },
           descStack,
@@ -520,7 +537,8 @@
               logoDataUrl ? { image: logoDataUrl, width: 80 } : { text: 'QuickITQuote', style: 'small' },
               { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', style: 'small' }
             ],
-            margin: [36, 20, 36, 0]
+            // Increased bottom margin to push content down so it doesn't sit under the logo
+            margin: [36, 20, 36, 12]
           };
         },
         styles: {
@@ -621,21 +639,68 @@
           },
           { text:'', pageBreak:'after' },
 
-          // Product details (bulleted), generated via AI (optional)
-          (ai?.products && ai.products.length) ? { tocItem:true, text: englishOnly(headings.productDetails || 'Product Details'), style:'h2' } : null,
+          // Product details (table with images, brand, availability)
+          { tocItem:true, text: englishOnly(headings.productDetails || 'Product Details'), style:'h2' },
+          {
+            table:{
+              headerRows:1,
+              widths: includeImages ? ['auto','*','auto','auto'] : ['*','auto','auto'],
+              body:[
+                includeImages ? [ {text:'Image',style:'tableHeader'}, {text:'Description',style:'tableHeader'}, {text:'Brand',style:'tableHeader'}, {text:'Availability',style:'tableHeader'} ]
+                              : [ {text:'Description',style:'tableHeader'}, {text:'Brand',style:'tableHeader'}, {text:'Availability',style:'tableHeader'} ],
+                ...((payload.items||[]).map((it, idx)=>{
+                  const img = includeImages ? (itemsWithDataImages[idx]?._img || null) : null;
+                  const desc = englishOnly(it.description||'-');
+                  const pn   = englishOnly(it.pn||'');
+                  const brand= englishOnly(it.brand||'');
+                  const avail= englishOnly(it.availability||'');
+                  const specUrl = (it.spec_sheet || it.specsheet || '').toString();
+                  const specLink = specUrl ? { text:'Spec Sheet', link: specUrl, color:'#2563eb', style:'small' } : null;
+                  const descCell = { stack:[ { text: desc }, pn ? { text:`PN: ${pn}`, style:'small' } : null, specLink ].filter(Boolean) };
+                  return includeImages
+                    ? [ img ? { image: img, width:28, height:28, margin:[0,2,6,0] } : { text:'' }, descCell, { text: brand||'-' }, { text: avail||'-' } ]
+                    : [ descCell, { text: brand||'-' }, { text: avail||'-' } ];
+                }))
+              ]
+            },
+            layout: { hLineColor:'#e5e7eb', vLineColor:'#e5e7eb' }
+          },
+          { text:'', margin:[0,6,0,0] },
           ...(ai?.products || []).flatMap(p => {
             const t = englishOnly(p.title || '');
             const bullets = Array.isArray(p.bullets) ? p.bullets.map(b=>englishOnly(b)).filter(Boolean) : [];
             return ([ { text: t, style:'h3' }, bullets.length ? { ul: bullets } : { text:'', margin:[0,0,0,0] } ]);
           }),
-          ai?.products?.length ? { text:'', pageBreak:'after' } : null,
+          { text:'', pageBreak:'after' },
 
           // Terms
           { tocItem:true, text: englishOnly(headings.terms || 'Terms & Conditions'), style:'h2' },
           { text:'Payment Terms', style:'h3' },
           { text: englishOnly($("payment-terms").value || ''), margin:[0,0,0,8] },
           { text:'Terms & Conditions', style:'h3' },
-          { text: englishOnly($("terms").value || '') }
+          { text: englishOnly($("terms").value || '') },
+
+          // High-branding proposal pages at the end (AI-assisted)
+          { text:'', pageBreak:'after' },
+          { tocItem:true, text:'Proposal', style:'h2' },
+          { stack:[
+              { canvas:[{ type:'rect', x:0, y:0, w:515, h:40, color:'#2563eb' }] , margin:[0,0,0,12] },
+              { text: englishOnly(ai?.proposal?.title || 'QuickITQuote — Solution Proposal'), style:'h3' },
+              ...(Array.isArray(ai?.proposal?.sections) && ai.proposal.sections[0] ?
+                [ { text: englishOnly(ai.proposal.sections[0].heading || 'Overview'), style:'h3' },
+                  ...(ai.proposal.sections[0].paragraphs||[]).map(s=>({ text: englishOnly(s), margin:[0,0,0,6] })) ]
+                : [ { text:'We deliver IT supply, installation, and support services tailored to your project with fast lead times and professional warranty.', margin:[0,0,0,6] } ])
+            ]
+          },
+          { text:'', pageBreak:'after' },
+          { stack:[
+              { canvas:[{ type:'rect', x:0, y:0, w:515, h:40, color:'#2563eb' }] , margin:[0,0,0,12] },
+              ...(Array.isArray(ai?.proposal?.sections) && ai.proposal.sections[1] ?
+                [ { text: englishOnly(ai.proposal.sections[1].heading || 'Services'), style:'h3' },
+                  ...(ai.proposal.sections[1].paragraphs||[]).map(s=>({ text: englishOnly(s), margin:[0,0,0,6] })) ]
+                : [ { text:'Services we can provide', style:'h3' }, { ul:[ 'Supply & Installation', 'Maintenance Contracts', 'Network & Security', 'Cloud & Productivity', 'Support & Training' ] } ])
+            ]
+          }
         ].filter(Boolean)
       };
 
@@ -856,7 +921,7 @@
   });
 
   // ===== Enhanced Functions =====
-  function addRowFromData({ desc, pn, unit, qty, manufacturer, brand, image }) {
+  function addRowFromData({ desc, pn, unit, qty, manufacturer, brand, image, spec_sheet }) {
     const tr = document.createElement("tr");
     const id = `row-${uid()}`;
     tr.id = id;
@@ -866,6 +931,7 @@
     const productName = desc || "";
   const productBrand = manufacturer || brand || "";
   const productImg = image || '';
+  const productSpec = spec_sheet || '';
     const productPN = pn || "";
     
     let descriptionHTML = `<div class="product-desc">`;
@@ -879,6 +945,15 @@
         descriptionHTML += `<span class="product-brand">${esc(productBrand)}</span>`;
       } else if (productPN) {
         descriptionHTML += `<span class="product-pn">PN: ${esc(productPN)}</span>`;
+      }
+      if (productSpec) {
+        descriptionHTML += ` <a class="qiq-spec" href="${esc(productSpec)}" target="_blank" rel="noopener" title="Spec Sheet" aria-label="Spec Sheet" style="margin-left:6px;display:inline-flex;align-items:center;color:#2563eb">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <text x="7" y="17" font-size="8" fill="#dc2626" font-family="sans-serif">PDF</text>
+          </svg>
+        </a>`;
       }
       descriptionHTML += `</div>`;
     }
@@ -894,6 +969,7 @@
         <input class="in-pn" type="hidden" value="${esc(pn)}" />
         <input class="in-brand" type="hidden" value="${esc(productBrand)}" />
         <input class="in-image" type="hidden" value="${esc(productImg)}" />
+        <input class="in-spec" type="hidden" value="${esc(productSpec)}" />
       </td>
       <td class="qty-col">
         <input class="in-qty qty-input" type="number" min="1" step="1" value="${Number(qty)||1}">
@@ -992,7 +1068,8 @@
     const desc = tr.querySelector(".in-desc").value;
     const pn = tr.querySelector(".in-pn").value;
     const brand = tr.querySelector(".in-brand").value;
-    const img = tr.querySelector(".in-image")?.value || '';
+  const img = tr.querySelector(".in-image")?.value || '';
+  const spec = tr.querySelector(".in-spec")?.value || '';
     
     let descriptionHTML = `<div class="product-desc">`;
     descriptionHTML += `<span class="product-name">${esc(desc)}</span>`;
@@ -1006,6 +1083,15 @@
       } else if (pn) {
         descriptionHTML += `<span class="product-pn">PN: ${esc(pn)}</span>`;
       }
+      if (spec) {
+        descriptionHTML += ` <a class="qiq-spec" href="${esc(spec)}" target="_blank" rel="noopener" title="Spec Sheet" aria-label="Spec Sheet" style="margin-left:6px;display:inline-flex;align-items:center;color:#2563eb">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <text x="7" y="17" font-size="8" fill="#dc2626" font-family="sans-serif">PDF</text>
+          </svg>
+        </a>`;
+      }
       descriptionHTML += `</div>`;
     }
     descriptionHTML += `</div>`;
@@ -1015,6 +1101,7 @@
       <input class="in-desc" type="hidden" value="${esc(desc)}" />
       <input class="in-pn" type="hidden" value="${esc(pn)}" />
       <input class="in-brand" type="hidden" value="${esc(brand)}" />
+      <input class="in-spec" type="hidden" value="${esc(spec)}" />
     `;
     
     descCell.innerHTML = `
@@ -1118,7 +1205,8 @@
         unit_price: num(tr.querySelector(".in-unit")?.value),
         qty: Math.max(1, parseInt(tr.querySelector(".in-qty")?.value || "1", 10)),
         image: tr.querySelector(".in-image")?.value || "",
-        brand: tr.querySelector(".in-brand")?.value || ""
+        brand: tr.querySelector(".in-brand")?.value || "",
+        spec_sheet: tr.querySelector(".in-spec")?.value || ""
       });
     });
     const payload = {
@@ -1163,7 +1251,8 @@
         unit: num(tr.querySelector(".in-unit")?.value),
         qty: Math.max(1, parseInt(tr.querySelector(".in-qty")?.value || "1", 10)),
         image: tr.querySelector(".in-image")?.value || "",
-        brand: tr.querySelector(".in-brand")?.value || ""
+        brand: tr.querySelector(".in-brand")?.value || "",
+        spec_sheet: tr.querySelector(".in-spec")?.value || ""
       });
     });
     
@@ -1662,7 +1751,10 @@
           desc: it.Name || it.name || "—",
           pn: it.PN_SKU || it.pn || it.sku || "",
           unit: num(it.UnitPrice || it.unitPrice || it.price || 0),
-          qty: Number(it.Qty || it.qty || 1)
+          qty: Number(it.Qty || it.qty || 1),
+          image: it.image || '',
+          brand: it.manufacturer || it.brand || '',
+          spec_sheet: it.spec_sheet || it.specsheet || ''
         });
         loadedCount++;
       });
