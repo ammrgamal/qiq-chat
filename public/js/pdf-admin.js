@@ -23,6 +23,21 @@
     } catch { return `${n.toFixed(2)} ${cur||''}`.trim(); }
   };
 
+  // --- PDF text sanitization helpers (match quote.js behavior) ---
+  const PLACEHOLDER_PAT = /^(?:\s*[-–—]?\s*|\s*(?:N\/?A|Unknown|غير\s*معروف)\s*)$/i;
+  const STRIP_PAT = /\b(?:N\/?A|Unknown|غير\s*معروف)\b/ig;
+  const collapseSpaces = (s) => s.replace(/[\t \u00A0\u200F\u200E]+/g, ' ').replace(/\s*\n\s*/g, '\n').trim();
+  const hasArabic = (s) => /[\u0600-\u06FF]/.test(s);
+  const hasLatinOrDigits = (s) => /[A-Za-z0-9]/.test(s);
+  const wrapLatinWithLRM = (s) => s.replace(/([A-Za-z0-9][A-Za-z0-9\-_.\/+]*)/g, '\u200E$1\u200E');
+  function sanitizeForPdf(input, opts){
+    let t = String(input ?? '').replace(STRIP_PAT, '').trim();
+    if (!t || PLACEHOLDER_PAT.test(t)) return '';
+    t = collapseSpaces(t);
+    if (opts?.rtl && hasArabic(t) && hasLatinOrDigits(t)) t = wrapLatinWithLRM(t);
+    return t;
+  }
+
   function payloadFromQuotation(q){
     const p = q?.payload || {};
     const items = Array.isArray(p.items) ? p.items : (Array.isArray(q.items) ? q.items : []);
@@ -63,13 +78,15 @@
       const j = await r.json(); ai = j?.data || null; if (j?.provider) console.info('PDF AI provider:', j.provider, j?.note?`(${j.note})`:'');
     }catch{}
     const headings = ai?.headings || { letter:'Cover Letter', boq:'Bill of Quantities', terms:'Terms & Conditions', productDetails:'Product Details' };
-    const coverTitle = ai?.coverTitle || 'عرض سعر | Quotation';
-    const coverSubtitle = ai?.coverSubtitle || '';
-    const letterBlocks = ai?.letter ? [
-      { text: String(ai.letter.ar||'').trim(), rtl: true, alignment: 'right', margin:[0,0,0,8], font: (window.pdfMake?.fonts && window.pdfMake.fonts.Arabic) ? 'Arabic' : undefined },
-      { text: String(ai.letter.en||'').trim() }
-    ] : [
-      { text: `Dear ${payload.client?.contact || 'Sir/Madam'},\n\nThank you for the opportunity to submit our quotation for ${payload.project?.name || 'your project'}.` }
+    const coverTitle = sanitizeForPdf(ai?.coverTitle || 'عرض سعر | Quotation', { rtl: hasArabic(String(ai?.coverTitle||'')) });
+    const coverSubtitle = sanitizeForPdf(ai?.coverSubtitle || '', { rtl: hasArabic(String(ai?.coverSubtitle||'')) });
+    const letterAr = sanitizeForPdf(ai?.letter?.ar || '', { rtl: true });
+    const letterEn = sanitizeForPdf(ai?.letter?.en || '');
+    const letterBlocks = (letterAr || letterEn) ? [
+      letterAr ? { text: letterAr, rtl: true, alignment: 'right', margin:[0,0,0,8], font: (window.pdfMake?.fonts && window.pdfMake.fonts.Arabic) ? 'Arabic' : undefined } : null,
+      letterEn ? { text: letterEn } : null
+    ].filter(Boolean) : [
+      { text: `Dear ${sanitizeForPdf(payload.client?.contact || 'Sir/Madam')},\n\nThank you for the opportunity to submit our quotation for ${sanitizeForPdf(payload.project?.name || 'your project')}.` }
     ];
 
     // Optionally prefetch images for BOQ thumbnails (cap to 100)
@@ -89,16 +106,18 @@
       const qty = Number(it.qty||1);
       const line = unit * qty;
       const maybeImg = includeImages ? (itemsWithDataImages[i]?._img || null) : null;
+      const descText = sanitizeForPdf(it.description||it.name||'-');
+      const pnText = sanitizeForPdf(it.pn||it.sku||'');
       const descStack = maybeImg ? {
         columns:[
           { image: maybeImg, width: 24, height: 24, margin:[0,2,6,0] },
-          { text: it.description||it.name||'-' }
+          { text: descText || '-' }
         ]
-      } : { text: it.description||it.name||'-' };
+      } : { text: descText || '-' };
       return [
         { text: String(i+1), alignment:'right' },
         descStack,
-        { text: it.pn||it.sku||'', alignment:'right' },
+        { text: pnText, alignment:'right' },
         { text: String(qty), alignment:'right' },
         { text: fmt(unit, payload.currency), alignment:'right' },
         { text: fmt(line, payload.currency), alignment:'right' },
@@ -108,7 +127,7 @@
     const dd = {
       info: { title: `Quotation ${payload.number}` },
       pageMargins: [36, 48, 36, 48],
-      defaultStyle: { fontSize: 10, lineHeight: 1.2 },
+      defaultStyle: { fontSize: 10, lineHeight: 1.2, font: (window.pdfMake?.fonts && window.pdfMake.fonts.Roboto) ? 'Roboto' : undefined },
       styles: {
         title: { fontSize: 20, bold: true },
         subtitle: { fontSize: 12, color: '#6b7280' },
@@ -138,7 +157,7 @@
         { toc: { title: { text:'Table of Contents', style:'tocTitle' } } },
         { text:'', pageBreak:'after' },
 
-        { tocItem:true, text: headings.letter || 'Cover Letter', style:'h2' },
+    { tocItem:true, text: sanitizeForPdf(headings.letter || 'Cover Letter'), style:'h2' },
   { stack: letterBlocks, margin:[0,0,0,12] },
         { text:'Summary', style:'h3' },
         { ul:[ `Subtotal: ${fmt(totals.subtotal, payload.currency)}`, (payload.include_installation_5pct ? `Installation/Services: ${fmt(totals.install, payload.currency)}` : null), `Grand Total: ${fmt(totals.grand, payload.currency)}` ].filter(Boolean) },
@@ -148,15 +167,19 @@
         { table:{ headerRows:1, widths:['auto','*','auto','auto','auto','auto'], body:[ [ {text:'#',style:'tableHeader', alignment:'right'}, {text:'Description',style:'tableHeader'}, {text:'PN',style:'tableHeader', alignment:'right'}, {text:'Qty',style:'tableHeader', alignment:'right'}, {text:'Unit',style:'tableHeader', alignment:'right'}, {text:'Line',style:'tableHeader', alignment:'right'} ], ...lines ] }, layout:{ fillColor:(rowIndex)=> rowIndex===0?'#f3f4f6':(rowIndex%2===0?'#fafafa':null), hLineColor:'#e5e7eb', vLineColor:'#e5e7eb' } },
         { text:'', pageBreak:'after' },
 
-        (ai?.products && ai.products.length) ? { tocItem:true, text: headings.productDetails || 'Product Details', style:'h2' } : null,
-        ...(ai?.products || []).flatMap(p => ([ { text: p.title || '', style:'h3' }, p.bullets && p.bullets.length ? { ul: p.bullets } : { text:'' } ])),
+        (ai?.products && ai.products.length) ? { tocItem:true, text: sanitizeForPdf(headings.productDetails || 'Product Details'), style:'h2' } : null,
+        ...(ai?.products || []).flatMap(p => {
+          const t = sanitizeForPdf(p.title || '');
+          const bullets = Array.isArray(p.bullets) ? p.bullets.map(b=>sanitizeForPdf(b, { rtl: hasArabic(String(b||'')) })).filter(Boolean) : [];
+          return ([ { text: t, style:'h3' }, bullets.length ? { ul: bullets } : { text:'' } ]);
+        }),
         ai?.products?.length ? { text:'', pageBreak:'after' } : null,
 
         { tocItem:true, text: headings.terms || 'Terms & Conditions', style:'h2' },
         { text:'Payment Terms', style:'h3' },
-        { text: payload.paymentTerms || '', margin:[0,0,0,8] },
+        { text: sanitizeForPdf(payload.paymentTerms || ''), margin:[0,0,0,8] },
         { text:'Terms & Conditions', style:'h3' },
-        { text: payload.terms || '' }
+        { text: sanitizeForPdf(payload.terms || '') }
       ].filter(Boolean)
     };
 

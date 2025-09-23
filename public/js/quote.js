@@ -21,6 +21,26 @@
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const uid = () => Math.random().toString(36).slice(2, 8).toUpperCase();
 
+  // Text sanitization for PDF: remove placeholders and fix RTL/LTR mixing
+  const PLACEHOLDER_PAT = /^(?:\s*[-–—]?\s*|\s*(?:N\/?A|Unknown|غير\s*معروف)\s*)$/i;
+  const STRIP_PAT = /\b(?:N\/?A|Unknown|غير\s*معروف)\b/ig;
+  const collapseSpaces = (s) => s.replace(/[\t \u00A0\u200F\u200E]+/g, ' ').replace(/\s*\n\s*/g, '\n').trim();
+  const hasArabic = (s) => /[\u0600-\u06FF]/.test(s);
+  const hasLatinOrDigits = (s) => /[A-Za-z0-9]/.test(s);
+  // Wrap Latin tokens with LRM when inside Arabic paragraphs to avoid direction confusion
+  function wrapLatinWithLRM(s){
+    return s.replace(/([A-Za-z0-9][A-Za-z0-9\-_.\/+]*)/g, '\u200E$1\u200E');
+  }
+  function sanitizeForPdf(input, opts){
+    let t = String(input ?? '').replace(STRIP_PAT, '').trim();
+    if (!t || PLACEHOLDER_PAT.test(t)) return '';
+    t = collapseSpaces(t);
+    if (opts?.rtl && hasArabic(t) && hasLatinOrDigits(t)) {
+      t = wrapLatinWithLRM(t);
+    }
+    return t;
+  }
+
   // Convert image URL to dataURL for pdfmake (same-origin recommended)
   async function imageUrlToDataURL(url){
     try{
@@ -403,16 +423,18 @@
         const qty = Number(it.qty||1);
         const line = unit * qty;
         const maybeImg = includeImages ? (itemsWithDataImages[i]?._img || null) : null;
+        const descText = sanitizeForPdf(it.description||'-');
+        const pnText = sanitizeForPdf(it.pn||'');
         const descStack = maybeImg ? {
           columns:[
             { image: maybeImg, width: 24, height: 24, margin:[0,2,6,0] },
-            { text: it.description||'-' }
+            { text: descText || '-' }
           ]
-        } : { text: it.description||'-' };
+        } : { text: descText || '-' };
         return [
           { text: String(i+1), alignment:'right' },
           descStack,
-          { text: it.pn||'', alignment:'right' },
+          { text: pnText, alignment:'right' },
           { text: String(qty), alignment:'right' },
           { text: fmt(unit, payload.currency), alignment:'right' },
           { text: fmt(line, payload.currency), alignment:'right' },
@@ -441,19 +463,21 @@
         if (j?.provider) console.info('PDF AI provider:', j.provider, j?.note?`(${j.note})`:'' );
       }catch{}
       const headings = ai?.headings || { letter:'Cover Letter', boq:'Bill of Quantities', terms:'Terms & Conditions', productDetails:'Product Details' };
-      const coverTitle = ai?.coverTitle || 'عرض سعر | Quotation';
-      const coverSubtitle = ai?.coverSubtitle || '';
-      const letterBlocks = ai?.letter ? [
-        { text: String(ai.letter.ar||'').trim(), rtl: true, alignment: 'right', margin:[0,0,0,8], font: (window.pdfMake?.fonts && window.pdfMake.fonts.Arabic) ? 'Arabic' : undefined },
-        { text: String(ai.letter.en||'').trim() }
-      ] : [
-        { text: `Dear ${payload.client?.contact || 'Sir/Madam'},\n\nThank you for the opportunity to submit our quotation for ${payload.project?.name || 'your project'}.` }
+      const coverTitle = sanitizeForPdf(ai?.coverTitle || 'عرض سعر | Quotation', { rtl: hasArabic(String(ai?.coverTitle||'')) });
+      const coverSubtitle = sanitizeForPdf(ai?.coverSubtitle || '', { rtl: hasArabic(String(ai?.coverSubtitle||'')) });
+      const letterAr = sanitizeForPdf(ai?.letter?.ar || '', { rtl: true });
+      const letterEn = sanitizeForPdf(ai?.letter?.en || '');
+      const letterBlocks = (letterAr || letterEn) ? [
+        letterAr ? { text: letterAr, rtl: true, alignment: 'right', margin:[0,0,0,8], font: (window.pdfMake?.fonts && window.pdfMake.fonts.Arabic) ? 'Arabic' : undefined } : null,
+        letterEn ? { text: letterEn } : null
+      ].filter(Boolean) : [
+        { text: `Dear ${sanitizeForPdf(payload.client?.contact || 'Sir/Madam')},\n\nThank you for the opportunity to submit our quotation for ${sanitizeForPdf(payload.project?.name || 'your project')}.` }
       ];
 
       const dd = {
         info: { title: `Quotation ${payload.number}` },
         pageMargins: [36, 48, 36, 48],
-        defaultStyle: { fontSize: 10, lineHeight: 1.2 },
+  defaultStyle: { fontSize: 10, lineHeight: 1.2, font: (window.pdfMake?.fonts && window.pdfMake.fonts.Roboto) ? 'Roboto' : undefined },
         styles: {
           title: { fontSize: 20, bold: true },
           subtitle: { fontSize: 12, color: '#6b7280' },
@@ -552,19 +576,20 @@
           { text:'', pageBreak:'after' },
 
           // Product details (bulleted), generated via AI (optional)
-          (ai?.products && ai.products.length) ? { tocItem:true, text: headings.productDetails || 'Product Details', style:'h2' } : null,
-          ...(ai?.products || []).flatMap(p => ([
-            { text: p.title || '', style:'h3' },
-            p.bullets && p.bullets.length ? { ul: p.bullets } : { text:'', margin:[0,0,0,0] }
-          ])),
+          (ai?.products && ai.products.length) ? { tocItem:true, text: sanitizeForPdf(headings.productDetails || 'Product Details'), style:'h2' } : null,
+          ...(ai?.products || []).flatMap(p => {
+            const t = sanitizeForPdf(p.title || '');
+            const bullets = Array.isArray(p.bullets) ? p.bullets.map(b=>sanitizeForPdf(b, { rtl: hasArabic(String(b||'')) })).filter(Boolean) : [];
+            return ([ { text: t, style:'h3' }, bullets.length ? { ul: bullets } : { text:'', margin:[0,0,0,0] } ]);
+          }),
           ai?.products?.length ? { text:'', pageBreak:'after' } : null,
 
           // Terms
           { tocItem:true, text: headings.terms || 'Terms & Conditions', style:'h2' },
           { text:'Payment Terms', style:'h3' },
-          { text: $("payment-terms").value || '', margin:[0,0,0,8] },
+          { text: sanitizeForPdf($("payment-terms").value || ''), margin:[0,0,0,8] },
           { text:'Terms & Conditions', style:'h3' },
-          { text: $("terms").value || '' }
+          { text: sanitizeForPdf($("terms").value || '') }
         ].filter(Boolean)
       };
 
