@@ -4,7 +4,7 @@
   const grandCell = document.getElementById("qiq-grand");    // الإجمالي
   const addAllBtn = document.getElementById("qiq-add-all");  // زرار Add all matched (لو موجود)
   const clearAllBtn = document.getElementById("qiq-clear-all"); // زرار Clear all
-  const exportCsvBtn = document.getElementById("qiq-export-csv"); // زرار Export CSV
+  const exportCsvBtn = document.getElementById("qiq-export-csv"); // زرار Export CSV (قد لا يكون موجودًا)
   const exportXlsxBtn = document.getElementById("qiq-export-xlsx"); // زرار Export XLSX
   const searchInput = document.getElementById("qiq-search-input"); // مربع البحث
   const searchCount = document.getElementById("qiq-search-count"); // عداد النتائج
@@ -628,6 +628,7 @@
 
   // ===== Event Listeners =====
   clearAllBtn?.addEventListener('click', clearAllItems);
+  // قد يتم إخفاء زر CSV بناءً على الإعدادات
   exportCsvBtn?.addEventListener('click', exportToCSV);
   exportXlsxBtn?.addEventListener('click', exportToExcel);
   saveDraftBtn?.addEventListener('click', saveDraftToStorage);

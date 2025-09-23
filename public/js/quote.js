@@ -720,35 +720,7 @@
     }catch(err){ console.warn(err); try{ window.QiqToast?.error?.('تعذر إنشاء PDF', 2000);}catch{} }
   });
 
-  const savePdfAccountBtn = $("btn-save-pdf-account");
-  if (savePdfAccountBtn){
-    savePdfAccountBtn.addEventListener("click", async (e)=>{
-      e.preventDefault();
-      if (!validateRequiredBeforePDF()) return;
-      // Require login
-      const token = localStorage.getItem('qiq_token');
-      if (!token){
-        showNotification("يرجى تسجيل الدخول أولاً لحفظ PDF في حسابك.", 'error');
-        // Optionally open /account.html in modal
-        try { window.QiqModal ? QiqModal.open('/account.html', {title:'تسجيل الدخول'}) : window.open('/account.html','_blank'); } catch {}
-        return;
-      }
-      try{
-        // Ensure project name exists using modal first
-        if (!$("project-name").value.trim()){
-          return openProjectInfoModal({ onDone: async () => {
-            if (!validateRequiredBeforePDF()) return; 
-            await handleSaveToAccount();
-          }});
-        }
-        if (!validateRequiredBeforePDF()) return;
-        await handleSaveToAccount();
-      }catch(err){
-        console.warn(err);
-        showNotification('تعذر الحفظ في الحساب.', 'error');
-      }
-    });
-  }
+  // زر "حفظ في حسابي كـ PDF" تم إلغاؤه بناءً على المتطلبات
 
   $("btn-request-special").addEventListener("click", async (e) => {
     e.preventDefault();
@@ -865,7 +837,7 @@
   });
 
   // Export Excel Button
-  $("btn-export-excel").addEventListener("click", (e) => {
+  $("btn-export-excel")?.addEventListener("click", (e) => {
     e.preventDefault();
     setLoadingState(e.target, true);
     try {
@@ -879,32 +851,39 @@
   });
 
   // Export CSV Button
-  $("btn-export-csv").addEventListener("click", (e) => {
-    e.preventDefault();
-    setLoadingState(e.target, true);
-    try {
-      exportToCSV();
-      showNotification("تم تصدير الملف بنجاح", "success");
-    } catch (error) {
-      showNotification("حدث خطأ أثناء التصدير", "error");
-    } finally {
-      setLoadingState(e.target, false);
-    }
-  });
+  // تم إلغاء زر "تصدير CSV" من صفحة الكوت
+  if ($("btn-export-csv")){
+    $("btn-export-csv").addEventListener("click", (e) => {
+      e.preventDefault();
+      setLoadingState(e.target, true);
+      try {
+        exportToCSV();
+        showNotification("تم تصدير الملف بنجاح", "success");
+      } catch (error) {
+        showNotification("حدث خطأ أثناء التصدير", "error");
+      } finally {
+        setLoadingState(e.target, false);
+      }
+    });
+  }
 
   // Import Excel Button
-  $("btn-import-excel").addEventListener("click", (e) => {
-    e.preventDefault();
-    $("excel-file-input").click();
-  });
-
-  $("excel-file-input").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setLoadingState($("btn-import-excel"), true);
-      importFromExcel(file);
-    }
-  });
+  // تم إلغاء الاستيراد من Excel في صفحة الكوت
+  if ($("btn-import-excel")){
+    $("btn-import-excel").addEventListener("click", (e) => {
+      e.preventDefault();
+      $("excel-file-input")?.click();
+    });
+  }
+  if ($("excel-file-input")){
+    $("excel-file-input").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        setLoadingState($("btn-import-excel"), true);
+        importFromExcel(file);
+      }
+    });
+  }
 
   // Search functionality
   $("search-input").addEventListener("input", (e) => {
