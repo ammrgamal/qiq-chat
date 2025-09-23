@@ -8,7 +8,7 @@ export default async function handler(req, res){
     return res.status(405).json({ error: 'Method not allowed' });
   }
   try{
-  const { client={}, project={}, items=[], currency='USD', imageUrls=[], pdfUrls=[], webUrls=[] } = req.body || {};
+  const { client={}, project={}, items=[], currency='USD', imageUrls=[], pdfUrls=[], webUrls=[], translate=null } = req.body || {};
     const safeItems = Array.isArray(items) ? items.slice(0, 30) : [];
   const openaiKey = process.env.OPENAI_API_KEY;
   const geminiKey = process.env.Gemini_API || process.env.GEMINI_API || process.env.GOOGLE_API_KEY;
@@ -33,6 +33,91 @@ export default async function handler(req, res){
   }catch{}
     const chatModel = enableGpt5 ? (process.env.OPENAI_GPT5_MODEL || "gpt-5") : (process.env.OPENAI_MODEL || "gpt-4o-mini");
   const geminiModel = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+
+    // Helper for English-only fallback
+    const englishOnly = (s) => String(s||'').replace(/[^A-Za-z0-9\s\.,;:!\?@#%&\-_\(\)\[\]\/\+\'\"]/g, ' ').replace(/[\s\u00A0]+/g,' ').trim();
+
+    // Fast path: translation request
+    if (translate) {
+      try{
+        // Normalize translate input to an object map {key: text}
+        let map = {};
+        if (Array.isArray(translate)) {
+          translate.forEach((v, i)=>{ map[String(i)] = String(v||''); });
+        } else if (typeof translate === 'object') {
+          Object.keys(translate).forEach(k=>{ map[String(k)] = String(translate[k]||''); });
+        }
+        const keys = Object.keys(map);
+        if (!keys.length) return res.status(200).json({ ok:true, translations: {} });
+
+        const system = [
+          'You translate each provided value to clear, professional English suitable for a business quotation PDF.',
+          'Preserve numbers, units, punctuation, and product codes. Avoid adding extra words; translate only.',
+          'Return strictly valid JSON: an object mapping the SAME KEYS to their English translations.'
+        ].join('\n');
+        const user = { translate: map };
+
+        // Prefer OpenAI for text translation; fallback to Gemini; then to local englishOnly.
+        if (openaiKey) {
+          try{
+            const r = await fetch('https://api.openai.com/v1/chat/completions', {
+              method:'POST',
+              headers:{ 'authorization': `Bearer ${openaiKey}`, 'content-type':'application/json' },
+              body: JSON.stringify({
+                model: chatModel,
+                temperature: 0.2,
+                messages:[ {role:'system', content: system}, {role:'user', content: JSON.stringify(user)} ],
+                response_format: { type:'json_object' }
+              })
+            });
+            if (r.ok){
+              const j = await r.json();
+              const content = j?.choices?.[0]?.message?.content || '{}';
+              let data = null; try{ data = JSON.parse(content); }catch{}
+              if (data && typeof data === 'object') {
+                return res.status(200).json({ ok:true, translations: data, provider:'openai-translate' });
+              }
+            }
+          }catch{}
+        }
+
+        if (geminiKey) {
+          try{
+            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`, {
+              method:'POST', headers:{ 'content-type':'application/json' },
+              body: JSON.stringify({
+                contents: [{ role:'user', parts:[ { text: system }, { text: 'Input:' }, { text: JSON.stringify(user) } ] }],
+                generationConfig: { temperature: 0.2, responseMimeType:'application/json' }
+              })
+            });
+            if (r.ok){
+              const j = await r.json();
+              const text = j?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+              let data = null; try{ data = JSON.parse(text); }catch{}
+              if (data && typeof data === 'object') {
+                return res.status(200).json({ ok:true, translations: data, provider:'gemini-translate' });
+              }
+            }
+          }catch{}
+        }
+
+        // Local fallback: strip non-Latin
+        const fallbackMap = {}; keys.forEach(k=> fallbackMap[k] = englishOnly(map[k]));
+        return res.status(200).json({ ok:true, translations: fallbackMap, provider:'local-fallback' });
+      }catch(e){
+        // On any error, fallback to englishOnly
+        try{
+          let map = {};
+          if (Array.isArray(translate)) translate.forEach((v,i)=> map[String(i)] = String(v||''));
+          else if (typeof translate === 'object') Object.keys(translate).forEach(k=> map[k] = String(translate[k]||''));
+          const keys = Object.keys(map);
+          const fallbackMap = {}; keys.forEach(k=> fallbackMap[k] = englishOnly(map[k]));
+          return res.status(200).json({ ok:true, translations: fallbackMap, provider:'exception-fallback' });
+        }catch{
+          return res.status(200).json({ ok:true, translations: {}, provider:'exception-fallback' });
+        }
+      }
+    }
 
     const fallback = () => ({
       coverTitle: `عرض سعر | Quotation`,

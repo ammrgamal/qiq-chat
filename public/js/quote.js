@@ -409,6 +409,33 @@
     try{
       try{ await window.ensureArabicFonts?.(); }catch{}
       const payload = buildPayload({ reason: 'export-pdf' });
+      // Auto-translate potentially Arabic fields to English via server (fallback to local filter inside API)
+      try{
+        const tRes = await fetch('/api/pdf-ai', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify({ translate: {
+          client_name: payload.client?.name||'',
+          client_contact: payload.client?.contact||'',
+          client_email: payload.client?.email||'',
+          client_phone: payload.client?.phone||'',
+          project_name: payload.project?.name||'',
+          project_site: payload.project?.site||'',
+          payment_terms: document.getElementById('payment-terms')?.value || '',
+          terms: document.getElementById('terms')?.value || ''
+        } }) });
+        if (tRes.ok){
+          const tj = await tRes.json().catch(()=>({}));
+          const tr = tj?.translations || {};
+          if (tr){
+            if (tr.client_name) payload.client.name = tr.client_name;
+            if (tr.client_contact) payload.client.contact = tr.client_contact;
+            if (tr.client_email) payload.client.email = tr.client_email;
+            if (tr.client_phone) payload.client.phone = tr.client_phone;
+            if (tr.project_name) payload.project.name = tr.project_name;
+            if (tr.project_site) payload.project.site = tr.project_site;
+            if (tr.payment_terms) document.getElementById('payment-terms').value = tr.payment_terms;
+            if (tr.terms) document.getElementById('terms').value = tr.terms;
+          }
+        }
+      }catch{}
       // Collect live totals text from footer cells
       const totals = {
         subtotal: $("subtotal-cell").textContent,
@@ -484,6 +511,10 @@
         pageMargins: [36, 84, 36, 48],
         defaultStyle: { fontSize: 10, lineHeight: 1.2, font: (window.pdfMake?.fonts && window.pdfMake.fonts.Roboto) ? 'Roboto' : undefined },
         header: function(currentPage, pageCount){
+          // Hide small header logo on the first page to avoid overlap with cover content
+          if (currentPage === 1) {
+            return { text: '', margin: [36, 20, 36, 0] };
+          }
           return {
             columns: [
               logoDataUrl ? { image: logoDataUrl, width: 80 } : { text: 'QuickITQuote', style: 'small' },
