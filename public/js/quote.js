@@ -31,6 +31,12 @@
   function wrapLatinWithLRM(s){
     return s.replace(/([A-Za-z0-9][A-Za-z0-9\-_.\/+]*)/g, '\u200E$1\u200E');
   }
+  // English-only filter (remove non-ASCII Latin except digits/punct)
+  function englishOnly(input){
+    const raw = String(input ?? '');
+    const filtered = raw.replace(/[^A-Za-z0-9\s\.,;:\/\-\+_\(\)\[\]&@#%\'"!\?]/g, '');
+    return collapseSpaces(filtered);
+  }
   function sanitizeForPdf(input, opts){
     let t = String(input ?? '').replace(STRIP_PAT, '').trim();
     if (!t || PLACEHOLDER_PAT.test(t)) return '';
@@ -38,7 +44,8 @@
     if (opts?.rtl && hasArabic(t) && hasLatinOrDigits(t)) {
       t = wrapLatinWithLRM(t);
     }
-    return t;
+    // Force English-only as per requirement
+    return englishOnly(t);
   }
 
   // Convert image URL to dataURL for pdfmake (same-origin recommended)
@@ -408,7 +415,9 @@
         install: $("install-cell").textContent,
         grand: $("grand-cell").textContent
       };
-      const includeImages = !!document.getElementById('boq-images-toggle')?.checked;
+  // Default to images ON if no preference saved
+  const includeImages = !!document.getElementById('boq-images-toggle')?.checked;
+  try{ localStorage.setItem('qiq_boq_images', includeImages ? '1' : '0'); }catch{}
       const itemsWithDataImages = [];
       if (includeImages) {
         // Cap to 100 images to avoid heavy PDFs
@@ -423,8 +432,8 @@
         const qty = Number(it.qty||1);
         const line = unit * qty;
         const maybeImg = includeImages ? (itemsWithDataImages[i]?._img || null) : null;
-        const descText = sanitizeForPdf(it.description||'-');
-        const pnText = sanitizeForPdf(it.pn||'');
+        const descText = englishOnly(it.description||'-');
+        const pnText = englishOnly(it.pn||'');
         const descStack = maybeImg ? {
           columns:[
             { image: maybeImg, width: 24, height: 24, margin:[0,2,6,0] },
@@ -463,28 +472,33 @@
         if (j?.provider) console.info('PDF AI provider:', j.provider, j?.note?`(${j.note})`:'' );
       }catch{}
       const headings = ai?.headings || { letter:'Cover Letter', boq:'Bill of Quantities', terms:'Terms & Conditions', productDetails:'Product Details' };
-      const coverTitle = sanitizeForPdf(ai?.coverTitle || 'عرض سعر | Quotation', { rtl: hasArabic(String(ai?.coverTitle||'')) });
-      const coverSubtitle = sanitizeForPdf(ai?.coverSubtitle || '', { rtl: hasArabic(String(ai?.coverSubtitle||'')) });
-      const letterAr = sanitizeForPdf(ai?.letter?.ar || '', { rtl: true });
-      const letterEn = sanitizeForPdf(ai?.letter?.en || '');
-      const letterBlocks = (letterAr || letterEn) ? [
-        letterAr ? { text: letterAr, rtl: true, alignment: 'right', margin:[0,0,0,8], font: (window.pdfMake?.fonts && window.pdfMake.fonts.Arabic) ? 'Arabic' : undefined } : null,
-        letterEn ? { text: letterEn } : null
-      ].filter(Boolean) : [
-        { text: `Dear ${sanitizeForPdf(payload.client?.contact || 'Sir/Madam')},\n\nThank you for the opportunity to submit our quotation for ${sanitizeForPdf(payload.project?.name || 'your project')}.` }
+      const coverTitle = englishOnly(ai?.coverTitle || 'Quotation');
+      const coverSubtitle = englishOnly(ai?.coverSubtitle || '');
+      const letterEn = englishOnly(ai?.letter?.en || '');
+      const letterBlocks = letterEn ? [ { text: letterEn } ] : [
+        { text: `Dear ${englishOnly(payload.client?.contact || 'Sir/Madam')},\n\nThank you for the opportunity to submit our quotation for ${englishOnly(payload.project?.name || 'your project')}.` }
       ];
 
       const dd = {
         info: { title: `Quotation ${payload.number}` },
-        pageMargins: [36, 48, 36, 48],
-  defaultStyle: { fontSize: 10, lineHeight: 1.2, font: (window.pdfMake?.fonts && window.pdfMake.fonts.Roboto) ? 'Roboto' : undefined },
+        pageMargins: [36, 84, 36, 48],
+        defaultStyle: { fontSize: 10, lineHeight: 1.2, font: (window.pdfMake?.fonts && window.pdfMake.fonts.Roboto) ? 'Roboto' : undefined },
+        header: function(currentPage, pageCount){
+          return {
+            columns: [
+              logoDataUrl ? { image: logoDataUrl, width: 80 } : { text: 'QuickITQuote', style: 'small' },
+              { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', style: 'small' }
+            ],
+            margin: [36, 20, 36, 0]
+          };
+        },
         styles: {
-          title: { fontSize: 20, bold: true },
+          title: { fontSize: 22, bold: true, color:'#111827' },
           subtitle: { fontSize: 12, color: '#6b7280' },
-          h2: { fontSize: 14, bold: true, margin:[0,12,0,6] },
-          h3: { fontSize: 12, bold: true, margin:[0,8,0,4] },
+          h2: { fontSize: 16, bold: true, color:'#1f2937', margin:[0,12,0,6] },
+          h3: { fontSize: 12, bold: true, color:'#111827', margin:[0,8,0,4] },
           label: { bold: true, color: '#374151' },
-          tableHeader: { bold: true, fillColor: '#f3f4f6' },
+          tableHeader: { bold: true, fillColor: '#eef2ff', color:'#1f2937' },
           small: { fontSize: 9, color: '#6b7280' },
           tocTitle: { fontSize: 14, bold: true, margin:[0,0,0,8] },
           tocItem: { fontSize: 10 }
@@ -513,20 +527,21 @@
             ], margin:[0,0,0,12]
           },
           coverSubtitle ? { text: coverSubtitle, style:'subtitle', margin:[0,0,0,8] } : null,
+          { canvas:[{ type:'line', x1:0, y1:0, x2:515, y2:0, lineWidth:1, lineColor:'#e5e7eb' }] , margin:[0,8,0,12] },
           {
             columns:[
               { width:'*', stack:[
                 { text:'Client', style:'h3' },
-                { text: sanitizeForPdf(payload.client?.name || '') },
-                { text: sanitizeForPdf(payload.client?.contact || '') },
-                { text: sanitizeForPdf(payload.client?.email || '') },
-                { text: sanitizeForPdf(payload.client?.phone || '') }
+                { text: englishOnly(payload.client?.name || '') },
+                { text: englishOnly(payload.client?.contact || '') },
+                { text: englishOnly(payload.client?.email || '') },
+                { text: englishOnly(payload.client?.phone || '') }
               ]},
               { width:'*', stack:[
                 { text:'Project', style:'h3' },
-                { text: sanitizeForPdf(payload.project?.name || '') },
-                { text: sanitizeForPdf(payload.project?.site || '') },
-                { text: sanitizeForPdf(payload.project?.execution_date || '') }
+                { text: englishOnly(payload.project?.name || '') },
+                { text: englishOnly(payload.project?.site || '') },
+                { text: englishOnly(payload.project?.execution_date || '') }
               ]}
             ]
           },
@@ -537,7 +552,7 @@
           { text:'', pageBreak:'after' },
 
           // Letter
-          { tocItem:true, text: sanitizeForPdf(headings.letter || 'Cover Letter'), style:'h2' },
+          { tocItem:true, text: englishOnly(headings.letter || 'Cover Letter'), style:'h2' },
           { stack: letterBlocks, margin:[0,0,0,12] },
           { text:'Summary', style:'h3' },
           { ul:[
@@ -548,7 +563,7 @@
           { text:'', pageBreak:'after' },
 
           // BOQ
-          { tocItem:true, text: sanitizeForPdf(headings.boq || 'Bill of Quantities'), style:'h2' },
+          { tocItem:true, text: englishOnly(headings.boq || 'Bill of Quantities'), style:'h2' },
           {
             table:{
               headerRows:1,
@@ -576,20 +591,20 @@
           { text:'', pageBreak:'after' },
 
           // Product details (bulleted), generated via AI (optional)
-          (ai?.products && ai.products.length) ? { tocItem:true, text: sanitizeForPdf(headings.productDetails || 'Product Details'), style:'h2' } : null,
+          (ai?.products && ai.products.length) ? { tocItem:true, text: englishOnly(headings.productDetails || 'Product Details'), style:'h2' } : null,
           ...(ai?.products || []).flatMap(p => {
-            const t = sanitizeForPdf(p.title || '');
-            const bullets = Array.isArray(p.bullets) ? p.bullets.map(b=>sanitizeForPdf(b, { rtl: hasArabic(String(b||'')) })).filter(Boolean) : [];
+            const t = englishOnly(p.title || '');
+            const bullets = Array.isArray(p.bullets) ? p.bullets.map(b=>englishOnly(b)).filter(Boolean) : [];
             return ([ { text: t, style:'h3' }, bullets.length ? { ul: bullets } : { text:'', margin:[0,0,0,0] } ]);
           }),
           ai?.products?.length ? { text:'', pageBreak:'after' } : null,
 
           // Terms
-          { tocItem:true, text: sanitizeForPdf(headings.terms || 'Terms & Conditions'), style:'h2' },
+          { tocItem:true, text: englishOnly(headings.terms || 'Terms & Conditions'), style:'h2' },
           { text:'Payment Terms', style:'h3' },
-          { text: sanitizeForPdf($("payment-terms").value || ''), margin:[0,0,0,8] },
+          { text: englishOnly($("payment-terms").value || ''), margin:[0,0,0,8] },
           { text:'Terms & Conditions', style:'h3' },
-          { text: sanitizeForPdf($("terms").value || '') }
+          { text: englishOnly($("terms").value || '') }
         ].filter(Boolean)
       };
 
@@ -1594,6 +1609,16 @@
 
   // تحميل البنود من الشات تلقائيًا عند فتح صفحة quote
   document.addEventListener('DOMContentLoaded', () => {
+    // Restore BOQ images toggle preference
+    try{
+      const pref = localStorage.getItem('qiq_boq_images');
+      const el = document.getElementById('boq-images-toggle');
+      if (el && (pref === '1' || pref === '0')) el.checked = (pref === '1');
+      if (el) el.addEventListener('change', ()=>{
+        try{ localStorage.setItem('qiq_boq_images', el.checked ? '1' : '0'); }catch{}
+      });
+    }catch{}
+
     // استخدام نفس المنطق المستخدم في زر "تحميل البنود من الشات"
     try {
       const stagedRaw = localStorage.getItem(STAGED_KEY);

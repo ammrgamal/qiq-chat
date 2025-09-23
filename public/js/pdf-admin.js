@@ -37,6 +37,8 @@
     if (opts?.rtl && hasArabic(t) && hasLatinOrDigits(t)) t = wrapLatinWithLRM(t);
     return t;
   }
+  // English-only filter for PDF output
+  const englishOnly = (s) => collapseSpaces(String(s||'').replace(/[^A-Za-z0-9\s\.,;:\/\-\+_\(\)\[\]&@#%\'"!\?]/g, ''));
 
   function payloadFromQuotation(q){
     const p = q?.payload || {};
@@ -62,7 +64,7 @@
   async function buildAndDownload(q, opts){
     try{ await window.ensureArabicFonts?.(); }catch{}
     const payload = payloadFromQuotation(q);
-    const includeImages = !!(opts && opts.includeImages);
+  const includeImages = (opts?.includeImages !== false);
     const totals = computeTotals(payload.items, payload.include_installation_5pct);
 
     // Try embedding logo
@@ -78,15 +80,11 @@
       const j = await r.json(); ai = j?.data || null; if (j?.provider) console.info('PDF AI provider:', j.provider, j?.note?`(${j.note})`:'');
     }catch{}
     const headings = ai?.headings || { letter:'Cover Letter', boq:'Bill of Quantities', terms:'Terms & Conditions', productDetails:'Product Details' };
-    const coverTitle = sanitizeForPdf(ai?.coverTitle || 'عرض سعر | Quotation', { rtl: hasArabic(String(ai?.coverTitle||'')) });
-    const coverSubtitle = sanitizeForPdf(ai?.coverSubtitle || '', { rtl: hasArabic(String(ai?.coverSubtitle||'')) });
-    const letterAr = sanitizeForPdf(ai?.letter?.ar || '', { rtl: true });
-    const letterEn = sanitizeForPdf(ai?.letter?.en || '');
-    const letterBlocks = (letterAr || letterEn) ? [
-      letterAr ? { text: letterAr, rtl: true, alignment: 'right', margin:[0,0,0,8], font: (window.pdfMake?.fonts && window.pdfMake.fonts.Arabic) ? 'Arabic' : undefined } : null,
-      letterEn ? { text: letterEn } : null
-    ].filter(Boolean) : [
-      { text: `Dear ${sanitizeForPdf(payload.client?.contact || 'Sir/Madam')},\n\nThank you for the opportunity to submit our quotation for ${sanitizeForPdf(payload.project?.name || 'your project')}.` }
+    const coverTitle = englishOnly(ai?.coverTitle || 'Quotation');
+    const coverSubtitle = englishOnly(ai?.coverSubtitle || '');
+    const letterEn = englishOnly(ai?.letter?.en || '');
+    const letterBlocks = letterEn ? [ { text: letterEn } ] : [
+      { text: `Dear ${englishOnly(payload.client?.contact || 'Sir/Madam')},\n\nThank you for the opportunity to submit our quotation for ${englishOnly(payload.project?.name || 'your project')}.` }
     ];
 
     // Optionally prefetch images for BOQ thumbnails (cap to 100)
@@ -106,8 +104,8 @@
       const qty = Number(it.qty||1);
       const line = unit * qty;
       const maybeImg = includeImages ? (itemsWithDataImages[i]?._img || null) : null;
-      const descText = sanitizeForPdf(it.description||it.name||'-');
-      const pnText = sanitizeForPdf(it.pn||it.sku||'');
+  const descText = englishOnly(it.description||it.name||'-');
+  const pnText = englishOnly(it.pn||it.sku||'');
       const descStack = maybeImg ? {
         columns:[
           { image: maybeImg, width: 24, height: 24, margin:[0,2,6,0] },
@@ -126,15 +124,18 @@
 
     const dd = {
       info: { title: `Quotation ${payload.number}` },
-      pageMargins: [36, 48, 36, 48],
+      pageMargins: [36, 84, 36, 48],
       defaultStyle: { fontSize: 10, lineHeight: 1.2, font: (window.pdfMake?.fonts && window.pdfMake.fonts.Roboto) ? 'Roboto' : undefined },
+      header: function(currentPage, pageCount){
+        return { columns:[ logoDataUrl ? { image: logoDataUrl, width: 80 } : { text:'QuickITQuote', style:'small' }, { text:`Page ${currentPage} of ${pageCount}`, alignment:'right', style:'small' } ], margin:[36,20,36,0] };
+      },
       styles: {
-        title: { fontSize: 20, bold: true },
+        title: { fontSize: 22, bold: true, color:'#111827' },
         subtitle: { fontSize: 12, color: '#6b7280' },
-        h2: { fontSize: 14, bold: true, margin:[0,12,0,6] },
-        h3: { fontSize: 12, bold: true, margin:[0,8,0,4] },
+        h2: { fontSize: 16, bold: true, color:'#1f2937', margin:[0,12,0,6] },
+        h3: { fontSize: 12, bold: true, color:'#111827', margin:[0,8,0,4] },
         label: { bold: true, color: '#374151' },
-        tableHeader: { bold: true, fillColor: '#f3f4f6' },
+        tableHeader: { bold: true, fillColor: '#eef2ff', color:'#1f2937' },
         small: { fontSize: 9, color: '#6b7280' },
         tocTitle: { fontSize: 14, bold: true, margin:[0,0,0,8] },
         tocItem: { fontSize: 10 }
@@ -151,35 +152,35 @@
           ], margin:[0,0,0,12]
         },
         coverSubtitle ? { text: coverSubtitle, style:'subtitle', margin:[0,0,0,8] } : null,
-        { columns:[ { width:'*', stack:[ { text:'Client', style:'h3' }, { text: `${payload.client?.name || ''}` }, { text: `${payload.client?.contact || ''}` }, { text: `${payload.client?.email || ''}` }, { text: `${payload.client?.phone || ''}` } ]}, { width:'*', stack:[ { text:'Project', style:'h3' }, { text: `${payload.project?.name || ''}` }, { text: `${payload.project?.site || ''}` }, { text: `${payload.project?.execution_date || ''}` } ]} ] },
+  { columns:[ { width:'*', stack:[ { text:'Client', style:'h3' }, { text: englishOnly(payload.client?.name || '') }, { text: englishOnly(payload.client?.contact || '') }, { text: englishOnly(payload.client?.email || '') }, { text: englishOnly(payload.client?.phone || '') } ]}, { width:'*', stack:[ { text:'Project', style:'h3' }, { text: englishOnly(payload.project?.name || '') }, { text: englishOnly(payload.project?.site || '') }, { text: englishOnly(payload.project?.execution_date || '') } ]} ] },
         { text:'', pageBreak:'after' },
 
         { toc: { title: { text:'Table of Contents', style:'tocTitle' } } },
         { text:'', pageBreak:'after' },
 
-    { tocItem:true, text: sanitizeForPdf(headings.letter || 'Cover Letter'), style:'h2' },
+  { tocItem:true, text: englishOnly(headings.letter || 'Cover Letter'), style:'h2' },
   { stack: letterBlocks, margin:[0,0,0,12] },
         { text:'Summary', style:'h3' },
         { ul:[ `Subtotal: ${fmt(totals.subtotal, payload.currency)}`, (payload.include_installation_5pct ? `Installation/Services: ${fmt(totals.install, payload.currency)}` : null), `Grand Total: ${fmt(totals.grand, payload.currency)}` ].filter(Boolean) },
         { text:'', pageBreak:'after' },
 
-        { tocItem:true, text: headings.boq || 'Bill of Quantities', style:'h2' },
+  { tocItem:true, text: englishOnly(headings.boq || 'Bill of Quantities'), style:'h2' },
         { table:{ headerRows:1, widths:['auto','*','auto','auto','auto','auto'], body:[ [ {text:'#',style:'tableHeader', alignment:'right'}, {text:'Description',style:'tableHeader'}, {text:'PN',style:'tableHeader', alignment:'right'}, {text:'Qty',style:'tableHeader', alignment:'right'}, {text:'Unit',style:'tableHeader', alignment:'right'}, {text:'Line',style:'tableHeader', alignment:'right'} ], ...lines ] }, layout:{ fillColor:(rowIndex)=> rowIndex===0?'#f3f4f6':(rowIndex%2===0?'#fafafa':null), hLineColor:'#e5e7eb', vLineColor:'#e5e7eb' } },
         { text:'', pageBreak:'after' },
 
-        (ai?.products && ai.products.length) ? { tocItem:true, text: sanitizeForPdf(headings.productDetails || 'Product Details'), style:'h2' } : null,
+  (ai?.products && ai.products.length) ? { tocItem:true, text: englishOnly(headings.productDetails || 'Product Details'), style:'h2' } : null,
         ...(ai?.products || []).flatMap(p => {
-          const t = sanitizeForPdf(p.title || '');
-          const bullets = Array.isArray(p.bullets) ? p.bullets.map(b=>sanitizeForPdf(b, { rtl: hasArabic(String(b||'')) })).filter(Boolean) : [];
+          const t = englishOnly(p.title || '');
+          const bullets = Array.isArray(p.bullets) ? p.bullets.map(b=>englishOnly(b)).filter(Boolean) : [];
           return ([ { text: t, style:'h3' }, bullets.length ? { ul: bullets } : { text:'' } ]);
         }),
         ai?.products?.length ? { text:'', pageBreak:'after' } : null,
 
-        { tocItem:true, text: headings.terms || 'Terms & Conditions', style:'h2' },
+  { tocItem:true, text: englishOnly(headings.terms || 'Terms & Conditions'), style:'h2' },
         { text:'Payment Terms', style:'h3' },
-        { text: sanitizeForPdf(payload.paymentTerms || ''), margin:[0,0,0,8] },
+        { text: englishOnly(payload.paymentTerms || ''), margin:[0,0,0,8] },
         { text:'Terms & Conditions', style:'h3' },
-        { text: sanitizeForPdf(payload.terms || '') }
+        { text: englishOnly(payload.terms || '') }
       ].filter(Boolean)
     };
 
