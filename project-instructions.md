@@ -1,4 +1,4 @@
-# QuickITQuote — Project Instructions
+# QuickITQuote — Project Instructions-For Chat GPT refernace
 
 ## 1. Project Title
 QuickITQuote – AI-assisted Quoting & Product Catalog (Arabic/English)
