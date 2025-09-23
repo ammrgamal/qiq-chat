@@ -715,8 +715,26 @@
         ].filter(Boolean)
       };
 
-      window.pdfMake?.createPdf(dd).download(`${payload.number || 'quotation'}.pdf`);
-      try{ window.QiqToast?.success?.('تم إنشاء PDF', 2000);}catch{}
+      // Robust download: ensure fonts, then prefer blob download with fallback
+      try{ await window.ensureArabicFonts?.(); }catch{}
+      const fileName = `${payload.number || 'quotation'}.pdf`;
+      let createdPdf = null;
+      try{ createdPdf = window.pdfMake?.createPdf(dd); }catch(err){ console.warn('pdfmake create failed', err); }
+      if (!createdPdf){ try{ window.QiqToast?.error?.('تعذر إنشاء PDF', 2200);}catch{}; return; }
+      try{
+        createdPdf.getBlob((blob)=>{
+          try{
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = fileName; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 1500);
+            try{ window.QiqToast?.success?.('تم إنشاء PDF', 1800);}catch{}
+          }catch{
+            try{ createdPdf.download(fileName); window.QiqToast?.success?.('تم إنشاء PDF', 1800);}catch(e2){ console.warn('pdf download failed', e2); window.QiqToast?.error?.('تعذر تنزيل PDF', 2400); }
+          }
+        });
+      }catch(err){
+        console.warn('pdf getBlob failed', err);
+        try{ createdPdf.download(fileName); window.QiqToast?.success?.('تم إنشاء PDF', 1800);}catch(e3){ console.warn('pdf download failed', e3); window.QiqToast?.error?.('تعذر تنزيل PDF', 2400); }
+      }
     }catch(err){ console.warn(err); try{ window.QiqToast?.error?.('تعذر إنشاء PDF', 2000);}catch{} }
   });
 

@@ -651,18 +651,46 @@
 
   // Import BOQ functionality
   const importBtn = document.getElementById("qiq-import-btn");
-  const fileInput = document.getElementById("qiq-file");
+  let fileInput = document.getElementById("qiq-file");
+
+  function ensureFileInput(){
+    if (fileInput && fileInput.tagName) return fileInput;
+    // Create a hidden file input if not present (more robust across pages)
+    const form = document.getElementById('qiq-form') || document.body;
+    fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.id = 'qiq-file';
+    fileInput.accept = '.xlsx,.xls,.csv';
+    fileInput.style.position = 'absolute';
+    fileInput.style.left = '-9999px';
+    fileInput.style.width = '1px';
+    fileInput.style.height = '1px';
+    fileInput.setAttribute('aria-hidden','true');
+    form.appendChild(fileInput);
+    // Bind change once when we create it
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) importFromExcel(file);
+      // reset value so selecting the same file again re-triggers change
+      try{ e.target.value = ''; }catch{}
+    });
+    return fileInput;
+  }
 
   importBtn?.addEventListener('click', () => {
-    fileInput?.click();
+    const inp = ensureFileInput();
+    try{ inp.value = ''; }catch{}
+    inp.click();
   });
 
-  fileInput?.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      importFromExcel(file);
-    }
-  });
+  // If input exists in DOM already, ensure change handler is attached
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) importFromExcel(file);
+      try{ e.target.value = ''; }catch{}
+    }, { once:false });
+  }
 
   function importFromExcel(file) {
     const isExcel = /\.(xlsx|xls)$/i.test(file?.name || '');
