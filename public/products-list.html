@@ -112,6 +112,9 @@
 			<button id="searchBtn" class="btn">بحث</button>
 			<button id="clearBtn" class="btn secondary">مسح</button>
 		</div>
+
+		<!-- Connectivity status (inline helper) -->
+		<div id="qiq-connectivity" class="muted" style="margin: 6px 0 12px; font-size: 12px"></div>
 		
 		<!-- Chat-like Quick Action Buttons (refined) -->
 		<div class="quick-actions" style="margin: 16px 0; display: flex; gap: 8px; flex-wrap: wrap;">
@@ -210,13 +213,43 @@
 	  langBtn?.addEventListener('click', ()=>{ try{ window.QiqI18n?.toggle?.(); }catch{} });
 	});
 	</script>
+	<script>
+	// Render a tiny connectivity line from /health for quick diagnostics
+	(function(){
+	  function chip(name, ok){
+		const color = ok ? '#166534' : '#991b1b';
+		return `<span style="display:inline-block;margin-inline-end:8px;color:${color}">${name}:${ok?'OK':'—'}</span>`;
+	  }
+	  fetch('/health').then(r=>r.json()).then(h=>{
+		const env = h?.env || {};
+		const html = [
+		  chip('HelloLeads', !!env.hasHelloLeads),
+		  chip('Resend', !!env.hasResend),
+		  chip('OpenAI', !!env.hasOpenAI),
+		  chip('Gemini', !!env.hasGemini),
+		  chip('AUTO_APPROVE', !!env.autoApprove)
+		].join(' ');
+		const el = document.getElementById('qiq-connectivity');
+		if (el) el.innerHTML = html;
+	  }).catch(()=>{});
+	})();
+	</script>
 	<!-- Modal container -->
 	<div id="qiq-modal" aria-hidden="true" style="display:none">
 		<div class="qiq-modal__backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.4);"></div>
 		<div class="qiq-modal__dialog" tabindex="-1" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);width:min(880px,92vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;z-index:50">
 			<div class="qiq-modal__header" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)">
 				<div class="qiq-modal__title" style="font-weight:600">Modal</div>
-				<div style="display:flex;gap:6px">
+				<div style="display:flex;gap:6px;align-items:center">
+					<!-- Persistent notice (manual dismiss) -->
+					<div id="qiq-modal-notice" style="display:none;background:#f1f5f9;color:#0f172a;padding:4px 8px;border-radius:8px;border:1px solid #cbd5e1">
+						<span id="qiq-modal-notice-text"></span>
+						<button id="qiq-modal-notice-close" class="btn ghost" style="padding:2px 6px;margin-inline-start:6px">✕</button>
+					</div>
+					<!-- New actions -->
+					<button class="qiq-modal__copy btn secondary" id="copyButton" style="padding:6px 10px">نسخ</button>
+					<button class="qiq-modal__attach btn" id="attachToQuote" style="padding:6px 10px;background:var(--brand-success)">إرفاق في عرض السعر</button>
+					<!-- Existing actions -->
 					<button class="qiq-modal__open-tab btn secondary" style="padding:6px 10px">Open in tab</button>
 					<button class="qiq-modal__print btn secondary" style="padding:6px 10px">Print</button>
 					<button class="qiq-modal__close btn" style="padding:6px 10px">Close</button>
@@ -226,5 +259,132 @@
 		</div>
 	</div>
 		<script src="/js/modal.js"></script>
+	<script>
+	// Modal helpers: persistent notice, sanitize content, copy, attach to quote
+	(function(){
+	  const $ = (s, r=document)=> r.querySelector(s);
+
+	  // Show inline notice that doesn't auto-dismiss
+	  function showNotice(text, type='info'){
+		const box = $('#qiq-modal-notice');
+		const msg = $('#qiq-modal-notice-text');
+		if (!box||!msg) return;
+		const styles = {
+		  info:{bg:'#f1f5f9',fg:'#0f172a',bd:'#cbd5e1'},
+		  ok:{bg:'#ecfdf5',fg:'#065f46',bd:'#a7f3d0'},
+		  warn:{bg:'#fff7ed',fg:'#9a3412',bd:'#fed7aa'},
+		  err:{bg:'#fef2f2',fg:'#7f1d1d',bd:'#fecaca'}
+		}[type]||{};
+		box.style.background = styles.bg || '#f1f5f9';
+		box.style.color = styles.fg || '#0f172a';
+		box.style.border = '1px solid ' + (styles.bd || '#cbd5e1');
+		msg.textContent = text || '';
+		box.style.display = text ? 'inline-flex' : 'none';
+	  }
+	  document.addEventListener('click', (e)=>{ if (e.target?.id==='qiq-modal-notice-close') showNotice(''); });
+
+	  // Provide product context to modal when available
+	  window.QiqModal = window.QiqModal || {};
+	  window.QiqModal.setCurrentProduct = function(meta={}){
+		window.QIQ_CURRENT_PRODUCT = {
+		  name: meta.name || meta.title || '',
+		  partNumber: meta.partNumber || meta.pn || meta.PN || meta.mpn || meta.sku || '',
+		  price: Number(meta.price || 0) || 0,
+		  brand: meta.brand || meta.manufacturer || '',
+		  image: meta.image || meta.thumbnail || ''
+		};
+	  };
+
+	  const arabicRe = /[\u0600-\u06FF]/;
+	  const latinRe = /[A-Za-z]/;
+
+	  // Ensure English tokens are visually separated to avoid RTL/LTR mix
+	  function separateEnglish(line){
+		const hasAr = arabicRe.test(line); const hasEn = latinRe.test(line);
+		if (hasAr && hasEn){
+		  return line.replace(/[A-Za-z0-9_./-]+/g, m => '\u200E'+m+'\u200E'); // wrap with LRM
+		}
+		return line;
+	  }
+
+	  // Clean content: remove Unknown/N.A/غير معروف/borders/separators; drop empty Pros/Cons
+	  function sanitizeText(raw){
+		if (!raw) return '';
+		let lines = raw.split(/\r?\n/).filter(line=>{
+		  const t = line.trim();
+		  if (!t) return false;
+		  const lower = t.toLowerCase();
+		  if (lower.includes('unknown') || lower==='n/a' || lower==='-' || lower==='—') return false;
+		  if (t.includes('غير معروف')) return false;
+		  if (/^\|[-\s]+\|$/.test(t)) return false;   // ascii borders
+		  if (/^[-─]{3,}$/.test(t)) return false;       // separators
+		  return true;
+		});
+		lines = lines.map(separateEnglish);
+		let cleaned = lines.join('\n');
+		cleaned = cleaned.replace(/(^|\n)#+\s*pros.*?(\n#+|\n*$)/gi, (m,p1,p2)=>{ const body=m.replace(/(^|\n)#+\s*pros/gi,''); return /\w/.test(body)?m:(p2||'\n'); });
+		cleaned = cleaned.replace(/(^|\n)#+\s*cons.*?(\n#+|\n*$)/gi, (m,p1,p2)=>{ const body=m.replace(/(^|\n)#+\s*cons/gi,''); return /\w/.test(body)?m:(p2||'\n'); });
+		// Optionally strip Arabic from technical blocks if mixing causes confusion
+		if (!window.QIQ_KEEP_ARABIC_IN_MODAL && arabicRe.test(cleaned)){
+		  cleaned = cleaned.replace(/[\u0600-\u06FF]+/g,'').replace(/\n{3,}/g,'\n\n');
+		}
+		return cleaned.trim();
+	  }
+
+	  function getFrameText(){
+		try{
+		  const doc = $('#qiq-modal-frame')?.contentDocument; if (!doc) return '';
+		  const pre = doc.querySelector('pre, code');
+		  return (pre?.innerText || doc.body?.innerText || '').trim();
+		}catch{ return ''; }
+	  }
+
+	  function extractCandidatePN(text){
+		const cands = Array.from(text.matchAll(/\b[A-Z0-9][A-Z0-9\-_.]{3,}\b/gi)).map(m=>m[0]);
+		const blacklist = new Set(['UNKNOWN','CPU','RAM','PORTS','WARRANTY','POWER','QTY','PN','SKU','PRICE','TOTAL','TABLE','FEATURE']);
+		return cands.find(s=>!blacklist.has(s.toUpperCase()) && /\d/.test(s)) || '';
+	  }
+
+	  async function onCopy(){
+		const cleaned = sanitizeText(getFrameText());
+		if (!cleaned) return showNotice('لا يوجد محتوى للنسخ.', 'warn');
+		try{ await navigator.clipboard.writeText(cleaned); showNotice('تم النسخ إلى الحافظة.', 'ok'); }
+		catch{ showNotice('تعذر النسخ، تأكد من صلاحيات المتصفح.', 'err'); }
+	  }
+
+	  function onAttach(){
+		const cleaned = sanitizeText(getFrameText());
+		const meta = Object.assign({}, window.QIQ_CURRENT_PRODUCT || {}, { partNumber: (window.QIQ_CURRENT_PRODUCT?.partNumber) || extractCandidatePN(cleaned) });
+		const pn = meta.partNumber; if (!pn) return showNotice('لم يتم العثور على رقم جزء PN صالح.', 'warn');
+		try{
+		  if (typeof window.addToQuote === 'function'){
+			window.addToQuote(pn, 1, meta);
+		  } else if (window.QiqQuote?.addItem){
+			window.QiqQuote.addItem({ pn, qty:1, name: meta.name||pn, price: meta.price||0, brand: meta.brand||'', image: meta.image||'' });
+		  } else {
+			const key='qiq_quote_items';
+			const items = JSON.parse(localStorage.getItem(key)||'[]');
+			items.push({ pn, qty:1, name: meta.name||pn, price: meta.price||0, brand: meta.brand||'', image: meta.image||'' });
+			localStorage.setItem(key, JSON.stringify(items));
+		  }
+		  showNotice('تم إرفاق المنتج إلى عرض السعر.', 'ok');
+		}catch(e){ console.error('AttachToQuote failed', e); showNotice('تعذر إرفاق المنتج الآن.', 'err'); }
+	  }
+
+	  function cleanupFrame(){
+		try{
+		  const doc = $('#qiq-modal-frame')?.contentDocument; if (!doc) return;
+		  const pre = doc.querySelector('pre, code');
+		  if (pre){ const cleaned = sanitizeText(pre.innerText||''); if (cleaned) pre.textContent = cleaned; }
+		}catch{}
+	  }
+
+	  document.addEventListener('DOMContentLoaded', ()=>{
+		$('#copyButton')?.addEventListener('click', onCopy);
+		$('#attachToQuote')?.addEventListener('click', onAttach);
+		$('#qiq-modal-frame')?.addEventListener('load', ()=> setTimeout(cleanupFrame, 60));
+	  });
+	})();
+	</script>
 	</body>
 	</html>

@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Generate project index and add it to commit
+node scripts/generate-index.mjs || exit 1
+git add PROJECT_INDEX.md

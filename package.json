@@ -19,13 +19,16 @@
     "start": "node server.js",
     "apply:algolia-settings": "ts-node src/search/applySettings.ts",
     "test": "npm run test:search",
-    "test:search": "jest __tests__/algoliaMapper.spec.ts -u"
+    "test:search": "jest __tests__/algoliaMapper.spec.ts -u",
+    "index": "node scripts/generate-index.mjs",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^24.5.2",
     "jest": "^29.7.0",
     "ts-jest": "^29.4.4",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "husky": "^9.0.0"
   }
 }
