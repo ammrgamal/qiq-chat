@@ -44,27 +44,25 @@ export async function adminLogin(req, res) {
 // Get all users
 export async function getUsers(req, res) {
   try {
-    const allUsers = await userStorage.getAll();
-    
-    // Transform user data for admin view
-    const usersData = Object.entries(allUsers).map(([email, user]) => ({
-      id: email,
-      email: email,
+    const allUsers = await userStorage.getAll(); // array of user objects
+    const usersArr = Array.isArray(allUsers) ? allUsers : [];
+    // Normalize/transform user data for admin view
+    const usersData = usersArr.map((user) => ({
+      id: user.email,
+      email: user.email,
       company: user.company || '',
       phone: user.phone || '',
       createdAt: user.createdAt || new Date().toISOString(),
       lastActive: user.lastActive || '',
-      verified: user.verified || false,
+      verified: Boolean(user.verified),
       quotationsCount: 0 // Will be calculated
     }));
     
     // Calculate quotations count for each user
     const allQuotations = await quotationStorage.getAll();
-    Object.values(allQuotations).forEach(quotation => {
+    (Array.isArray(allQuotations)? allQuotations : []).forEach(quotation => {
       const user = usersData.find(u => u.email === quotation.userEmail);
-      if (user) {
-        user.quotationsCount++;
-      }
+      if (user) user.quotationsCount++;
     });
     
     res.json(usersData);
@@ -81,18 +79,24 @@ export async function getQuotations(req, res) {
     const allQuotations = await quotationStorage.getAll();
     
     // Transform quotations data for admin view
-    const quotationsData = allQuotations.map(quotation => ({
-      id: quotation.id,
-      userEmail: quotation.userEmail || '',
-      clientName: quotation.clientName || '',
-      clientCompany: quotation.clientCompany || '',
-      clientPhone: quotation.clientPhone || '',
-      date: quotation.createdAt ? quotation.createdAt.split('T')[0] : '',
-      total: quotation.grandTotal || '',
-      status: quotation.status || 'مكتمل',
-      itemsCount: quotation.items ? quotation.items.length : 0,
-      hasInstallation: quotation.installationFee && quotation.installationFee > 0
-    }));
+    const quotationsData = allQuotations.map(q => {
+      const payload = q.payload || {};
+      const items = Array.isArray(payload.items) ? payload.items : (Array.isArray(q.items) ? q.items : []);
+      const total = payload?.totals?.grand ?? q.total ?? payload.total ?? '';
+      const date = q.date || q.savedAt || q.lastModified || '';
+      return {
+        id: q.id,
+        userEmail: q.userEmail || '',
+        clientName: q.clientName || payload?.client?.name || '',
+        clientCompany: q.clientCompany || payload?.client?.company || '',
+        clientPhone: q.clientPhone || payload?.client?.phone || '',
+        date: String(date).split('T')[0],
+        total,
+        status: q.status || 'مسودة',
+        itemsCount: items.length,
+        hasInstallation: Boolean(payload?.fees?.installation || q.installationFee)
+      };
+    });
     
     // Sort by date descending
     quotationsData.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -108,7 +112,7 @@ export async function getQuotations(req, res) {
 // Get activity logs
 export async function getActivity(req, res) {
   try {
-    const allActivity = await activityStorage.getAll();
+    const allActivity = await activityStorage.getRecent(1000);
     
     // Sort by timestamp descending (most recent first)
     const activityData = allActivity.sort((a, b) => 
@@ -116,7 +120,7 @@ export async function getActivity(req, res) {
     );
     
     // Limit to last 1000 entries to prevent excessive data
-    const limitedActivity = activityData.slice(0, 1000);
+  const limitedActivity = activityData.slice(0, 1000);
     
     res.json(limitedActivity);
     
@@ -129,13 +133,13 @@ export async function getActivity(req, res) {
 // Get dashboard statistics
 export async function getDashboardStats(req, res) {
   try {
-    const [allUsers, allQuotations, allActivity] = await Promise.all([
+    const [usersRaw, allQuotations, allActivity] = await Promise.all([
       userStorage.getAll(),
       quotationStorage.getAll(),
-      activityStorage.getAll()
+      activityStorage.getRecent(1000)
     ]);
     
-    const userEmails = Object.keys(allUsers);
+    const usersArr = Array.isArray(usersRaw) ? usersRaw : [];
     const quotations = Array.isArray(allQuotations) ? allQuotations : [];
     
     // Calculate today's quotations
@@ -160,12 +164,12 @@ export async function getDashboardStats(req, res) {
     }, 0);
     
     const stats = {
-      totalUsers: userEmails.length,
+      totalUsers: usersArr.length,
       totalQuotations: quotations.length,
       todayQuotations: todayQuotations.length,
       activeUsers: activeUsers.length,
       totalRevenue: totalRevenue,
-      verifiedUsers: Object.values(allUsers).filter(u => u.verified).length,
+      verifiedUsers: usersArr.filter(u => u.verified).length,
       recentActivity: allActivity.slice(0, 10)
     };
     

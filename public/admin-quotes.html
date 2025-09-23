@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>العروض - لوحة الإدارة</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    .admin-header { background: #1f2937; color: #fff; padding: 14px 0; margin-bottom: 18px; }
+    .admin-nav { display: flex; gap: 12px; align-items: center; }
+    .admin-nav a { color: #d1d5db; text-decoration: none; padding: 6px 10px; border-radius: 6px; }
+    .admin-nav a:hover, .admin-nav a.active { background: #374151; color: #fff; }
+    .filter-bar { background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .filter-bar input, .filter-bar select { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; }
+    .data-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .data-table th, .data-table td { border: 1px solid #e5e7eb; padding: 8px; text-align: right; }
+    .data-table th { background: #f9fafb; font-weight: 600; }
+    .btn-admin { background: #2563eb; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .btn-admin:hover { background: #1d4ed8; }
+    .btn-danger { background: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
+    .status-chip { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; background:#eef2ff; color:#3730a3 }
+  </style>
+</head>
+<body>
+  <div class="admin-header">
+    <div class="qiq-container">
+      <div class="admin-nav">
+        <strong>إدارة العروض</strong>
+        <div style="margin-inline-start:auto">
+          <button id="btn-logout" class="btn-admin">خروج</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="qiq-container">
+    <div class="filter-bar">
+      <input type="text" id="quotations-search" placeholder="البحث برقم العرض أو العميل..." />
+      <select id="quotations-status">
+        <option value="">كل الحالات</option>
+        <option value="مسودة">مسودة</option>
+        <option value="قيد المراجعة">قيد المراجعة</option>
+        <option value="مكتمل">مكتمل</option>
+      </select>
+      <input type="date" id="quotations-date" />
+      <button class="btn-admin" id="btn-export">تصدير CSV</button>
+    </div>
+
+    <table class="data-table" id="quotations-table">
+      <thead>
+        <tr>
+          <th>رقم العرض</th>
+          <th>العميل</th>
+          <th>المستخدم</th>
+          <th>التاريخ</th>
+          <th>القيمة</th>
+          <th>الحالة</th>
+          <th>إجراءات</th>
+        </tr>
+      </thead>
+      <tbody id="quotations-tbody">
+        <tr><td colspan="7">جاري التحميل...</td></tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Admin Login Modal -->
+  <div id="admin-login-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:9999">
+    <div class="qiq-card" style="max-width:400px;width:90%">
+      <h3>دخول المدير</h3>
+      <form id="admin-login-form">
+        <div style="margin-bottom:12px">
+          <label>كلمة مرور المدير:</label>
+          <input type="password" id="admin-password" required style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:4px" />
+        </div>
+        <div style="text-align:center">
+          <button type="submit" class="btn-admin">دخول</button>
+        </div>
+      </form>
+      <div id="admin-login-error" style="color:#dc2626;margin-top:8px;text-align:center"></div>
+    </div>
+  </div>
+
+  <script src="/js/toast.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.10/build/pdfmake.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.10/build/vfs_fonts.js"></script>
+  <script src="/js/pdf-arabic-fonts.js"></script>
+  <script src="/js/pdf-admin.js"></script>
+  <script src="/js/admin-quotes.js"></script>
+  <script src="/js/experimental-banner.js"></script>
+</body>
+</html>

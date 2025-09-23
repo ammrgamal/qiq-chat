@@ -14,6 +14,7 @@
   <!-- pdfmake for PDF generation -->
   <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.10/build/pdfmake.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.10/build/vfs_fonts.js"></script>
+  <script src="/js/pdf-arabic-fonts.js"></script>
   <style>
     :root{ --border:#e5e7eb; --muted:#6b7280; --accent:#2563eb; --bg:#f8fafc; --ok:#059669; }
     body{ font-family:Inter,system-ui,Segoe UI,Arial; background:#fff; color:#111; margin:0 }
@@ -79,6 +80,15 @@
   /* Chat-like vibes */
   .compact-quote-table tbody tr:nth-child(odd){background:#fafafa}
   .compact-quote-table tbody tr:hover{background:#f3f4f6}
+
+    /* Improved spacing + thumbnail in description */
+    .compact-quote-table .desc-flex{display:flex;gap:10px;align-items:flex-start}
+    .compact-quote-table .thumb{width:40px;height:40px;border-radius:8px;object-fit:cover;flex:0 0 auto;cursor:zoom-in;border:1px solid var(--border);background:#fff}
+    .compact-quote-table .qty-col{width:80px;text-align:center}
+    .compact-quote-table .price-col{width:120px}
+    .compact-quote-table .total-col{width:130px}
+    .compact-quote-table .actions-col{width:80px}
+    .compact-quote-table td, .compact-quote-table th{vertical-align:top}
 
   /* Project Info Modal */
   .proj-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:99999}
@@ -153,8 +163,8 @@
           <input id="client-contact" placeholder="الاسم" />
         </div>
         <div class="col-3">
-          <label>البريد الإلكتروني</label>
-          <input id="client-email" type="email" placeholder="name@example.com" />
+          <label>البريد الإلكتروني (Business)</label>
+          <input id="client-email" type="email" placeholder="name@company.com" />
           <div class="email-hint">Please use your business email for faster response.</div>
         </div>
         <div class="col-3">
@@ -164,6 +174,18 @@
         <div class="col-3">
           <label>اسم المشروع</label>
           <input id="project-name" placeholder="Project X" />
+        </div>
+        <div class="col-3">
+          <label>صفة الطالب (Requester Role)</label>
+          <select id="requester-role">
+            <option value="">— اختر —</option>
+            <option>IT Manager</option>
+            <option>Procurement</option>
+            <option>Owner/Founder</option>
+            <option>Operations</option>
+            <option>Consultant</option>
+            <option>Other</option>
+          </select>
         </div>
         <div class="col-3">
           <label>صاحب / مالك المشروع (إن وجد)</label>
@@ -195,6 +217,10 @@
           <label>موعد التنفيذ المتوقع</label>
           <input id="execution-date" type="date" />
         </div>
+        <div class="col-3">
+          <label>موعد الإغلاق المتوقع (Expected Closing)</label>
+          <input id="expected-close" type="date" />
+        </div>
         <div class="col-6 checkbox">
           <input id="need-assist" type="checkbox" />
           <label for="need-assist" style="margin:0">أحتاج مكالمة/مساعدة قبل استلام العرض</label>
@@ -207,6 +233,7 @@
       <div class="flex">
         <div style="font-weight:700">بنود عرض السعر</div>
         <div class="right no-print flex">
+          <label class="checkbox" style="margin-inline-end:8px"><input id="boq-images-toggle" type="checkbox"/> <span class="muted">إظهار صور مصغّرة في جدول BOQ</span></label>
           <button id="btn-clear-all" class="btn btn-danger">مسح الكل</button>
           <button id="btn-import-excel" class="btn btn-primary">استيراد Excel</button>
           <button id="btn-export-csv" class="btn">تصدير CSV</button>
@@ -236,11 +263,11 @@
         <table id="items-table" class="compact-quote-table sticky-header" aria-label="Quote items">
           <thead>
             <tr>
-              <th style="width:86%">Description / PN</th>
-              <th style="width:3%">QTY</th>
-              <th style="width:4%">Price</th>
-              <th style="width:4%">Total</th>
-              <th class="no-print" style="width:3%">Action</th>
+              <th class="desc-col">Description / PN</th>
+              <th class="qty-col">QTY</th>
+              <th class="price-col">Price</th>
+              <th class="total-col">Total</th>
+              <th class="actions-col no-print">Action</th>
             </tr>
           </thead>
           <tbody id="items-body"></tbody>
@@ -297,6 +324,8 @@
           <button id="btn-submit" class="btn btn-ok">إرسال الطلب</button>
         </div>
       </div>
+      <!-- Connectivity status (inline helper) -->
+      <div id="qiq-connectivity" class="muted" style="margin-top:8px;font-size:12px"></div>
       
       <!-- Proceed to Request Quote CTA -->
       <div id="proceed-cta" class="proceed-cta" style="display:none">
@@ -362,5 +391,26 @@
   <script src="js/toast.js"></script>
   <script src="/js/experimental-banner.js"></script>
   <script src="js/quote.js"></script>
+  <script>
+    // Render a tiny connectivity line from /health for quick diagnostics
+    (function(){
+      function chip(name, ok){
+        const color = ok ? '#166534' : '#991b1b';
+        return `<span style="display:inline-block;margin-inline-end:8px;color:${color}">${name}:${ok?'OK':'—'}</span>`;
+      }
+      fetch('/health').then(r=>r.json()).then(h=>{
+        const env = h?.env || {};
+        const html = [
+          chip('HelloLeads', !!env.hasHelloLeads),
+          chip('Resend', !!env.hasResend),
+          chip('OpenAI', !!env.hasOpenAI),
+          chip('Gemini', !!env.hasGemini),
+          chip('AUTO_APPROVE', !!env.autoApprove)
+        ].join(' ');
+        const el = document.getElementById('qiq-connectivity');
+        if (el) el.innerHTML = html;
+      }).catch(()=>{});
+    })();
+  </script>
 </body>
 </html>

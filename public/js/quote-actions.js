@@ -660,39 +660,30 @@
     const reader = new FileReader();
     reader.onload = async function(e) {
       try {
-        let rows = [];
+        // Send to backend parser for consistent logic + notes
+        let payload = null;
         if (isExcel && typeof XLSX !== 'undefined' && e.target.result) {
-          // Parse as real Excel using SheetJS
           const wb = XLSX.read(e.target.result, { type: 'array' });
           const ws = wb.Sheets[wb.SheetNames[0]];
           const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
-          rows = (Array.isArray(aoa) ? aoa : []).map(r => Array.isArray(r) ? r : []).filter(r => r.some(c => String(c||'').trim() !== ''));
+          payload = { rows: aoa };
         } else {
-          // Fallback: parse as CSV/TSV text
           const text = e.target.result || '';
-          if (typeof text !== 'string') {
-            showNotification('تعذر قراءة الملف، حاول مرة أخرى كـ CSV', 'error');
-            return;
-          }
-          // Protect against binary Excel loaded as text
-          if (/^PK/.test(text)) {
-            showNotification('تم رفع ملف Excel ثنائي. لو سمحت ارفعه كـ .xlsx (سيتم استخدام SheetJS).', 'error');
-            return;
-          }
-          rows = text
-            .split(/\r?\n/)
-            .map(r => r.split(/[;\t,]/).map(c => String(c||'').trim().replace(/^"|"$/g, '')))
-            .filter(r => r.some(c => c && c.length));
+          if (typeof text !== 'string') { showNotification('تعذر قراءة الملف، حاول مرة أخرى كـ CSV', 'error'); return; }
+          if (/^PK/.test(text)) { showNotification('تم رفع ملف Excel ثنائي. لو سمحت ارفعه كـ .xlsx (سيتم استخدام SheetJS).', 'error'); return; }
+          const rows = text.split(/\r?\n/).map(r=> r.split(/[;\t,]/).map(c=> String(c||'').trim().replace(/^"|"$/g,'')) ).filter(r=> r.some(c=>c && c.length));
+          payload = { rows };
         }
-
-        if (!rows.length) {
-          showNotification('الملف فارغ أو غير صالح', 'error');
-          return;
-        }
+        const resp = await fetch('/api/boq/parse', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
+        if (!resp.ok) throw new Error('HTTP '+resp.status);
+        const parsed = await resp.json();
+        const rows = Array.isArray(parsed?.items) ? parsed.items : [];
+        const notes = Array.isArray(parsed?.notes) ? parsed.notes : [];
+        if (!rows.length) { showNotification('الملف فارغ أو غير صالح', 'error'); return; }
 
         // Heuristic header detection from first non-empty row
-        const header = rows[0].map(h => h.toLowerCase());
-        const colIndex = { pn: -1, qty: -1, desc: -1, price: -1 };
+        // Now rows are normalized objects {pn, qty, description?, price?}
+        const colIndex = { pn: 0, qty: 1, desc: 2, price: 3 };
 
         function likelyPn(val){
           const v = String(val||'').trim();
@@ -718,7 +709,7 @@
         });
 
         // If still unknown, probe first up to 3 data rows
-        const probeRows = rows.slice(1, 4);
+  const probeRows = [];
         if (colIndex.pn<0 || colIndex.qty<0) {
           for (let i=0;i<(rows[1]?.length||0);i++){
             const colVals = probeRows.map(r=>r[i]);
@@ -785,13 +776,12 @@
         }
 
         let importedCount = 0;
-        for (let i=1;i<rows.length;i++){
+        for (let i=0;i<rows.length;i++){
           const row = rows[i];
-          const pn = row[colIndex.pn] || '';
-          const qty = row[colIndex.qty] || 1;
-          const desc = colIndex.desc>=0 ? row[colIndex.desc] : '';
-          const priceRaw = colIndex.price>=0 ? row[colIndex.price] : '';
-          const price = priceRaw ? String(priceRaw).replace(/[^\d.]/g,'') : '';
+          const pn = row.pn || '';
+          const qty = row.qty || 1;
+          const desc = row.description || '';
+          const price = row.price ? String(row.price).replace(/[^\d.]/g,'') : '';
 
           if (!(pn||desc)) continue;
 
@@ -849,11 +839,9 @@
           }
         }
 
-        if (importedCount > 0) {
-          showNotification(`تم استيراد ${importedCount} عنصر بنجاح`, 'success');
-        } else {
-          showNotification('لم يتم العثور على بيانات صالحة للاستيراد', 'error');
-        }
+        if (notes.length) { try{ window.QiqToast?.warning?.(notes.join('\n'), 4000);}catch{} }
+        if (importedCount > 0) { showNotification(`تم استيراد ${importedCount} عنصر بنجاح`, 'success'); }
+        else { showNotification('لم يتم العثور على بيانات صالحة للاستيراد', 'error'); }
 
         // Persist staged
         updateStagedItemsFromTable();

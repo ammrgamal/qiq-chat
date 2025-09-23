@@ -176,6 +176,27 @@
       const cfg = await res.json();
       document.getElementById('cfg-instructions').value = cfg.instructions || '';
       document.getElementById('cfg-bundles').value = JSON.stringify(cfg.bundles || [], null, 2);
+      try{
+        const ai = cfg.ai || {};
+        const overrideEl = document.getElementById('cfg-ai-override');
+        const allowEl = document.getElementById('cfg-ai-allowed');
+        if (overrideEl) overrideEl.checked = !!ai.autoApproveOverride;
+        if (allowEl) allowEl.value = (Array.isArray(ai.allowedDomains) ? ai.allowedDomains.join('\n') : '');
+      }catch{}
+      // Surface environment info (AUTO_APPROVE and AI providers) if present
+      try{
+        const env = cfg._env || {};
+        const el = document.getElementById('cfg-env-info');
+        if (el){
+          el.innerHTML = `
+            <div class="muted" style="margin-top:8px">
+              AUTO_APPROVE: <b>${env.autoApprove ? 'ON' : 'OFF'}</b> ·
+              OpenAI: <b>${env.aiProviders?.openai ? 'OK' : '—'}</b> ·
+              Gemini: <b>${env.aiProviders?.gemini ? 'OK' : '—'}</b>
+              ${env.notes ? `<div style='margin-top:4px;color:#9ca3af'>${env.notes}</div>` : ''}
+            </div>`;
+        }
+      }catch{}
       try{ window.QiqToast?.success?.('تم التحميل', 1500); }catch{}
     }catch(e){ console.warn(e); try{ window.QiqToast?.error?.('تعذر التحميل', 2000);}catch{} }
   }
@@ -186,7 +207,15 @@
       const instructions = document.getElementById('cfg-instructions').value || '';
       let bundles = [];
       try{ bundles = JSON.parse(document.getElementById('cfg-bundles').value || '[]'); }catch{ bundles = []; }
-      const res = await fetch('/api/admin/config', { method:'POST', headers:{ 'Authorization': `Bearer ${adminToken}`, 'content-type':'application/json' }, body: JSON.stringify({ instructions, bundles }) });
+      // AI settings
+      const overrideEl = document.getElementById('cfg-ai-override');
+      const allowEl = document.getElementById('cfg-ai-allowed');
+      const allowedDomains = (allowEl?.value || '')
+        .split(/\r?\n/)
+        .map(s=>s.trim())
+        .filter(Boolean);
+      const ai = { autoApproveOverride: !!(overrideEl && overrideEl.checked), allowedDomains };
+      const res = await fetch('/api/admin/config', { method:'POST', headers:{ 'Authorization': `Bearer ${adminToken}`, 'content-type':'application/json' }, body: JSON.stringify({ instructions, bundles, ai }) });
       if (!res.ok) throw new Error('HTTP '+res.status);
       try{ window.QiqToast?.success?.('تم الحفظ', 1500); }catch{}
     }catch(e){ console.warn(e); try{ window.QiqToast?.error?.('تعذر الحفظ', 2000);}catch{} }
@@ -392,7 +421,7 @@
   };
 
   window.viewQuotationDetails = function(id) {
-    alert(`عرض تفاصيل العرض: ${id}`);
+    openQuotationModal(id);
   };
 
   window.deleteQuotation = async function(id) {
@@ -467,4 +496,139 @@
     return csvRows.join('\n');
   }
 
+})();
+
+// Quotation detail modal implementation
+(function(){
+  const modalId = 'admin-quotation-modal';
+  function ensureModal(){
+    if (document.getElementById(modalId)) return;
+    const div = document.createElement('div');
+    div.id = modalId;
+    div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:9999';
+    div.innerHTML = `
+      <div class="qiq-card" style="max-width:900px;width:95%;max-height:90vh;overflow:auto">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <h3 id="qmod-title" style="margin:0;flex:1">تفاصيل العرض</h3>
+          <button id="qmod-close" class="btn-admin">إغلاق</button>
+        </div>
+        <div id="qmod-body">جاري التحميل...</div>
+      </div>`;
+    document.body.appendChild(div);
+    div.querySelector('#qmod-close').addEventListener('click', ()=> hide());
+  }
+  function show(){ ensureModal(); document.getElementById(modalId).style.display='flex'; }
+  function hide(){ const el=document.getElementById(modalId); if (el) el.style.display='none'; }
+
+  async function fetchAdmin(url){
+    const token = sessionStorage.getItem('qiq_admin_token');
+    const res = await fetch(url, { headers:{ 'Authorization': `Bearer ${token}`, 'content-type':'application/json' }});
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    return res.json();
+  }
+  async function postAdmin(url, body){
+    const token = sessionStorage.getItem('qiq_admin_token');
+    const res = await fetch(url, { method:'POST', headers:{ 'Authorization': `Bearer ${token}`, 'content-type':'application/json' }, body: JSON.stringify(body||{}) });
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    return res.json();
+  }
+
+  function renderDetails(q){
+    const items = Array.isArray(q?.payload?.items) ? q.payload.items : [];
+    const rows = items.map((it,i)=> `<tr>
+      <td>${i+1}</td>
+      <td>${it.description || it.name || '-'}</td>
+      <td>${it.pn||''}</td>
+      <td>${it.qty||1}</td>
+      <td>${it.unit||it.price||''}</td>
+    </tr>`).join('');
+    return `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div><strong>رقم العرض:</strong> ${q.id}</div>
+        <div><strong>التاريخ:</strong> ${q.date || (q.savedAt||'').slice(0,10)}</div>
+        <div><strong>العميل:</strong> ${q.clientName||q?.payload?.client?.name||'-'}</div>
+        <div><strong>البريد:</strong> ${q.userEmail||'-'}</div>
+        <div><strong>الإجمالي:</strong> ${q?.payload?.totals?.grand ?? q.total ?? '-'}</div>
+        <div><strong>الحالة:</strong> ${q.status||'مسودة'}</div>
+      </div>
+      <div class="qiq-card" style="margin-bottom:12px">
+        <h4 style="margin-top:0">الأصناف</h4>
+        <table class="data-table">
+          <thead><tr><th>#</th><th>الوصف</th><th>رقم الصنف</th><th>الكمية</th><th>السعر</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="5">لا توجد أصناف</td></tr>'}</tbody>
+        </table>
+      </div>
+      <div class="qiq-card" style="display:grid;gap:8px">
+        <h4 style="margin:0">ملاحظات داخلية</h4>
+        <form id="qmod-notes-form" style="display:flex;gap:8px">
+          <input id="qmod-note-input" placeholder="أضف ملاحظة..." style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px"/>
+          <button class="btn-admin" type="submit">حفظ</button>
+        </form>
+        <div id="qmod-notes-list">${(q.internalNotes||[]).map(n=> `<div style="font-size:12px;color:#374151">${n.note} <span style="color:#6b7280">(${new Date(n.at).toLocaleString('ar-EG')})</span></div>`).join('')}</div>
+        <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#374151">
+            <input type="checkbox" id="qmod-boq-images" />
+            تضمين صور مصغرة في BOQ
+          </label>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button id="qmod-resend" class="btn-admin">إعادة إرسال الإيميل</button>
+          <button id="qmod-pdf" class="btn-admin">تنزيل PDF</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  async function buildAndDownloadSimplePdf(q){
+    const items = Array.isArray(q?.payload?.items) ? q.payload.items : [];
+    const body = [["#","الوصف","PN","الكمية","السعر"]].concat(items.map((it,i)=>[
+      String(i+1), it.description||it.name||'-', it.pn||'', String(it.qty||1), String(it.unit||it.price||'')
+    ]));
+    const dd = {
+      content:[
+        { text: 'عرض سعر', style:'header', alignment:'center' },
+        { text: `${q.id} • ${q.date||''}`, margin:[0,0,0,8], alignment:'center' },
+        { text: `العميل: ${q.clientName||'-'}`, margin:[0,0,0,12] },
+        { table:{ headerRows:1, widths:['auto','*','auto','auto','auto'], body }, layout:'lightHorizontalLines' }
+      ],
+      styles:{ header:{ fontSize:16, bold:true } }, defaultStyle:{ font: 'Helvetica' }
+    };
+    window.pdfMake?.createPdf(dd).download(`${q.id}.pdf`);
+  }
+
+  window.openQuotationModal = async function(id){
+    try{
+      show();
+      const box = document.getElementById('qmod-body');
+      box.innerHTML = 'جاري التحميل...';
+      const q = await fetchAdmin(`/api/admin/quotation/${encodeURIComponent(id)}`);
+      document.getElementById('qmod-title').textContent = `تفاصيل العرض: ${id}`;
+      box.innerHTML = renderDetails(q);
+      // Initialize BOQ images toggle from session (default: ON)
+      try{
+        const pref = sessionStorage.getItem('qiq_admin_boq_images');
+        const chk = box.querySelector('#qmod-boq-images');
+        if (chk) chk.checked = (pref == null) ? true : (pref === '1');
+      }catch{}
+      // Wire form
+      box.querySelector('#qmod-notes-form').addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const note = box.querySelector('#qmod-note-input').value.trim();
+        if (!note) return;
+        await postAdmin(`/api/admin/quotation/${encodeURIComponent(id)}/notes`, { note });
+        const fresh = await fetchAdmin(`/api/admin/quotation/${encodeURIComponent(id)}`);
+        box.innerHTML = renderDetails(fresh);
+      });
+      // Resend
+      box.querySelector('#qmod-resend').addEventListener('click', async ()=>{
+        try{ await postAdmin(`/api/admin/quotation/${encodeURIComponent(id)}/resend-email`, {}); window.QiqToast?.success?.('تم الإرسال', 1500);}catch{ window.QiqToast?.error?.('تعذر الإرسال', 2000);} 
+      });
+      // PDF (advanced with fallback)
+      box.querySelector('#qmod-pdf').addEventListener('click', async ()=>{
+        const includeImages = !!box.querySelector('#qmod-boq-images')?.checked;
+        try{ sessionStorage.setItem('qiq_admin_boq_images', includeImages ? '1' : '0'); }catch{}
+        try{ await window.QiqAdminPdf?.buildAndDownload(q, { includeImages }); }
+        catch{ buildAndDownloadSimplePdf(q); }
+      });
+    }catch(e){ console.warn(e); const box = document.getElementById('qmod-body'); if (box) box.textContent = 'خطأ في التحميل'; }
+  };
 })();

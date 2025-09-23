@@ -21,6 +21,22 @@
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const uid = () => Math.random().toString(36).slice(2, 8).toUpperCase();
 
+  // Convert image URL to dataURL for pdfmake (same-origin recommended)
+  async function imageUrlToDataURL(url){
+    try{
+      if (!url) return null;
+      const res = await fetch(url, { mode: 'cors' });
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return await new Promise((resolve)=>{
+        const reader = new FileReader();
+        reader.onload = ()=> resolve(reader.result);
+        reader.onerror = ()=> resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    }catch{ return null; }
+  }
+
   // ===== Enhanced UI Helpers =====
   const showNotification = (message, type = 'info') => {
     // Use the global toast system if available
@@ -161,7 +177,8 @@
             pn: item.pn || item.sku || "",
             unit: Number(item.price || 0),
             qty: Number(item.quantity || 1),
-            manufacturer: item.manufacturer || ""
+            manufacturer: item.manufacturer || "",
+            image: item.image || ''
           });
           if (key) existingKeys.add(key);
           imported++;
@@ -193,7 +210,8 @@
               pn: it.PN_SKU || it.pn || it.sku || "",
               unit: num(it.UnitPrice || it.unitPrice || it.price || 0),
               qty: Number(it.Qty || it.qty || 1),
-              manufacturer: it.manufacturer || it.brand || it.vendor || ""
+              manufacturer: it.manufacturer || it.brand || it.vendor || "",
+              image: it.image || ''
             });
             if (key) existing.add(key);
             imported++;
@@ -356,43 +374,200 @@
     showNotification("تم حفظ المسودة محليًا", "success");
   });
 
-  // Export PDF (pdfmake)
+  // Export PDF (pdfmake) — multi-page branded
   document.getElementById('btn-export-pdfmake')?.addEventListener('click', async (e)=>{
     e.preventDefault();
     if (!validateRequiredBeforePDF()) return;
     await recalcTotals();
     try{
+      try{ await window.ensureArabicFonts?.(); }catch{}
       const payload = buildPayload({ reason: 'export-pdf' });
-      const items = (payload.items||[]).map((it,i)=>[
-        { text: String(i+1), alignment:'right' },
-        { text: it.description||'-', alignment:'right' },
-        { text: it.pn||'', alignment:'right' },
-        { text: String(it.qty||1), alignment:'right' },
-        { text: String(it.unit||''), alignment:'right' },
-        { text: String(it.total||''), alignment:'right' },
-      ]);
+      // Collect live totals text from footer cells
+      const totals = {
+        subtotal: $("subtotal-cell").textContent,
+        install: $("install-cell").textContent,
+        grand: $("grand-cell").textContent
+      };
+      const includeImages = !!document.getElementById('boq-images-toggle')?.checked;
+      const itemsWithDataImages = [];
+      if (includeImages) {
+        // Cap to 100 images to avoid heavy PDFs
+        for (let i=0; i<Math.min(payload.items.length, 100); i++){
+          const it = payload.items[i];
+          const durl = it.image ? await imageUrlToDataURL(it.image) : null;
+          itemsWithDataImages.push({ ...it, _img: durl });
+        }
+      }
+      const lines = (payload.items||[]).map((it,i)=>{
+        const unit = Number(it.unit_price||0);
+        const qty = Number(it.qty||1);
+        const line = unit * qty;
+        const maybeImg = includeImages ? (itemsWithDataImages[i]?._img || null) : null;
+        const descStack = maybeImg ? {
+          columns:[
+            { image: maybeImg, width: 24, height: 24, margin:[0,2,6,0] },
+            { text: it.description||'-' }
+          ]
+        } : { text: it.description||'-' };
+        return [
+          { text: String(i+1), alignment:'right' },
+          descStack,
+          { text: it.pn||'', alignment:'right' },
+          { text: String(qty), alignment:'right' },
+          { text: fmt(unit, payload.currency), alignment:'right' },
+          { text: fmt(line, payload.currency), alignment:'right' },
+        ];
+      });
+
+      // Try embedding logo
+      const logoDataUrl = await imageUrlToDataURL(logoEl?.src);
+
+      // Fetch AI-generated titles/headings and product details
+      let ai = null;
+      try{
+        // Prepare optional media/link context for AI provider routing (Gemini for media)
+        const allImgs = (payload.items||[]).map(it => it?.image || '').filter(Boolean);
+        const allLinks = (payload.items||[]).map(it => it?.link || '').filter(Boolean);
+        const pdfLinks = allLinks.filter(u => /\.pdf(\?|#|$)/i.test(u));
+        const imageUrls = Array.from(new Set(allImgs)).slice(0,5);
+        const webUrls   = Array.from(new Set(allLinks)).slice(0,5);
+        const pdfUrls   = Array.from(new Set(pdfLinks)).slice(0,3);
+        const r = await fetch('/api/pdf-ai', {
+          method:'POST', headers:{'content-type':'application/json'},
+          body: JSON.stringify({ client: payload.client, project: payload.project, items: payload.items, currency: payload.currency, imageUrls, webUrls, pdfUrls })
+        });
+        const j = await r.json();
+        ai = j?.data || null;
+        if (j?.provider) console.info('PDF AI provider:', j.provider, j?.note?`(${j.note})`:'' );
+      }catch{}
+      const headings = ai?.headings || { letter:'Cover Letter', boq:'Bill of Quantities', terms:'Terms & Conditions', productDetails:'Product Details' };
+      const coverTitle = ai?.coverTitle || 'عرض سعر | Quotation';
+      const coverSubtitle = ai?.coverSubtitle || '';
+      const letterBlocks = ai?.letter ? [
+        { text: String(ai.letter.ar||'').trim(), rtl: true, alignment: 'right', margin:[0,0,0,8], font: (window.pdfMake?.fonts && window.pdfMake.fonts.Arabic) ? 'Arabic' : undefined },
+        { text: String(ai.letter.en||'').trim() }
+      ] : [
+        { text: `Dear ${payload.client?.contact || 'Sir/Madam'},\n\nThank you for the opportunity to submit our quotation for ${payload.project?.name || 'your project'}.` }
+      ];
+
       const dd = {
         info: { title: `Quotation ${payload.number}` },
-        pageMargins: [30, 40, 30, 40],
-        defaultStyle: { fontSize: 9 },
+        pageMargins: [36, 48, 36, 48],
+        defaultStyle: { fontSize: 10, lineHeight: 1.2 },
         styles: {
-          header: { fontSize: 16, bold: true, margin: [0,0,0,6] },
-          muted: { color: '#6b7280' },
-          tableHeader: { bold: true, fillColor: '#f3f4f6' }
+          title: { fontSize: 20, bold: true },
+          subtitle: { fontSize: 12, color: '#6b7280' },
+          h2: { fontSize: 14, bold: true, margin:[0,12,0,6] },
+          h3: { fontSize: 12, bold: true, margin:[0,8,0,4] },
+          label: { bold: true, color: '#374151' },
+          tableHeader: { bold: true, fillColor: '#f3f4f6' },
+          small: { fontSize: 9, color: '#6b7280' },
+          tocTitle: { fontSize: 14, bold: true, margin:[0,0,0,8] },
+          tocItem: { fontSize: 10 }
+        },
+        footer: function(currentPage, pageCount){
+          return { columns:[
+            { text: 'QuickITQuote', style:'small' },
+            { text: `Page ${currentPage} of ${pageCount}`, alignment:'right', style:'small' }
+          ], margin:[36, 8, 36, 0] };
         },
         content: [
-          { text: 'QuickITQuote — Quotation', style: 'header' },
-          { text: `Number: ${payload.number}    Date: ${payload.date}`, style:'muted' },
-          { text: `Client: ${payload.client?.name || ''}    Currency: ${payload.currency}`, style:'muted', margin:[0,0,0,8] },
+          // Cover Page
+          { tocItem: true, text: 'Cover', style: 'h2' },
           {
-            table:{ headerRows:1, widths:['auto','*','auto','auto','auto','auto'], body:[
-              [ {text:'#',style:'tableHeader'}, {text:'Description',style:'tableHeader'}, {text:'PN',style:'tableHeader'}, {text:'Qty',style:'tableHeader'}, {text:'Unit',style:'tableHeader'}, {text:'Line',style:'tableHeader'} ],
-              ...items
-            ]}, layout:'lightHorizontalLines'
+            columns: [
+              logoDataUrl ? { image: logoDataUrl, width: 140, margin:[0,0,0,12] } : { text: 'QuickITQuote', style:'title' },
+              {
+                alignment: 'right',
+                stack: [
+                  { text: coverTitle, style:'title' },
+                  { text: `Number: ${payload.number}`, style:'subtitle' },
+                  { text: `Date: ${payload.date}` , style:'subtitle' },
+                  { text: `Currency: ${payload.currency}`, style:'subtitle' }
+                ]
+              }
+            ], margin:[0,0,0,12]
           },
-          { text: `Grand Total: ${payload.totals?.grand || ''}`, margin:[0,8,0,0] }
-        ]
+          coverSubtitle ? { text: coverSubtitle, style:'subtitle', margin:[0,0,0,8] } : null,
+          {
+            columns:[
+              { width:'*', stack:[
+                { text:'Client', style:'h3' },
+                { text: `${payload.client?.name || ''}` },
+                { text: `${payload.client?.contact || ''}` },
+                { text: `${payload.client?.email || ''}` },
+                { text: `${payload.client?.phone || ''}` }
+              ]},
+              { width:'*', stack:[
+                { text:'Project', style:'h3' },
+                { text: `${payload.project?.name || ''}` },
+                { text: `${payload.project?.site || ''}` },
+                { text: `${payload.project?.execution_date || ''}` }
+              ]}
+            ]
+          },
+          { text:'', pageBreak:'after' },
+
+          // Table of Contents
+          { toc: { title: { text:'Table of Contents', style:'tocTitle' } } },
+          { text:'', pageBreak:'after' },
+
+          // Letter
+          { tocItem:true, text: headings.letter || 'Cover Letter', style:'h2' },
+          { stack: letterBlocks, margin:[0,0,0,12] },
+          { text:'Summary', style:'h3' },
+          { ul:[
+            `Subtotal: ${totals.subtotal}`,
+            (payload.include_installation_5pct ? `Installation/Services: ${totals.install}` : null),
+            `Grand Total: ${totals.grand}`
+          ].filter(Boolean) },
+          { text:'', pageBreak:'after' },
+
+          // BOQ
+          { tocItem:true, text: headings.boq || 'Bill of Quantities', style:'h2' },
+          {
+            table:{
+              headerRows:1,
+              widths:['auto','*','auto','auto','auto','auto'],
+              body:[
+                [
+                  {text:'#',style:'tableHeader', alignment:'right'},
+                  {text:'Description',style:'tableHeader'},
+                  {text:'PN',style:'tableHeader', alignment:'right'},
+                  {text:'Qty',style:'tableHeader', alignment:'right'},
+                  {text:'Unit',style:'tableHeader', alignment:'right'},
+                  {text:'Line',style:'tableHeader', alignment:'right'}
+                ],
+                ...lines
+              ]
+            },
+            layout: {
+              fillColor: function (rowIndex, node, columnIndex) {
+                if (rowIndex === 0) return '#f3f4f6';
+                return (rowIndex % 2 === 0) ? '#fafafa' : null;
+              },
+              hLineColor: '#e5e7eb', vLineColor: '#e5e7eb'
+            }
+          },
+          { text:'', pageBreak:'after' },
+
+          // Product details (bulleted), generated via AI (optional)
+          (ai?.products && ai.products.length) ? { tocItem:true, text: headings.productDetails || 'Product Details', style:'h2' } : null,
+          ...(ai?.products || []).flatMap(p => ([
+            { text: p.title || '', style:'h3' },
+            p.bullets && p.bullets.length ? { ul: p.bullets } : { text:'', margin:[0,0,0,0] }
+          ])),
+          ai?.products?.length ? { text:'', pageBreak:'after' } : null,
+
+          // Terms
+          { tocItem:true, text: headings.terms || 'Terms & Conditions', style:'h2' },
+          { text:'Payment Terms', style:'h3' },
+          { text: $("payment-terms").value || '', margin:[0,0,0,8] },
+          { text:'Terms & Conditions', style:'h3' },
+          { text: $("terms").value || '' }
+        ].filter(Boolean)
       };
+
       window.pdfMake?.createPdf(dd).download(`${payload.number || 'quotation'}.pdf`);
       try{ window.QiqToast?.success?.('تم إنشاء PDF', 2000);}catch{}
     }catch(err){ console.warn(err); try{ window.QiqToast?.error?.('تعذر إنشاء PDF', 2000);}catch{} }
@@ -434,6 +609,12 @@
     showPayloadPreview(payload);
     setLoadingState(e.target, true);
     try {
+      // Create lead first in HelloLeads
+      try{
+        const leadRes = await fetch('/api/hello-leads', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
+        const leadJson = await leadRes.json().catch(()=>({}));
+        console.info('HelloLeads:', leadRes.status, leadJson?.ok); // non-blocking
+      }catch{}
       const r = await fetch("/api/special-quote", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -483,6 +664,12 @@
     showPayloadPreview(payload);
     setLoadingState(e.target, true);
     try {
+      // Create lead first in HelloLeads
+      try{
+        const leadRes = await fetch('/api/hello-leads', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
+        const leadJson = await leadRes.json().catch(()=>({}));
+        console.info('HelloLeads:', leadRes.status, leadJson?.ok); // non-blocking
+      }catch{}
       const r = await fetch("/api/special-quote", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -598,7 +785,7 @@
   });
 
   // ===== Enhanced Functions =====
-  function addRowFromData({ desc, pn, unit, qty, manufacturer, brand }) {
+  function addRowFromData({ desc, pn, unit, qty, manufacturer, brand, image }) {
     const tr = document.createElement("tr");
     const id = `row-${uid()}`;
     tr.id = id;
@@ -606,7 +793,8 @@
 
     // Create the enhanced product description combining name, brand, and PN
     const productName = desc || "";
-    const productBrand = manufacturer || brand || "";
+  const productBrand = manufacturer || brand || "";
+  const productImg = image || '';
     const productPN = pn || "";
     
     let descriptionHTML = `<div class="product-desc">`;
@@ -627,10 +815,14 @@
     
     tr.innerHTML = `
       <td class="desc-col">
-        ${descriptionHTML}
+        <div class="desc-flex">
+          ${productImg ? `<img class="thumb" src="${esc(productImg)}" alt="thumb" onclick="openImagePreview('${esc(productImg)}')" onerror="this.style.display='none'"/>` : ''}
+          ${descriptionHTML}
+        </div>
         <input class="in-desc" type="hidden" value="${esc(desc)}" />
         <input class="in-pn" type="hidden" value="${esc(pn)}" />
         <input class="in-brand" type="hidden" value="${esc(productBrand)}" />
+        <input class="in-image" type="hidden" value="${esc(productImg)}" />
       </td>
       <td class="qty-col">
         <input class="in-qty qty-input" type="number" min="1" step="1" value="${Number(qty)||1}">
@@ -729,6 +921,7 @@
     const desc = tr.querySelector(".in-desc").value;
     const pn = tr.querySelector(".in-pn").value;
     const brand = tr.querySelector(".in-brand").value;
+    const img = tr.querySelector(".in-image")?.value || '';
     
     let descriptionHTML = `<div class="product-desc">`;
     descriptionHTML += `<span class="product-name">${esc(desc)}</span>`;
@@ -753,7 +946,16 @@
       <input class="in-brand" type="hidden" value="${esc(brand)}" />
     `;
     
-    descCell.innerHTML = descriptionHTML;
+    descCell.innerHTML = `
+      <div class="desc-flex">
+        ${img ? `<img class="thumb" src="${esc(img)}" alt="thumb" onclick="openImagePreview('${esc(img)}')" onerror="this.style.display='none'"/>` : ''}
+        ${descriptionHTML}
+      </div>
+      <input class="in-desc" type="hidden" value="${esc(desc)}" />
+      <input class="in-pn" type="hidden" value="${esc(pn)}" />
+      <input class="in-brand" type="hidden" value="${esc(brand)}" />
+      <input class="in-image" type="hidden" value="${esc(img)}" />
+    `;
   }
 
   // ===== Currency Conversion =====
@@ -843,7 +1045,9 @@
         description: tr.querySelector(".in-desc")?.value || "",
         pn: tr.querySelector(".in-pn")?.value || "",
         unit_price: num(tr.querySelector(".in-unit")?.value),
-        qty: Math.max(1, parseInt(tr.querySelector(".in-qty")?.value || "1", 10))
+        qty: Math.max(1, parseInt(tr.querySelector(".in-qty")?.value || "1", 10)),
+        image: tr.querySelector(".in-image")?.value || "",
+        brand: tr.querySelector(".in-brand")?.value || ""
       });
     });
     const payload = {
@@ -859,10 +1063,12 @@
       },
       project: {
         name: $("project-name").value || "",
+        requester_role: $("requester-role")?.value || "",
         owner: $("project-owner").value || "",
         main_contractor: $("main-contractor").value || "",
         site: $("site-location").value || "",
-        execution_date: $("execution-date")?.value || ""
+        execution_date: $("execution-date")?.value || "",
+        expected_closing_date: $("expected-close")?.value || ""
       },
       need_assist: $("need-assist").checked,
       payment_terms: $("payment-terms").value || "",
@@ -884,7 +1090,9 @@
         desc: tr.querySelector(".in-desc")?.value || "",
         pn: tr.querySelector(".in-pn")?.value || "",
         unit: num(tr.querySelector(".in-unit")?.value),
-        qty: Math.max(1, parseInt(tr.querySelector(".in-qty")?.value || "1", 10))
+        qty: Math.max(1, parseInt(tr.querySelector(".in-qty")?.value || "1", 10)),
+        image: tr.querySelector(".in-image")?.value || "",
+        brand: tr.querySelector(".in-brand")?.value || ""
       });
     });
     
@@ -898,10 +1106,12 @@
       client_email: $("client-email").value || "",
       client_phone: $("client-phone").value || "",
       project_name: $("project-name").value || "",
+    requester_role: $("requester-role")?.value || "",
       project_owner: $("project-owner").value || "",
       main_contractor: $("main-contractor").value || "",
       site_location: $("site-location").value || "",
-  execution_date: $("execution-date")?.value || "",
+    execution_date: $("execution-date")?.value || "",
+    expected_close: $("expected-close")?.value || "",
       need_assist: $("need-assist").checked,
       payment_terms: $("payment-terms").value || "",
       terms: $("terms").value || "",
@@ -1011,11 +1221,13 @@
       if (state.client_email) $("client-email").value = state.client_email;
       if (state.client_phone) $("client-phone").value = state.client_phone;
       if (state.project_name) $("project-name").value = state.project_name;
+    if (state.requester_role && document.getElementById('requester-role')) document.getElementById('requester-role').value = state.requester_role;
       if (state.project_owner) $("project-owner").value = state.project_owner;
       if (state.main_contractor) $("main-contractor").value = state.main_contractor;
       if (state.site_location) $("site-location").value = state.site_location;
   if (state.quote_date) $("quote-date").value = state.quote_date;
   if (state.execution_date) $("execution-date").value = state.execution_date;
+    if (state.expected_close && document.getElementById('expected-close')) document.getElementById('expected-close').value = state.expected_close;
       if (state.currency) $("currency").value = state.currency;
       if (state.payment_terms) $("payment-terms").value = state.payment_terms;
       if (state.terms) $("terms").value = state.terms;
@@ -1031,7 +1243,7 @@
       if (state.items && Array.isArray(state.items)) {
         state.items.forEach(item => {
           if (item.desc || item.pn) {
-            addRowFromData({ desc: item.desc, pn: item.pn, unit: item.unit, qty: item.qty });
+            addRowFromData({ desc: item.desc, pn: item.pn, unit: item.unit, qty: item.qty, image: item.image, brand: item.brand, manufacturer: item.manufacturer });
           }
         });
       }
@@ -1057,7 +1269,9 @@
   function validateRequiredBeforePDF(){
     const required = [
       {id:'project-name', label:'اسم المشروع'},
+      {id:'requester-role', label:'صفة الطالب'},
       {id:'execution-date', label:'موعد التنفيذ المتوقع'},
+      {id:'expected-close', label:'موعد الإغلاق المتوقع'},
       {id:'client-contact', label:'الشخص المسؤول'},
       {id:'client-email', label:'البريد الإلكتروني'},
       {id:'client-phone', label:'الهاتف'}
@@ -1071,6 +1285,16 @@
         el.focus();
         el.scrollIntoView({behavior:'smooth', block:'center'});
         return false;
+      }
+      // Simple email format check if field is email
+      if (el.type === 'email'){
+        const ok = /.+@.+\..+/.test(val);
+        if (!ok){
+          showNotification('البريد الإلكتروني غير صالح. الرجاء إدخال بريد عمل صحيح.', 'error');
+          el.focus();
+          el.scrollIntoView({behavior:'smooth', block:'center'});
+          return false;
+        }
       }
     }
     return true;
@@ -1236,6 +1460,7 @@
       const nameInput = document.getElementById('proj-modal-name');
       const siteInput = document.getElementById('proj-modal-site');
       const execInput = document.getElementById('proj-modal-exec');
+  // Note: requester role and expected close are in main form, not modal, to keep modal short
       const saveBtn = document.getElementById('proj-info-save');
       const cancelBtn = document.getElementById('proj-info-cancel');
       if (!backdrop || !nameInput || !saveBtn) {
