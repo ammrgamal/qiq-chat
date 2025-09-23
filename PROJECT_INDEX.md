@@ -1,8 +1,8 @@
 # Project Index — qiq-chat
-Generated: 2025-09-23T08:16:44.608Z
+Generated: 2025-09-23T08:28:46.439Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
-- Total size: 851.6 KB
+- Total size: 859.5 KB
 - Files: 88
 - Directories: 16
 - Max depth: 6
@@ -57,7 +57,7 @@ qiq-chat/
 ├── __tests__/
 │   └── algoliaMapper.spec.ts (525 B)
 ├── .storage/
-│   ├── activity.json (9.1 KB)
+│   ├── activity.json (9.5 KB)
 │   └── quotations.json (672 B)
 ├── api/
 │   ├── _lib/
@@ -114,14 +114,14 @@ qiq-chat/
 │   │   ├── api.js (1.8 KB)
 │   │   ├── experimental-banner.js (2.3 KB)
 │   │   ├── modal.js (6.3 KB)
-│   │   ├── pdf-admin.js (9.3 KB)
+│   │   ├── pdf-admin.js (10.8 KB)
 │   │   ├── pdf-arabic-fonts.js (1.8 KB)
 │   │   ├── performance.js (5.6 KB)
 │   │   ├── products-search-enhanced.js (22.1 KB)
 │   │   ├── products-search.js (6.7 KB)
 │   │   ├── quote-actions.js (36.0 KB)
 │   │   ├── quote-form.js (3.0 KB)
-│   │   ├── quote.js (63.1 KB)
+│   │   ├── quote.js (64.7 KB)
 │   │   ├── security.js (7.6 KB)
 │   │   ├── toast.js (4.4 KB)
 │   │   ├── ui-chat.js (14.0 KB)
@@ -152,7 +152,7 @@ qiq-chat/
 ├── jest.config.cjs (154 B)
 ├── package-lock.json (282.7 KB)
 ├── package.json (854 B)
-├── PROJECT_INDEX.md (11.0 KB)
+├── PROJECT_INDEX.md (15.2 KB)
 ├── project-instructions.md (4.1 KB)
 ├── quote.html (12.8 KB)
 ├── server.js (6.4 KB)
@@ -320,7 +320,7 @@ function sanitizeProductDetails(rawText) {
 
 ## Project instructions
 
-# QuickITQuote — Project Instructions
+# QuickITQuote — Project Instructions-For Chat GPT refernace
 
 ## 1. Project Title
 QuickITQuote – AI-assisted Quoting & Product Catalog (Arabic/English)

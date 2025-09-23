@@ -517,16 +517,16 @@
             columns:[
               { width:'*', stack:[
                 { text:'Client', style:'h3' },
-                { text: `${payload.client?.name || ''}` },
-                { text: `${payload.client?.contact || ''}` },
-                { text: `${payload.client?.email || ''}` },
-                { text: `${payload.client?.phone || ''}` }
+                { text: sanitizeForPdf(payload.client?.name || '') },
+                { text: sanitizeForPdf(payload.client?.contact || '') },
+                { text: sanitizeForPdf(payload.client?.email || '') },
+                { text: sanitizeForPdf(payload.client?.phone || '') }
               ]},
               { width:'*', stack:[
                 { text:'Project', style:'h3' },
-                { text: `${payload.project?.name || ''}` },
-                { text: `${payload.project?.site || ''}` },
-                { text: `${payload.project?.execution_date || ''}` }
+                { text: sanitizeForPdf(payload.project?.name || '') },
+                { text: sanitizeForPdf(payload.project?.site || '') },
+                { text: sanitizeForPdf(payload.project?.execution_date || '') }
               ]}
             ]
           },
@@ -537,7 +537,7 @@
           { text:'', pageBreak:'after' },
 
           // Letter
-          { tocItem:true, text: headings.letter || 'Cover Letter', style:'h2' },
+          { tocItem:true, text: sanitizeForPdf(headings.letter || 'Cover Letter'), style:'h2' },
           { stack: letterBlocks, margin:[0,0,0,12] },
           { text:'Summary', style:'h3' },
           { ul:[
@@ -548,7 +548,7 @@
           { text:'', pageBreak:'after' },
 
           // BOQ
-          { tocItem:true, text: headings.boq || 'Bill of Quantities', style:'h2' },
+          { tocItem:true, text: sanitizeForPdf(headings.boq || 'Bill of Quantities'), style:'h2' },
           {
             table:{
               headerRows:1,
@@ -585,7 +585,7 @@
           ai?.products?.length ? { text:'', pageBreak:'after' } : null,
 
           // Terms
-          { tocItem:true, text: headings.terms || 'Terms & Conditions', style:'h2' },
+          { tocItem:true, text: sanitizeForPdf(headings.terms || 'Terms & Conditions'), style:'h2' },
           { text:'Payment Terms', style:'h3' },
           { text: sanitizeForPdf($("payment-terms").value || ''), margin:[0,0,0,8] },
           { text:'Terms & Conditions', style:'h3' },
