@@ -24,14 +24,18 @@
 .qiq-right{display:flex;gap:8px;align-items:center}
 .qiq-status{font-size:12px;color:#6b7280;margin-inline-start:8px}
 
-/* ===== Toast Notifications ===== */
-.qiq-toast{position:fixed;right:16px;bottom:16px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+/* ===== Toast Notifications (Centered) ===== */
+.qiq-toast{
+  position:fixed;left:50%;top:16px;transform:translateX(-50%);
+  z-index:9999;display:flex;flex-direction:column;gap:8px;
+  width: min(640px, calc(100vw - 32px));
+  align-items: stretch;
+}
 .qiq-toast .item{
   background:#111827;color:#fff;padding:12px 14px;border-radius:12px;
   box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px;
-  /* Only slide-in by default; fade-out is triggered by JS on remove() */
-  animation: qiq-slide-in 0.3s ease-out;
-  transform: translateX(100%);
+  /* Drop-in animation; fade-out is triggered by JS on remove() */
+  animation: qiq-drop-in 0.3s ease-out forwards;
 }
 .qiq-toast .item.success{background:#059669;border-left:4px solid #047857}
 .qiq-toast .item.error{background:#dc2626;border-left:4px solid #b91c1c}
@@ -94,9 +98,9 @@
   font-size: 13px;
 }
 
-@keyframes qiq-slide-in {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+@keyframes qiq-drop-in {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 @keyframes qiq-fade-out {
   from { opacity: 1; }

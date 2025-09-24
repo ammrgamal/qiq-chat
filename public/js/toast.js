@@ -27,11 +27,10 @@
     el.setAttribute('role','status');
     el.setAttribute('aria-live','polite');
     el.innerHTML = `
-      <div class="toast-body" style="display:flex;align-items:center;gap:10px">
-        <span class="toast-icon">${iconFor(type)}</span>
-        <span class="toast-text">${message}</span>
-        <div class="toast-spacer" style="flex:1"></div>
-        <button class="close" aria-label="Close">✕</button>
+      <div class="toast-body" style="display:flex;align-items:flex-start;gap:12px;max-width:100%">
+        <span class="toast-icon" style="flex:0 0 auto">${iconFor(type)}</span>
+        <div class="toast-text" style="flex:1 1 auto;white-space:pre-wrap;word-break:break-word;min-width:0">${message}</div>
+        <button class="close" aria-label="Close" style="flex:0 0 auto">✕</button>
       </div>`;
     return el;
   }
@@ -54,9 +53,9 @@
     c.appendChild(el);
     const closeBtn = el.querySelector('.close');
     closeBtn.onclick = ()=> dismiss();
-    // Allow click anywhere to dismiss as well
+    // Dismiss only when clicking the close button to avoid accidental closes
     el.addEventListener('click', (e)=>{
-      if (!e.target.closest('.close')) dismiss();
+      if (e.target.closest('.close')) dismiss();
     });
   let remaining = (typeof duration === 'number') ? duration : DEFAULTS[type] ?? DEFAULTS.info;
     if (PERSISTENT_MODE) remaining = Infinity; // enforce never auto-dismiss globally
