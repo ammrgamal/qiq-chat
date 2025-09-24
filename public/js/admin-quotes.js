@@ -102,9 +102,9 @@
     try{
       const res = await fetch(`/api/admin/delete-quotation?id=${encodeURIComponent(id)}`, { method:'DELETE', headers:{ 'Authorization': `Bearer ${adminToken}` }});
       if (!res.ok){ const e=await res.json(); throw new Error(e.error||'فشل الحذف'); }
-      window.QiqToast?.success?.('تم الحذف', 1200);
+  window.QiqToast?.success?.('تم الحذف');
       await loadQuotations();
-    }catch(e){ window.QiqToast?.error?.('تعذر الحذف', 1600); }
+  }catch(e){ window.QiqToast?.error?.('تعذر الحذف'); }
   }
 
   // Inline quotation modal (self-contained)
@@ -215,7 +215,7 @@
         box.innerHTML = renderDetails(fresh);
       });
       box.querySelector('#qmod-resend').addEventListener('click', async ()=>{
-        try{ await postAdmin(`/api/admin/quotation/${encodeURIComponent(id)}/resend-email`, {}); window.QiqToast?.success?.('تم الإرسال', 1500);}catch{ window.QiqToast?.error?.('تعذر الإرسال', 2000);} 
+  try{ await postAdmin(`/api/admin/quotation/${encodeURIComponent(id)}/resend-email`, {}); window.QiqToast?.success?.('تم الإرسال');}catch{ window.QiqToast?.error?.('تعذر الإرسال');} 
       });
       box.querySelector('#qmod-pdf').addEventListener('click', async ()=>{
         const includeImages = !!box.querySelector('#qmod-boq-images')?.checked;

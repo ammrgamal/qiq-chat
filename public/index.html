@@ -151,11 +151,11 @@
       const ref = (inp?.value||'').trim();
       if (!ref) return;
       const ok = window.QiqBOQ?.loadRef?.(ref);
-      if (ok) { window.QiqToast?.success?.('تم تحميل المشروع بالمرجع', 2400); } else { window.QiqToast?.error?.('لم يتم العثور على مرجع', 2400); }
+  if (ok) { window.QiqToast?.success?.('تم تحميل المشروع بالمرجع'); } else { window.QiqToast?.error?.('لم يتم العثور على مرجع'); }
     });
     btnS?.addEventListener('click', ()=>{
       const ref = window.QiqBOQ?.saveCurrentAsRef?.(inp?.value||'');
-      if (ref) { if (inp) inp.value = ref; navigator.clipboard?.writeText(ref).catch(()=>{}); window.QiqToast?.success?.('تم الحفظ. تم نسخ المرجع.', 2400); }
+  if (ref) { if (inp) inp.value = ref; navigator.clipboard?.writeText(ref).catch(()=>{}); window.QiqToast?.success?.('تم الحفظ. تم نسخ المرجع.'); }
     });
   })();
   // Theme toggle for chat page

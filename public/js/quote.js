@@ -69,7 +69,7 @@
     // Use the global toast system if available
     if (window.QiqToast && window.QiqToast.show) {
       // enforce minimum duration 2000ms
-      window.QiqToast.show(message, type, 2500);
+  window.QiqToast.show(message, type);
     } else {
       // Fallback notification system
       const notification = document.createElement('div');

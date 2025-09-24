@@ -179,11 +179,11 @@
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const json = await r.json();
-      try{ if(window.QiqToast?.info) window.QiqToast.info(`تم تنفيذ البحث: "${esc(query).slice(0,40)}"`, 2500);}catch{}
+  try{ if(window.QiqToast?.info) window.QiqToast.info(`تم تنفيذ البحث: "${esc(query).slice(0,40)}"`);}catch{}
       return Array.isArray(json?.hits) ? json.hits : [];
     } catch (e) {
       console.warn("Search error:", e);
-      try{ if(window.QiqToast?.error) window.QiqToast.error('تعذر تنفيذ البحث الآن. سيتم استخدام بيانات محلية للتجربة.', 3000);}catch{}
+  try{ if(window.QiqToast?.error) window.QiqToast.error('تعذر تنفيذ البحث الآن. سيتم استخدام بيانات محلية للتجربة.');}catch{}
       // Return sample data when API is not available and fallback failed
       return sampleProducts.filter(product =>
         product.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -271,7 +271,7 @@
       if (Array.isArray(resp.hits) && resp.hits.length) {
         displayProductsInTable(resp.hits, "Matches & alternatives");
         addMsg("bot", `تم العثور على ${resp.hits.length} نتيجة مطابقة. تحقق من الجدول أدناه.`);
-        try{ if(window.QiqToast?.success) window.QiqToast.success(`عُثر على ${resp.hits.length} عناصر`, 2500);}catch{}
+  try{ if(window.QiqToast?.success) window.QiqToast.success(`عُثر على ${resp.hits.length} عناصر`);}catch{}
       }
     } finally {
       sendBtn && (sendBtn.disabled = false);
@@ -292,10 +292,10 @@
     if (results.length) {
       displayProductsInTable(results, "Search results");
       addMsg("bot", `تم العثور على ${results.length} نتيجة بحث. تحقق من الجدول أدناه.`);
-      try{ if(window.QiqToast?.success) window.QiqToast.success(`نتائج: ${results.length}`, 2500);}catch{}
+  try{ if(window.QiqToast?.success) window.QiqToast.success(`نتائج: ${results.length}`);}catch{}
     } else {
       addMsg("bot", "لا توجد نتائج مطابقة.");
-      try{ if(window.QiqToast?.warning) window.QiqToast.warning('لا توجد نتائج', 2500);}catch{}
+  try{ if(window.QiqToast?.warning) window.QiqToast.warning('لا توجد نتائج');}catch{}
     }
   });
 

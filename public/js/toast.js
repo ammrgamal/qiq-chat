@@ -5,6 +5,8 @@
   let queue = [];
   let current = null;
   let timer = null;
+  // Global flag to force persistence regardless of per-call timeouts
+  let PERSISTENT_MODE = true; // never auto-dismiss by default
 
   function ensureContainer(){
     let c = document.getElementById(containerId);
@@ -57,6 +59,7 @@
       if (!e.target.closest('.close')) dismiss();
     });
   let remaining = (typeof duration === 'number') ? duration : DEFAULTS[type] ?? DEFAULTS.info;
+    if (PERSISTENT_MODE) remaining = Infinity; // enforce never auto-dismiss globally
     let lastTick = Date.now();
     const onEnter = ()=>{ if (timer){ clearInterval(timer); timer=null; } };
     const onLeave = ()=>{ if (!timer && Number.isFinite(remaining)){ lastTick = Date.now(); timer = setInterval(tick, 100); } };
@@ -71,20 +74,23 @@
     if (Number.isFinite(remaining)) timer = setInterval(tick, 100);
   }
   function enqueue(type, message, duration){
-    queue.push({ type, message, duration });
+    // Ignore provided duration in persistent mode
+    const d = PERSISTENT_MODE ? Infinity : duration;
+    queue.push({ type, message, duration: d });
     showNext();
   }
 
   const API = {
     init(){ ensureContainer(); },
     show(message, type='info', timeout){
-      const t = typeof timeout === 'number' ? timeout : (DEFAULTS[type] ?? DEFAULTS.info);
+      const t = PERSISTENT_MODE ? Infinity : (typeof timeout === 'number' ? timeout : (DEFAULTS[type] ?? DEFAULTS.info));
       enqueue(type, message, t);
     },
     success(msg, timeout){ return API.show(msg, 'success', timeout); },
     info(msg, timeout){ return API.show(msg, 'info', timeout); },
     warning(msg, timeout){ return API.show(msg, 'warning', timeout); },
-    error(msg, timeout){ return API.show(msg, 'error', timeout); }
+    error(msg, timeout){ return API.show(msg, 'error', timeout); },
+    setPersistent(flag){ PERSISTENT_MODE = !!flag; }
   };
 
   window.QiqToast = API;

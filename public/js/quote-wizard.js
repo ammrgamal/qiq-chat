@@ -94,8 +94,8 @@
     const notes= $id('wiz-notes')?.value.trim();
     const projectName=$id('wiz-project-name')?.value.trim();
     const projectSite=$id('wiz-project-site')?.value.trim();
-    if (!name || !email){ window.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني', 3000); return; }
-    if (!projectName){ window.QiqToast?.error?.('يرجى إدخال اسم المشروع', 3000); return; }
+  if (!name || !email){ window.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني'); return; }
+  if (!projectName){ window.QiqToast?.error?.('يرجى إدخال اسم المشروع'); return; }
     saveClient({ name, email, company, notes, projectName, projectSite });
 
     const payload = payloadFromState();
@@ -114,11 +114,11 @@
         document.body.appendChild(a); a.click(); a.remove();
       }
       if (action === 'custom'){
-        window.QiqToast?.success?.('تم إرسال طلبك وسنتواصل معك قريبًا.', 3000);
+  window.QiqToast?.success?.('تم إرسال طلبك وسنتواصل معك قريبًا.');
       } else if (action === 'send') {
-        window.QiqToast?.success?.('تم إرسال العرض إلى بريدك.', 3000);
+  window.QiqToast?.success?.('تم إرسال العرض إلى بريدك.');
       }
-    }catch(e){ console.warn(e); window.QiqToast?.error?.('تعذر تنفيذ العملية الآن', 3000); }
+  }catch(e){ console.warn(e); window.QiqToast?.error?.('تعذر تنفيذ العملية الآن'); }
   }
 
   function render(step){
@@ -162,8 +162,8 @@
         const company = doc.getElementById('wiz-company')?.value.trim();
         const notes = doc.getElementById('wiz-notes')?.value.trim();
         const projectSite = doc.getElementById('wiz-project-site')?.value.trim();
-        if (!name || !email){ window.parent.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني', 3000); return; }
-        if (!projectName){ window.parent.QiqToast?.error?.('يرجى إدخال اسم المشروع', 3000); return; }
+  if (!name || !email){ window.parent.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني'); return; }
+  if (!projectName){ window.parent.QiqToast?.error?.('يرجى إدخال اسم المشروع'); return; }
         window.parent.localStorage.setItem(STATE_KEY, JSON.stringify({ name, email, company, notes, projectName, projectSite }));
         render(2);
       });

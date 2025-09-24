@@ -232,8 +232,8 @@
       if (q !== lastQuery) {
         try {
           const count = res?.nbHits || hits.length || 0;
-          if (count > 0 && window.QiqToast?.success) window.QiqToast.success(`تم العثور على ${count} نتيجة`, 2000);
-          if (count === 0 && window.QiqToast?.warning) window.QiqToast.warning('لا توجد نتائج. جرّب كلمة أدق أو استخدم المرشحات.', 2000);
+          if (count > 0 && window.QiqToast?.success) window.QiqToast.success(`تم العثور على ${count} نتيجة`);
+          if (count === 0 && window.QiqToast?.warning) window.QiqToast.warning('لا توجد نتائج. جرّب كلمة أدق أو استخدم المرشحات.');
         } catch {}
         lastQuery = q;
       }

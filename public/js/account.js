@@ -17,7 +17,7 @@
     // Also use toast system if available
     if (window.QiqToast && window.QiqToast.show && msg) {
       // Make account toasts linger a bit more (6s)
-      window.QiqToast.show(msg, type, 6000);
+  window.QiqToast.show(msg, type);
     }
   };
 

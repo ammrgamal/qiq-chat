@@ -39,10 +39,10 @@
             window.QiqModalClose = function(){ try{ window.parent.QiqModal?.close?.(); }catch(e){} };
             // Copy to clipboard via parent
             window.__parentCopy = function(txt){ try{ window.parent.navigator.clipboard.writeText(String(txt||''))
-              .then(()=>{ try{ window.parent.QiqToast?.success?.('تم النسخ',2000); }catch(e){} }); }catch(e){} };
+              .then(()=>{ try{ window.parent.QiqToast?.success?.('تم النسخ'); }catch(e){} }); }catch(e){} };
             // Attach comparison markdown to parent storage and toast
             window.__parentAttachComparison = function(md){ try{ const att = { kind:'ai-comparison', createdAt: new Date().toISOString(), markdown: String(md||'') };
-              window.parent.localStorage.setItem('qiq_attached_comparison', JSON.stringify(att)); window.parent.QiqToast?.success?.('تم إرفاق المقارنة بصفحة العرض', 2000); }catch(e){} };
+              window.parent.localStorage.setItem('qiq_attached_comparison', JSON.stringify(att)); window.parent.QiqToast?.success?.('تم إرفاق المقارنة بصفحة العرض'); }catch(e){} };
           }catch(e){}
         })();
       <\/script>`;

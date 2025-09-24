@@ -30,7 +30,7 @@
   // Use the global toast system instead of inline notifications
   const showNotification = (message, type = 'info') => {
     if (window.QiqToast && window.QiqToast.show) {
-      window.QiqToast.show(message, type, 2500);
+      window.QiqToast.show(message, type);
     } else {
       // Fallback for legacy compatibility
       const notification = document.createElement('div');
@@ -42,7 +42,8 @@
       `;
       notification.textContent = message;
       document.body.appendChild(notification);
-      setTimeout(() => notification.remove(), 3000);
+      // Keep fallback visible until user clicks it
+      notification.addEventListener('click', ()=> notification.remove());
     }
   };
 
@@ -815,7 +816,7 @@
             const q = tr.querySelector('.qiq-qty');
             if (q) { q.value = String(Math.max(1, parseInt(qty,10))); }
           }
-          if (note) { try{ if(window.QiqToast?.info) window.QiqToast.info(note, 3500);}catch{} }
+          if (note) { try{ if(window.QiqToast?.info) window.QiqToast.info(note);}catch{} }
           if (isAlternative) { addToLog('إضافة', payload.name, 'بديل مقترح'); }
         }
 
@@ -878,7 +879,7 @@
           }
         }
 
-  if (notes.length) { try{ window.QiqToast?.warning?.(notes.join('\n'), 4000);}catch{} }
+  if (notes.length) { try{ window.QiqToast?.warning?.(notes.join('\n'));}catch{} }
         if (importedCount > 0) { showNotification(`تم استيراد ${importedCount} عنصر بنجاح`, 'success'); }
         else { showNotification('لم يتم العثور على بيانات صالحة للاستيراد', 'error'); }
 
