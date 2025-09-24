@@ -7,7 +7,7 @@
   const btnClose = modal.querySelector('.qiq-modal__close');
   const titleEl = modal.querySelector('.qiq-modal__title');
   const btnOpenTab = modal.querySelector('.qiq-modal__open-tab');
-  const btnPrint = modal.querySelector('.qiq-modal__print');
+  // const btnPrint = modal.querySelector('.qiq-modal__print');
 
   let lastFocus = null;
   function lockScroll(){
@@ -101,16 +101,7 @@
       btnOpenTab.style.borderRadius = '8px';
       btnOpenTab.style.minWidth = '100px';
     }
-    if (btnPrint){
-      btnPrint.onclick = ()=> {
-        try {
-          frame.contentWindow?.focus();
-          frame.contentWindow?.print();
-        } catch {}
-      };
-      btnPrint.style.borderRadius = '8px';
-      btnPrint.style.minWidth = '80px';
-    }
+    // print control removed
   }
 
   function close(){

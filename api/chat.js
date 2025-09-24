@@ -10,6 +10,21 @@ const STORAGE_DIR = process.env.NODE_ENV === 'production' ? '/tmp/qiq-storage' :
 const CONFIG_FILE = path.join(STORAGE_DIR, 'admin-config.json');
 const AI_DIR = path.join(__dirname, '../ai');
 const AI_INSTRUCTIONS_FILE = path.join(AI_DIR, 'ai-instructions.txt');
+let AI_CACHE = { text: '', mtimeMs: 0 };
+
+async function readAiInstructionsCached(){
+  try{
+    const st = await fs.stat(AI_INSTRUCTIONS_FILE);
+    if (!AI_CACHE.mtimeMs || st.mtimeMs !== AI_CACHE.mtimeMs){
+      const txt = await fs.readFile(AI_INSTRUCTIONS_FILE,'utf8');
+      AI_CACHE = { text: txt, mtimeMs: st.mtimeMs };
+    }
+    return AI_CACHE.text || '';
+  }catch{
+    AI_CACHE = { text: '', mtimeMs: 0 };
+    return '';
+  }
+}
 
 async function readAdminConfig(){
   try{ const txt = await fs.readFile(CONFIG_FILE,'utf8'); return JSON.parse(txt); }catch{ return { instructions:'', bundles:[] }; }
@@ -46,13 +61,12 @@ export default async function handler(req, res) {
 
   const FAST_MODE = /^(1|true|yes)$/i.test(String(process.env.FAST_MODE || process.env.AUTO_APPROVE || ""));
   const adminCfg = await readAdminConfig();
-    let aiFile = '';
-    try { aiFile = await fs.readFile(AI_INSTRUCTIONS_FILE,'utf8'); } catch {}
+    const aiFile = await readAiInstructionsCached();
     const openaiKey = process.env.OPENAI_API_KEY;
 
     // Fast path: drive a conversational intake (no auto-search unless user explicitly asks)
     if (FAST_MODE || !openaiKey) {
-      const lastRaw = String(messages[messages.length - 1]?.content || '');
+  const lastRaw = String(messages[messages.length - 1]?.content || '');
       const last = lastRaw.toLowerCase();
       const base = [
         'تمام — خلّيني أفهم احتياجك خطوة بخطوة:',
@@ -62,7 +76,9 @@ export default async function handler(req, res) {
         '4) تفضّل بدائل اقتصادية وممتازة؟',
         '',
         'EN: I will collect a few details to tailor a BOQ. What solution, how many users/devices, term, and do you want budget and premium options?'
-  ].join('\n') + (adminCfg.instructions? ('\n\n[إرشادات المدير]\n'+adminCfg.instructions) : '');
+  ].join('\n')
+    + (adminCfg.instructions? ('\n\n[إرشادات المدير]\n'+adminCfg.instructions) : '')
+    + (aiFile ? ('\n\n[System notes]\n' + aiFile.slice(0, 500)) : '');
       let reply = base;
       if (/(kaspersky|edr|endpoint)/i.test(last)) reply = 'Kaspersky/EDR — كم جهاز ومدة الترخيص (1Y/2Y)? هل في سيرفرات/VMs تحتاج حماية؟\nEN: For Kaspersky/EDR, how many endpoints and for how long? Any servers/VMs?';
       else if (/(office|microsoft|o365|m365)/i.test(last)) reply = 'Microsoft 365 — كم مستخدم؟ تحتاج Business Standard ولا E3/E5؟ مساحة البريد/التخزين؟\nEN: M365 — users count? Plan (Business Standard vs E3/E5)? Mail/storage needs?';

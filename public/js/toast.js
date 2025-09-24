@@ -1,6 +1,6 @@
 /* ========= Global Toast Notification System ========= */
 (function() {
-  const DEFAULTS = { success: 2200, info: 2400, warning: 3200, error: 3000 };
+  const DEFAULTS = { success: 3000, info: 3000, warning: 3200, error: 3000 };
   const containerId = 'qiq-toast-container';
   let queue = [];
   let current = null;
@@ -52,7 +52,7 @@
     c.appendChild(el);
     const closeBtn = el.querySelector('.close');
     closeBtn.onclick = ()=> dismiss();
-    let remaining = Math.max(800, duration || DEFAULTS.info);
+  let remaining = Math.max(3000, duration || DEFAULTS.info);
     let lastTick = Date.now();
     const onEnter = ()=>{ if (timer){ clearInterval(timer); timer=null; } };
     const onLeave = ()=>{ if (!timer){ lastTick = Date.now(); timer = setInterval(tick, 100); } };

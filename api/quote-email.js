@@ -5,6 +5,14 @@
 
 import { sendEmail } from './_lib/email.js';
 
+function sanitizeName(s){
+  return (s==null?'':String(s))
+    .replace(/[\\/:*?"<>|\n\r]+/g,' ') // remove invalid filename chars
+    .replace(/\s+/g,' ') // collapse whitespace
+    .trim()
+    .slice(0, 80); // keep it short
+}
+
 function ensureString(v){ return (v==null?'':String(v)); }
 function b64(s){ return Buffer.from(s).toString('base64'); }
 function escapeCsv(v){ const s = ensureString(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
@@ -23,18 +31,127 @@ function buildCsv(items){
 
 // Build a minimalist PDF as text-based for now (many email providers accept simple base64 PDFs)
 // For richer PDFs use client-side pdfmake; here we just deliver a simple fallback server PDF.
-function buildSimplePdf({ number, date, currency, client, project, items }){
-  const lines = (items||[]).map((it,i)=>`${i+1}. ${ensureString(it.description||it.name||'-')} | PN: ${ensureString(it.pn||'')} | Qty: ${it.qty||1} | Unit: ${it.unit_price||it.unit||it.price||0}`);
-  const text = [
-    `QuickITQuote — Quotation ${ensureString(number)}`,
-    `Date: ${ensureString(date)}  Currency: ${ensureString(currency)}`,
-    '', 'Client:', `  ${ensureString(client?.name||'')}`, `  ${ensureString(client?.email||'')}`, `  ${ensureString(client?.phone||'')}`,
-    '', 'Project:', `  ${ensureString(project?.name||'')}`, `  ${ensureString(project?.site||'')}`,
-    '', 'Items:', ...lines
-  ].join('\n');
-  // This is not a real PDF generator; we wrap plain text in a minimal PDF-like file for transport.
-  // To keep scope minimal, set application/pdf but content is text. Many viewers will still open it.
-  return Buffer.from(text);
+async function buildPdfBuffer({ number, date, currency, client, project, items }){
+  // Lazy import to avoid hard dependency during build steps
+  const { default: PDFDocument } = await import('pdfkit');
+  const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: `Quotation ${ensureString(number)} - ${ensureString(project?.name||'')}` }});
+  const chunks = [];
+  return await new Promise((resolve, reject)=>{
+    doc.on('data', c=>chunks.push(c));
+    doc.on('error', reject);
+    doc.on('end', ()=> resolve(Buffer.concat(chunks)));
+
+    // Header
+    doc.fontSize(18).fillColor('#111827').font('Helvetica-Bold').text(`QuickITQuote — Quotation ${ensureString(number)}`, { align: 'left' });
+    doc.moveDown(0.3).fontSize(11).font('Helvetica').fillColor('#374151').text(`Date: ${ensureString(date)}    Currency: ${ensureString(currency)}`);
+
+    // Optional product image (first item)
+    (async ()=>{
+      try{
+        const first = (items||[])[0] || {};
+        const imgUrl = first.image || first["Image URL"] || first.thumbnail || first.img || '';
+        if (imgUrl && typeof fetch === 'function'){
+          const resp = await fetch(imgUrl);
+          if (resp.ok){ const buf = Buffer.from(await resp.arrayBuffer());
+            const x = doc.page.width - doc.page.margins.right - 70;
+            const y = 50; // near top
+            try{ doc.image(buf, x, y, { fit:[64,64] }); }catch{}
+          }
+        }
+      }catch{}
+    })();
+
+    // Client / Project boxes
+    doc.moveDown(0.6);
+    const startX = doc.x, startY = doc.y;
+    const boxW = (doc.page.width - doc.page.margins.left - doc.page.margins.right - 12) / 2;
+    const lineH = 14;
+    // Client
+    doc.save();
+    doc.roundedRect(startX, startY, boxW, lineH*3.6, 6).stroke('#e5e7eb');
+    doc.font('Helvetica-Bold').fillColor('#111827').text('Client', startX+8, startY+6);
+    doc.font('Helvetica').fillColor('#374151');
+    doc.text(`${ensureString(client?.name||'')}`, startX+8, startY+22);
+    if (client?.email) doc.text(`${ensureString(client.email)}`, startX+8, startY+36);
+    doc.restore();
+    // Project
+    doc.save();
+    const px = startX + boxW + 12;
+    doc.roundedRect(px, startY, boxW, lineH*3.6, 6).stroke('#e5e7eb');
+    doc.font('Helvetica-Bold').fillColor('#111827').text('Project', px+8, startY+6);
+    doc.font('Helvetica').fillColor('#374151');
+    doc.text(`${ensureString(project?.name||'')}`, px+8, startY+22);
+    if (project?.site) doc.text(`${ensureString(project.site)}`, px+8, startY+36);
+    doc.restore();
+    doc.moveDown(3.2);
+
+    // Table grid
+    const cols = [
+      { key:'#', label:'#', w:24 },
+      { key:'desc', label:'Description', w:180 },
+      { key:'pn', label:'PN', w:100 },
+      { key:'qty', label:'Qty', w:45 },
+      { key:'unit', label:'Unit', w:60 },
+      { key:'total', label:'Total', w:70 }
+    ];
+    let x = doc.x; let y = doc.y + 4;
+    const tableW = cols.reduce((a,c)=>a+c.w,0);
+    const maxY = doc.page.height - doc.page.margins.bottom - 120;
+
+    function drawHeader(){
+      doc.save();
+      doc.rect(x, y, tableW, 20).fill('#f3f4f6');
+      let cx = x;
+      cols.forEach(c=>{ doc.fillColor('#111827').font('Helvetica-Bold').fontSize(10).text(c.label, cx+4, y+6, { width:c.w-8, align: c.key==='desc'?'left':'right' }); cx += c.w; });
+      doc.restore();
+      y += 20;
+      // header bottom line
+      doc.moveTo(x, y).lineTo(x+tableW, y).stroke('#e5e7eb');
+    }
+    function drawRow(i, it){
+      const qty = Number(it.qty||1); const unit = Number(it.unit_price||it.unit||it.price||0); const line = unit*qty;
+      const desc = ensureString(it.description||it.name||'-');
+      const pn = ensureString(it.pn||'');
+      const heights = [];
+      heights.push(doc.heightOfString(String(i+1), { width: cols[0].w-8 }));
+      heights.push(doc.heightOfString(desc, { width: cols[1].w-8 }));
+      heights.push(doc.heightOfString(pn, { width: cols[2].w-8 }));
+      const rowH = Math.max(20, ...heights);
+      // page break
+      if (y + rowH > maxY){
+        doc.addPage();
+        x = doc.page.margins.left; y = doc.page.margins.top; drawHeader();
+      }
+      // text cells
+      let cx = x;
+      doc.font('Helvetica').fontSize(10).fillColor('#111827');
+      doc.text(String(i+1), cx+4, y+4, { width: cols[0].w-8, align:'right' }); cx += cols[0].w;
+      doc.text(desc, cx+4, y+4, { width: cols[1].w-8, align:'left' }); cx += cols[1].w;
+      doc.text(pn, cx+4, y+4, { width: cols[2].w-8, align:'left' }); cx += cols[2].w;
+      doc.text(String(qty), cx+4, y+4, { width: cols[3].w-8, align:'right' }); cx += cols[3].w;
+      doc.text(unit.toFixed(2), cx+4, y+4, { width: cols[4].w-8, align:'right' }); cx += cols[4].w;
+      doc.text(line.toFixed(2), cx+4, y+4, { width: cols[5].w-8, align:'right' });
+      // row line
+      doc.moveTo(x, y+rowH).lineTo(x+tableW, y+rowH).stroke('#f1f5f9');
+      y += rowH;
+    }
+
+    drawHeader();
+    const norm = (items||[]);
+    let subtotal = 0;
+    norm.forEach((it,i)=>{ const u = Number(it.unit_price||it.unit||it.price||0); const q = Number(it.qty||1); subtotal += u*q; drawRow(i,it); });
+    const grand = subtotal;
+
+    // Totals box (right aligned)
+    y += 12; if (y > maxY) { doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; }
+    const tw = 220; const tx = x + tableW - tw; const ty = y;
+    doc.roundedRect(tx, ty, tw, 44, 6).stroke('#e5e7eb');
+    doc.font('Helvetica').fontSize(11).fillColor('#111827');
+    doc.text(`Subtotal: ${subtotal.toFixed(2)}`, tx+10, ty+8, { width: tw-20, align:'right' });
+    doc.text(`Grand Total: ${grand.toFixed(2)}`, tx+10, ty+24, { width: tw-20, align:'right' });
+
+    doc.end();
+  });
 }
 
 function buildSummaryHtml(payload, action){
@@ -91,12 +208,13 @@ export default async function handler(req, res){
     // Build CSV and PDF
     const csv = buildCsv(payload.items||[]);
     const csvB64 = b64(csv);
-    const pdfBuf = buildSimplePdf(payload);
+    const pdfBuf = await buildPdfBuffer(payload);
     const pdfB64 = pdfBuf.toString('base64');
 
+    const baseName = sanitizeName(`${payload.number||'quotation'}${payload?.project?.name ? ' - ' + sanitizeName(payload.project.name) : ''}`) || 'quotation';
     const attachments = [
-      { filename: `${payload.number||'quotation'}.pdf`, type: 'application/pdf', content: pdfB64 },
-      { filename: `${payload.number||'quotation'}.csv`, type: 'text/csv', content: csvB64 }
+      { filename: `${baseName}.pdf`, type: 'application/pdf', content: pdfB64 },
+      { filename: `${baseName}.csv`, type: 'text/csv', content: csvB64 }
     ];
 
     // Always notify admin

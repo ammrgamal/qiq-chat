@@ -264,6 +264,7 @@
 		<div class="qiq-modal__dialog" tabindex="-1" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);width:min(880px,92vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;z-index:50">
 			<div class="qiq-modal__header" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)">
 				<div class="qiq-modal__title" style="font-weight:600">Modal</div>
+				<button class="qiq-modal__close btn" style="padding:6px 10px;margin-inline-start:8px">Close</button>
 				<div style="display:flex;gap:6px;align-items:center">
 					<!-- Persistent notice (manual dismiss) -->
 					<div id="qiq-modal-notice" style="display:none;background:#f1f5f9;color:#0f172a;padding:4px 8px;border-radius:8px;border:1px solid #cbd5e1">
@@ -274,9 +275,7 @@
 					<button class="qiq-modal__copy btn secondary" id="copyButton" style="padding:6px 10px">نسخ</button>
 					<button class="qiq-modal__attach btn" id="attachToQuote" style="padding:6px 10px;background:var(--brand-success)">إرفاق في عرض السعر</button>
 					<!-- Existing actions -->
-					<button class="qiq-modal__open-tab btn secondary" style="padding:6px 10px">Open in tab</button>
-					<button class="qiq-modal__print btn secondary" style="padding:6px 10px">Print</button>
-					<button class="qiq-modal__close btn" style="padding:6px 10px">Close</button>
+				
 				</div>
 			</div>
 			<iframe id="qiq-modal-frame" style="border:0;flex:1;min-height:300px"></iframe>

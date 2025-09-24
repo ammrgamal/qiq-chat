@@ -90,7 +90,7 @@
     const email= $id('wiz-email')?.value.trim();
     const company=$id('wiz-company')?.value.trim();
     const notes= $id('wiz-notes')?.value.trim();
-    if (!name || !email){ window.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني', 2600); return; }
+    if (!name || !email){ window.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني', 3000); return; }
     saveClient({ name, email, company, notes });
 
     const payload = payloadFromState();
@@ -103,7 +103,8 @@
       if (action === 'download' && j?.pdfBase64){
         const a = document.createElement('a');
         a.href = 'data:application/pdf;base64,'+j.pdfBase64;
-        a.download = (payload.number||'quotation')+'.pdf';
+        const baseName = `${payload.number||'quotation'}${payload?.project?.name ? ' - ' + payload.project.name : ''}`;
+        a.download = baseName + '.pdf';
         document.body.appendChild(a); a.click(); a.remove();
       }
       if (action === 'custom'){
@@ -111,7 +112,7 @@
       } else if (action === 'send') {
         window.QiqToast?.success?.('تم إرسال العرض إلى بريدك.', 3000);
       }
-    }catch(e){ console.warn(e); window.QiqToast?.error?.('تعذر تنفيذ العملية الآن', 2800); }
+    }catch(e){ console.warn(e); window.QiqToast?.error?.('تعذر تنفيذ العملية الآن', 3000); }
   }
 
   function render(step){
@@ -132,12 +133,13 @@
         .btn{border:0;border-radius:10px;padding:8px 12px;background:#1e3a8a;color:#fff;cursor:pointer}
         .btn.secondary{background:#6b7280}
       </style>`;
-    const inner = step===1 ? html1+`<div class=\"wiz-actions\"><button class=\"btn\" id=\"wiz-next\">التالي</button></div>`
-                           : html2+`<div class=\"wiz-actions\">
-            <button class=\"btn secondary\" id=\"wiz-back\">رجوع</button>
-            <button class=\"btn\" id=\"wiz-download\">Download PDF</button>
-            <button class=\"btn\" id=\"wiz-send\">Send by Email</button>
-            <button class=\"btn\" id=\"wiz-custom\">Get Custom Quote</button>
+    const inner = step===1 ? html1+`<div class="wiz-actions"><button class="btn" id="wiz-next">التالي</button></div>`
+                           : html2+`<div class="wiz-actions">
+            <button class="btn secondary" id="wiz-back">رجوع</button>
+            <button class="btn" id="wiz-download">Download PDF</button>
+            <button class="btn" id="wiz-send">Send by Email</button>
+            <button class="btn" id="wiz-custom">Get Custom Quote</button>
+            <button class="btn secondary" id="wiz-back-step1">الرجوع إلى بيانات العميل</button>
           </div>`;
     const panel = css + steps + inner;
     try{
@@ -152,6 +154,7 @@
       doc.getElementById('wiz-download')?.addEventListener('click', (e)=>{ e.preventDefault(); handle('download'); });
       doc.getElementById('wiz-send')?.addEventListener('click', (e)=>{ e.preventDefault(); handle('send'); });
       doc.getElementById('wiz-custom')?.addEventListener('click', (e)=>{ e.preventDefault(); handle('custom'); });
+      doc.getElementById('wiz-back-step1')?.addEventListener('click', (e)=>{ e.preventDefault(); render(1); });
     }, 120);
   }
 
