@@ -17,6 +17,22 @@ Server PDF generator (pdfkit) will auto-detect fonts from the folders above. Cli
 
 If you don’t have them, download from Google Fonts (Noto Naskh Arabic, Noto Kufi Arabic) and drop the `.ttf` files as-is. The loader `public/js/pdf-arabic-fonts.js` (client) and the server will pick them up automatically.
 
+### Arabic text shaping (pdfkit)
+Server PDFs now apply a lightweight Arabic reshaping and a visual bidi adjustment to improve Arabic rendering in pdfkit.
+
+Steps:
+1. Install deps (in `qiq-chat/`):
+
+```powershell
+npm install
+```
+
+2. Make sure at least one Arabic TTF is present under `public/fonts/` or `api/assets/fonts/` (see list above).
+
+Notes:
+- We use `arabic-persian-reshaper` dynamically; if not installed, the server falls back gracefully (English unaffected; Arabic may render without shaping).
+- For very complex Arabic/bidi layouts, we can upgrade to a fuller bidi pipeline later.
+
 ## 2) Environment Variables
 Set these locally (e.g., `.env` or your deployment environment) to enable full functionality:
 

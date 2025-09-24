@@ -28,6 +28,8 @@
         <label style="grid-column:1/-1">الاسم الكامل<input id="wiz-name" type="text" value="${esc(saved?.name||'')}" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
         <label>البريد الإلكتروني<input id="wiz-email" type="email" value="${esc(saved?.email||'')}" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
         <label>اسم الشركة (اختياري)<input id="wiz-company" type="text" value="${esc(saved?.company||'')}" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
+        <label>اسم المشروع<span style="color:#dc2626"> *</span><input id="wiz-project-name" type="text" value="${esc(saved?.projectName||'')}" placeholder="مثال: مشروع حماية الأجهزة - قسم المبيعات" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
+        <label>الموقع / الجهة (اختياري)<input id="wiz-project-site" type="text" value="${esc(saved?.projectSite||'')}" placeholder="مثال: القاهرة - المقر الرئيسي" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
         <label style="grid-column:1/-1">ملاحظات / متطلبات إضافية<textarea id="wiz-notes" rows="3" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px">${esc(saved?.notes||'')}</textarea></label>
       </div>`;
   }
@@ -80,7 +82,7 @@
       date: new Date().toISOString().slice(0,10),
       currency: 'USD',
       client: { name: client.name||'', email: client.email||'', contact: client.company||'', phone: '' },
-      project: { name: client.company||'', site: '' },
+      project: { name: client.projectName||'', site: client.projectSite||'' },
       items
     };
   }
@@ -90,12 +92,16 @@
     const email= $id('wiz-email')?.value.trim();
     const company=$id('wiz-company')?.value.trim();
     const notes= $id('wiz-notes')?.value.trim();
+    const projectName=$id('wiz-project-name')?.value.trim();
+    const projectSite=$id('wiz-project-site')?.value.trim();
     if (!name || !email){ window.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني', 3000); return; }
-    saveClient({ name, email, company, notes });
+    if (!projectName){ window.QiqToast?.error?.('يرجى إدخال اسم المشروع', 3000); return; }
+    saveClient({ name, email, company, notes, projectName, projectSite });
 
     const payload = payloadFromState();
     payload.action = action;
-    payload.client.name = name; payload.client.email = email; payload.client.contact = company; payload.project.name = company;
+    payload.client.name = name; payload.client.email = email; payload.client.contact = company;
+    payload.project.name = projectName; payload.project.site = projectSite;
     try{
       const r = await fetch('/api/quote-email', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) });
       if (!r.ok) throw new Error('HTTP '+r.status);

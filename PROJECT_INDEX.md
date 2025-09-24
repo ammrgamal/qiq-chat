@@ -1,8 +1,8 @@
 # Project Index — qiq-chat
-Generated: 2025-09-24T07:19:43.367Z
+Generated: 2025-09-24T09:53:13.721Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
-- Total size: 949.4 KB
+- Total size: 951.7 KB
 - Files: 92
 - Directories: 19
 - Max depth: 6
@@ -109,7 +109,7 @@ qiq-chat/
 ├── docs/
 │   ├── algolia_index_reference.md (2.7 KB)
 │   ├── COPILOT_INSTRUCTIONS.md (3.7 KB)
-│   └── SETUP.md (2.5 KB)
+│   └── SETUP.md (3.1 KB)
 ├── public/
 │   ├── css/
 │   │   └── styles.css (14.2 KB)
@@ -130,7 +130,7 @@ qiq-chat/
 │   │   ├── products-search.js (6.7 KB)
 │   │   ├── quote-actions.js (41.4 KB)
 │   │   ├── quote-form.js (3.0 KB)
-│   │   ├── quote-wizard.js (9.1 KB)
+│   │   ├── quote-wizard.js (10.1 KB)
 │   │   ├── quote.js (75.2 KB)
 │   │   ├── security.js (7.6 KB)
 │   │   ├── toast.js (3.2 KB)
@@ -161,9 +161,9 @@ qiq-chat/
 ├── index.html (8.4 KB)
 ├── index.js (956 B)
 ├── jest.config.cjs (154 B)
-├── package-lock.json (311.9 KB)
+├── package-lock.json (312.3 KB)
 ├── package.json (922 B)
-├── PROJECT_INDEX.md (11.3 KB)
+├── PROJECT_INDEX.md (11.7 KB)
 ├── quote.html (12.8 KB)
 ├── server.js (6.5 KB)
 └── test-flow.html (6.0 KB)
@@ -189,6 +189,22 @@ Recommended fonts:
 Server PDF generator (pdfkit) will auto-detect fonts from the folders above. Client-side (if used) also loads from `public/fonts/`.
 
 If you don’t have them, download from Google Fonts (Noto Naskh Arabic, Noto Kufi Arabic) and drop the `.ttf` files as-is. The loader `public/js/pdf-arabic-fonts.js` (client) and the server will pick them up automatically.
+
+### Arabic text shaping (pdfkit)
+Server PDFs now apply a lightweight Arabic reshaping and a visual bidi adjustment to improve Arabic rendering in pdfkit.
+
+Steps:
+1. Install deps (in `qiq-chat/`):
+
+```powershell
+npm install
+```
+
+2. Make sure at least one Arabic TTF is present under `public/fonts/` or `api/assets/fonts/` (see list above).
+
+Notes:
+- We use `arabic-persian-reshaper` dynamically; if not installed, the server falls back gracefully (English unaffected; Arabic may render without shaping).
+- For very complex Arabic/bidi layouts, we can upgrade to a fuller bidi pipeline later.
 
 ## 2) Environment Variables
 Set these locally (e.g., `.env` or your deployment environment) to enable full functionality:
