@@ -368,6 +368,16 @@
       }
     });
     localStorage.setItem('qiq_staged_items', JSON.stringify(products));
+    // If a reference is active, also save snapshot under that reference key
+    try{
+      const ref = localStorage.getItem('qiq_boq_current_ref') || '';
+      if (ref) {
+        const mapKey = 'qiq_boq_refs_map';
+        const refs = JSON.parse(localStorage.getItem(mapKey) || '{}');
+        refs[ref] = { items: products, savedAt: new Date().toISOString() };
+        localStorage.setItem(mapKey, JSON.stringify(refs));
+      }
+    }catch{}
   }
 
   // تجهّز الداتا من زرار عليه data-*
@@ -913,5 +923,61 @@
     updateStagedItemsFromTable();
     showNotification('تم حفظ كل المنتجات في قائمة عرض السعر. يمكنك الآن الانتقال لصفحة عرض السعر.', 'success');
   });
+
+  // ===== BOQ Reference Utilities (exposed) =====
+  (function(){
+    function genRef(){
+      const d = new Date();
+      const ts = d.toISOString().replace(/[-:T.Z]/g,'').slice(0,12);
+      return `QIQ-${ts}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+    }
+    function getMap(){ try{ return JSON.parse(localStorage.getItem('qiq_boq_refs_map')||'{}')||{}; }catch{ return {}; } }
+    function setMap(m){ try{ localStorage.setItem('qiq_boq_refs_map', JSON.stringify(m)); }catch{} }
+    function currentItems(){ try{ return JSON.parse(localStorage.getItem('qiq_staged_items')||'[]')||[]; }catch{ return []; } }
+    function setCurrentRef(ref){ try{ localStorage.setItem('qiq_boq_current_ref', String(ref||'')); }catch{} }
+    function getCurrentRef(){ try{ return localStorage.getItem('qiq_boq_current_ref') || ''; }catch{ return ''; } }
+    function saveAs(ref){
+      const r = String(ref||'').trim() || genRef();
+      const map = getMap();
+      map[r] = { items: currentItems(), savedAt: new Date().toISOString() };
+      setMap(map);
+      setCurrentRef(r);
+      return r;
+    }
+    function load(ref){
+      const r = String(ref||'').trim();
+      if (!r) return false;
+      const map = getMap();
+      const obj = map[r];
+      if (!obj || !Array.isArray(obj.items)) return false;
+      // Write to staged
+      localStorage.setItem('qiq_staged_items', JSON.stringify(obj.items));
+      setCurrentRef(r);
+      // If a table exists on this page, re-render rows quickly
+      if (tbody) {
+        tbody.innerHTML = '';
+        obj.items.forEach(item => {
+          buildRow({
+            name: item.name || item.description || '-',
+            pn: item.pn || item.sku || '',
+            sku: item.pn || item.sku || '',
+            price: item.price || item.unit || item.unit_price || '',
+            image: item.image || '',
+            manufacturer: item.manufacturer || item.brand || '',
+            link: item.link || '',
+            source: 'Ref'
+          });
+        });
+        recalcTotals();
+      }
+      return true;
+    }
+    function list(){
+      const map = getMap();
+      return Object.keys(map).map(k=>({ ref:k, savedAt: map[k]?.savedAt || null, count: Array.isArray(map[k]?.items)? map[k].items.length : 0 }))
+        .sort((a,b)=> String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
+    }
+    window.QiqBOQ = { newRef: genRef, saveCurrentAsRef: saveAs, loadRef: load, listRefs: list, getCurrentRef, setCurrentRef };
+  })();
 
 })();

@@ -104,13 +104,16 @@
 					⚖️ المقارنة
 					<span class="comparison-badge" style="position: absolute; top: -8px; right: -8px; background: #3b82f6; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: none;">0</span>
 				</button>
-				<a class="btn secondary" href="/quote.html">عرض السعر</a>
+				<button class="btn secondary" data-open-quote-wizard>عرض السعر</button>
 			</div>
 		</div>
 		<div class="toolbar">
 			<input id="q" type="search" placeholder="ابحث بالاسم / PN / SKU" />
 			<button id="searchBtn" class="btn">بحث</button>
 			<button id="clearBtn" class="btn secondary">مسح</button>
+      <input id="qiq-ref-input" type="text" placeholder="BOQ Ref" style="margin-inline-start:auto;min-width:180px;padding:8px;border:1px solid var(--border);border-radius:8px" />
+      <button id="qiq-ref-load" class="btn secondary" type="button">تحميل</button>
+      <button id="qiq-ref-save" class="btn" type="button">حفظ كمرجع</button>
 		</div>
 
 		<!-- Connectivity status (inline helper) -->
@@ -200,6 +203,7 @@
 		<script src="/js/analytics.js"></script>
 		<script src="/js/quote-actions.js"></script>
 		<script src="/js/products-search-enhanced.js"></script>
+		<script src="/js/quote-wizard.js"></script>
 	<script>
 	// Theme toggle hook
 	document.addEventListener('DOMContentLoaded', function(){
@@ -212,6 +216,26 @@
 	  const langBtn = document.getElementById('langToggleCatalog');
 	  langBtn?.addEventListener('click', ()=>{ try{ window.QiqI18n?.toggle?.(); }catch{} });
 	});
+	</script>
+	<script>
+	// Reference save/load
+	(function(){
+		document.addEventListener('DOMContentLoaded', function(){
+			const inp = document.getElementById('qiq-ref-input');
+			const bL = document.getElementById('qiq-ref-load');
+			const bS = document.getElementById('qiq-ref-save');
+			try{ const cur = window.QiqBOQ?.getCurrentRef?.(); if (cur && inp) inp.value = cur; }catch{}
+			bL?.addEventListener('click', ()=>{
+				const ref = (inp?.value||'').trim(); if (!ref) return;
+				const ok = window.QiqBOQ?.loadRef?.(ref);
+				if (ok) { window.QiqToast?.success?.('تم تحميل المشروع بالمرجع', 2400); } else { window.QiqToast?.error?.('لم يتم العثور على مرجع', 2400); }
+			});
+			bS?.addEventListener('click', ()=>{
+				const ref = window.QiqBOQ?.saveCurrentAsRef?.(inp?.value||'');
+				if (ref) { if (inp) inp.value = ref; navigator.clipboard?.writeText(ref).catch(()=>{}); window.QiqToast?.success?.('تم الحفظ. تم نسخ المرجع.', 2400); }
+			});
+		});
+	})();
 	</script>
 	<script>
 	// Render a tiny connectivity line from /health for quick diagnostics

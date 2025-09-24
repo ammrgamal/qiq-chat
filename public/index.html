@@ -18,6 +18,7 @@
   <script src="js/ui-enhancements.js" defer></script>
   <script src="js/quote-actions.js" defer></script>
   <script src="js/modal.js" defer></script>
+  <script src="js/quote-wizard.js" defer></script>
   <script src="js/ui-chat.js" defer></script>
 </head>
 <body>
@@ -31,8 +32,9 @@
       </div>
       <div style="margin-inline-start:auto;display:flex;gap:8px;align-items:center">
         <a class="btn ghost" href="/products-list.html">Catalog</a>
-        <a class="btn ghost" href="/quote.html">Quote</a>
-        <a class="btn ghost" href="/account.html">Account</a>
+        <button class="btn ghost" data-open-quote-wizard>Quote</button>
+        <!-- Hide Account link on chat page -->
+        <span style="display:none"><a class="btn ghost" href="/account.html">Account</a></span>
         <button id="themeToggleChat" class="btn secondary" title="Theme">🌙</button>
         <button id="langToggle" class="btn secondary" title="Language">AR/EN</button>
       </div>
@@ -47,6 +49,11 @@
     <div id="qiq-products-list" class="qiq-products-list"></div>
 
     <form id="qiq-form" class="qiq-form" autocomplete="off">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <input id="qiq-ref-input" class="qiq-input" type="text" placeholder="BOQ Reference (اختياري)" style="flex:1;min-width:200px" />
+        <button class="qiq-btn" type="button" id="qiq-ref-load">تحميل بالمرجع</button>
+        <button class="qiq-btn" type="button" id="qiq-ref-save">حفظ كمرجع</button>
+      </div>
       <input id="qiq-input" class="qiq-input" type="text"
              placeholder="اكتب سؤالك أو ابدأ.. مثلا: عايز Kaspersky EDR لـ 120 مستخدم لمدة سنتين" required />
       <div class="qiq-actions">
@@ -130,14 +137,28 @@
   </div>
 
   <div style="text-align:center;margin:20px 0;">
-    <button id="go-to-quote" class="qiq-btn qiq-primary" type="button" style="font-size:18px;padding:12px 32px;">الانتقال لصفحة عرض السعر</button>
+    <button data-open-quote-wizard class="qiq-btn qiq-primary" type="button" style="font-size:18px;padding:12px 32px;">طلب عرض سعر</button>
   </div>
 
   <script>
-  // Open quote as full page (no modal)
-  document.getElementById('go-to-quote').addEventListener('click', function() {
-    window.location.href = '/quote.html';
-  });
+  // Wizard button handled by quote-wizard.js
+  // Reference save/load
+  (function(){
+    const inp = document.getElementById('qiq-ref-input');
+    const btnL= document.getElementById('qiq-ref-load');
+    const btnS= document.getElementById('qiq-ref-save');
+    try{ const cur = window.QiqBOQ?.getCurrentRef?.(); if (cur && inp) inp.value = cur; }catch{}
+    btnL?.addEventListener('click', ()=>{
+      const ref = (inp?.value||'').trim();
+      if (!ref) return;
+      const ok = window.QiqBOQ?.loadRef?.(ref);
+      if (ok) { window.QiqToast?.success?.('تم تحميل المشروع بالمرجع', 2400); } else { window.QiqToast?.error?.('لم يتم العثور على مرجع', 2400); }
+    });
+    btnS?.addEventListener('click', ()=>{
+      const ref = window.QiqBOQ?.saveCurrentAsRef?.(inp?.value||'');
+      if (ref) { if (inp) inp.value = ref; navigator.clipboard?.writeText(ref).catch(()=>{}); window.QiqToast?.success?.('تم الحفظ. تم نسخ المرجع.', 2400); }
+    });
+  })();
   // Theme toggle for chat page
   document.getElementById('themeToggleChat')?.addEventListener('click', ()=>{
     try{

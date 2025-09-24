@@ -8,6 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const STORAGE_DIR = process.env.NODE_ENV === 'production' ? '/tmp/qiq-storage' : path.join(__dirname, '../.storage');
 const CONFIG_FILE = path.join(STORAGE_DIR, 'admin-config.json');
+const AI_DIR = path.join(__dirname, '../ai');
+const AI_INSTRUCTIONS_FILE = path.join(AI_DIR, 'ai-instructions.txt');
 
 async function readAdminConfig(){
   try{ const txt = await fs.readFile(CONFIG_FILE,'utf8'); return JSON.parse(txt); }catch{ return { instructions:'', bundles:[] }; }
@@ -44,6 +46,8 @@ export default async function handler(req, res) {
 
   const FAST_MODE = /^(1|true|yes)$/i.test(String(process.env.FAST_MODE || process.env.AUTO_APPROVE || ""));
   const adminCfg = await readAdminConfig();
+    let aiFile = '';
+    try { aiFile = await fs.readFile(AI_INSTRUCTIONS_FILE,'utf8'); } catch {}
     const openaiKey = process.env.OPENAI_API_KEY;
 
     // Fast path: drive a conversational intake (no auto-search unless user explicitly asks)
@@ -74,6 +78,7 @@ export default async function handler(req, res) {
     }
 
     const systemPrompt = [
+      aiFile || '',
       "أنت مساعد QuickITQuote.",
       "- تحدث بالعربية أولاً ثم الإنجليزية باختصار.",
       "- إن كان سؤال المستخدم عن منتج/موديل/سعر/بدائل، استدعِ أداة البحث (searchProducts) بكلمة بحث مناسبة.",
