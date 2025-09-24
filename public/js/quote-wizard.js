@@ -88,14 +88,23 @@
   }
 
   async function handle(action){
-    const name = $id('wiz-name')?.value.trim();
-    const email= $id('wiz-email')?.value.trim();
-    const company=$id('wiz-company')?.value.trim();
-    const notes= $id('wiz-notes')?.value.trim();
-    const projectName=$id('wiz-project-name')?.value.trim();
-    const projectSite=$id('wiz-project-site')?.value.trim();
-  if (!name || !email){ window.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني'); return; }
-  if (!projectName){ window.QiqToast?.error?.('يرجى إدخال اسم المشروع'); return; }
+    // Prefer saved state (works on step 2 where inputs are not visible). Fallback to inputs if present.
+    let { name, email, company, notes, projectName, projectSite } = loadClient() || {};
+    // Try to read from current iframe if inputs exist
+    try{
+      const frame = window.QiqModal?.getFrame?.();
+      const doc = frame?.contentDocument;
+      const byId = (id)=> doc?.getElementById(id)?.value?.trim();
+      name = byId('wiz-name') || name;
+      email = byId('wiz-email') || email;
+      company = byId('wiz-company') || company;
+      notes = byId('wiz-notes') || notes;
+      projectName = byId('wiz-project-name') || projectName;
+      projectSite = byId('wiz-project-site') || projectSite;
+    }catch{}
+
+    if (!name || !email){ window.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني'); return; }
+    if (!projectName){ window.QiqToast?.error?.('يرجى إدخال اسم المشروع'); return; }
     saveClient({ name, email, company, notes, projectName, projectSite });
 
     const payload = payloadFromState();
@@ -104,7 +113,10 @@
     payload.project.name = projectName; payload.project.site = projectSite;
     try{
       const r = await fetch('/api/quote-email', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) });
-      if (!r.ok) throw new Error('HTTP '+r.status);
+      if (!r.ok){
+        window.QiqToast?.error?.(`حدث خطأ أثناء الإرسال (HTTP ${r.status})`);
+        return;
+      }
       const j = await r.json();
       if (action === 'download' && j?.pdfBase64){
         const a = document.createElement('a');
@@ -112,6 +124,8 @@
         const baseName = `${payload.number||'quotation'}${payload?.project?.name ? ' - ' + payload.project.name : ''}`;
         a.download = baseName + '.pdf';
         document.body.appendChild(a); a.click(); a.remove();
+      } else if (action === 'download' && !j?.pdfBase64){
+        window.QiqToast?.error?.('لم يتم إنشاء ملف PDF.');
       }
       if (action === 'custom'){
   window.QiqToast?.success?.('تم إرسال طلبك وسنتواصل معك قريبًا.');
