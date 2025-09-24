@@ -4,6 +4,72 @@
 // Returns { ok, pdfBase64, csvBase64 } (pdfBase64 only for download action)
 
 import { sendEmail } from './_lib/email.js';
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const FONT_DIRS = [
+  path.join(__dirname, '../assets/fonts'),
+  path.join(__dirname, '../public/fonts'),
+  path.join(__dirname, '../../public/fonts')
+];
+
+// ============ Lightweight Arabic shaping helpers (optional deps) ============
+let __arShapeFn = null;
+function hasArabic(s){ return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(String(s||'')); }
+function reverseArabicRuns(str){
+  // Reverse only Arabic script runs, leave other segments (numbers/latin) intact
+  return String(str||'').replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+/g, seg => seg.split('').reverse().join(''));
+}
+async function getArabicShaper(){
+  if (__arShapeFn) return __arShapeFn;
+  let reshape = null;
+  try{
+    const mod = await import('arabic-persian-reshaper');
+    reshape = (mod && (mod.reshape || mod.default?.reshape)) || null;
+  }catch{}
+  __arShapeFn = (input)=>{
+    const s = String(input==null?'':input);
+    if (!hasArabic(s)) return s;
+    let t = s;
+    try{ if (typeof reshape === 'function') t = reshape(t); }catch{}
+    // Naive visual ordering for Arabic runs (satisfies most simple cases in PDFKit)
+    t = reverseArabicRuns(t);
+    return t;
+  };
+  return __arShapeFn;
+}
+
+async function tryAccess(p){ try{ await fs.access(p); return true; }catch{ return false; } }
+async function ensureArabicFonts(doc){
+  // Look for common Arabic font families inside assets/fonts
+  const families = [
+    { reg: 'NotoNaskhArabic-Regular.ttf', bold: 'NotoNaskhArabic-Bold.ttf' },
+    { reg: 'NotoSansArabic-Regular.ttf', bold: 'NotoSansArabic-Bold.ttf' },
+    { reg: 'NotoKufiArabic-Regular.ttf', bold: 'NotoKufiArabic-Bold.ttf' },
+    { reg: 'Amiri-Regular.ttf', bold: 'Amiri-Bold.ttf' }
+  ];
+  for (const dir of FONT_DIRS){
+    for (const f of families){
+      const regPath = path.join(dir, f.reg);
+      const boldPath = path.join(dir, f.bold);
+      const hasReg = await tryAccess(regPath);
+      const hasBold = await tryAccess(boldPath);
+      if (hasReg){
+        try{ doc.registerFont('AR_REG', regPath); }catch{}
+      }
+      if (hasBold){
+        try{ doc.registerFont('AR_BOLD', boldPath); }catch{}
+      }
+      if (hasReg || hasBold){
+        return { reg: hasReg ? 'AR_REG' : null, bold: hasBold ? 'AR_BOLD' : null };
+      }
+    }
+  }
+  return { reg: null, bold: null };
+}
 
 function sanitizeName(s){
   return (s==null?'':String(s))
@@ -36,14 +102,21 @@ async function buildPdfBuffer({ number, date, currency, client, project, items }
   const { default: PDFDocument } = await import('pdfkit');
   const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: `Quotation ${ensureString(number)} - ${ensureString(project?.name||'')}` }});
   const chunks = [];
-  return await new Promise((resolve, reject)=>{
+  return await new Promise(async (resolve, reject)=>{
     doc.on('data', c=>chunks.push(c));
     doc.on('error', reject);
     doc.on('end', ()=> resolve(Buffer.concat(chunks)));
 
+    // Fonts (register Arabic if available)
+    const fonts = await ensureArabicFonts(doc);
+    const REG = fonts.reg || 'Helvetica';
+    const BOLD = fonts.bold || 'Helvetica-Bold';
+    const ar = await getArabicShaper();
+    const ARS = (s)=> ar(String(s==null?'':s));
+
     // Header
-    doc.fontSize(18).fillColor('#111827').font('Helvetica-Bold').text(`QuickITQuote — Quotation ${ensureString(number)}`, { align: 'left' });
-    doc.moveDown(0.3).fontSize(11).font('Helvetica').fillColor('#374151').text(`Date: ${ensureString(date)}    Currency: ${ensureString(currency)}`);
+  doc.fontSize(18).fillColor('#111827').font(BOLD).text(ARS(`QuickITQuote — Quotation ${ensureString(number)}`), { align: 'left' });
+  doc.moveDown(0.3).fontSize(11).font(REG).fillColor('#374151').text(ARS(`Date: ${ensureString(date)}    Currency: ${ensureString(currency)}`));
 
     // Optional product image (first item)
     (async ()=>{
@@ -69,19 +142,19 @@ async function buildPdfBuffer({ number, date, currency, client, project, items }
     // Client
     doc.save();
     doc.roundedRect(startX, startY, boxW, lineH*3.6, 6).stroke('#e5e7eb');
-    doc.font('Helvetica-Bold').fillColor('#111827').text('Client', startX+8, startY+6);
-    doc.font('Helvetica').fillColor('#374151');
-    doc.text(`${ensureString(client?.name||'')}`, startX+8, startY+22);
-    if (client?.email) doc.text(`${ensureString(client.email)}`, startX+8, startY+36);
+  doc.font(BOLD).fillColor('#111827').text('Client', startX+8, startY+6);
+  doc.font(REG).fillColor('#374151');
+  doc.text(ARS(`${ensureString(client?.name||'')}`), startX+8, startY+22);
+  if (client?.email) doc.text(ARS(`${ensureString(client.email)}`), startX+8, startY+36);
     doc.restore();
     // Project
     doc.save();
     const px = startX + boxW + 12;
     doc.roundedRect(px, startY, boxW, lineH*3.6, 6).stroke('#e5e7eb');
-    doc.font('Helvetica-Bold').fillColor('#111827').text('Project', px+8, startY+6);
-    doc.font('Helvetica').fillColor('#374151');
-    doc.text(`${ensureString(project?.name||'')}`, px+8, startY+22);
-    if (project?.site) doc.text(`${ensureString(project.site)}`, px+8, startY+36);
+  doc.font(BOLD).fillColor('#111827').text('Project', px+8, startY+6);
+  doc.font(REG).fillColor('#374151');
+  doc.text(ARS(`${ensureString(project?.name||'')}`), px+8, startY+22);
+  if (project?.site) doc.text(ARS(`${ensureString(project.site)}`), px+8, startY+36);
     doc.restore();
     doc.moveDown(3.2);
 
@@ -102,7 +175,7 @@ async function buildPdfBuffer({ number, date, currency, client, project, items }
       doc.save();
       doc.rect(x, y, tableW, 20).fill('#f3f4f6');
       let cx = x;
-      cols.forEach(c=>{ doc.fillColor('#111827').font('Helvetica-Bold').fontSize(10).text(c.label, cx+4, y+6, { width:c.w-8, align: c.key==='desc'?'left':'right' }); cx += c.w; });
+  cols.forEach(c=>{ doc.fillColor('#111827').font(BOLD).fontSize(10).text(ARS(c.label), cx+4, y+6, { width:c.w-8, align: c.key==='desc'?'left':'right' }); cx += c.w; });
       doc.restore();
       y += 20;
       // header bottom line
@@ -124,10 +197,10 @@ async function buildPdfBuffer({ number, date, currency, client, project, items }
       }
       // text cells
       let cx = x;
-      doc.font('Helvetica').fontSize(10).fillColor('#111827');
-      doc.text(String(i+1), cx+4, y+4, { width: cols[0].w-8, align:'right' }); cx += cols[0].w;
-      doc.text(desc, cx+4, y+4, { width: cols[1].w-8, align:'left' }); cx += cols[1].w;
-      doc.text(pn, cx+4, y+4, { width: cols[2].w-8, align:'left' }); cx += cols[2].w;
+  doc.font(REG).fontSize(10).fillColor('#111827');
+  doc.text(String(i+1), cx+4, y+4, { width: cols[0].w-8, align:'right' }); cx += cols[0].w;
+  doc.text(ARS(desc), cx+4, y+4, { width: cols[1].w-8, align:'left' }); cx += cols[1].w;
+  doc.text(ARS(pn), cx+4, y+4, { width: cols[2].w-8, align:'left' }); cx += cols[2].w;
       doc.text(String(qty), cx+4, y+4, { width: cols[3].w-8, align:'right' }); cx += cols[3].w;
       doc.text(unit.toFixed(2), cx+4, y+4, { width: cols[4].w-8, align:'right' }); cx += cols[4].w;
       doc.text(line.toFixed(2), cx+4, y+4, { width: cols[5].w-8, align:'right' });
@@ -146,9 +219,9 @@ async function buildPdfBuffer({ number, date, currency, client, project, items }
     y += 12; if (y > maxY) { doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; }
     const tw = 220; const tx = x + tableW - tw; const ty = y;
     doc.roundedRect(tx, ty, tw, 44, 6).stroke('#e5e7eb');
-    doc.font('Helvetica').fontSize(11).fillColor('#111827');
-    doc.text(`Subtotal: ${subtotal.toFixed(2)}`, tx+10, ty+8, { width: tw-20, align:'right' });
-    doc.text(`Grand Total: ${grand.toFixed(2)}`, tx+10, ty+24, { width: tw-20, align:'right' });
+  doc.font(REG).fontSize(11).fillColor('#111827');
+  doc.text(ARS(`Subtotal: ${subtotal.toFixed(2)}`), tx+10, ty+8, { width: tw-20, align:'right' });
+  doc.text(ARS(`Grand Total: ${grand.toFixed(2)}`), tx+10, ty+24, { width: tw-20, align:'right' });
 
     doc.end();
   });

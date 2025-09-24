@@ -1,10 +1,10 @@
 # Project Index — qiq-chat
-Generated: 2025-09-24T06:46:56.234Z
+Generated: 2025-09-24T07:19:43.367Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
-- Total size: 949.5 KB
+- Total size: 949.4 KB
 - Files: 92
-- Directories: 17
+- Directories: 19
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
 
@@ -28,6 +28,8 @@ This file is auto-generated. Share it with ChatGPT for context.
   - api/admin/quotations.js
   - api/admin/stats.js
   - api/admin/users.js
+- assets/
+  - fonts/
 - storage/
   - api/storage/quotations.js
 - users/
@@ -59,7 +61,7 @@ qiq-chat/
 │   ├── algoliaMapper.spec.ts (525 B)
 │   └── pdfTotals.spec.ts (1.3 KB)
 ├── .storage/
-│   ├── activity.json (13.4 KB)
+│   ├── activity.json (13.9 KB)
 │   └── quotations.json (672 B)
 ├── ai/
 │   └── ai-instructions.txt (997 B)
@@ -80,6 +82,8 @@ qiq-chat/
 │   │   ├── quotations.js (339 B)
 │   │   ├── stats.js (347 B)
 │   │   └── users.js (329 B)
+│   ├── assets/
+│   │   └── fonts/
 │   ├── storage/
 │   │   └── quotations.js (4.9 KB)
 │   ├── users/
@@ -97,7 +101,7 @@ qiq-chat/
 │   ├── hello-leads.js (3.0 KB)
 │   ├── maintenance.js (3.9 KB)
 │   ├── pdf-ai.js (14.4 KB)
-│   ├── quote-email.js (11.1 KB)
+│   ├── quote-email.js (13.8 KB)
 │   ├── quote.js (741 B)
 │   ├── search-health.js (1.2 KB)
 │   ├── search.js (2.7 KB)
@@ -105,7 +109,7 @@ qiq-chat/
 ├── docs/
 │   ├── algolia_index_reference.md (2.7 KB)
 │   ├── COPILOT_INSTRUCTIONS.md (3.7 KB)
-│   └── SETUP.md (2.2 KB)
+│   └── SETUP.md (2.5 KB)
 ├── public/
 │   ├── css/
 │   │   └── styles.css (14.2 KB)
@@ -124,7 +128,7 @@ qiq-chat/
 │   │   ├── performance.js (5.6 KB)
 │   │   ├── products-search-enhanced.js (23.6 KB)
 │   │   ├── products-search.js (6.7 KB)
-│   │   ├── quote-actions.js (41.2 KB)
+│   │   ├── quote-actions.js (41.4 KB)
 │   │   ├── quote-form.js (3.0 KB)
 │   │   ├── quote-wizard.js (9.1 KB)
 │   │   ├── quote.js (75.2 KB)
@@ -158,8 +162,8 @@ qiq-chat/
 ├── index.js (956 B)
 ├── jest.config.cjs (154 B)
 ├── package-lock.json (311.9 KB)
-├── package.json (880 B)
-├── PROJECT_INDEX.md (15.2 KB)
+├── package.json (922 B)
+├── PROJECT_INDEX.md (11.3 KB)
 ├── quote.html (12.8 KB)
 ├── server.js (6.5 KB)
 └── test-flow.html (6.0 KB)
@@ -171,12 +175,20 @@ qiq-chat/
 
 This repo has integrations that depend on local assets (Arabic fonts) and environment variables. Use this as a short checklist.
 
-## 1) Arabic PDF Fonts (pdfmake)
-Place the following TTFs under `public/fonts/` so Arabic text renders/shapes correctly in PDFs:
-- `NotoNaskhArabic-Regular.ttf`
-- `NotoKufiArabic-Regular.ttf`
+## 1) Arabic PDF Fonts (client + server)
+Place the following TTFs under one of these folders so Arabic text renders properly in PDFs:
+- `public/fonts/` (preferred, used by client and server)
+- `api/assets/fonts/` (server-only fallback)
 
-If you don’t have them, download from Google Fonts (Noto Naskh Arabic, Noto Kufi Arabic) and drop the `.ttf` files as-is. The loader `public/js/pdf-arabic-fonts.js` will pick them up automatically.
+Recommended fonts:
+- `NotoNaskhArabic-Regular.ttf`
+- `NotoNaskhArabic-Bold.ttf`
+- `NotoKufiArabic-Regular.ttf`
+- `NotoKufiArabic-Bold.ttf`
+
+Server PDF generator (pdfkit) will auto-detect fonts from the folders above. Client-side (if used) also loads from `public/fonts/`.
+
+If you don’t have them, download from Google Fonts (Noto Naskh Arabic, Noto Kufi Arabic) and drop the `.ttf` files as-is. The loader `public/js/pdf-arabic-fonts.js` (client) and the server will pick them up automatically.
 
 ## 2) Environment Variables
 Set these locally (e.g., `.env` or your deployment environment) to enable full functionality:

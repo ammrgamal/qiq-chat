@@ -721,71 +721,68 @@
           const rows = text.split(/\r?\n/).map(r=> r.split(/[;\t,]/).map(c=> String(c||'').trim().replace(/^"|"$/g,'')) ).filter(r=> r.some(c=>c && c.length));
           payload = { rows };
         }
-        const resp = await fetch('/api/boq/parse', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
-        if (!resp.ok) throw new Error('HTTP '+resp.status);
-        const parsed = await resp.json();
-        const rows = Array.isArray(parsed?.items) ? parsed.items : [];
-        const notes = Array.isArray(parsed?.notes) ? parsed.notes : [];
+        // Try backend parser; if 404 or network error, fallback to local parsing
+        let parsed = null;
+        try{
+          const resp = await fetch('/api/boq/parse', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
+          if (resp.ok) parsed = await resp.json();
+          else if (resp.status !== 404) throw new Error('HTTP '+resp.status);
+        }catch(err){ console.warn('backend parse error, will fallback:', err); }
+
+        let rows = Array.isArray(parsed?.items) ? parsed.items : [];
+        let notes = Array.isArray(parsed?.notes) ? parsed.notes : [];
+        if (!rows.length) {
+          // Local fallback: implement minimal fromRows equivalent
+          function fromRowsLocal(aoa){
+            if (!Array.isArray(aoa) || aoa.length===0) return { items: [], notes:['BOQ: no rows'] };
+            const header = aoa[0].map(x=> String(x||'').toLowerCase());
+            const col = { pn:-1, qty:-1, desc:-1, price:-1 };
+            header.forEach((h,i)=>{
+              if (col.pn<0 && /(pn|mpn|sku|part|رقم|كود|موديل)/i.test(h)) col.pn=i;
+              if (col.qty<0 && /(qty|quantity|عدد|كمية)/i.test(h)) col.qty=i;
+              if (col.price<0 && /(price|unit|cost|سعر)/i.test(h)) col.price=i;
+              if (col.desc<0 && /(desc|name|وصف|البند|item)/i.test(h)) col.desc=i;
+            });
+            const probe = aoa.slice(1,4);
+            function likelyPn(v){ const s=String(v||''); return /[a-z]{1,3}?\d|\d+[a-z]/i.test(s) && /[a-z0-9]/i.test(s) && s.length>=3; }
+            function likelyQty(v){ const n=Number(String(v||'').replace(/[^\d.]/g,'')); return Number.isFinite(n)&&n>0&&Math.floor(n)===n; }
+            function likelyPrice(v){ const s=String(v||''); return /(usd|sar|egp|aed|eur|\$)/i.test(s) || (Number(String(s).replace(/[^\d.]/g,''))>0 && s.includes('.')); }
+            if (col.pn<0 || col.qty<0){
+              for (let i=0;i<(aoa[1]?.length||0);i++){
+                const vals = probe.map(r=>r[i]);
+                if (col.pn<0 && vals.filter(likelyPn).length>=2) col.pn=i;
+                if (col.qty<0 && vals.filter(likelyQty).length>=2) col.qty=i;
+              }
+            }
+            if (col.price<0){
+              for (let i=0;i<(aoa[1]?.length||0);i++){
+                const vals = probe.map(r=>r[i]);
+                if (vals.filter(likelyPrice).length>=1){ col.price=i; break; }
+              }
+            }
+            if (col.desc<0){ for (let i=0;i<(aoa[1]?.length||0);i++){ if(i!==col.pn && i!==col.qty){ col.desc=i; break; } } }
+            const notes=[]; if (col.pn<0 || col.qty<0) notes.push('لم نتمكن من تحديد PN/QTY بدقة — سيتم الافتراض (أول عمود PN والثاني QTY).');
+            if (col.pn<0) col.pn=0; if (col.qty<0) col.qty=1;
+            const out=[];
+            for (let i=1;i<aoa.length;i++){
+              const r = aoa[i]; if (!r) continue;
+              const pn   = r[col.pn] ?? '';
+              const qty  = r[col.qty] ?? 1;
+              const desc = col.desc>=0 ? r[col.desc] : '';
+              const priceRaw = col.price>=0 ? r[col.price] : '';
+              const price = priceRaw ? Number(String(priceRaw).replace(/[^\d.]/g,'')) : undefined;
+              if (!pn && !desc) continue;
+              const q = Number(String(qty).replace(/[^\d.]/g,'')) || 1;
+              out.push({ pn: String(pn||'').toString(), qty: q, description: desc? String(desc) : undefined, price });
+            }
+            return { items: out, notes };
+          }
+          const fallbackAoA = payload.rows || [];
+          const f = fromRowsLocal(fallbackAoA);
+          rows = f.items; notes = f.notes;
+        }
+
         if (!rows.length) { showNotification('الملف فارغ أو غير صالح', 'error'); return; }
-
-        // Heuristic header detection from first non-empty row
-        // Now rows are normalized objects {pn, qty, description?, price?}
-        const colIndex = { pn: 0, qty: 1, desc: 2, price: 3 };
-
-        function likelyPn(val){
-          const v = String(val||'').trim();
-          // PN/MPN/SKU pattern: letters+digits and often dashes/underscores
-          return /[a-z]{1,3}?\d|\d+[a-z]/i.test(v) && /[a-z0-9]/i.test(v) && v.length >= 3;
-        }
-        function likelyQty(val){
-          if (val===null||val===undefined||val==='') return false;
-          const n = Number(String(val).replace(/[^\d.]/g,''));
-          return Number.isFinite(n) && n>0 && Math.floor(n)===n;
-        }
-        function likelyPrice(val){
-          const s = String(val||'');
-          return /(usd|sar|egp|aed|eur|\$)/i.test(s) || (Number(String(s).replace(/[^\d.]/g,''))>0 && s.includes('.'));
-        }
-
-        // Try header labels first
-        header.forEach((h,i)=>{
-          if (colIndex.pn<0 && /(pn|mpn|sku|part|رقم|كود|موديل)/i.test(h)) colIndex.pn=i;
-          if (colIndex.qty<0 && /(qty|quantity|عدد|كمية)/i.test(h)) colIndex.qty=i;
-          if (colIndex.price<0 && /(price|unit|cost|سعر)/i.test(h)) colIndex.price=i;
-          if (colIndex.desc<0 && /(desc|name|وصف|البند|item)/i.test(h)) colIndex.desc=i;
-        });
-
-        // If still unknown, probe first up to 3 data rows
-  const probeRows = [];
-        if (colIndex.pn<0 || colIndex.qty<0) {
-          for (let i=0;i<(rows[1]?.length||0);i++){
-            const colVals = probeRows.map(r=>r[i]);
-            const pnScore = colVals.filter(v=>likelyPn(v)).length;
-            const qtyScore = colVals.filter(v=>likelyQty(v)).length;
-            if (pnScore>=2 && colIndex.pn<0) colIndex.pn=i;
-            if (qtyScore>=2 && colIndex.qty<0) colIndex.qty=i;
-          }
-        }
-        if (colIndex.price<0) {
-          for (let i=0;i<(rows[1]?.length||0);i++){
-            const colVals = probeRows.map(r=>r[i]);
-            const priceScore = colVals.filter(v=>likelyPrice(v)).length;
-            if (priceScore>=1) { colIndex.price=i; break; }
-          }
-        }
-        if (colIndex.desc<0) {
-          // Fallback: choose the first non-PN/QTY column as description
-          for (let i=0;i<(rows[1]?.length||0);i++){
-            if (i!==colIndex.pn && i!==colIndex.qty) { colIndex.desc=i; break; }
-          }
-        }
-
-        // If still ambiguous, prompt the user once and proceed
-        if (colIndex.pn<0 || colIndex.qty<0) {
-          try { if(window.QiqToast?.warning) window.QiqToast.warning('تعذر اكتشاف PN/QTY بدقة. سيتم افتراض أول عمود PN وثاني عمود QTY.', 3500);}catch{}
-          if (colIndex.pn<0) colIndex.pn = 0;
-          if (colIndex.qty<0) colIndex.qty = 1;
-        }
 
         // Helper: search backend for a PN or description
         async function searchCatalog(q){
@@ -823,22 +820,19 @@
         }
 
         let importedCount = 0;
-        for (let i=0;i<rows.length;i++){
-          const row = rows[i];
-          const pn = row.pn || '';
-          const qty = row.qty || 1;
-          const desc = row.description || '';
-          const price = row.price ? String(row.price).replace(/[^\d.]/g,'') : '';
-
+        for (const row of rows){
+          const pn = String(row.pn||'').trim();
+          const qty = Number(row.qty||1) || 1;
+          const desc = String(row.description||'').trim();
+          const price = row.price!=null ? String(row.price).replace(/[^\d.]/g,'') : '';
           if (!(pn||desc)) continue;
 
           // 1) Try PN exact/close match
           let hits = [];
-          if (pn) hits = await searchCatalog(String(pn));
-          if (!hits.length && desc) hits = await searchCatalog(String(desc));
+          if (pn) hits = await searchCatalog(pn);
+          if (!hits.length && desc) hits = await searchCatalog(desc);
 
           if (hits.length) {
-            // Take top match
             const h = hits[0];
             addBaseRow({
               name: h?.name || desc || pn,
@@ -853,16 +847,14 @@
             });
             importedCount++;
           } else {
-            // Not found: add as-is and try to propose alternative by brand keywords
             addBaseRow({ name: desc || `Item ${pn}`, pn, qty, price, source:'Import', note:'غير موجود في الكتالوج — يرجى اختيار بديل.' });
-            // Try to fetch alternatives by using partial PN token or description keyword
             let altQ = '';
-            if (typeof pn==='string' && pn) {
+            if (pn) {
               const parts = pn.split(/[-_\s]/).filter(Boolean);
               altQ = parts.slice(0,2).join(' ');
             }
             if (!altQ && desc) {
-              const words = String(desc).split(/\s+/).filter(w=>w.length>2);
+              const words = desc.split(/\s+/).filter(w=>w.length>2);
               altQ = words.slice(0,3).join(' ');
             }
             if (altQ) {
@@ -886,7 +878,7 @@
           }
         }
 
-        if (notes.length) { try{ window.QiqToast?.warning?.(notes.join('\n'), 4000);}catch{} }
+  if (notes.length) { try{ window.QiqToast?.warning?.(notes.join('\n'), 4000);}catch{} }
         if (importedCount > 0) { showNotification(`تم استيراد ${importedCount} عنصر بنجاح`, 'success'); }
         else { showNotification('لم يتم العثور على بيانات صالحة للاستيراد', 'error'); }
 

@@ -49,18 +49,18 @@
     <div id="qiq-products-list" class="qiq-products-list"></div>
 
     <form id="qiq-form" class="qiq-form" autocomplete="off">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-        <input id="qiq-ref-input" class="qiq-input" type="text" placeholder="BOQ Reference (اختياري)" style="flex:1;min-width:200px" />
-        <button class="qiq-btn" type="button" id="qiq-ref-load">تحميل بالمرجع</button>
-        <button class="qiq-btn" type="button" id="qiq-ref-save">حفظ كمرجع</button>
-      </div>
       <input id="qiq-input" class="qiq-input" type="text"
              placeholder="اكتب سؤالك أو ابدأ.. مثلا: عايز Kaspersky EDR لـ 120 مستخدم لمدة سنتين" required />
-      <div class="qiq-actions">
-        <button class="qiq-btn qiq-primary" type="button" id="qiq-import-btn" title="استيراد BOQ (Excel)">Import BOQ (Excel)</button>
-        <button class="qiq-btn" type="button" id="qiq-open-search" title="البحث عن منتجات">بحث</button>
+      <div class="qiq-actions" style="margin-top:8px">
+        <button class="qiq-btn qiq-primary" type="button" id="qiq-import-btn" title="استيراد BOQ (Excel)">استيراد BOQ (Excel)</button>
+        <button class="qiq-btn" type="button" id="qiq-open-search" title="البحث عن منتجات">البحث عن منتجات</button>
         <button class="qiq-send" type="submit">إرسال</button>
         <input type="file" id="qiq-file" accept=".xlsx,.xls,.csv" hidden />
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
+        <input id="qiq-ref-input" class="qiq-input" type="text" placeholder="(اختياري) BOQ Reference" style="flex:1;min-width:200px" />
+        <button class="qiq-btn" type="button" id="qiq-ref-load">تحميل بالمرجع</button>
+        <button class="qiq-btn" type="button" id="qiq-ref-save">حفظ كمرجع</button>
       </div>
     </form>
   </section>

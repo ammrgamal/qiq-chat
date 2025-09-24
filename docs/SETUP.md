@@ -2,12 +2,20 @@
 
 This repo has integrations that depend on local assets (Arabic fonts) and environment variables. Use this as a short checklist.
 
-## 1) Arabic PDF Fonts (pdfmake)
-Place the following TTFs under `public/fonts/` so Arabic text renders/shapes correctly in PDFs:
-- `NotoNaskhArabic-Regular.ttf`
-- `NotoKufiArabic-Regular.ttf`
+## 1) Arabic PDF Fonts (client + server)
+Place the following TTFs under one of these folders so Arabic text renders properly in PDFs:
+- `public/fonts/` (preferred, used by client and server)
+- `api/assets/fonts/` (server-only fallback)
 
-If you don’t have them, download from Google Fonts (Noto Naskh Arabic, Noto Kufi Arabic) and drop the `.ttf` files as-is. The loader `public/js/pdf-arabic-fonts.js` will pick them up automatically.
+Recommended fonts:
+- `NotoNaskhArabic-Regular.ttf`
+- `NotoNaskhArabic-Bold.ttf`
+- `NotoKufiArabic-Regular.ttf`
+- `NotoKufiArabic-Bold.ttf`
+
+Server PDF generator (pdfkit) will auto-detect fonts from the folders above. Client-side (if used) also loads from `public/fonts/`.
+
+If you don’t have them, download from Google Fonts (Noto Naskh Arabic, Noto Kufi Arabic) and drop the `.ttf` files as-is. The loader `public/js/pdf-arabic-fonts.js` (client) and the server will pick them up automatically.
 
 ## 2) Environment Variables
 Set these locally (e.g., `.env` or your deployment environment) to enable full functionality:

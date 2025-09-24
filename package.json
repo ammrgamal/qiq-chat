@@ -14,7 +14,8 @@
     "express-rate-limit": "^7.4.0",
     "xlsx": "^0.18.5",
     "pdfkit": "^0.15.0",
-    "joi": "^17.12.0"
+    "joi": "^17.12.0",
+    "arabic-persian-reshaper": "^2.2.2"
   },
   "scripts": {
     "start": "node server.js",
