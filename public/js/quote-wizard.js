@@ -139,7 +139,7 @@
         .btn{border:0;border-radius:10px;padding:8px 12px;background:#1e3a8a;color:#fff;cursor:pointer}
         .btn.secondary{background:#6b7280}
       </style>`;
-  const inner = step===1 ? html1+`<div class="wiz-actions"><button class="btn" id="wiz-next">التالي</button></div>`
+    const inner = step===1 ? html1+`<div class="wiz-actions"><button class="btn" id="wiz-next">التالي</button></div>`
                            : html2+`<div class="wiz-actions">
             <button class="btn secondary" id="wiz-back">رجوع</button>
             <button class="btn" id="wiz-download">Download PDF</button>
@@ -148,31 +148,53 @@
             <button class="btn secondary" id="wiz-back-step1">الرجوع إلى بيانات العميل</button>
           </div>`;
     const panel = css + steps + inner;
+
     try{
-      if (window.QiqModal){ QiqModal.open('#', { title:'طلب عرض سعر', html: panel, size: 'sm' }); }
+      if (window.QiqModal){ QiqModal.open('#', { title:'\u0637\u0644\u0628 \u0639\u0631\u0636 \u0633\u0639\u0631', html: panel, size: 'sm' }); }
       else alert('Wizard requires modal.js');
     }catch{}
-    setTimeout(()=>{ // wire handlers after iframe load
+
+    // Robustly wire handlers after iframe content is ready (load + retry fallback)
+    function bindInside(){
       const frame = window.QiqModal?.getFrame?.();
-      const doc = frame?.contentDocument; if (!doc) return;
-      doc.getElementById('wiz-next')?.addEventListener('click', (e)=>{ e.preventDefault();
+      const doc = frame?.contentDocument; if (!doc) return false;
+      const q = (sel)=> doc.getElementById(sel);
+      const next = q('wiz-next');
+      const back = q('wiz-back');
+      const dl   = q('wiz-download');
+      const send = q('wiz-send');
+      const cust = q('wiz-custom');
+      const back1= q('wiz-back-step1');
+      // If none found yet, not ready
+      if (!next && !dl && !send && !cust && !back && !back1) return false;
+      // Helper to avoid double binding
+      const on = (el, type, fn)=>{ if (!el) return; if (el.__bound) return; el.__bound = true; el.addEventListener(type, fn); };
+      on(next, 'click', (e)=>{ e.preventDefault();
         const name = doc.getElementById('wiz-name')?.value.trim();
         const email= doc.getElementById('wiz-email')?.value.trim();
         const projectName = doc.getElementById('wiz-project-name')?.value.trim();
         const company = doc.getElementById('wiz-company')?.value.trim();
         const notes = doc.getElementById('wiz-notes')?.value.trim();
         const projectSite = doc.getElementById('wiz-project-site')?.value.trim();
-  if (!name || !email){ window.parent.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني'); return; }
-  if (!projectName){ window.parent.QiqToast?.error?.('يرجى إدخال اسم المشروع'); return; }
+        if (!name || !email){ window.parent.QiqToast?.error?.('\u064a\u0631\u062c\u0649 \u0625\u062f\u062e\u0627\u0644 \u0627\u0644\u0627\u0633\u0645 \u0648\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a'); return; }
+        if (!projectName){ window.parent.QiqToast?.error?.('\u064a\u0631\u062c\u0649 \u0625\u062f\u062e\u0627\u0644 \u0627\u0633\u0645 \u0627\u0644\u0645\u0634\u0631\u0648\u0639'); return; }
         window.parent.localStorage.setItem(STATE_KEY, JSON.stringify({ name, email, company, notes, projectName, projectSite }));
         render(2);
       });
-      doc.getElementById('wiz-back')?.addEventListener('click', (e)=>{ e.preventDefault(); render(1); });
-      doc.getElementById('wiz-download')?.addEventListener('click', (e)=>{ e.preventDefault(); handle('download'); });
-      doc.getElementById('wiz-send')?.addEventListener('click', (e)=>{ e.preventDefault(); handle('send'); });
-      doc.getElementById('wiz-custom')?.addEventListener('click', (e)=>{ e.preventDefault(); handle('custom'); });
-      doc.getElementById('wiz-back-step1')?.addEventListener('click', (e)=>{ e.preventDefault(); render(1); });
-    }, 120);
+      on(back, 'click', (e)=>{ e.preventDefault(); render(1); });
+      on(dl,   'click', (e)=>{ e.preventDefault(); handle('download'); });
+      on(send, 'click', (e)=>{ e.preventDefault(); handle('send'); });
+      on(cust, 'click', (e)=>{ e.preventDefault(); handle('custom'); });
+      on(back1,'click', (e)=>{ e.preventDefault(); render(1); });
+      return true;
+    }
+    // Try bind immediately, then via load, then retries
+    if (!bindInside()){
+      const frame = window.QiqModal?.getFrame?.();
+      try{ frame?.addEventListener('load', bindInside, { once: true }); }catch{}
+      let tries = 0; const max = 40; // ~4s
+      const iv = setInterval(()=>{ if (bindInside() || ++tries>=max) clearInterval(iv); }, 100);
+    }
   }
 
   function openWizard(e){ if (e) e.preventDefault(); render(1); }

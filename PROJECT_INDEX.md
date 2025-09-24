@@ -1,8 +1,8 @@
 # Project Index — qiq-chat
-Generated: 2025-09-24T11:13:52.005Z
+Generated: 2025-09-24T11:32:08.690Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
-- Total size: 953.2 KB
+- Total size: 954.2 KB
 - Files: 92
 - Directories: 19
 - Max depth: 6
@@ -130,7 +130,7 @@ qiq-chat/
 │   │   ├── products-search.js (6.7 KB)
 │   │   ├── quote-actions.js (41.5 KB)
 │   │   ├── quote-form.js (3.0 KB)
-│   │   ├── quote-wizard.js (10.8 KB)
+│   │   ├── quote-wizard.js (11.8 KB)
 │   │   ├── quote.js (75.2 KB)
 │   │   ├── security.js (7.6 KB)
 │   │   ├── toast.js (4.0 KB)
