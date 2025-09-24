@@ -32,14 +32,8 @@
     return bubble;
   }
 
-  // رسالة ترحيب + اقتراحات سريعة (presales)
-  addMsg("bot", "أهلاً بك في QuickITQuote 👋\nاسأل عن منتج أو رخصة، أو استخدم الأزرار التالية:");
-  addMsg("bot", `
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="qiq-btn qiq-primary" type="button" id="qiq-chat-import">استيراد BOQ (Excel)</button>
-      <button class="qiq-btn" type="button" id="qiq-chat-search">البحث عن منتجات</button>
-    </div>
-  `, true);
+  // رسالة ترحيب (بدون أزرار داخل الشات)
+  addMsg("bot", "أهلاً بك في QuickITQuote 👋\nاسأل عن منتج أو رخصة، وسنساعدك فوراً.");
 
   // Sample product data for testing (when API is not available)
   const sampleProducts = [
@@ -305,26 +299,7 @@
     }
   });
 
-  // اقتراحات سريعة: Import و Search داخل الشات
-  document.addEventListener('click', function(ev){
-    const imp = ev.target.closest('#qiq-chat-import');
-    if (imp){
-      try{
-        const btn = document.getElementById('qiq-import-btn');
-        if (btn) btn.click();
-        else if (window.QiqToast?.info) window.QiqToast.info('زر الاستيراد غير متوفر في هذه الصفحة.', 2500);
-      }catch{}
-      return;
-    }
-    const sch = ev.target.closest('#qiq-chat-search');
-    if (sch){
-      try{
-        const open = document.getElementById('qiq-open-search');
-        if (open) open.click();
-        else if (window.QiqToast?.info) window.QiqToast.info('اكتب اسم المنتج في الحقل ثم اضغط بحث.', 2500);
-      }catch{}
-    }
-  });
+  // أزلنا الأزرار الداخلية واقتراحاتها للحفاظ على بساطة واجهة الشات
 
   // Delegate: open any details link in modal if available
   document.addEventListener('click', function(ev){

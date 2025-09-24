@@ -139,7 +139,7 @@
         .btn{border:0;border-radius:10px;padding:8px 12px;background:#1e3a8a;color:#fff;cursor:pointer}
         .btn.secondary{background:#6b7280}
       </style>`;
-    const inner = step===1 ? html1+`<div class="wiz-actions"><button class="btn" id="wiz-next">التالي</button></div>`
+  const inner = step===1 ? html1+`<div class="wiz-actions"><button class="btn" id="wiz-next">التالي</button></div>`
                            : html2+`<div class="wiz-actions">
             <button class="btn secondary" id="wiz-back">رجوع</button>
             <button class="btn" id="wiz-download">Download PDF</button>
@@ -155,7 +155,18 @@
     setTimeout(()=>{ // wire handlers after iframe load
       const frame = window.QiqModal?.getFrame?.();
       const doc = frame?.contentDocument; if (!doc) return;
-      doc.getElementById('wiz-next')?.addEventListener('click', (e)=>{ e.preventDefault(); render(2); });
+      doc.getElementById('wiz-next')?.addEventListener('click', (e)=>{ e.preventDefault();
+        const name = doc.getElementById('wiz-name')?.value.trim();
+        const email= doc.getElementById('wiz-email')?.value.trim();
+        const projectName = doc.getElementById('wiz-project-name')?.value.trim();
+        const company = doc.getElementById('wiz-company')?.value.trim();
+        const notes = doc.getElementById('wiz-notes')?.value.trim();
+        const projectSite = doc.getElementById('wiz-project-site')?.value.trim();
+        if (!name || !email){ window.parent.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني', 3000); return; }
+        if (!projectName){ window.parent.QiqToast?.error?.('يرجى إدخال اسم المشروع', 3000); return; }
+        window.parent.localStorage.setItem(STATE_KEY, JSON.stringify({ name, email, company, notes, projectName, projectSite }));
+        render(2);
+      });
       doc.getElementById('wiz-back')?.addEventListener('click', (e)=>{ e.preventDefault(); render(1); });
       doc.getElementById('wiz-download')?.addEventListener('click', (e)=>{ e.preventDefault(); handle('download'); });
       doc.getElementById('wiz-send')?.addEventListener('click', (e)=>{ e.preventDefault(); handle('send'); });

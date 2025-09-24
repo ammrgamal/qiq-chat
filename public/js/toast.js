@@ -1,6 +1,6 @@
 /* ========= Global Toast Notification System ========= */
 (function() {
-  const DEFAULTS = { success: 3000, info: 3000, warning: 3200, error: 3000 };
+  const DEFAULTS = { success: Infinity, info: Infinity, warning: Infinity, error: Infinity };
   const containerId = 'qiq-toast-container';
   let queue = [];
   let current = null;
@@ -52,18 +52,23 @@
     c.appendChild(el);
     const closeBtn = el.querySelector('.close');
     closeBtn.onclick = ()=> dismiss();
-  let remaining = Math.max(3000, duration || DEFAULTS.info);
+    // Allow click anywhere to dismiss as well
+    el.addEventListener('click', (e)=>{
+      if (!e.target.closest('.close')) dismiss();
+    });
+  let remaining = (typeof duration === 'number') ? duration : DEFAULTS[type] ?? DEFAULTS.info;
     let lastTick = Date.now();
     const onEnter = ()=>{ if (timer){ clearInterval(timer); timer=null; } };
-    const onLeave = ()=>{ if (!timer){ lastTick = Date.now(); timer = setInterval(tick, 100); } };
+    const onLeave = ()=>{ if (!timer && Number.isFinite(remaining)){ lastTick = Date.now(); timer = setInterval(tick, 100); } };
     el.addEventListener('mouseenter', onEnter);
     el.addEventListener('mouseleave', onLeave);
     function tick(){
+      if (!Number.isFinite(remaining)) return; // persistent: no auto-dismiss
       const now = Date.now();
       remaining -= (now - lastTick); lastTick = now;
       if (remaining <= 0) { dismiss(); }
     }
-    timer = setInterval(tick, 100);
+    if (Number.isFinite(remaining)) timer = setInterval(tick, 100);
   }
   function enqueue(type, message, duration){
     queue.push({ type, message, duration });
