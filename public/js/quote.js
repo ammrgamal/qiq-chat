@@ -321,25 +321,18 @@
     }catch{}
   });
 
-  if ($("btn-add-row")) {
-    $("btn-add-row").addEventListener("click", (e) => {
-      e.preventDefault();
-      addRowFromData({ desc: "", pn: "", unit: 0, qty: 1 });
-      recalcTotals();
-      showNotification("تمت إضافة بند جديد.", "success");
-    });
-  }
-
   $("btn-load-staged").addEventListener("click", (e) => {
     e.preventDefault();
-    // دمج بدون مسح القديم
+    // دمج العناصر المحفوظة من صفحة الشات بدون مسح القديم
     try {
       const stagedRaw = localStorage.getItem(STAGED_KEY);
       if (!stagedRaw) return showNotification("لا يوجد عناصر Staged مخزنة", "error");
       const staged = JSON.parse(stagedRaw) || [];
       let loadedCount = 0;
       const existingKeys = new Set(
-        Array.from(itemsBody.querySelectorAll('tr')).map(tr => tr.querySelector('.in-pn')?.value?.toUpperCase() || '')
+        Array.from(itemsBody.querySelectorAll('tr'))
+          .map(tr => (tr.querySelector('.in-pn')?.value || '').toString().toUpperCase())
+          .filter(Boolean)
       );
       staged.forEach((it) => {
         const pn = (it.PN_SKU || it.pn || it.sku || '').toString().toUpperCase();
@@ -349,13 +342,16 @@
           pn: it.PN_SKU || it.pn || it.sku || "",
           unit: num(it.UnitPrice || it.unitPrice || it.price || 0),
           qty: Number(it.Qty || it.qty || 1),
-          manufacturer: it.manufacturer || it.brand || it.vendor || ""
+          manufacturer: it.manufacturer || it.brand || it.vendor || "",
+          image: it.image || '',
+          spec_sheet: it.spec_sheet || it.specsheet || ''
         });
         if (pn) existingKeys.add(pn);
         loadedCount++;
       });
       recalcTotals();
       updateEmptyState();
+      saveState();
       showNotification(`تم تحميل ${loadedCount} عنصر من الشات`, "success");
     } catch (err) {
       console.warn(err);
