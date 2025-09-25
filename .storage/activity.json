@@ -3,6 +3,19 @@
     {
       "action": "quotation_save",
       "userEmail": "user@demo.local",
+      "userToken": "qiq_eyJpZCI6MTIzNDUsImVtYWlsIjoidXNlckBkZW1vLmxvY2FsIiwiY29tcGFueSI6IkRlbW8gQ29tcGFueSIsImV4cCI6MTc1ODg5NTA1NzkzNn0=",
+      "quotationId": "QT-2025-001",
+      "details": {
+        "clientName": "",
+        "total": 1234,
+        "currency": "USD"
+      },
+      "timestamp": "2025-09-25T13:57:37.943Z",
+      "id": "1758808657943-g3ev"
+    },
+    {
+      "action": "quotation_save",
+      "userEmail": "user@demo.local",
       "userToken": "qiq_eyJpZCI6MTIzNDUsImVtYWlsIjoidXNlckBkZW1vLmxvY2FsIiwiY29tcGFueSI6IkRlbW8gQ29tcGFueSIsImV4cCI6MTc1ODg5MzI5MTkxMH0=",
       "quotationId": "QT-2025-001",
       "details": {

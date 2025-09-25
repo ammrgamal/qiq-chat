@@ -28,6 +28,14 @@
         <label style="grid-column:1/-1">الاسم الكامل<input id="wiz-name" type="text" value="${esc(saved?.name||'')}" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
         <label>البريد الإلكتروني<input id="wiz-email" type="email" value="${esc(saved?.email||'')}" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
         <label>اسم الشركة (اختياري)<input id="wiz-company" type="text" value="${esc(saved?.company||'')}" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
+        <label>المسمى الوظيفي<input id="wiz-title" type="text" value="${esc(saved?.title||'')}" placeholder="مثال: مدير تقنية المعلومات" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
+        <label>العملة
+          <select id="wiz-currency" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px">
+            <option value="USD" ${saved?.currency==='USD'?'selected':''}>$ USD</option>
+            <option value="EGP" ${saved?.currency==='EGP'?'selected':''}>جنيه EGP</option>
+            <option value="SAR" ${saved?.currency==='SAR'?'selected':''}>ر.س SAR</option>
+          </select>
+        </label>
         <label>اسم المشروع<span style="color:#dc2626"> *</span><input id="wiz-project-name" type="text" value="${esc(saved?.projectName||'')}" placeholder="مثال: مشروع حماية الأجهزة - قسم المبيعات" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
         <label>الموقع / الجهة (اختياري)<input id="wiz-project-site" type="text" value="${esc(saved?.projectSite||'')}" placeholder="مثال: القاهرة - المقر الرئيسي" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
         <label style="grid-column:1/-1">ملاحظات / متطلبات إضافية<textarea id="wiz-notes" rows="3" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px">${esc(saved?.notes||'')}</textarea></label>
@@ -80,16 +88,30 @@
       action: 'download',
       number,
       date: new Date().toISOString().slice(0,10),
-      currency: 'USD',
-      client: { name: client.name||'', email: client.email||'', contact: client.company||'', phone: '' },
+      currency: client.currency || 'USD',
+      client: { name: client.name||'', email: client.email||'', contact: client.company||'', title: client.title||'', phone: '' },
       project: { name: client.projectName||'', site: client.projectSite||'' },
       items
     };
   }
 
   async function handle(action){
+    // Show a busy overlay in the modal dialog
+    try{
+      const frame = window.QiqModal?.getFrame?.();
+      const doc = frame?.contentDocument;
+      if (doc && !doc.getElementById('wiz-busy')){
+        const el = doc.createElement('div'); el.id = 'wiz-busy';
+        el.setAttribute('style','position:fixed;inset:0;background:rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:system-ui');
+        el.innerHTML = '<div style="display:flex;gap:10px;align-items:center;color:#1e3a8a"><span class="spinner" style="width:18px;height:18px;border:3px solid #c7d2fe;border-top-color:#1e3a8a;border-radius:50%;display:inline-block;animation:qiqspin 0.9s linear infinite"></span><span>جاري المعالجة…</span></div>';
+        const style = doc.createElement('style'); style.textContent='@keyframes qiqspin{to{transform:rotate(360deg)}}'; doc.head.appendChild(style);
+        doc.body.appendChild(el);
+        // Disable action buttons
+        ['wiz-download','wiz-send','wiz-custom','wiz-next','wiz-back','wiz-back-step1'].forEach(id=>{ try{ const b=doc.getElementById(id); if (b){ b.disabled=true; b.style.opacity='0.7'; } }catch{} });
+      }
+    }catch{}
     // Prefer saved state (works on step 2 where inputs are not visible). Fallback to inputs if present.
-    let { name, email, company, notes, projectName, projectSite } = loadClient() || {};
+  let { name, email, company, notes, projectName, projectSite, title, currency } = loadClient() || {};
     // Try to read from current iframe if inputs exist
     try{
       const frame = window.QiqModal?.getFrame?.();
@@ -101,16 +123,37 @@
       notes = byId('wiz-notes') || notes;
       projectName = byId('wiz-project-name') || projectName;
       projectSite = byId('wiz-project-site') || projectSite;
+      title = byId('wiz-title') || title;
+      currency = byId('wiz-currency') || currency || 'USD';
     }catch{}
 
     if (!name || !email){ window.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني'); return; }
     if (!projectName){ window.QiqToast?.error?.('يرجى إدخال اسم المشروع'); return; }
-    saveClient({ name, email, company, notes, projectName, projectSite });
+  saveClient({ name, email, company, notes, projectName, projectSite, title, currency });
 
     const payload = payloadFromState();
     payload.action = action;
-    payload.client.name = name; payload.client.email = email; payload.client.contact = company;
+    payload.client.name = name; payload.client.email = email; payload.client.contact = company; payload.client.title = title;
     payload.project.name = projectName; payload.project.site = projectSite;
+    payload.currency = currency || 'USD';
+
+    // Convert unit prices from USD to selected currency using official CDN API
+    try{
+      const from = 'usd'; const to = (currency||'USD').toLowerCase();
+      if (to !== 'usd'){
+        const res = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${from}.json`);
+        let rate = 1; if (res.ok){ const data = await res.json(); rate = Number(data?.[from]?.[to]||1) || 1; }
+        if (rate && rate>0){
+          (payload.items||[]).forEach(it=>{
+            const base = Number(it.unit||it.unit_price||it.price||0);
+            if (!it.base_usd) it.base_usd = base; // keep original for reference
+            const converted = (it.base_usd||base) * rate;
+            it.unit = Number(converted.toFixed(2));
+            it.unit_price = it.unit; it.price = it.unit;
+          });
+        }
+      }
+    }catch{}
     try{
       const r = await fetch('/api/quote-email', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) });
       if (!r.ok){
@@ -143,6 +186,14 @@
         }
       }
   }catch(e){ console.warn(e); window.QiqToast?.error?.('تعذر تنفيذ العملية الآن'); }
+  finally{
+    // Hide busy overlay and re-enable buttons
+    try{
+      const frame = window.QiqModal?.getFrame?.();
+      const doc = frame?.contentDocument; const el = doc?.getElementById('wiz-busy'); if (el) el.remove();
+      ['wiz-download','wiz-send','wiz-custom','wiz-next','wiz-back','wiz-back-step1'].forEach(id=>{ try{ const b=doc.getElementById(id); if (b){ b.disabled=false; b.style.opacity='1'; } }catch{} });
+    }catch{}
+  }
   }
 
   function render(step){

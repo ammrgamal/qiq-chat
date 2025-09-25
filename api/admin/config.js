@@ -16,12 +16,12 @@ async function readConfig(){
     const t = await fs.readFile(CONFIG_FILE,'utf8');
     const j = JSON.parse(t);
     // Back-compat shape
-    return Object.assign({ instructions:'', bundles:[], ai:{ autoApproveOverride:false, allowedDomains:[] }, pdf:{ includeItemImages: process.env.NODE_ENV==='production', includePartnerLogos: process.env.NODE_ENV==='production' } }, j, {
-      ai: Object.assign({ autoApproveOverride:false, allowedDomains:[] }, j.ai||{}),
-      pdf: Object.assign({ includeItemImages: process.env.NODE_ENV==='production', includePartnerLogos: process.env.NODE_ENV==='production' }, j.pdf||{})
+    return Object.assign({ instructions:'', bundles:[], ai:{ autoApproveOverride:false, allowedDomains:[], preferGammaCards: false }, pdf:{ includeItemImages: process.env.NODE_ENV==='production', includePartnerLogos: process.env.NODE_ENV==='production', includeProServices: true } }, j, {
+      ai: Object.assign({ autoApproveOverride:false, allowedDomains:[], preferGammaCards: false }, j.ai||{}),
+      pdf: Object.assign({ includeItemImages: process.env.NODE_ENV==='production', includePartnerLogos: process.env.NODE_ENV==='production', includeProServices: true }, j.pdf||{})
     });
   }catch{
-    return { instructions:'', bundles:[], ai:{ autoApproveOverride:false, allowedDomains:[] }, pdf:{ includeItemImages: process.env.NODE_ENV==='production', includePartnerLogos: process.env.NODE_ENV==='production' } };
+    return { instructions:'', bundles:[], ai:{ autoApproveOverride:false, allowedDomains:[], preferGammaCards: false }, pdf:{ includeItemImages: process.env.NODE_ENV==='production', includePartnerLogos: process.env.NODE_ENV==='production', includeProServices: true } };
   }
 }
 async function writeConfig(cfg){
@@ -33,11 +33,13 @@ async function writeConfig(cfg){
       bundles: Array.isArray(cfg.bundles) ? cfg.bundles : [],
       ai: {
         autoApproveOverride: !!(cfg.ai && cfg.ai.autoApproveOverride),
-        allowedDomains: Array.isArray(cfg.ai?.allowedDomains) ? cfg.ai.allowedDomains.map(String) : []
+        allowedDomains: Array.isArray(cfg.ai?.allowedDomains) ? cfg.ai.allowedDomains.map(String) : [],
+        preferGammaCards: !!(cfg.ai && cfg.ai.preferGammaCards)
       },
       pdf: {
         includeItemImages: !!(cfg.pdf && cfg.pdf.includeItemImages),
-        includePartnerLogos: !!(cfg.pdf && cfg.pdf.includePartnerLogos)
+        includePartnerLogos: !!(cfg.pdf && cfg.pdf.includePartnerLogos),
+        includeProServices: !!(cfg.pdf && cfg.pdf.includeProServices)
       }
     };
     await fs.writeFile(CONFIG_FILE, JSON.stringify(out,null,2),'utf8');

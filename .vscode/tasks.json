@@ -118,6 +118,22 @@
 			],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "qiq-chat smoke",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"./scripts/smoke.ps1",
+				"-Port",
+				"3039"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

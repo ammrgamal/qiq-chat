@@ -180,8 +180,10 @@
         const ai = cfg.ai || {};
         const overrideEl = document.getElementById('cfg-ai-override');
         const allowEl = document.getElementById('cfg-ai-allowed');
+        const preferGammaEl = document.getElementById('cfg-ai-prefer-gamma');
         if (overrideEl) overrideEl.checked = !!ai.autoApproveOverride;
         if (allowEl) allowEl.value = (Array.isArray(ai.allowedDomains) ? ai.allowedDomains.join('\n') : '');
+        if (preferGammaEl) preferGammaEl.checked = !!ai.preferGammaCards;
       }catch{}
       // Surface environment info (AUTO_APPROVE and AI providers) if present
       try{
@@ -202,8 +204,10 @@
         const pdf = cfg.pdf || {};
         const imgs = document.getElementById('cfg-pdf-images');
         const logos = document.getElementById('cfg-pdf-logos');
+        const pro = document.getElementById('cfg-pdf-proservices');
         if (imgs) imgs.checked = !!pdf.includeItemImages;
         if (logos) logos.checked = !!pdf.includePartnerLogos;
+        if (pro) pro.checked = !!pdf.includeProServices;
       }catch{}
   try{ window.QiqToast?.success?.('تم التحميل'); }catch{}
   }catch(e){ console.warn(e); try{ window.QiqToast?.error?.('تعذر التحميل');}catch{} }
@@ -222,11 +226,13 @@
         .split(/\r?\n/)
         .map(s=>s.trim())
         .filter(Boolean);
-      const ai = { autoApproveOverride: !!(overrideEl && overrideEl.checked), allowedDomains };
+  const preferGammaEl = document.getElementById('cfg-ai-prefer-gamma');
+  const ai = { autoApproveOverride: !!(overrideEl && overrideEl.checked), allowedDomains, preferGammaCards: !!(preferGammaEl && preferGammaEl.checked) };
       // PDF settings
       const imgs = document.getElementById('cfg-pdf-images');
       const logos = document.getElementById('cfg-pdf-logos');
-      const pdf = { includeItemImages: !!(imgs && imgs.checked), includePartnerLogos: !!(logos && logos.checked) };
+  const pro = document.getElementById('cfg-pdf-proservices');
+  const pdf = { includeItemImages: !!(imgs && imgs.checked), includePartnerLogos: !!(logos && logos.checked), includeProServices: !!(pro && pro.checked) };
       const res = await fetch('/api/admin/config', { method:'POST', headers:{ 'Authorization': `Bearer ${adminToken}`, 'content-type':'application/json' }, body: JSON.stringify({ instructions, bundles, ai, pdf }) });
       if (!res.ok) throw new Error('HTTP '+res.status);
   try{ window.QiqToast?.success?.('تم الحفظ'); }catch{}

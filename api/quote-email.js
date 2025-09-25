@@ -313,10 +313,11 @@ async function readAdminPdfPrefs(){
     const pdf = j?.pdf || {};
     return {
       includeItemImages: pdf.includeItemImages ?? (process.env.NODE_ENV==='production'),
-      includePartnerLogos: pdf.includePartnerLogos ?? (process.env.NODE_ENV==='production')
+      includePartnerLogos: pdf.includePartnerLogos ?? (process.env.NODE_ENV==='production'),
+      includeProServices: pdf.includeProServices !== false // default true
     };
   }catch{
-    return { includeItemImages: process.env.NODE_ENV==='production', includePartnerLogos: process.env.NODE_ENV==='production' };
+    return { includeItemImages: process.env.NODE_ENV==='production', includePartnerLogos: process.env.NODE_ENV==='production', includeProServices: true };
   }
 }
 
@@ -407,7 +408,8 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     const drawFooter = () => {
       try{
         if (__pageNum < 2) return; // only from page 2+
-        const footerY = doc.page.height - doc.page.margins.bottom + 18;
+        // Keep footer within printable area
+        const footerY = doc.page.height - doc.page.margins.bottom - 12;
         // Page number left
         doc.save();
         doc.font(REG).fillColor('#6b7280').fontSize(9).text(`Page ${__pageNum}`, doc.page.margins.left, footerY, { align:'left' });
@@ -415,23 +417,25 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
         // Logo right
         try{
           if (__logoBuf){
-            const w2 = 60;
+            const w2 = 44;
             const x2 = doc.page.width - doc.page.margins.right - w2;
-            doc.image(__logoBuf, x2, footerY-10, { width: w2 });
+            doc.image(__logoBuf, x2, footerY-8, { width: w2 });
           }
         }catch{}
       }catch{}
     };
 
-    // Client letter page (visual/branding) — page 2
+  // Client letter page (visual/branding) — page 2
     __pageNum = 2;
     doc.addPage();
     try{
       const totalsTmp = computeTotals(items);
       const systemsTmp = gatherSystems({ client, project }, items);
       const brandsTmp = gatherBrands(items);
-      // Letter heading
-      doc.font(BOLD).fillColor(BRAND_PRIMARY).fontSize(14).text('Client Letter', { align:'left' });
+  // Letter heading + subtle divider
+  doc.font(BOLD).fillColor(BRAND_PRIMARY).fontSize(14).text('Client Letter', { align:'left' });
+  const headY = doc.y + 4;
+  doc.moveTo(doc.page.margins.left, headY).lineTo(doc.page.width - doc.page.margins.right, headY).stroke('#e5e7eb');
       doc.moveDown(0.6);
       // Dear ... and paragraphs
       const dear = `Dear ${ensureString(client?.name||'Customer')},`;
@@ -504,6 +508,37 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
         }catch{}
       }
     }
+
+    // Helper: render text with **bold** segments inline
+    function renderFormattedText(text, x, y, width, alignLeft){
+      const raw = ensureString(text || '');
+      const hasBold = /\*\*(.+?)\*\*/.test(raw);
+      if (!hasBold){
+        doc.font(REG).fontSize(10).fillColor('#111827');
+        doc.text(ARS(raw), x, y, { width, align: alignLeft ? 'left' : 'right' });
+        return;
+      }
+      const rx = /\*\*(.+?)\*\*/g;
+      let last = 0; let first = true; let m;
+      while ((m = rx.exec(raw))){
+        const before = raw.slice(last, m.index);
+        if (before){
+          doc.font(REG).fontSize(10).fillColor('#111827');
+          doc.text(ARS(before), first ? x : undefined, first ? y : undefined, { width, align: alignLeft ? 'left' : 'right', continued: true });
+          first = false;
+        }
+        const boldSeg = m[1] || '';
+        if (boldSeg){
+          doc.font(BOLD).fontSize(10).fillColor('#111827');
+          doc.text(ARS(boldSeg), { width, align: alignLeft ? 'left' : 'right', continued: true });
+          first = false;
+        }
+        last = rx.lastIndex;
+      }
+      const tail = raw.slice(last);
+      doc.font(REG).fontSize(10).fillColor('#111827');
+      doc.text(ARS(tail), first ? x : undefined, first ? y : undefined, { width, align: alignLeft ? 'left' : 'right', continued: false });
+    }
     function drawRow(i, it){
       const qty = Number(it.qty||1); const unit = Number(it.unit_price||it.unit||it.price||0); const line = unit*qty;
       const desc = ensureString(it.description||it.description_enriched||it.name||'-');
@@ -514,10 +549,11 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       if (includeImages){
         const imgUrl = it.image || it["Image URL"] || it.thumbnail || it.img || '';
         imgBuf = imgBuffers.get(imgUrl) || null;
-        if (imgBuf) { imgH = 42; descWidth -= 50; }
+        if (imgBuf) { imgH = 48; descWidth -= 52; }
       }
       heights.push(doc.heightOfString(String(i+1), { width: cols[0].w-8 }));
-      heights.push(doc.heightOfString(desc, { width: descWidth }));
+  const linkUrlForHeight = ensureString(it.spec_sheet || it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '');
+      heights.push(doc.heightOfString(desc + (linkUrlForHeight ? '\n' : ''), { width: descWidth }));
       heights.push(doc.heightOfString(pn, { width: cols[2].w-8 }));
       const rowH = Math.max(20, ...heights, imgH? imgH+8 : 0);
       // page break
@@ -534,10 +570,10 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       // description cell with optional image + optional spec sheet link
       if (imgBuf){
         try{ doc.image(imgBuf, cx+4, y+4, { fit: [46, 46] }); }catch{}
-        doc.text(ARS(desc), cx+54, y+4, { width: (cols[1].w-8)-50, align:'left' });
-        const linkUrl = ensureString(it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '');
+        renderFormattedText(desc, cx+54, y+4, (cols[1].w-8)-50, true);
+  const linkUrl = ensureString(it.spec_sheet || it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '');
         if (linkUrl){
-          const ly = y + Math.max(24, Math.min(rowH-14, 38));
+          const ly = y + Math.max(24, Math.min(rowH-14, 44));
           const lx = cx+54;
           const label = 'Spec sheet';
           doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(label, lx, ly, { width: (cols[1].w-8)-50, align:'left', underline: true });
@@ -546,10 +582,10 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
           doc.fillColor('#111827');
         }
       } else {
-        doc.text(ARS(desc), cx+4, y+4, { width: cols[1].w-8, align:'left' });
-        const linkUrl = ensureString(it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '');
+        renderFormattedText(desc, cx+4, y+4, cols[1].w-8, true);
+  const linkUrl = ensureString(it.spec_sheet || it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '');
         if (linkUrl){
-          const ly = y + Math.max(20, Math.min(rowH-14, 34));
+          const ly = y + Math.max(20, Math.min(rowH-14, 40));
           const lx = cx+4;
           const label = 'Spec sheet';
           doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(label, lx, ly, { width: cols[1].w-8, align:'left', underline: true });
@@ -569,9 +605,52 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     }
 
     drawHeader();
-    let subtotal = 0;
-    norm.forEach((it,i)=>{ const u = Number(it.unit_price||it.unit||it.price||0); const q = Number(it.qty||1); subtotal += u*q; drawRow(i,it); });
-    const grand = subtotal;
+  let subtotal = 0;
+  norm.forEach((it,i)=>{ const u = Number(it.unit_price||it.unit||it.price||0); const q = Number(it.qty||1); subtotal += u*q; drawRow(i,it); });
+  const grand = subtotal;
+
+  // Optional Professional Services line (5% with minimum USD 200 equivalent) — not included in grand
+  const prefs3 = prefs;
+  if (prefs3.includeProServices) {
+    const psMinUSD = 200;
+    const currencyCode = ensureString(currency||CURRENCY_FALLBACK).toUpperCase();
+    let rate = 1; // USD->USD
+    try{
+      if (currencyCode !== 'USD'){
+        // tiny server-side FX using a public CDN; failure falls back to 1
+        const fxUrl = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json`;
+        const r = await fetch(fxUrl);
+        if (r.ok){
+          const j = await r.json();
+          const map = j && j.usd;
+          if (map && typeof map[currencyCode.toLowerCase()] === 'number'){
+            rate = Number(map[currencyCode.toLowerCase()]) || 1;
+          }
+        }
+      }
+    }catch{}
+    const minEquivalent = psMinUSD * rate;
+    const psValue = Math.max(grand * 0.05, minEquivalent);
+    // Render as a separate highlighted row before totals
+    const rowHps = 20;
+    if (y + rowHps > maxY){ drawFooter(); __pageNum++; doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; drawHeader(); }
+    let cxps = x;
+    doc.save();
+    // light highlight background across the row
+    doc.rect(x, y, tableW, rowHps).fill(BRAND_BG);
+    doc.fillColor('#0f172a').font(BOLD).fontSize(10);
+    doc.text('#', cxps+4, y+4, { width: cols[0].w-8, align:'right' }); cxps += cols[0].w;
+    const labelPs = 'Optional – Professional Services (5% min $200 eqv.)';
+    doc.text(ARS(labelPs), cxps+4, y+4, { width: cols[1].w-8, align:'left' }); cxps += cols[1].w;
+    doc.text('', cxps+4, y+4, { width: cols[2].w-8, align:'left' }); cxps += cols[2].w; // MPN empty
+    doc.text('1', cxps+4, y+4, { width: cols[3].w-8, align:'right' }); cxps += cols[3].w;
+    doc.text(psValue.toFixed(2), cxps+4, y+4, { width: cols[4].w-8, align:'right' }); cxps += cols[4].w;
+    doc.text(psValue.toFixed(2), cxps+4, y+4, { width: cols[5].w-8, align:'right' });
+    doc.restore();
+    // separator line
+    doc.moveTo(x, y+rowHps).lineTo(x+tableW, y+rowHps).stroke('#dbeafe');
+    y += rowHps;
+  }
 
     // Totals box (right aligned) with stronger contrast
   y += 12; if (y > maxY) { drawFooter(); __pageNum++; doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; }
@@ -587,11 +666,10 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     doc.fillColor(BRAND_PRIMARY).font(BOLD).fontSize(12).text(ARS('Grand Total'), tx+12, gtY+8, { width: tw-140, align:'left' });
     doc.fillColor('#0f172a').font(BOLD).text(ARS(grand.toFixed(2)), tx+12, gtY+8, { width: tw-24, align:'right' });
 
-    // Optional Professional Services (5% of project up to $200) — not included in totals
-    const optVal = Math.min(grand * 0.05, 200);
-    y = gtY + 36;
-    doc.moveTo(x, y+10).lineTo(x+tableW, y+10).stroke('#f1f5f9');
-    doc.font(REG).fillColor('#6b7280').fontSize(10).text(ARS(`Optional – Professional Services (5% up to $200): ${optVal.toFixed(2)}`), x, y+16, { width: tableW, align:'left' });
+  // Note under totals to clarify it is optional and not included
+  y = gtY + 36;
+  doc.moveTo(x, y+10).lineTo(x+tableW, y+10).stroke('#f1f5f9');
+  doc.font(REG).fillColor('#6b7280').fontSize(10).text(ARS(`Note: Professional Services is optional and not included in the Grand Total.`), x, y+16, { width: tableW, align:'left' });
 
     // Presentation cards page(s)
     if (Array.isArray(cards) && cards.length){
@@ -672,15 +750,19 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
 
 function buildSummaryHtml(payload, action){
   const items = payload.items||[];
-  const rows = items.slice(0,50).map((it,i)=>`
+  const rows = items.slice(0,50).map((it,i)=>{
+    const descHtml = formatBoldHtml(it.description||it.name||'-');
+    const link = it.spec_sheet || it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '';
+    const linkHtml = link ? `<div><a href="${escapeHtml(link)}" style="color:${escapeHtml(BRAND_PRIMARY)};text-decoration:underline">Spec sheet</a></div>` : '';
+    return `
     <tr>
       <td style="padding:6px;border-bottom:1px solid #eee">${i+1}</td>
-      <td style="padding:6px;border-bottom:1px solid #eee">${escapeHtml(it.description||it.name||'-')}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee">${descHtml}${linkHtml}</td>
       <td style="padding:6px;border-bottom:1px solid #eee">${escapeHtml(it.pn||'')}</td>
       <td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${Number(it.qty||1)}</td>
       <td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${Number(it.unit_price||it.unit||it.price||0)}</td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
   const titleMap = { download:'Download PDF', send:'Send by Email', custom:'Get Custom Quote' };
   return `
     <div style="font-family:Segoe UI,Arial">
@@ -702,7 +784,7 @@ function buildSummaryHtml(payload, action){
         <thead><tr>
           <th style="text-align:right;border-bottom:1px solid #ddd;padding:6px">#</th>
           <th style="text-align:right;border-bottom:1px solid #ddd;padding:6px">Description</th>
-          <th style="text-align:right;border-bottom:1px solid #ddd;padding:6px">PN</th>
+          <th style="text-align:right;border-bottom:1px solid #ddd;padding:6px">MPN</th>
           <th style="text-align:right;border-bottom:1px solid #ddd;padding:6px">Qty</th>
           <th style="text-align:right;border-bottom:1px solid #ddd;padding:6px">Unit</th>
         </tr></thead>
@@ -713,6 +795,12 @@ function buildSummaryHtml(payload, action){
 }
 
 function escapeHtml(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]||c)); }
+
+// Safely render **bold** segments in HTML while escaping other content
+function formatBoldHtml(v){
+  const safe = escapeHtml(v==null?'':String(v));
+  return safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+}
 
 export default async function handler(req, res){
   if (req.method !== 'POST') return res.status(405).json({ error:'Method not allowed' });
@@ -728,7 +816,17 @@ export default async function handler(req, res){
     let cards = buildPresentationCards(solutionText);
     // Optionally get Gamma cards. If env prefers Gamma, replace when available.
     try {
-      const preferGamma = /^(1|true|yes)$/i.test(String(process.env.PREFER_GAMMA_CARDS||''));
+      // preferGamma: admin true forces on; admin false forces off; otherwise auto-enable if Gamma keys exist or env flag true
+      const hasGamma = !!(process.env.GAMMA_APP_API || process.env.GAMMA_APP_APIS || process.env.GAMMA_API || process.env.GAMMA_KEY) && !!(process.env.GAMMA_ENDPOINT || process.env.GAMMA_API_URL);
+      let adminPref;
+      try{
+        const STORAGE_DIR = process.env.NODE_ENV === 'production' ? '/tmp/qiq-storage' : path.join(__dirname, '../.storage');
+        const CONFIG_FILE = path.join(STORAGE_DIR, 'admin-config.json');
+        const t = await fs.readFile(CONFIG_FILE,'utf8');
+        const j = JSON.parse(t);
+        if (j?.ai && typeof j.ai.preferGammaCards === 'boolean') adminPref = j.ai.preferGammaCards;
+      }catch{}
+      let preferGamma = adminPref === true ? true : (adminPref === false ? false : (hasGamma || /^(1|true|yes)$/i.test(String(process.env.PREFER_GAMMA_CARDS||''))));
       const g = await trySendToGamma(solutionText);
       if (g && g.ok && Array.isArray(g.cards) && g.cards.length){
         if (preferGamma) cards = g.cards;

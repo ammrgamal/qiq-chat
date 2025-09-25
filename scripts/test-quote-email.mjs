@@ -35,10 +35,21 @@ async function main(){
     } else {
       console.log(JSON.stringify(json, null, 2));
     }
-    process.exit(res.ok ? 0 : 1);
+    // Graceful exit: avoid immediate process.exit on Windows to sidestep rare libuv assertion
+    const code = res.ok ? 0 : 1;
+    if (process.platform === 'win32') {
+      setTimeout(()=>process.exit(code), 50);
+    } else {
+      process.exit(code);
+    }
   }catch(err){
     console.error('[quote-email error]', err?.message || err);
-    process.exit(2);
+    const code = 2;
+    if (process.platform === 'win32') {
+      setTimeout(()=>process.exit(code), 50);
+    } else {
+      process.exit(code);
+    }
   }
 }
 
