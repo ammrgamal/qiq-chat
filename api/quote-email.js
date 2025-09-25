@@ -287,8 +287,10 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     const ar = await getArabicShaper();
     const ARS = (s)=> ar(String(s==null?'':s));
 
-    // Intro page (branding)
-    doc.rect(doc.page.margins.left, doc.page.margins.top, doc.page.width - doc.page.margins.left - doc.page.margins.right, 60).fill(BRAND_BG).stroke(BRAND_BG);
+  // Intro page (branding)
+  let __logoBuf = null;
+  const headerH = 80;
+  doc.rect(doc.page.margins.left, doc.page.margins.top, doc.page.width - doc.page.margins.left - doc.page.margins.right, headerH).fill(BRAND_BG).stroke(BRAND_BG);
     doc.fillColor(BRAND_PRIMARY).font(BOLD).fontSize(22).text(ARS(`Official Quotation`), { align: 'left' });
     doc.moveDown(0.2).font(REG).fillColor('#111827').fontSize(12).text(ARS('Smart IT Procurement powered by QuickITQuote.com'));
     doc.moveDown(0.8).font(REG).fillColor('#374151').text(ARS(`Quote: ${ensureString(number)}    Date: ${ensureString(date)}    Currency: ${ensureString(currency)}`));
@@ -298,13 +300,14 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       const logoPath = path.join(__dirname, '../public/logo.png');
       const logo = await tryLoadLocal(logoPath);
       if (logo){
+        __logoBuf = logo;
         const w = 96; const x = doc.page.width - doc.page.margins.right - w; const y = doc.page.margins.top + 6;
         try{ doc.image(logo, x, y, { width: w }); }catch{}
       }
     }catch{}
 
-    // Client / Project blocks
-    doc.moveDown(0.6);
+  // Client / Project blocks (more space below header/logo)
+  doc.moveDown(1.2);
     const startX = doc.x, startY = doc.y;
     const boxW = (doc.page.width - doc.page.margins.left - doc.page.margins.right - 12) / 2;
     const lineH = 14;
@@ -316,21 +319,62 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     if (client?.email) doc.text(ARS(`${ensureString(client.email)}`), startX+8, startY+36);
     doc.restore();
     doc.save();
-    const px = startX + boxW + 12;
-    doc.roundedRect(px, startY, boxW, lineH*3.6, 6).stroke('#e5e7eb');
-    doc.font(BOLD).fillColor('#111827').text('Project', px+8, startY+6);
-    doc.font(REG).fillColor('#374151');
-    doc.text(ARS(`${ensureString(project?.name||'')}`), px+8, startY+22);
-    if (project?.site) doc.text(ARS(`${ensureString(project.site)}`), px+8, startY+36);
+  const px = startX + boxW + 12;
+  // Avoid overlapping the header logo on the right by shrinking the Project box if needed
+  const rightSafe = __logoBuf ? 110 : 0; // reserve ~110px near right edge for logo whitespace
+  const maxRight = doc.page.width - doc.page.margins.right - rightSafe;
+  const projBoxWidth = Math.max(120, Math.min(boxW, maxRight - px));
+  doc.roundedRect(px, startY, projBoxWidth, lineH*3.6, 6).stroke('#e5e7eb');
+  doc.font(BOLD).fillColor('#111827').text('Project', px+8, startY+6);
+  doc.font(REG).fillColor('#374151');
+  doc.text(ARS(`${ensureString(project?.name||'')}`), px+8, startY+22, { width: projBoxWidth-16 });
+  if (project?.site) doc.text(ARS(`${ensureString(project.site)}`), px+8, startY+36, { width: projBoxWidth-16 });
     doc.restore();
 
-    // Solution overview
+    // Solution overview (bold title if provided like **Title**)
     if (solutionText){
+      function parseSolutionLines(txt){
+        const raw = ensureString(txt);
+        const lines = raw.split(/\r?\n/);
+        let title = null;
+        if (/^\s*\*\*.+\*\*\s*$/.test(lines[0]||'')){
+          title = (lines.shift()||'').replace(/^\s*\*\*(.+)\*\*\s*$/, '$1').trim();
+        }
+        const body = lines.join('\n').replace(/\*\*(.+?)\*\*/g,'$1');
+        return { title, body: body.trim() };
+      }
+      const { title, body } = parseSolutionLines(solutionText);
       doc.moveDown(2);
       doc.font(BOLD).fillColor(BRAND_PRIMARY).fontSize(13).text('Solution Overview');
-      doc.moveDown(0.2).font(REG).fillColor('#111827').fontSize(11).text(ARS(solutionText), { align:'left' });
+      if (title){
+        doc.moveDown(0.2).font(BOLD).fillColor('#111827').fontSize(11).text(ARS(title), { align:'left' });
+      }
+      doc.moveDown(0.1).font(REG).fillColor('#111827').fontSize(11).text(ARS(body || solutionText), { align:'left' });
     }
 
+    // Prepare page numbering; the intro page is page 1
+    let __pageNum = 1;
+    const drawFooter = () => {
+      try{
+        if (__pageNum < 2) return; // only from page 2+
+        const footerY = doc.page.height - doc.page.margins.bottom + 18;
+        // Page number left
+        doc.save();
+        doc.font(REG).fillColor('#6b7280').fontSize(9).text(`Page ${__pageNum}`, doc.page.margins.left, footerY, { align:'left' });
+        doc.restore();
+        // Logo right
+        try{
+          if (__logoBuf){
+            const w2 = 60;
+            const x2 = doc.page.width - doc.page.margins.right - w2;
+            doc.image(__logoBuf, x2, footerY-10, { width: w2 });
+          }
+        }catch{}
+      }catch{}
+    };
+
+    // Next page (page 2)
+    __pageNum = 2;
     doc.addPage();
 
   // Items table grid
@@ -390,6 +434,8 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       const rowH = Math.max(20, ...heights, imgH? imgH+8 : 0);
       // page break
       if (y + rowH > maxY){
+        drawFooter();
+        __pageNum++;
         doc.addPage();
         x = doc.page.margins.left; y = doc.page.margins.top; drawHeader();
       }
@@ -397,12 +443,32 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       let cx = x;
       doc.font(REG).fontSize(10).fillColor('#111827');
       doc.text(String(i+1), cx+4, y+4, { width: cols[0].w-8, align:'right' }); cx += cols[0].w;
-      // description cell with optional image
+      // description cell with optional image + optional spec sheet link
       if (imgBuf){
         try{ doc.image(imgBuf, cx+4, y+4, { fit: [46, 46] }); }catch{}
         doc.text(ARS(desc), cx+54, y+4, { width: (cols[1].w-8)-50, align:'left' });
+        const linkUrl = ensureString(it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '');
+        if (linkUrl){
+          const ly = y + Math.max(24, Math.min(rowH-14, 38));
+          const lx = cx+54;
+          const label = 'Spec sheet';
+          doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(label, lx, ly, { width: (cols[1].w-8)-50, align:'left', underline: true });
+          const wlab = doc.widthOfString(label);
+          try{ doc.link(lx, ly, wlab, 12, linkUrl); }catch{}
+          doc.fillColor('#111827');
+        }
       } else {
         doc.text(ARS(desc), cx+4, y+4, { width: cols[1].w-8, align:'left' });
+        const linkUrl = ensureString(it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '');
+        if (linkUrl){
+          const ly = y + Math.max(20, Math.min(rowH-14, 34));
+          const lx = cx+4;
+          const label = 'Spec sheet';
+          doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(label, lx, ly, { width: cols[1].w-8, align:'left', underline: true });
+          const wlab = doc.widthOfString(label);
+          try{ doc.link(lx, ly, wlab, 12, linkUrl); }catch{}
+          doc.fillColor('#111827');
+        }
       }
       cx += cols[1].w;
   doc.text(ARS(pn), cx+4, y+4, { width: cols[2].w-8, align:'left' }); cx += cols[2].w;
@@ -419,17 +485,31 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     norm.forEach((it,i)=>{ const u = Number(it.unit_price||it.unit||it.price||0); const q = Number(it.qty||1); subtotal += u*q; drawRow(i,it); });
     const grand = subtotal;
 
-    // Totals box (right aligned)
-    y += 12; if (y > maxY) { doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; }
-    const tw = 220; const tx = x + tableW - tw; const ty = y;
-    doc.roundedRect(tx, ty, tw, 44, 6).stroke('#e5e7eb');
-  doc.font(REG).fontSize(11).fillColor('#111827');
-  doc.text(ARS(`Subtotal: ${subtotal.toFixed(2)}`), tx+10, ty+8, { width: tw-20, align:'right' });
-  doc.text(ARS(`Grand Total: ${grand.toFixed(2)}`), tx+10, ty+24, { width: tw-20, align:'right' });
+    // Totals box (right aligned) with stronger contrast
+  y += 12; if (y > maxY) { drawFooter(); __pageNum++; doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; }
+    const tw = 260; const tx = x + tableW - tw; const ty = y;
+    doc.roundedRect(tx, ty, tw, 64, 6).stroke('#e5e7eb');
+    // Subtotal row
+    doc.font(BOLD).fontSize(11).fillColor('#374151');
+    doc.text(ARS('Subtotal'), tx+12, ty+10, { width: tw-140, align:'left' });
+    doc.font(BOLD).fillColor('#111827').text(ARS(subtotal.toFixed(2)), tx+12, ty+10, { width: tw-24, align:'right' });
+    // Grand Total highlighted
+    const gtY = ty+32;
+    doc.rect(tx+1, gtY, tw-2, 28).fill(BRAND_BG).stroke(BRAND_BG);
+    doc.fillColor(BRAND_PRIMARY).font(BOLD).fontSize(12).text(ARS('Grand Total'), tx+12, gtY+8, { width: tw-140, align:'left' });
+    doc.fillColor('#0f172a').font(BOLD).text(ARS(grand.toFixed(2)), tx+12, gtY+8, { width: tw-24, align:'right' });
+
+    // Optional Professional Services (5% of project up to $200) — not included in totals
+    const optVal = Math.min(grand * 0.05, 200);
+    y = gtY + 36;
+    doc.moveTo(x, y+10).lineTo(x+tableW, y+10).stroke('#f1f5f9');
+    doc.font(REG).fillColor('#6b7280').fontSize(10).text(ARS(`Optional – Professional Services (5% up to $200): ${optVal.toFixed(2)}`), x, y+16, { width: tableW, align:'left' });
 
     // Presentation cards page(s)
     if (Array.isArray(cards) && cards.length){
-      doc.addPage();
+  drawFooter();
+  __pageNum++;
+  doc.addPage();
       doc.font(BOLD).fillColor(BRAND_PRIMARY).fontSize(14).text('Solution Presentation', { align:'left' });
       doc.moveDown(0.4);
       let cx = doc.page.margins.left; let cy = doc.y; const cw = (doc.page.width - doc.page.margins.left - doc.page.margins.right - 12)/2; const ch = 180;
@@ -447,7 +527,7 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       }catch{}
 
       const drawCard = (card)=>{
-        if (cy + ch > doc.page.height - doc.page.margins.bottom){ doc.addPage(); cx = doc.page.margins.left; cy = doc.page.margins.top; }
+  if (cy + ch > doc.page.height - doc.page.margins.bottom){ drawFooter(); __pageNum++; doc.addPage(); cx = doc.page.margins.left; cy = doc.page.margins.top; }
         doc.save();
         doc.roundedRect(cx, cy, cw, ch, 10).fill(BRAND_BG).stroke('#dbe4ff');
         doc.fillColor(BRAND_PRIMARY).font(BOLD).fontSize(12).text(ARS(card.title||'Card'), cx+12, cy+10, { width: cw-24 });
@@ -467,7 +547,9 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     }
 
     // Closing page
-    doc.addPage();
+  drawFooter();
+  __pageNum++;
+  doc.addPage();
     doc.font(BOLD).fillColor(BRAND_PRIMARY).fontSize(14).text('About QuickITQuote');
     doc.moveDown(0.4).font(REG).fillColor('#111827').fontSize(11).text(ARS('Egypt’s First AI-Powered B2B IT Quotation Platform. We deliver accurate BOQs, AI-assisted alternatives, verified solutions, real-time pricing, and local availability across industries (Healthcare, Finance, Education, Government).'));
     doc.moveDown(0.6).font(BOLD).fillColor('#111827').text('Contact');
@@ -495,7 +577,8 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       }
     }catch{}
 
-    doc.end();
+  drawFooter();
+  doc.end();
   });
 }
 
