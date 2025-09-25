@@ -215,6 +215,8 @@
 
   // Expose as global to bind from buttons
   window.QiqQuoteWizard = { open: openWizard };
+  // Expose action handler for iframe bridge
+  window.QiqWizardHandle = handle;
 
   // Attach default listeners if buttons exist
   document.addEventListener('click', function(ev){

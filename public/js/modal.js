@@ -43,6 +43,34 @@
             // Attach comparison markdown to parent storage and toast
             window.__parentAttachComparison = function(md){ try{ const att = { kind:'ai-comparison', createdAt: new Date().toISOString(), markdown: String(md||'') };
               window.parent.localStorage.setItem('qiq_attached_comparison', JSON.stringify(att)); window.parent.QiqToast?.success?.('تم إرفاق المقارنة بصفحة العرض'); }catch(e){} };
+            // Wire quote wizard action buttons to parent handler (fallback binding inside iframe)
+            function wireWizard(){
+              try{
+                var ids = [
+                  ['wiz-download','download'],
+                  ['wiz-send','send'],
+                  ['wiz-custom','custom'],
+                  ['wiz-back','back1'],
+                  ['wiz-back-step1','back0']
+                ];
+                ids.forEach(function(pair){
+                  var el = document.getElementById(pair[0]);
+                  if (!el || el.__bound) return;
+                  el.__bound = true;
+                  el.addEventListener('click', function(ev){
+                    try{ ev.preventDefault(); }catch{}
+                    if (pair[1]==='download') return window.parent.QiqWizardHandle?.('download');
+                    if (pair[1]==='send') return window.parent.QiqWizardHandle?.('send');
+                    if (pair[1]==='custom') return window.parent.QiqWizardHandle?.('custom');
+                    if (pair[1]==='back1') return window.parent.QiqModal?.setHtml?.('');
+                    if (pair[1]==='back0') return window.parent.QiqWizardHandle?.('back-to-step1');
+                  });
+                });
+              }catch(e){}
+            }
+            // Try immediately and over a short interval to catch dynamic inserts
+            wireWizard();
+            var __tries = 0; var __iv = setInterval(function(){ if (++__tries>30) return clearInterval(__iv); wireWizard(); }, 100);
           }catch(e){}
         })();
       <\/script>`;
