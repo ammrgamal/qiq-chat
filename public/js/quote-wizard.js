@@ -220,12 +220,11 @@
             <button class="btn" id="wiz-download">Download PDF</button>
             <button class="btn" id="wiz-send">Send by Email</button>
             <button class="btn" id="wiz-custom">Get Custom Quote</button>
-            <button class="btn secondary" id="wiz-back-step1">الرجوع إلى بيانات العميل</button>
           </div>`;
     const panel = css + steps + inner;
 
     try{
-      if (window.QiqModal){ QiqModal.open('#', { title:'\u0637\u0644\u0628 \u0639\u0631\u0636 \u0633\u0639\u0631', html: panel, size: 'sm' }); }
+  if (window.QiqModal){ QiqModal.open('#', { title:'\u0637\u0644\u0628 \u0639\u0631\u0636 \u0633\u0639\u0631', html: panel, size: 'lg' }); }
       else alert('Wizard requires modal.js');
     }catch{}
 
@@ -239,9 +238,9 @@
       const dl   = q('wiz-download');
       const send = q('wiz-send');
       const cust = q('wiz-custom');
-      const back1= q('wiz-back-step1');
+  const back1= null;
       // If none found yet, not ready
-      if (!next && !dl && !send && !cust && !back && !back1) return false;
+  if (!next && !dl && !send && !cust && !back) return false;
       // Helper to avoid double binding
       const on = (el, type, fn)=>{ if (!el) return; if (el.__bound) return; el.__bound = true; el.addEventListener(type, fn); };
       on(next, 'click', (e)=>{ e.preventDefault();
@@ -260,7 +259,7 @@
       on(dl,   'click', (e)=>{ e.preventDefault(); handle('download'); });
       on(send, 'click', (e)=>{ e.preventDefault(); handle('send'); });
       on(cust, 'click', (e)=>{ e.preventDefault(); handle('custom'); });
-      on(back1,'click', (e)=>{ e.preventDefault(); render(1); });
+  // removed duplicate back button
       return true;
     }
     // Try bind immediately, then via load, then retries

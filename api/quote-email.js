@@ -17,7 +17,7 @@ const FONT_DIRS = [
 ];
 const BRAND_PRIMARY = process.env.PDF_BRAND_COLOR || '#3C52B2';
 const BRAND_BG      = process.env.PDF_BG_COLOR || '#EDF0FC';
-const CURRENCY_FALLBACK = process.env.DEFAULT_CURRENCY || 'EGP';
+const CURRENCY_FALLBACK = process.env.DEFAULT_CURRENCY || 'USD';
 
 // ============ Lightweight Arabic shaping helpers (optional deps) ============
 let __arShapeFn = null;
@@ -358,6 +358,39 @@ async function trySendToGamma(solutionText){
   }catch(e){ return { ok:false, error: String(e&&e.message||e) }; }
 }
 
+// --- Authoritative server-side conversion (USD is the base) ---
+async function getUsdToRate(target){
+  const code = String(target||'USD').toUpperCase();
+  if (code === 'USD') return 1;
+  try{
+    const r = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json');
+    if (!r.ok) return 1;
+    const j = await r.json();
+    const map = j && j.usd;
+    const fx = map && map[code.toLowerCase()];
+    return typeof fx === 'number' && fx>0 ? fx : 1;
+  }catch{ return 1; }
+}
+
+async function convertItemsToCurrency(items, targetCurrency){
+  const rate = await getUsdToRate(targetCurrency);
+  const arr = Array.isArray(items) ? items : [];
+  return arr.map(it=>{
+    const out = { ...it };
+    // Prefer explicit base USD value when present
+    let baseUSD = Number(out.base_usd || out.baseUSD || out.base_price_usd || out.usd || 0);
+    if (!baseUSD){
+      // Assume incoming unit is USD if no explicit base provided
+      baseUSD = Number(out.unit_price||out.unit||out.price||0);
+    }
+    if (!isFinite(baseUSD)) baseUSD = 0;
+    out.base_usd = baseUSD;
+    const conv = Number((baseUSD * rate).toFixed(2));
+    out.unit = conv; out.unit_price = conv; out.price = conv;
+    return out;
+  });
+}
+
 // Build a branded multi-page PDF with intro, items, presentation cards, and closing
 async function readAdminPdfPrefs(){
   try{
@@ -531,8 +564,29 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       const scopeText = await buildInstallationScope({ client, project, items });
       doc.font(BOLD).fillColor(BRAND_PRIMARY).fontSize(14).text('Installation & Commissioning Scope', { align:'left' });
       doc.moveDown(0.4);
-      const body = scopeText || 'Scope will be provided upon request.';
-      doc.font(REG).fillColor('#111827').fontSize(11).text(ARS(body), { align:'left' });
+      const raw = scopeText || 'Scope will be provided upon request.';
+      const lines = String(raw).split(/\r?\n/);
+      const pageW = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      let sx = doc.page.margins.left; let sy = doc.y; const sw = pageW;
+
+      function writeHeading(text){
+        const clean = text.replace(/^#+\s*/, '').replace(/\*\*/g,'').trim();
+        if (!clean) return; doc.font(BOLD).fillColor('#111827').fontSize(12).text(ARS(clean), sx, sy, { width: sw }); sy = doc.y + 4;
+      }
+      function writeBullet(text){
+        const body = text.replace(/^\s*[-*]\s+/, '').trim();
+        const content = `• ${body}`; doc.save(); doc.font(REG).fillColor('#111827').fontSize(11); renderFormattedText(content, sx, sy, sw, true); doc.restore(); sy = doc.y + 2;
+      }
+      function writePara(text){
+        const t = text.replace(/^\*\s+/, '').replace(/^#+\s*/,'').trim(); if (!t){ sy += 4; return; }
+        doc.save(); doc.font(REG).fillColor('#111827').fontSize(11); renderFormattedText(t, sx, sy, sw, true); doc.restore(); sy = doc.y + 4;
+      }
+
+      for (const ln of lines){
+        if (/^\s*#{1,6}\s+/.test(ln)) { writeHeading(ln); continue; }
+        if (/^\s*[-*]\s+/.test(ln)) { writeBullet(ln); continue; }
+        writePara(ln);
+      }
     }catch{}
 
     // Next page (items table)
@@ -626,7 +680,10 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       const linkUrlForHeight = resolveSpecLink(it);
       // compute description height (strip inline **bold** markers for metric)
       const descPlain = desc.replace(/\*\*(.+?)\*\*/g,'$1');
-      const descH = doc.heightOfString(descPlain + (linkUrlForHeight ? '\n' : ''), { width: descWidth });
+  // measure description only, link drawn separately; add margin
+  let descH = doc.heightOfString(descPlain, { width: descWidth });
+  if (linkUrlForHeight) descH += 12; // space for link
+  descH += 4; // safety padding
       heights.push(descH);
       heights.push(doc.heightOfString(pn, { width: cols[2].w-8 }));
       const rowH = Math.max(22, ...heights, imgH? imgH+8 : 0);
@@ -643,8 +700,11 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       doc.text(String(i+1), cx+4, y+4, { width: cols[0].w-8, align:'right' }); cx += cols[0].w;
       // description cell with optional image + optional spec sheet link
       if (imgBuf){
-        try{ doc.image(imgBuf, cx+4, y+4, { fit: [46, 46] }); }catch{}
         const descCellW = (cols[1].w-8)-50;
+        doc.save();
+        // Clip description cell to avoid spill into next row
+        doc.rect(cx+4, y+2, cols[1].w-8, rowH-4).clip();
+        try{ doc.image(imgBuf, cx+4, y+4, { fit: [46, 46] }); }catch{}
         renderFormattedText(desc, cx+54, y+4, descCellW, true);
         const linkUrl = resolveSpecLink(it);
         if (linkUrl){
@@ -659,8 +719,11 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
           try{ doc.link(lx, ly, wlab, 12, linkUrl); }catch{}
           doc.fillColor('#111827');
         }
+        doc.restore();
       } else {
         const descCellW = cols[1].w-8;
+        doc.save();
+        doc.rect(cx+4, y+2, cols[1].w-8, rowH-4).clip();
         renderFormattedText(desc, cx+4, y+4, descCellW, true);
         const linkUrl = resolveSpecLink(it);
         if (linkUrl){
@@ -673,6 +736,7 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
           try{ doc.link(lx, ly, wlab, 12, linkUrl); }catch{}
           doc.fillColor('#111827');
         }
+        doc.restore();
       }
       cx += cols[1].w;
   doc.text(ARS(pn), cx+4, y+4, { width: cols[2].w-8, align:'left' }); cx += cols[2].w;
@@ -889,9 +953,10 @@ export default async function handler(req, res){
     const action = (body.action||'').toLowerCase();
     const payload = body;
 
-    // Phase 1: Enrich items and build solution description
-    const currency = payload.currency || CURRENCY_FALLBACK;
-    const enrichedItems = await enrichItemsWithAI(payload.items||[]);
+  // Phase 1: Authoritative conversion (USD base) then enrich items and build solution description
+  const currency = payload.currency || CURRENCY_FALLBACK;
+  const convertedItems = await convertItemsToCurrency(payload.items||[], currency);
+  const enrichedItems = await enrichItemsWithAI(convertedItems);
     const solutionText = await buildSolutionDescription({ client: payload.client, project: payload.project, items: enrichedItems, currency });
     let cards = buildPresentationCards(solutionText);
     // Optionally get Gamma cards. If env prefers Gamma, replace when available.
@@ -944,16 +1009,8 @@ export default async function handler(req, res){
         const { subtotal, grand } = computeTotals(enrichedItems);
         const systems = gatherSystems(payload, enrichedItems);
         const brands = gatherBrands(enrichedItems);
-        // Translate core fields to English if Arabic is detected
-        const nameEn = await translateToEnglishIfArabic(payload?.client?.name||'');
-        const projNameEn = await translateToEnglishIfArabic(payload?.project?.name||'');
-        const projSiteEn = await translateToEnglishIfArabic(payload?.project?.site||'');
-        const systemsEn = await (async ()=>{
-          const out=[]; for(const s of (systems||[])){ out.push(await translateToEnglishIfArabic(s)); } return out; })();
-        const brandsEn = await (async ()=>{
-          const out=[]; for(const s of (brands||[])){ out.push(await translateToEnglishIfArabic(s)); } return out; })();
-        const payloadEn = { ...payload, client: { ...payload.client, name: nameEn }, project: { ...payload.project, name: projNameEn, site: projSiteEn } };
-        const clientHtml = buildClientLetterHtml({ ...payloadEn, items: enrichedItems }, { subtotal, grand }, systemsEn, brandsEn);
+        // Emails can remain in Arabic; do not translate here
+        const clientHtml = buildClientLetterHtml({ ...payload, items: enrichedItems }, { subtotal, grand }, systems, brands);
         clientRes = await sendEmail({ to, subject: `Your quotation ${payload.number||''}`, html: clientHtml, attachments });
         if (!clientRes?.ok) console.warn('Client email failed', clientRes);
         else { try { console.log('Client email sent', { provider: clientRes.provider, id: clientRes.id||null, usedOnboarding: !!clientRes.usedOnboarding }); } catch {} }
