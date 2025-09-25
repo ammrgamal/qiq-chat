@@ -816,17 +816,9 @@ export default async function handler(req, res){
     let cards = buildPresentationCards(solutionText);
     // Optionally get Gamma cards. If env prefers Gamma, replace when available.
     try {
-      // preferGamma: admin true forces on; admin false forces off; otherwise auto-enable if Gamma keys exist or env flag true
+      // Force prefer Gamma unconditionally when keys+endpoint exist
       const hasGamma = !!(process.env.GAMMA_APP_API || process.env.GAMMA_APP_APIS || process.env.GAMMA_API || process.env.GAMMA_KEY) && !!(process.env.GAMMA_ENDPOINT || process.env.GAMMA_API_URL);
-      let adminPref;
-      try{
-        const STORAGE_DIR = process.env.NODE_ENV === 'production' ? '/tmp/qiq-storage' : path.join(__dirname, '../.storage');
-        const CONFIG_FILE = path.join(STORAGE_DIR, 'admin-config.json');
-        const t = await fs.readFile(CONFIG_FILE,'utf8');
-        const j = JSON.parse(t);
-        if (j?.ai && typeof j.ai.preferGammaCards === 'boolean') adminPref = j.ai.preferGammaCards;
-      }catch{}
-      let preferGamma = adminPref === true ? true : (adminPref === false ? false : (hasGamma || /^(1|true|yes)$/i.test(String(process.env.PREFER_GAMMA_CARDS||''))));
+      const preferGamma = !!hasGamma;
       const g = await trySendToGamma(solutionText);
       if (g && g.ok && Array.isArray(g.cards) && g.cards.length){
         if (preferGamma) cards = g.cards;

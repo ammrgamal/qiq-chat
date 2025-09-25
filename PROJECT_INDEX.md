@@ -1,8 +1,8 @@
 # Project Index — qiq-chat
-Generated: 2025-09-25T14:12:35.295Z
+Generated: 2025-09-25T14:53:10.026Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
-- Total size: 1002.8 KB
+- Total size: 1006.9 KB
 - Files: 93
 - Directories: 19
 - Max depth: 6
@@ -61,7 +61,7 @@ qiq-chat/
 │   ├── algoliaMapper.spec.ts (525 B)
 │   └── pdfTotals.spec.ts (1.3 KB)
 ├── .storage/
-│   ├── activity.json (17.8 KB)
+│   ├── activity.json (18.2 KB)
 │   └── quotations.json (672 B)
 ├── ai/
 │   └── ai-instructions.txt (3.5 KB)
@@ -101,7 +101,7 @@ qiq-chat/
 │   ├── hello-leads.js (3.0 KB)
 │   ├── maintenance.js (3.9 KB)
 │   ├── pdf-ai.js (14.4 KB)
-│   ├── quote-email.js (42.8 KB)
+│   ├── quote-email.js (46.6 KB)
 │   ├── quote.js (741 B)
 │   ├── search-health.js (1.2 KB)
 │   ├── search.js (2.7 KB)
@@ -118,7 +118,7 @@ qiq-chat/
 │   ├── js/
 │   │   ├── account.js (22.9 KB)
 │   │   ├── admin-quotes.js (11.3 KB)
-│   │   ├── admin.js (25.8 KB)
+│   │   ├── admin.js (25.5 KB)
 │   │   ├── analytics.js (19.2 KB)
 │   │   ├── api.js (1.8 KB)
 │   │   ├── experimental-banner.js (2.3 KB)
@@ -126,9 +126,9 @@ qiq-chat/
 │   │   ├── pdf-admin.js (16.6 KB)
 │   │   ├── pdf-arabic-fonts.js (1.8 KB)
 │   │   ├── performance.js (5.6 KB)
-│   │   ├── products-search-enhanced.js (23.6 KB)
+│   │   ├── products-search-enhanced.js (23.7 KB)
 │   │   ├── products-search.js (6.7 KB)
-│   │   ├── quote-actions.js (41.5 KB)
+│   │   ├── quote-actions.js (41.7 KB)
 │   │   ├── quote-form.js (3.0 KB)
 │   │   ├── quote-wizard.js (16.6 KB)
 │   │   ├── quote.js (75.2 KB)
@@ -139,7 +139,7 @@ qiq-chat/
 │   │   └── user-features.js (11.8 KB)
 │   ├── account.html (2.2 KB)
 │   ├── admin-quotes.html (4.2 KB)
-│   ├── admin.html (13.7 KB)
+│   ├── admin.html (13.4 KB)
 │   ├── index.html (9.3 KB)
 │   ├── logo.png (15.7 KB)
 │   ├── products-list.html (21.5 KB)
