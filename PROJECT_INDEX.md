@@ -1,8 +1,8 @@
 # Project Index — qiq-chat
-Generated: 2025-09-25T09:40:12.190Z
+Generated: 2025-09-25T09:55:30.127Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
-- Total size: 956.4 KB
+- Total size: 957.2 KB
 - Files: 92
 - Directories: 19
 - Max depth: 6
@@ -67,7 +67,7 @@ qiq-chat/
 │   └── ai-instructions.txt (997 B)
 ├── api/
 │   ├── _lib/
-│   │   ├── email.js (3.9 KB)
+│   │   ├── email.js (4.4 KB)
 │   │   └── jwt.js (1.5 KB)
 │   ├── admin/
 │   │   ├── activity.js (335 B)
@@ -133,7 +133,7 @@ qiq-chat/
 │   │   ├── quote-wizard.js (12.5 KB)
 │   │   ├── quote.js (75.2 KB)
 │   │   ├── security.js (7.6 KB)
-│   │   ├── toast.js (4.0 KB)
+│   │   ├── toast.js (4.3 KB)
 │   │   ├── ui-chat.js (14.3 KB)
 │   │   ├── ui-enhancements.js (25.0 KB)
 │   │   └── user-features.js (11.8 KB)

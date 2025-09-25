@@ -5,12 +5,16 @@
 // For safety, do NOT ship default provider API keys.
 // Emails will be disabled unless RESEND_API_KEY or SENDGRID_API_KEY is set.
 const DEFAULT_FROM_EMAIL     = 'no-reply@quickitquote.com';
+const DEFAULT_FROM_NAME      = 'QuickITQuote';
 
 function getFromAddress() {
-  return process.env.EMAIL_FROM
+  const email = process.env.EMAIL_FROM
     || process.env.RESEND_FROM
     || process.env.SENDGRID_FROM
     || DEFAULT_FROM_EMAIL;
+  const name = process.env.EMAIL_FROM_NAME || process.env.RESEND_FROM_NAME || DEFAULT_FROM_NAME;
+  // Prefer formatted From: "Name <email>"
+  return /</.test(email) ? email : `${name} <${email}>`;
 }
 
 async function sendWithResend({ to, subject, html, from, attachments }){
@@ -37,12 +41,13 @@ async function sendWithResend({ to, subject, html, from, attachments }){
     if (!res.ok){
       const t = await res.text();
       console.warn('resend error', res.status, t);
-      return { ok:false, provider:'resend' };
+      return { ok:false, provider:'resend', status: res.status, error: t };
     }
-    return { ok:true, provider:'resend' };
+    const json = await res.json().catch(()=>({}));
+    return { ok:true, provider:'resend', id: json?.id };
   } catch (e) {
     console.warn('resend sendEmail failed', e);
-    return { ok:false, provider:'resend' };
+    return { ok:false, provider:'resend', error: String(e&&e.message||e) };
   }
 }
 
@@ -71,12 +76,12 @@ async function sendWithSendGrid({ to, subject, html, from, attachments }){
     if (!res.ok){
       const t = await res.text();
       console.warn('sendgrid error', res.status, t);
-      return { ok:false, provider:'sendgrid' };
+      return { ok:false, provider:'sendgrid', status: res.status, error: t };
     }
     return { ok:true, provider:'sendgrid' };
   }catch(e){
     console.warn('sendgrid sendEmail failed', e);
-    return { ok:false, provider:'sendgrid' };
+    return { ok:false, provider:'sendgrid', error: String(e&&e.message||e) };
   }
 }
 
@@ -92,7 +97,8 @@ export async function sendEmail({ to, subject, html, from, attachments }){
     if (r.ok) return r;
     // If Resend fails but SendGrid is configured, try fallback silently
     if (process.env.SENDGRID_API_KEY) {
-      return await sendWithSendGrid({ to: recipient, subject, html, from, attachments });
+      const s = await sendWithSendGrid({ to: recipient, subject, html, from, attachments });
+      return s.ok ? s : { ok:false, primary:r, fallback:s };
     }
     return r;
   }

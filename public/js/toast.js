@@ -75,7 +75,14 @@
   function enqueue(type, message, duration){
     // Ignore provided duration in persistent mode
     const d = PERSISTENT_MODE ? Infinity : duration;
-    queue.push({ type, message, duration: d });
+    // If a toast is already showing, dismiss it so the new one appears immediately on top
+    if (current) {
+      try{ current.remove(); }catch{}
+      current = null;
+      if (timer){ try{ clearInterval(timer); }catch{} timer = null; }
+    }
+    // Use unshift so newest shows first
+    queue.unshift({ type, message, duration: d });
     showNext();
   }
 
