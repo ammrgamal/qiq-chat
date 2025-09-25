@@ -70,9 +70,12 @@
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
-      <div style="margin-top:10px;text-align:left">
-        <div>Subtotal: <strong>${t.subtotal.toFixed(2)}</strong></div>
-        <div>Grand Total: <strong>${t.grand.toFixed(2)}</strong></div>
+      <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+        <div style="color:#6b7280">العملة: <strong id="wiz-currency-view"></strong></div>
+        <div style="text-align:left">
+          <div>Subtotal: <strong>${t.subtotal.toFixed(2)}</strong></div>
+          <div>Grand Total: <strong>${t.grand.toFixed(2)}</strong></div>
+        </div>
       </div>
     </div>`;
   }
@@ -103,14 +106,14 @@
       if (doc && !doc.getElementById('wiz-busy')){
         const el = doc.createElement('div'); el.id = 'wiz-busy';
         el.setAttribute('style','position:fixed;inset:0;background:rgba(255,255,255,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:system-ui');
-        el.innerHTML = '<div style="display:flex;gap:10px;align-items:center;color:#1e3a8a"><span class="spinner" style="width:18px;height:18px;border:3px solid #c7d2fe;border-top-color:#1e3a8a;border-radius:50%;display:inline-block;animation:qiqspin 0.9s linear infinite"></span><span>جاري المعالجة…</span></div>';
+  el.innerHTML = '<div style="display:flex;gap:12px;align-items:center;color:#1e3a8a"><span class="spinner" style="width:18px;height:18px;border:3px solid #c7d2fe;border-top-color:#1e3a8a;border-radius:50%;display:inline-block;animation:qiqspin 0.9s linear infinite"></span><span>جاري المعالجة…</span><div id="wiz-progress" style="min-width:180px;height:8px;background:#e5e7eb;border-radius:6px;overflow:hidden"><div id="wiz-progress-bar" style="height:100%;width:1%;background:#3b82f6;transition:width .3s ease"></div></div><span id="wiz-progress-label" style="min-width:38px;text-align:right">1%</span></div>';
         const style = doc.createElement('style'); style.textContent='@keyframes qiqspin{to{transform:rotate(360deg)}}'; doc.head.appendChild(style);
         doc.body.appendChild(el);
         // Disable action buttons
         ['wiz-download','wiz-send','wiz-custom','wiz-next','wiz-back','wiz-back-step1'].forEach(id=>{ try{ const b=doc.getElementById(id); if (b){ b.disabled=true; b.style.opacity='0.7'; } }catch{} });
       }
     }catch{}
-    // Prefer saved state (works on step 2 where inputs are not visible). Fallback to inputs if present.
+  // Prefer saved state (works on step 2 where inputs are not visible). Fallback to inputs if present.
   let { name, email, company, notes, projectName, projectSite, title, currency } = loadClient() || {};
     // Try to read from current iframe if inputs exist
     try{
@@ -130,6 +133,24 @@
     if (!name || !email){ window.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني'); return; }
     if (!projectName){ window.QiqToast?.error?.('يرجى إدخال اسم المشروع'); return; }
   saveClient({ name, email, company, notes, projectName, projectSite, title, currency });
+
+    // Progress sequence (1% -> 100%) while awaiting server
+    let pct = 1; let done = false;
+    function setProgress(p){ try{
+      const frame = window.QiqModal?.getFrame?.(); const doc = frame?.contentDocument;
+      const bar = doc?.getElementById('wiz-progress-bar'); const lab = doc?.getElementById('wiz-progress-label');
+      if (bar) bar.style.width = Math.max(1, Math.min(100, p))+'%'; if (lab) lab.textContent = Math.round(Math.max(1, Math.min(100, p)))+'%';
+    }catch{} }
+    setProgress(1);
+    const phases = [20, 38, 55, 72, 88, 97];
+    let phaseIdx = 0;
+    const iv = setInterval(()=>{
+      if (done) return clearInterval(iv);
+      pct = Math.min(pct + 1 + Math.floor(Math.random()*3), phases[Math.min(phaseIdx, phases.length-1)]);
+      setProgress(pct);
+      if (pct >= phases[phaseIdx]) phaseIdx++;
+      if (phaseIdx >= phases.length) clearInterval(iv);
+    }, 280);
 
     const payload = payloadFromState();
     payload.action = action;
@@ -161,6 +182,7 @@
         return;
       }
       const j = await r.json();
+      done = true; setProgress(100);
       if (action === 'download' && j?.pdfBase64){
         const a = document.createElement('a');
         a.href = 'data:application/pdf;base64,'+j.pdfBase64;
@@ -200,7 +222,7 @@
     const items = getItems();
     const saved = loadClient();
     const html1 = buildClientForm(saved);
-    const html2 = buildItemsTable(items);
+  const html2 = buildItemsTable(items);
     const steps = `
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <div class="chip ${step===1?'active':''}">1) بيانات العميل</div>
@@ -224,13 +246,13 @@
     const panel = css + steps + inner;
 
     try{
-  if (window.QiqModal){ QiqModal.open('#', { title:'\u0637\u0644\u0628 \u0639\u0631\u0636 \u0633\u0639\u0631', html: panel, size: 'lg' }); }
+  if (window.QiqModal){ QiqModal.open('#', { title:'\u0637\u0644\u0628 \u0639\u0631\u0636 \u0633\u0639\u0631', html: panel, size: 'md' }); }
       else alert('Wizard requires modal.js');
     }catch{}
 
     // Robustly wire handlers after iframe content is ready (load + retry fallback)
     function bindInside(){
-      const frame = window.QiqModal?.getFrame?.();
+  const frame = window.QiqModal?.getFrame?.();
       const doc = frame?.contentDocument; if (!doc) return false;
       const q = (sel)=> doc.getElementById(sel);
       const next = q('wiz-next');
@@ -252,7 +274,8 @@
         const projectSite = doc.getElementById('wiz-project-site')?.value.trim();
         if (!name || !email){ window.parent.QiqToast?.error?.('\u064a\u0631\u062c\u0649 \u0625\u062f\u062e\u0627\u0644 \u0627\u0644\u0627\u0633\u0645 \u0648\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a'); return; }
         if (!projectName){ window.parent.QiqToast?.error?.('\u064a\u0631\u062c\u0649 \u0625\u062f\u062e\u0627\u0644 \u0627\u0633\u0645 \u0627\u0644\u0645\u0634\u0631\u0648\u0639'); return; }
-        window.parent.localStorage.setItem(STATE_KEY, JSON.stringify({ name, email, company, notes, projectName, projectSite }));
+        const currency = doc.getElementById('wiz-currency')?.value || 'EGP';
+        window.parent.localStorage.setItem(STATE_KEY, JSON.stringify({ name, email, company, notes, projectName, projectSite, currency }));
         render(2);
       });
       on(back, 'click', (e)=>{ e.preventDefault(); render(1); });
@@ -260,7 +283,8 @@
       on(send, 'click', (e)=>{ e.preventDefault(); handle('send'); });
       on(cust, 'click', (e)=>{ e.preventDefault(); handle('custom'); });
   // removed duplicate back button
-      return true;
+  try{ const cur = (window.parent.localStorage.getItem(STATE_KEY) && JSON.parse(window.parent.localStorage.getItem(STATE_KEY))?.currency) || 'EGP'; const el = doc.getElementById('wiz-currency-view'); if (el) el.textContent = cur; }catch{}
+  return true;
     }
     // Try bind immediately, then via load, then retries
     if (!bindInside()){
@@ -277,6 +301,7 @@
   window.QiqQuoteWizard = { open: openWizard };
   // Expose action handler for iframe bridge
   window.QiqWizardHandle = handle;
+  window.QiqWizardBack = ()=> render(1);
 
   // Attach default listeners if buttons exist
   document.addEventListener('click', function(ev){

@@ -60,102 +60,7 @@ async function getArabicShaper(){
 }
 
 async function tryAccess(p){ try{ await fs.access(p); return true; }catch{ return false; } }
-async function ensureArabicFonts(doc){
-  // Look for common Arabic font families inside assets/fonts
-  const families = [
-    { reg: 'NotoNaskhArabic-Regular.ttf', bold: 'NotoNaskhArabic-Bold.ttf' },
-    { reg: 'NotoSansArabic-Regular.ttf', bold: 'NotoSansArabic-Bold.ttf' },
-    { reg: 'NotoKufiArabic-Regular.ttf', bold: 'NotoKufiArabic-Bold.ttf' },
-    { reg: 'Amiri-Regular.ttf', bold: 'Amiri-Bold.ttf' }
-  ];
-  for (const dir of FONT_DIRS){
-    for (const f of families){
-      const regPath = path.join(dir, f.reg);
-      const boldPath = path.join(dir, f.bold);
-      const hasReg = await tryAccess(regPath);
-      const hasBold = await tryAccess(boldPath);
-      if (hasReg){
-        try{ doc.registerFont('AR_REG', regPath); }catch{}
-      }
-      if (hasBold){
-        try{ doc.registerFont('AR_BOLD', boldPath); }catch{}
-      }
-      if (hasReg || hasBold){
-        return { reg: hasReg ? 'AR_REG' : null, bold: hasBold ? 'AR_BOLD' : null };
-      }
-    }
-  }
-  return { reg: null, bold: null };
-}
-
-async function tryLoadLocal(filePath){
-  try{ const buf = await fs.readFile(filePath); return buf; }catch{ return null; }
-}
-
-async function fetchImageBuffer(url){
-  try{
-    if (!url) return null;
-    const r = await fetch(url);
-    if (!r.ok) return null;
-    const ab = await r.arrayBuffer();
-    return Buffer.from(ab);
-  }catch{ return null; }
-}
-
-function sanitizeName(s){
-  return (s==null?'':String(s))
-    .replace(/[\\/:*?"<>|\n\r]+/g,' ') // remove invalid filename chars
-    .replace(/\s+/g,' ') // collapse whitespace
-    .trim()
-    .slice(0, 80); // keep it short
-}
-
-function ensureString(v){ return (v==null?'':String(v)); }
-function b64(s){ return Buffer.from(s).toString('base64'); }
-function escapeCsv(v){ const s = ensureString(v); return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
-
-function buildCsv(items){
-  const header = 'Item,Quantity,Unit Price,Total\n';
-  const rows = (items||[]).map(it=>{
-    const name = ensureString(it.description || it.description_enriched || it.name || '-');
-    const qty = Number(it.qty||1);
-    const unit = Number(it.unit_price||it.unit||it.price||0);
-    const total = unit*qty;
-    return [escapeCsv(name), qty, unit, total].join(',');
-  }).join('\n');
-  return header + rows + (rows? '\n' : '');
-}
-
-function computeTotals(items){
-  let subtotal = 0;
-  for (const it of (items||[])){
-    const u = Number(it.unit_price||it.unit||it.price||0);
-    const q = Number(it.qty||1);
-    subtotal += u*q;
-  }
-  return { subtotal, grand: subtotal };
-}
-
-function gatherBrands(items){
-  const set = new Set();
-  for (const it of (items||[])){
-    const b = it.brand || it.manufacturer || it.vendor || it.mfg || it.maker;
-    if (b) set.add(String(b));
-  }
-  return Array.from(set);
-}
-
-function gatherSystems(payload, items){
-  const set = new Set();
-  // Prefer explicit project props if provided
-  const ps = payload?.project?.proposedSystems || payload?.proposedSystems;
-  if (Array.isArray(ps)) ps.forEach(s=> s && set.add(String(s)));
-  for (const it of (items||[])){
-    const s = it.system || it.category || it.type || it.family;
-    if (s) set.add(String(s));
-  }
-  return Array.from(set);
-}
+async function ensureArabicFonts(doc){ /* No-op: PDF is English-only using Latin fonts */ }
 
 // Centralized spec-sheet link resolver (allows overrides and fallbacks)
 function resolveSpecLink(it){
@@ -371,6 +276,38 @@ async function getUsdToRate(target){
     return typeof fx === 'number' && fx>0 ? fx : 1;
   }catch{ return 1; }
 }
+
+// Basic totals and categorization helpers used in client letter and PDF
+function computeTotals(items){
+  let subtotal = 0;
+  for (const it of (items||[])){
+    const u = Number(it.unit_price||it.unit||it.price||0);
+    const q = Number(it.qty||1);
+    subtotal += (u*q);
+  }
+  return { subtotal, grand: subtotal };
+}
+function gatherSystems(payload, items){
+  const set = new Set();
+  for (const it of (items||[])){
+    const cand = it.system || it.category || it.family || it.type || '';
+    if (cand) set.add(String(cand));
+    if (set.size>=8) break;
+  }
+  return Array.from(set);
+}
+function gatherBrands(items){
+  const set = new Set();
+  for (const it of (items||[])){
+    const b = it.brand || it.manufacturer || it.vendor || it.maker || '';
+    if (b) set.add(String(b));
+    if (set.size>=8) break;
+  }
+  return Array.from(set);
+}
+
+// Optional: Algolia stats provider (safe no-op if not configured)
+async function getAlgoliaCatalogStats(){ return null; }
 
 async function convertItemsToCurrency(items, targetCurrency){
   const rate = await getUsdToRate(targetCurrency);
@@ -594,7 +531,7 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     __pageNum++;
     doc.addPage();
 
-  // Items table grid
+  // Items table grid (clean implementation)
     const cols = [
       { key:'#', label:'#', w:24 },
       { key:'desc', label:'Description', w:230 },
@@ -611,16 +548,14 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       doc.save();
       doc.rect(x, y, tableW, 20).fill('#f3f4f6');
       let cx = x;
-  cols.forEach(c=>{ doc.fillColor('#111827').font(BOLD).fontSize(10).text(ARS(c.label), cx+4, y+6, { width:c.w-8, align: c.key==='desc'?'left':'right' }); cx += c.w; });
+      cols.forEach(c=>{ doc.fillColor('#111827').font(BOLD).fontSize(10).text(ARS(c.label), cx+4, y+6, { width:c.w-8, align: c.key==='desc'?'left':'right' }); cx += c.w; });
       doc.restore();
       y += 20;
-      // header bottom line
       doc.moveTo(x, y).lineTo(x+tableW, y).stroke('#e5e7eb');
     }
-  const norm = (items||[]);
-  const prefs = await readAdminPdfPrefs();
-  const includeImages = prefs.includeItemImages || /^(1|true|yes)$/i.test(String(process.env.PDF_INCLUDE_IMAGES || ''));
-    // Prefetch image buffers to avoid awaits inside drawing function
+    const norm = (items||[]);
+    const prefs = await readAdminPdfPrefs();
+    const includeImages = prefs.includeItemImages || /^(1|true|yes)$/i.test(String(process.env.PDF_INCLUDE_IMAGES || ''));
     const imgBuffers = new Map();
     if (includeImages){
       for (const it of norm){
@@ -634,13 +569,12 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       }
     }
 
-    // Helper: render text with **bold** segments inline
-    function renderFormattedText(text, x, y, width, alignLeft){
+    function renderFormattedText(text, x1, y1, width, alignLeft){
       const raw = ensureString(text || '');
       const hasBold = /\*\*(.+?)\*\*/.test(raw);
       if (!hasBold){
         doc.font(REG).fontSize(10).fillColor('#111827');
-        doc.text(ARS(raw), x, y, { width, align: alignLeft ? 'left' : 'right' });
+        doc.text(ARS(raw), x1, y1, { width, align: alignLeft ? 'left' : 'right' });
         return;
       }
       const rx = /\*\*(.+?)\*\*/g;
@@ -649,7 +583,7 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
         const before = raw.slice(last, m.index);
         if (before){
           doc.font(REG).fontSize(10).fillColor('#111827');
-          doc.text(ARS(before), first ? x : undefined, first ? y : undefined, { width, align: alignLeft ? 'left' : 'right', continued: true });
+          doc.text(ARS(before), first ? x1 : undefined, first ? y1 : undefined, { width, align: alignLeft ? 'left' : 'right', continued: true });
           first = false;
         }
         const boldSeg = m[1] || '';
@@ -662,158 +596,127 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       }
       const tail = raw.slice(last);
       doc.font(REG).fontSize(10).fillColor('#111827');
-      doc.text(ARS(tail), first ? x : undefined, first ? y : undefined, { width, align: alignLeft ? 'left' : 'right', continued: false });
+      doc.text(ARS(tail), first ? x1 : undefined, first ? y1 : undefined, { width, align: alignLeft ? 'left' : 'right', continued: false });
     }
+
     function drawRow(i, it){
       const qty = Number(it.qty||1); const unit = Number(it.unit_price||it.unit||it.price||0); const line = unit*qty;
-  const desc = ensureString(it.description_en || it.description || it.description_enriched || it.name || '-');
+      const desc = ensureString(it.description_en || it.description || it.description_enriched || it.name || '-');
       const pn = ensureString(it.pn||'');
-      const heights = [];
-      let descWidth = cols[1].w-8;
-      let imgH = 0; let imgBuf = null;
+      const colDescW = cols[1].w - 8;
+      let imgBuf = null;
       if (includeImages){
         const imgUrl = it.image || it["Image URL"] || it.thumbnail || it.img || '';
         imgBuf = imgBuffers.get(imgUrl) || null;
-        if (imgBuf) { imgH = 48; descWidth -= 52; }
       }
-      heights.push(doc.heightOfString(String(i+1), { width: cols[0].w-8 }));
-      const linkUrlForHeight = resolveSpecLink(it);
-      // compute description height (strip inline **bold** markers for metric)
+      const linkUrl = resolveSpecLink(it);
       const descPlain = desc.replace(/\*\*(.+?)\*\*/g,'$1');
-  // measure description only, link drawn separately; add margin
-  let descH = doc.heightOfString(descPlain, { width: descWidth });
-  if (linkUrlForHeight) descH += 12; // space for link
-  descH += 4; // safety padding
-      heights.push(descH);
-      heights.push(doc.heightOfString(pn, { width: cols[2].w-8 }));
-      const rowH = Math.max(22, ...heights, imgH? imgH+8 : 0);
-      // page break
-      if (y + rowH > maxY){
-        drawFooter();
-        __pageNum++;
-        doc.addPage();
-        x = doc.page.margins.left; y = doc.page.margins.top; drawHeader();
-      }
-      // text cells
+      const widthLeft = imgBuf ? (colDescW - 50) : colDescW;
+      const widthTop = colDescW;
+      const textHLeft = doc.heightOfString(descPlain, { width: widthLeft });
+      const textHTop = doc.heightOfString(descPlain, { width: widthTop });
+      const useStackTop = !!imgBuf && (textHLeft > 60 && (textHTop + 46 < textHLeft + 20));
+      const descTextHeight = useStackTop ? textHTop : textHLeft;
+      const linkSpace = linkUrl ? 16 : 0;
+      const padding = 6;
+      const imgBlockH = imgBuf ? 46 + (useStackTop ? 4 : 0) : 0;
+      let rowH = Math.max(22, descTextHeight + linkSpace + padding, imgBlockH + (useStackTop ? descTextHeight + linkSpace + padding : 0));
+      if (y + rowH > maxY){ drawFooter(); __pageNum++; doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; drawHeader(); }
       let cx = x;
       doc.font(REG).fontSize(10).fillColor('#111827');
       doc.text(String(i+1), cx+4, y+4, { width: cols[0].w-8, align:'right' }); cx += cols[0].w;
-      // description cell with optional image + optional spec sheet link
+      doc.save();
+      doc.rect(cx+4, y+2, colDescW, rowH-4).clip();
+      let textStartY = y + 4;
       if (imgBuf){
-        const descCellW = (cols[1].w-8)-50;
-        doc.save();
-        // Clip description cell to avoid spill into next row
-        doc.rect(cx+4, y+2, cols[1].w-8, rowH-4).clip();
-        try{ doc.image(imgBuf, cx+4, y+4, { fit: [46, 46] }); }catch{}
-        renderFormattedText(desc, cx+54, y+4, descCellW, true);
-        const linkUrl = resolveSpecLink(it);
-        if (linkUrl){
-          // place link right under the text block within the cell bounds
-          const descPlain2 = desc.replace(/\*\*(.+?)\*\*/g,'$1');
-          let ly = y + 4 + doc.heightOfString(descPlain2, { width: descCellW }) + 2;
-          const lx = cx+54;
-          if (ly > y + rowH - 14) ly = y + rowH - 14;
-          const label = 'Spec sheet';
-          doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(label, lx, ly, { width: descCellW, align:'left', underline: true });
-          const wlab = doc.widthOfString(label);
-          try{ doc.link(lx, ly, wlab, 12, linkUrl); }catch{}
-          doc.fillColor('#111827');
+        if (useStackTop){
+          try{ doc.image(imgBuf, cx+4, y+4, { fit: [Math.min(colDescW, 120), 46] }); }catch{}
+          textStartY += 50;
+          renderFormattedText(desc, cx+4, textStartY, widthTop, true);
+        } else {
+          try{ doc.image(imgBuf, cx+4, y+4, { fit: [46,46] }); }catch{}
+          renderFormattedText(desc, cx+54, y+4, widthLeft, true);
         }
-        doc.restore();
       } else {
-        const descCellW = cols[1].w-8;
-        doc.save();
-        doc.rect(cx+4, y+2, cols[1].w-8, rowH-4).clip();
-        renderFormattedText(desc, cx+4, y+4, descCellW, true);
-        const linkUrl = resolveSpecLink(it);
-        if (linkUrl){
-          let ly = y + 4 + doc.heightOfString(desc.replace(/\*\*(.+?)\*\*/g,'$1'), { width: descCellW }) + 2;
-          const lx = cx+4;
-          if (ly > y + rowH - 14) ly = y + rowH - 14;
-          const label = 'Spec sheet';
-          doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(label, lx, ly, { width: descCellW, align:'left', underline: true });
-          const wlab = doc.widthOfString(label);
-          try{ doc.link(lx, ly, wlab, 12, linkUrl); }catch{}
-          doc.fillColor('#111827');
-        }
-        doc.restore();
+        renderFormattedText(desc, cx+4, y+4, widthTop, true);
       }
+      if (linkUrl){
+        const usedWidth = (imgBuf && !useStackTop) ? widthLeft : widthTop;
+        const usedX = (imgBuf && !useStackTop) ? (cx+54) : (cx+4);
+        const dH = doc.heightOfString(descPlain, { width: usedWidth });
+        let ly = (imgBuf && useStackTop ? textStartY : (y+4)) + dH + 8;
+        if (ly > y + rowH - 14) ly = y + rowH - 14;
+        const iconSize = 6;
+        doc.fillColor(BRAND_PRIMARY).rect(usedX, ly+3, iconSize, iconSize).fill();
+        const labelTxt = 'Spec sheet';
+        doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(labelTxt, usedX + iconSize + 4, ly, { width: usedWidth - (iconSize+6), align:'left', underline: true });
+        const wlab = doc.widthOfString(labelTxt) + iconSize + 6;
+        try{ doc.link(usedX, ly, wlab, 12, linkUrl); }catch{}
+        doc.fillColor('#111827');
+      }
+      doc.restore();
       cx += cols[1].w;
-  doc.text(ARS(pn), cx+4, y+4, { width: cols[2].w-8, align:'left' }); cx += cols[2].w;
+      doc.text(ARS(pn), cx+4, y+4, { width: cols[2].w-8, align:'left' }); cx += cols[2].w;
       doc.text(String(qty), cx+4, y+4, { width: cols[3].w-8, align:'right' }); cx += cols[3].w;
       doc.text(unit.toFixed(2), cx+4, y+4, { width: cols[4].w-8, align:'right' }); cx += cols[4].w;
       doc.text(line.toFixed(2), cx+4, y+4, { width: cols[5].w-8, align:'right' });
-      // row line
       doc.moveTo(x, y+rowH).lineTo(x+tableW, y+rowH).stroke('#f1f5f9');
       y += rowH;
     }
 
+    // Run table
     drawHeader();
-  let subtotal = 0;
-  norm.forEach((it,i)=>{ const u = Number(it.unit_price||it.unit||it.price||0); const q = Number(it.qty||1); subtotal += u*q; drawRow(i,it); });
-  const grand = subtotal;
+    let subtotal = 0;
+    norm.forEach((it,i)=>{ const u = Number(it.unit_price||it.unit||it.price||0); const q = Number(it.qty||1); subtotal += u*q; drawRow(i,it); });
+    const grand = subtotal; // Pro Services excluded from grand by policy
 
-  // Optional Professional Services line (5% with minimum USD 200 equivalent) — not included in grand
-  const prefs3 = prefs;
-  if (prefs3.includeProServices) {
-    const psMinUSD = 200;
-    const currencyCode = ensureString(currency||CURRENCY_FALLBACK).toUpperCase();
-    let rate = 1; // USD->USD
-    try{
-      if (currencyCode !== 'USD'){
-        // tiny server-side FX using a public CDN; failure falls back to 1
-        const fxUrl = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json`;
-        const r = await fetch(fxUrl);
-        if (r.ok){
-          const j = await r.json();
-          const map = j && j.usd;
-          if (map && typeof map[currencyCode.toLowerCase()] === 'number'){
-            rate = Number(map[currencyCode.toLowerCase()]) || 1;
-          }
-        }
-      }
-    }catch{}
-    const minEquivalent = psMinUSD * rate;
-    const psValue = Math.max(grand * 0.05, minEquivalent);
-    // Render as a separate highlighted row before totals
-    const rowHps = 20;
-    if (y + rowHps > maxY){ drawFooter(); __pageNum++; doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; drawHeader(); }
-    let cxps = x;
-    doc.save();
-    // light highlight background across the row
-    doc.rect(x, y, tableW, rowHps).fill(BRAND_BG);
-    doc.fillColor('#0f172a').font(BOLD).fontSize(10);
-    doc.text('#', cxps+4, y+4, { width: cols[0].w-8, align:'right' }); cxps += cols[0].w;
-  const labelPs = 'Optional – Professional Services (Installation & Commissioning)';
-    doc.text(ARS(labelPs), cxps+4, y+4, { width: cols[1].w-8, align:'left' }); cxps += cols[1].w;
-    doc.text('', cxps+4, y+4, { width: cols[2].w-8, align:'left' }); cxps += cols[2].w; // MPN empty
-    doc.text('1', cxps+4, y+4, { width: cols[3].w-8, align:'right' }); cxps += cols[3].w;
-    doc.text(psValue.toFixed(2), cxps+4, y+4, { width: cols[4].w-8, align:'right' }); cxps += cols[4].w;
-    doc.text(psValue.toFixed(2), cxps+4, y+4, { width: cols[5].w-8, align:'right' });
-    doc.restore();
-    // separator line
-    doc.moveTo(x, y+rowHps).lineTo(x+tableW, y+rowHps).stroke('#dbeafe');
-    y += rowHps;
-  }
+    // Optional Professional Services row (excluded from Grand Total)
+    if (prefs.includeProServices){
+      const psValue = Math.max(grand * 0.05, 200);
+      const rowHps = 22;
+      if (y + rowHps > maxY){ drawFooter(); __pageNum++; doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; drawHeader(); }
+      let cxps = x;
+      doc.save();
+      doc.rect(x, y, tableW, rowHps).fill(BRAND_BG);
+      doc.fillColor('#0f172a').font(BOLD).fontSize(10);
+      doc.text('#', cxps+4, y+4, { width: cols[0].w-8, align:'right' }); cxps += cols[0].w;
+      const labelPs = 'Optional – Professional Services (Installation & Commissioning)';
+      doc.text(ARS(labelPs), cxps+4, y+4, { width: cols[1].w-8, align:'left' }); cxps += cols[1].w;
+      doc.text('', cxps+4, y+4, { width: cols[2].w-8, align:'left' }); cxps += cols[2].w;
+      doc.text('1', cxps+4, y+4, { width: cols[3].w-8, align:'right' }); cxps += cols[3].w;
+      doc.text(psValue.toFixed(2), cxps+4, y+4, { width: cols[4].w-8, align:'right' }); cxps += cols[4].w;
+      doc.text(psValue.toFixed(2), cxps+4, y+4, { width: cols[5].w-8, align:'right' });
+      doc.restore();
+      doc.moveTo(x, y+rowHps).lineTo(x+tableW, y+rowHps).stroke('#dbeafe');
+      y += rowHps;
+    }
 
-    // Totals box (right aligned) with stronger contrast
-  y += 12; if (y > maxY) { drawFooter(); __pageNum++; doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; }
+    // Totals box
+    y += 12; if (y > maxY) { drawFooter(); __pageNum++; doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; }
     const tw = 260; const tx = x + tableW - tw; const ty = y;
     doc.roundedRect(tx, ty, tw, 64, 6).stroke('#e5e7eb');
-    // Subtotal row
     doc.font(BOLD).fontSize(11).fillColor('#374151');
     doc.text(ARS('Subtotal'), tx+12, ty+10, { width: tw-140, align:'left' });
     doc.font(BOLD).fillColor('#111827').text(ARS(subtotal.toFixed(2)), tx+12, ty+10, { width: tw-24, align:'right' });
-    // Grand Total highlighted
     const gtY = ty+32;
     doc.rect(tx+1, gtY, tw-2, 28).fill(BRAND_BG).stroke(BRAND_BG);
     doc.fillColor(BRAND_PRIMARY).font(BOLD).fontSize(12).text(ARS('Grand Total'), tx+12, gtY+8, { width: tw-140, align:'left' });
     doc.fillColor('#0f172a').font(BOLD).text(ARS(grand.toFixed(2)), tx+12, gtY+8, { width: tw-24, align:'right' });
 
-  // Note under totals to clarify it is optional and not included
-  y = gtY + 36;
-  doc.moveTo(x, y+10).lineTo(x+tableW, y+10).stroke('#f1f5f9');
-  doc.font(REG).fillColor('#6b7280').fontSize(10).text(ARS(`Note: Professional Services covers installation, configuration, testing, documentation, and handover by a specialized, certified team. It is optional and not included in the Grand Total.`), x, y+16, { width: tableW, align:'left' });
+    // Notes and commercial terms
+    y = gtY + 36;
+    doc.moveTo(x, y+10).lineTo(x+tableW, y+10).stroke('#f1f5f9');
+    doc.font(REG).fillColor('#6b7280').fontSize(10).text(ARS(`Note: Professional Services covers installation, configuration, testing, documentation, and handover by a specialized, certified team. It is optional and not included in the Grand Total.`), x, y+16, { width: tableW, align:'left' });
+    y = y + 48;
+    const ctW = tableW; const ctX = x; const ctY = y;
+    doc.font(BOLD).fillColor('#111827').fontSize(11).text('Commercial Terms', ctX, ctY, { width: ctW, align:'left' });
+    doc.font(REG).fillColor('#111827').fontSize(10);
+    const ctLines = [
+      '• Typical lead time: 10–12 weeks.',
+      '• For urgent requirements, we can provide equivalent alternatives upon client confirmation.',
+      '• Prices are indicative; final pricing will be confirmed after final quantities and project commitment.'
+    ];
+    let cty = doc.y + 4; for (const l of ctLines){ doc.text(l, ctX, cty, { width: ctW }); cty = doc.y + 2; }
 
     // Presentation cards page(s)
     if (Array.isArray(cards) && cards.length){
@@ -861,7 +764,20 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
   __pageNum++;
   doc.addPage();
     doc.font(BOLD).fillColor(BRAND_PRIMARY).fontSize(14).text('About QuickITQuote');
-    doc.moveDown(0.4).font(REG).fillColor('#111827').fontSize(11).text(ARS('Egypt’s First AI-Powered B2B IT Quotation Platform. We deliver accurate BOQs, AI-assisted alternatives, verified solutions, real-time pricing, and local availability across industries (Healthcare, Finance, Education, Government).'));
+    // Optional Algolia stats (brands with >=1000 items and total items)
+    try{
+      const stats = await getAlgoliaCatalogStats?.();
+      if (stats && (stats.total || (stats.primaryBrands && stats.primaryBrands.length))){
+        if (stats.primaryBrands && stats.primaryBrands.length){
+          doc.moveDown(0.4).font(BOLD).fillColor('#111827').fontSize(11).text(ARS('Primary Partners'));
+          doc.font(REG).fillColor('#111827').fontSize(10).text(ARS(stats.primaryBrands.join(', ')));
+        }
+        if (stats.total){
+          doc.moveDown(0.2).font(REG).fillColor('#111827').fontSize(10).text(ARS(`Catalog coverage: ${Number(stats.total).toLocaleString()}+ products indexed.`));
+        }
+      }
+    }catch{}
+    doc.moveDown(0.4).font(REG).fillColor('#111827').fontSize(11).text(ARS('QuickITQuote is Egypt’s first AI-powered B2B IT Quotation Platform. We combine AI with curated catalogs to deliver: accurate BOQs, AI-assisted alternatives, verified solutions, real-time pricing, and local availability. Our service accelerates procurement, reduces risk, and improves budget predictability across sectors (Healthcare, Finance, Education, Government).'));
     doc.moveDown(0.6).font(BOLD).fillColor('#111827').text('Contact');
     doc.font(REG).fillColor('#374151').text('https://quickitquote.com  •  sales@quickitquote.com');
     // Partner logos row if enabled

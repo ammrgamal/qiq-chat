@@ -83,9 +83,17 @@
   function open(url, opts={}){
     lastFocus = document.activeElement;
     if (titleEl) titleEl.textContent = opts.title || '';
-    // apply size variant (default large)
-    dialog.style.width = opts.size === 'sm' ? 'min(760px, 92vw)' : 'min(1100px, 96vw)';
-    dialog.style.height = opts.size === 'sm' ? 'min(70vh, 720px)' : 'min(88vh, 860px)';
+    // apply size variant (sm/md/lg)
+    if (opts.size === 'sm'){
+      dialog.style.width = 'min(760px, 92vw)';
+      dialog.style.height = 'min(70vh, 720px)';
+    } else if (opts.size === 'md'){
+      dialog.style.width = 'min(980px, 95vw)';
+      dialog.style.height = 'min(82vh, 800px)';
+    } else {
+      dialog.style.width = 'min(1100px, 96vw)';
+      dialog.style.height = 'min(88vh, 860px)';
+    }
     // Reset previous handlers/state
     frame.onload = null;
     frame.onerror = null;
