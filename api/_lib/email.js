@@ -93,8 +93,15 @@ export async function sendEmail({ to, subject, html, from, attachments }){
   // Prefer Resend if key present (env or default), else fallback to SendGrid if configured
   const hasResend = Boolean(process.env.RESEND_API_KEY);
   if (hasResend) {
-    const r = await sendWithResend({ to: recipient, subject, html, from, attachments });
+    let r = await sendWithResend({ to: recipient, subject, html, from, attachments });
     if (r.ok) return r;
+    // Try Resend onboarding sender as a fallback if domain is not verified
+    try{
+      if (!String(from||'').includes('onboarding@resend.dev')){
+        const ob = await sendWithResend({ to: recipient, subject, html, from: 'onboarding@resend.dev', attachments });
+        if (ob.ok) return { ...ob, usedOnboarding: true };
+      }
+    }catch{}
     // If Resend fails but SendGrid is configured, try fallback silently
     if (process.env.SENDGRID_API_KEY) {
       const s = await sendWithSendGrid({ to: recipient, subject, html, from, attachments });

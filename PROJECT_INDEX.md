@@ -1,8 +1,8 @@
 # Project Index — qiq-chat
-Generated: 2025-09-25T09:55:30.127Z
+Generated: 2025-09-25T10:20:01.424Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
-- Total size: 957.2 KB
+- Total size: 958.8 KB
 - Files: 92
 - Directories: 19
 - Max depth: 6
@@ -61,13 +61,13 @@ qiq-chat/
 │   ├── algoliaMapper.spec.ts (525 B)
 │   └── pdfTotals.spec.ts (1.3 KB)
 ├── .storage/
-│   ├── activity.json (14.3 KB)
+│   ├── activity.json (14.7 KB)
 │   └── quotations.json (672 B)
 ├── ai/
 │   └── ai-instructions.txt (997 B)
 ├── api/
 │   ├── _lib/
-│   │   ├── email.js (4.4 KB)
+│   │   ├── email.js (4.7 KB)
 │   │   └── jwt.js (1.5 KB)
 │   ├── admin/
 │   │   ├── activity.js (335 B)
@@ -101,7 +101,7 @@ qiq-chat/
 │   ├── hello-leads.js (3.0 KB)
 │   ├── maintenance.js (3.9 KB)
 │   ├── pdf-ai.js (14.4 KB)
-│   ├── quote-email.js (13.8 KB)
+│   ├── quote-email.js (14.1 KB)
 │   ├── quote.js (741 B)
 │   ├── search-health.js (1.2 KB)
 │   ├── search.js (2.7 KB)
@@ -130,7 +130,7 @@ qiq-chat/
 │   │   ├── products-search.js (6.7 KB)
 │   │   ├── quote-actions.js (41.5 KB)
 │   │   ├── quote-form.js (3.0 KB)
-│   │   ├── quote-wizard.js (12.5 KB)
+│   │   ├── quote-wizard.js (13.1 KB)
 │   │   ├── quote.js (75.2 KB)
 │   │   ├── security.js (7.6 KB)
 │   │   ├── toast.js (4.3 KB)

@@ -128,9 +128,19 @@
         window.QiqToast?.error?.('لم يتم إنشاء ملف PDF.');
       }
       if (action === 'custom'){
-  window.QiqToast?.success?.('تم إرسال طلبك وسنتواصل معك قريبًا.');
+        window.QiqToast?.success?.('تم إرسال طلبك وسنتواصل معك قريبًا.');
       } else if (action === 'send') {
-  window.QiqToast?.success?.('تم إرسال العرض إلى بريدك.');
+        const adminOk = !!(j?.email?.admin?.ok);
+        const clientOk = !!(j?.email?.client?.ok);
+        if (clientOk){
+          window.QiqToast?.success?.('تم إرسال العرض إلى بريدك.');
+        } else {
+          const status = j?.email?.client?.status || '';
+          window.QiqToast?.warning?.(`تم إنشاء العرض، لكن تعذر إرسال البريد (${status||'خطأ غير معروف'}). حاول لاحقًا أو تحقق من البريد غير الهام.`);
+        }
+        if (!adminOk){
+          window.QiqToast?.warning?.('تعذر إشعار فريق الإدارة عبر البريد. سيتم المتابعة يدويًا.');
+        }
       }
   }catch(e){ console.warn(e); window.QiqToast?.error?.('تعذر تنفيذ العملية الآن'); }
   }

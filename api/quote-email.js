@@ -294,18 +294,23 @@ export default async function handler(req, res){
     const adminEmail = 'ammr.gamal@gmail.com';
     const subject = `QIQ – ${action||'action'} — ${payload.number||''}`;
     const html = buildSummaryHtml(payload, action);
-    await sendEmail({ to: adminEmail, subject, html, attachments });
+    const adminRes = await sendEmail({ to: adminEmail, subject, html, attachments });
+    if (!adminRes?.ok) {
+      console.warn('Admin email failed', adminRes);
+    }
 
     // If sending to customer ('send' action), email the client too
+    let clientRes = null;
     if (action === 'send'){
       const to = (payload?.client?.email || '').trim();
       if (to) {
-        await sendEmail({ to, subject: `Your quotation ${payload.number||''}`, html, attachments });
+        clientRes = await sendEmail({ to, subject: `Your quotation ${payload.number||''}`, html, attachments });
+        if (!clientRes?.ok) console.warn('Client email failed', clientRes);
       }
     }
 
     // Respond with base64s for download
-    return res.status(200).json({ ok:true, pdfBase64: pdfB64, csvBase64: csvB64 });
+  return res.status(200).json({ ok:true, pdfBase64: pdfB64, csvBase64: csvB64, email: { admin: adminRes||null, client: clientRes } });
   }catch(e){
     console.error('quote-email error', e);
     return res.status(500).json({ ok:false, error:'Server error' });
