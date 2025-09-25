@@ -17,7 +17,7 @@
       return `${n.toFixed(2)} ${cur || ""}`.trim();
     }
   };
-  const getCurrency = () => $("currency").value || "USD";
+  const getCurrency = () => $("currency").value || "EGP";
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const uid = () => Math.random().toString(36).slice(2, 8).toUpperCase();
 
@@ -160,7 +160,7 @@
   logoEl.onerror = () => (logoEl.src = "https://via.placeholder.com/200x80?text=LOGO");
 
   // Prefill currency
-  $("currency").value = state.currency || "USD";
+  $("currency").value = state.currency || "EGP";
   currencyViewEl.textContent = $("currency").value;
 
   // Prefill client/project if saved

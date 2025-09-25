@@ -95,7 +95,7 @@
             ${safePn ? `<span class="qiq-chip">PN: ${safePn}</span>` : ""}
             ${safeBrand ? `<span class="qiq-chip brand">الشركة: ${safeBrand}</span>` : ""}
           </div>
-          <div class="qiq-result-price">${safePrice ? safePrice + ' USD' : "-"}</div>
+          <div class="qiq-result-price">${safePrice ? safePrice + ' ' + (window.QiqSession?.currency||'EGP') : "-"}</div>
           <div class="qiq-result-actions">
             <button class="qiq-btn primary" type="button"
               data-name="${safeName}"
@@ -139,7 +139,7 @@
         <span class="qiq-result-row-name">${safeName}</span>
         <div class="qiq-result-row-details">
           ${safePn ? `<span class="qiq-chip">PN: ${safePn}</span>` : ""}
-          ${safePrice ? `<span class="qiq-chip price">${safePrice} USD</span>` : ""}
+          ${safePrice ? `<span class="qiq-chip price">${safePrice} ${(window.QiqSession?.currency||'EGP')}`+`</span>` : ""}
         </div>
         <div class="qiq-result-row-actions">
           <button class="qiq-btn primary" type="button"

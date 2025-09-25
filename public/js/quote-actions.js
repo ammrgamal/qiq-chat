@@ -20,7 +20,8 @@
   function fmtUSD(v){
     const n = Number(String(v||"").replace(/[^\d.]/g,""));
     if(!isFinite(n)) return "-";
-    try { return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n); }
+      const cur = (window.QiqSession?.currency||'EGP').toUpperCase();
+      try { return new Intl.NumberFormat('en-US',{style:'currency',currency: cur}).format(n); }
     catch { return `$${n.toFixed(2)}`; }
   }
   function numFromPrice(v){
@@ -256,6 +257,7 @@
                 ${pn ? `<span style="background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:12px;color:#374151">PN: ${pn}</span>` : ''}
                 ${manufacturer ? `<span style="background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:12px;color:#374151">${manufacturer}</span>` : ''}
                 ${unitNum? `<span style="background:#eef2ff;border-radius:999px;padding:2px 8px;font-size:12px;color:#3730a3">USD ${unitNum}</span>`:''}
+                ${unitNum? `<span style="background:#eef2ff;border-radius:999px;padding:2px 8px;font-size:12px;color:#3730a3">${(window.QiqSession?.currency||'EGP')} ${unitNum}</span>`:''}
               </div>
               ${link ? `<a href="${link}" target="_blank" rel="noopener" style="color:#2563eb">Open product page</a>` : ''}
             </div>

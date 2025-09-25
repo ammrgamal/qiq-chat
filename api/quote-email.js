@@ -17,7 +17,7 @@ const FONT_DIRS = [
 ];
 const BRAND_PRIMARY = process.env.PDF_BRAND_COLOR || '#3C52B2';
 const BRAND_BG      = process.env.PDF_BG_COLOR || '#EDF0FC';
-const CURRENCY_FALLBACK = process.env.DEFAULT_CURRENCY || 'USD';
+const CURRENCY_FALLBACK = process.env.DEFAULT_CURRENCY || 'EGP';
 
 // ============ Lightweight Arabic shaping helpers (optional deps) ============
 let __arShapeFn = null;
@@ -25,6 +25,20 @@ function hasArabic(s){ return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(S
 function reverseArabicRuns(str){
   // Reverse only Arabic script runs, leave other segments (numbers/latin) intact
   return String(str||'').replace(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+/g, seg => seg.split('').reverse().join(''));
+}
+
+// Translate to English when Arabic is detected (used to keep PDFs English-only)
+async function translateToEnglishIfArabic(text){
+  const s = String(text==null?'':text).trim();
+  if (!hasArabic(s)) return s;
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) return s; // if no key, leave as-is
+  const translated = await openaiComplete({
+    prompt: `Translate to concise business English (no transliteration, no extra commentary):\n\n${s}`,
+    maxTokens: 160,
+    temperature: 0.2
+  });
+  return translated || s;
 }
 async function getArabicShaper(){
   if (__arShapeFn) return __arShapeFn;
@@ -143,6 +157,20 @@ function gatherSystems(payload, items){
   return Array.from(set);
 }
 
+// Centralized spec-sheet link resolver (allows overrides and fallbacks)
+function resolveSpecLink(it){
+  try{
+    const pn = String(it?.pn||'').trim();
+    // Hard override for specific PN requested by admin
+    if (/^CO11192-01F006$/i.test(pn)){
+      return 'https://pub-02eff5b467804c8ebe56285681eba9a0.r2.dev/specs/Commscope/706144-p360-co11192-external.pdf';
+    }
+  }catch{}
+  return ensureString(
+    it?.spec_sheet || it?.link || it?.datasheet || it?.Spec || it?.['Specs Link'] || it?.['Data Sheet'] || it?.DataSheet || ''
+  );
+}
+
 function buildClientLetterHtml(payload, { subtotal, grand }, systems, brands){
   const clientName = (payload?.client?.name || 'Customer').trim();
   const projName = (payload?.project?.name || '').trim();
@@ -191,11 +219,20 @@ async function enrichItemsWithAI(items){
   const out = [];
   for (const it of (items||[])){
     const enriched = { ...it };
-    if (!ensureString(enriched.description)){
+    const existingDesc = ensureString(enriched.description);
+    if (!existingDesc){
       const name = ensureString(enriched.name || enriched.title || enriched.Description || enriched.sku || enriched.pn || 'the product');
       const prompt = `Generate a short, professional product description for ${name} that highlights its use case, benefits, and ideal customer. Keep it concise and business-focused.`;
       const desc = await openaiComplete({ prompt, maxTokens: 120, temperature: 0.4 });
       if (desc) enriched.description_enriched = desc;
+    } else {
+      // If provided description is Arabic, translate it to English for PDF/email use
+      try{
+        if (hasArabic(existingDesc)){
+          const en = await translateToEnglishIfArabic(existingDesc);
+          if (en && en !== existingDesc) enriched.description_en = en;
+        }
+      }catch{}
     }
     out.push(enriched);
   }
@@ -212,6 +249,24 @@ async function buildSolutionDescription({ client, project, items, currency }){
     'Write a concise solution overview (120-180 words) describing the business problem addressed, the proposed solution approach, and expected outcomes. Use clear, executive-friendly language.'
   ].join('\n');
   const text = await openaiComplete({ prompt, maxTokens: 220, temperature: 0.5 });
+  return text || '';
+}
+
+async function buildInstallationScope({ client, project, items }){
+  const lines = (items||[]).slice(0,30).map((it,i)=>{
+    const name = ensureString(it.name||it.description||'-');
+    const pn = ensureString(it.pn||'');
+    const qty = Number(it.qty||1);
+    return `- ${name}${pn?` (${pn})`:''} x${qty}`;
+  }).join('\n');
+  const prompt = [
+    `Client: ${ensureString(client?.name||'')}`,
+    `Project: ${ensureString(project?.name||'')}`,
+    `Items/BOQ:\n${lines}`,
+    '',
+    'Write a detailed installation & commissioning scope tailored to the listed items. Use concise bullet points grouped by phases: Preparation, Installation, Configuration, Testing & Validation, Documentation & Handover, Training (if relevant). Mention standards, best practices, cable management, labeling, safety, and acceptance criteria. Keep it 200-350 words.'
+  ].join('\n');
+  const text = await openaiComplete({ prompt, maxTokens: 380, temperature: 0.4 });
   return text || '';
 }
 
@@ -331,12 +386,13 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     doc.on('error', reject);
     doc.on('end', ()=> resolve(Buffer.concat(chunks)));
 
-    // Fonts (register Arabic if available)
-    const fonts = await ensureArabicFonts(doc);
-    const REG = fonts.reg || 'Helvetica';
-    const BOLD = fonts.bold || 'Helvetica-Bold';
-    const ar = await getArabicShaper();
-    const ARS = (s)=> ar(String(s==null?'':s));
+    // Fonts: keep standard Latin fonts; avoid Arabic shaping entirely per requirements
+    const REG = 'Helvetica';
+    const BOLD = 'Helvetica-Bold';
+    const ARS = (s)=> String(s==null?'':s);
+    const clientNameEn = await translateToEnglishIfArabic(client?.name||'');
+    const projectNameEn = await translateToEnglishIfArabic(project?.name||'');
+    const projectSiteEn = await translateToEnglishIfArabic(project?.site||'');
 
   // Intro page (branding)
   let __logoBuf = null;
@@ -366,8 +422,8 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     doc.roundedRect(startX, startY, boxW, lineH*3.6, 6).stroke('#e5e7eb');
     doc.font(BOLD).fillColor('#111827').text('Client', startX+8, startY+6);
     doc.font(REG).fillColor('#374151');
-    doc.text(ARS(`${ensureString(client?.name||'')}`), startX+8, startY+22);
-    if (client?.email) doc.text(ARS(`${ensureString(client.email)}`), startX+8, startY+36);
+  doc.text(ARS(`${ensureString(clientNameEn)}`), startX+8, startY+22);
+  if (client?.email) doc.text(ARS(`${ensureString(client.email)}`), startX+8, startY+36);
     doc.restore();
     doc.save();
   const px = startX + boxW + 12;
@@ -378,8 +434,8 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
   doc.roundedRect(px, startY, projBoxWidth, lineH*3.6, 6).stroke('#e5e7eb');
   doc.font(BOLD).fillColor('#111827').text('Project', px+8, startY+6);
   doc.font(REG).fillColor('#374151');
-  doc.text(ARS(`${ensureString(project?.name||'')}`), px+8, startY+22, { width: projBoxWidth-16 });
-  if (project?.site) doc.text(ARS(`${ensureString(project.site)}`), px+8, startY+36, { width: projBoxWidth-16 });
+  doc.text(ARS(`${ensureString(projectNameEn||'')}`), px+8, startY+22, { width: projBoxWidth-16 });
+  if (project?.site) doc.text(ARS(`${ensureString(projectSiteEn)}`), px+8, startY+36, { width: projBoxWidth-16 });
     doc.restore();
 
     // Solution overview (bold title if provided like **Title**)
@@ -438,7 +494,7 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
   doc.moveTo(doc.page.margins.left, headY).lineTo(doc.page.width - doc.page.margins.right, headY).stroke('#e5e7eb');
       doc.moveDown(0.6);
       // Dear ... and paragraphs
-      const dear = `Dear ${ensureString(client?.name||'Customer')},`;
+  const dear = `Dear ${ensureString(clientNameEn||'Customer')},`;
       doc.font(REG).fillColor('#111827').fontSize(11).text(ARS(dear));
       doc.moveDown(0.4);
       const p1 = 'I hope you are doing well. I\'m reaching out on behalf of QuickITQuote, Egypt\'s first AI-powered B2B quotation platform. We combine AI with verified catalogs to deliver proposals with exceptional speed, transparency, and consistency.';
@@ -448,11 +504,14 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       doc.text(ARS(p2));
       doc.moveDown(0.6);
       // Info box
-      const bxX = doc.page.margins.left, bxW = doc.page.width - doc.page.margins.left - doc.page.margins.right; let bxY = doc.y; const bxH = 64;
+  const bxX = doc.page.margins.left, bxW = doc.page.width - doc.page.margins.left - doc.page.margins.right; let bxY = doc.y; const bxH = 64;
       doc.roundedRect(bxX, bxY, bxW, bxH, 8).fill('#F3F4F6').stroke('#E5E7EB');
       doc.fillColor('#111827').font(BOLD).fontSize(11).text(ARS(`Proposal Total Amount: ${ensureString(currency)} ${Number(totalsTmp.grand).toFixed(2)}`), bxX+12, bxY+10, { width: bxW-24 });
-      const sys = systemsTmp && systemsTmp.length ? `Proposed Systems: ${systemsTmp.slice(0,6).join(', ')}` : '';
-      const brs = brandsTmp && brandsTmp.length ? `Proposed Brands: ${brandsTmp.slice(0,6).join(', ')}` : '';
+  // Translate systems/brands lines to English if Arabic appears
+  let sys = systemsTmp && systemsTmp.length ? `Proposed Systems: ${systemsTmp.slice(0,6).join(', ')}` : '';
+  let brs = brandsTmp && brandsTmp.length ? `Proposed Brands: ${brandsTmp.slice(0,6).join(', ')}` : '';
+  try{ if (hasArabic(sys)) sys = await translateToEnglishIfArabic(sys); }catch{}
+  try{ if (hasArabic(brs)) brs = await translateToEnglishIfArabic(brs); }catch{}
       if (sys) doc.font(REG).fontSize(10).fillColor('#374151').text(ARS(sys), bxX+12, bxY+28, { width: bxW-24 });
       if (brs) doc.font(REG).fontSize(10).fillColor('#374151').text(ARS(brs), bxX+12, bxY+42, { width: bxW-24 });
       doc.fillColor('#111827');
@@ -462,6 +521,18 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       doc.moveDown(0.6);
       doc.text(ARS('Thank you for considering this opportunity.')); doc.moveDown(0.2);
       doc.text(ARS('Best regards,')); doc.text(ARS('QuickITQuote Team'));
+    }catch{}
+
+    // Installation scope page — page 3
+    drawFooter();
+    __pageNum++;
+    doc.addPage();
+    try{
+      const scopeText = await buildInstallationScope({ client, project, items });
+      doc.font(BOLD).fillColor(BRAND_PRIMARY).fontSize(14).text('Installation & Commissioning Scope', { align:'left' });
+      doc.moveDown(0.4);
+      const body = scopeText || 'Scope will be provided upon request.';
+      doc.font(REG).fillColor('#111827').fontSize(11).text(ARS(body), { align:'left' });
     }catch{}
 
     // Next page (items table)
@@ -541,7 +612,7 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     }
     function drawRow(i, it){
       const qty = Number(it.qty||1); const unit = Number(it.unit_price||it.unit||it.price||0); const line = unit*qty;
-      const desc = ensureString(it.description||it.description_enriched||it.name||'-');
+  const desc = ensureString(it.description_en || it.description || it.description_enriched || it.name || '-');
       const pn = ensureString(it.pn||'');
       const heights = [];
       let descWidth = cols[1].w-8;
@@ -552,10 +623,13 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
         if (imgBuf) { imgH = 48; descWidth -= 52; }
       }
       heights.push(doc.heightOfString(String(i+1), { width: cols[0].w-8 }));
-  const linkUrlForHeight = ensureString(it.spec_sheet || it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '');
-      heights.push(doc.heightOfString(desc + (linkUrlForHeight ? '\n' : ''), { width: descWidth }));
+      const linkUrlForHeight = resolveSpecLink(it);
+      // compute description height (strip inline **bold** markers for metric)
+      const descPlain = desc.replace(/\*\*(.+?)\*\*/g,'$1');
+      const descH = doc.heightOfString(descPlain + (linkUrlForHeight ? '\n' : ''), { width: descWidth });
+      heights.push(descH);
       heights.push(doc.heightOfString(pn, { width: cols[2].w-8 }));
-      const rowH = Math.max(20, ...heights, imgH? imgH+8 : 0);
+      const rowH = Math.max(22, ...heights, imgH? imgH+8 : 0);
       // page break
       if (y + rowH > maxY){
         drawFooter();
@@ -570,25 +644,31 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       // description cell with optional image + optional spec sheet link
       if (imgBuf){
         try{ doc.image(imgBuf, cx+4, y+4, { fit: [46, 46] }); }catch{}
-        renderFormattedText(desc, cx+54, y+4, (cols[1].w-8)-50, true);
-  const linkUrl = ensureString(it.spec_sheet || it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '');
+        const descCellW = (cols[1].w-8)-50;
+        renderFormattedText(desc, cx+54, y+4, descCellW, true);
+        const linkUrl = resolveSpecLink(it);
         if (linkUrl){
-          const ly = y + Math.max(24, Math.min(rowH-14, 44));
+          // place link right under the text block within the cell bounds
+          const descPlain2 = desc.replace(/\*\*(.+?)\*\*/g,'$1');
+          let ly = y + 4 + doc.heightOfString(descPlain2, { width: descCellW }) + 2;
           const lx = cx+54;
+          if (ly > y + rowH - 14) ly = y + rowH - 14;
           const label = 'Spec sheet';
-          doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(label, lx, ly, { width: (cols[1].w-8)-50, align:'left', underline: true });
+          doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(label, lx, ly, { width: descCellW, align:'left', underline: true });
           const wlab = doc.widthOfString(label);
           try{ doc.link(lx, ly, wlab, 12, linkUrl); }catch{}
           doc.fillColor('#111827');
         }
       } else {
-        renderFormattedText(desc, cx+4, y+4, cols[1].w-8, true);
-  const linkUrl = ensureString(it.spec_sheet || it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '');
+        const descCellW = cols[1].w-8;
+        renderFormattedText(desc, cx+4, y+4, descCellW, true);
+        const linkUrl = resolveSpecLink(it);
         if (linkUrl){
-          const ly = y + Math.max(20, Math.min(rowH-14, 40));
+          let ly = y + 4 + doc.heightOfString(desc.replace(/\*\*(.+?)\*\*/g,'$1'), { width: descCellW }) + 2;
           const lx = cx+4;
+          if (ly > y + rowH - 14) ly = y + rowH - 14;
           const label = 'Spec sheet';
-          doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(label, lx, ly, { width: cols[1].w-8, align:'left', underline: true });
+          doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(label, lx, ly, { width: descCellW, align:'left', underline: true });
           const wlab = doc.widthOfString(label);
           try{ doc.link(lx, ly, wlab, 12, linkUrl); }catch{}
           doc.fillColor('#111827');
@@ -640,7 +720,7 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     doc.rect(x, y, tableW, rowHps).fill(BRAND_BG);
     doc.fillColor('#0f172a').font(BOLD).fontSize(10);
     doc.text('#', cxps+4, y+4, { width: cols[0].w-8, align:'right' }); cxps += cols[0].w;
-    const labelPs = 'Optional – Professional Services (5% min $200 eqv.)';
+  const labelPs = 'Optional – Professional Services (Installation & Commissioning)';
     doc.text(ARS(labelPs), cxps+4, y+4, { width: cols[1].w-8, align:'left' }); cxps += cols[1].w;
     doc.text('', cxps+4, y+4, { width: cols[2].w-8, align:'left' }); cxps += cols[2].w; // MPN empty
     doc.text('1', cxps+4, y+4, { width: cols[3].w-8, align:'right' }); cxps += cols[3].w;
@@ -669,7 +749,7 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
   // Note under totals to clarify it is optional and not included
   y = gtY + 36;
   doc.moveTo(x, y+10).lineTo(x+tableW, y+10).stroke('#f1f5f9');
-  doc.font(REG).fillColor('#6b7280').fontSize(10).text(ARS(`Note: Professional Services is optional and not included in the Grand Total.`), x, y+16, { width: tableW, align:'left' });
+  doc.font(REG).fillColor('#6b7280').fontSize(10).text(ARS(`Note: Professional Services covers installation, configuration, testing, documentation, and handover by a specialized, certified team. It is optional and not included in the Grand Total.`), x, y+16, { width: tableW, align:'left' });
 
     // Presentation cards page(s)
     if (Array.isArray(cards) && cards.length){
@@ -767,7 +847,7 @@ function buildSummaryHtml(payload, action){
   return `
     <div style="font-family:Segoe UI,Arial">
       <h3 style="margin:0 0 8px">${titleMap[action]||'Quote Action'} — ${escapeHtml(payload.number||'')}</h3>
-      <div style="margin-bottom:8px;color:#374151">Date: ${escapeHtml(payload.date||'')} • Currency: ${escapeHtml(payload.currency||'USD')}</div>
+  <div style="margin-bottom:8px;color:#374151">Date: ${escapeHtml(payload.date||'')} • Currency: ${escapeHtml(payload.currency||CURRENCY_FALLBACK)}</div>
       <div style="display:flex;gap:16px;margin-bottom:12px">
         <div>
           <div style="font-weight:600">Client</div>
@@ -864,7 +944,16 @@ export default async function handler(req, res){
         const { subtotal, grand } = computeTotals(enrichedItems);
         const systems = gatherSystems(payload, enrichedItems);
         const brands = gatherBrands(enrichedItems);
-        const clientHtml = buildClientLetterHtml({ ...payload, items: enrichedItems }, { subtotal, grand }, systems, brands);
+        // Translate core fields to English if Arabic is detected
+        const nameEn = await translateToEnglishIfArabic(payload?.client?.name||'');
+        const projNameEn = await translateToEnglishIfArabic(payload?.project?.name||'');
+        const projSiteEn = await translateToEnglishIfArabic(payload?.project?.site||'');
+        const systemsEn = await (async ()=>{
+          const out=[]; for(const s of (systems||[])){ out.push(await translateToEnglishIfArabic(s)); } return out; })();
+        const brandsEn = await (async ()=>{
+          const out=[]; for(const s of (brands||[])){ out.push(await translateToEnglishIfArabic(s)); } return out; })();
+        const payloadEn = { ...payload, client: { ...payload.client, name: nameEn }, project: { ...payload.project, name: projNameEn, site: projSiteEn } };
+        const clientHtml = buildClientLetterHtml({ ...payloadEn, items: enrichedItems }, { subtotal, grand }, systemsEn, brandsEn);
         clientRes = await sendEmail({ to, subject: `Your quotation ${payload.number||''}`, html: clientHtml, attachments });
         if (!clientRes?.ok) console.warn('Client email failed', clientRes);
         else { try { console.log('Client email sent', { provider: clientRes.provider, id: clientRes.id||null, usedOnboarding: !!clientRes.usedOnboarding }); } catch {} }

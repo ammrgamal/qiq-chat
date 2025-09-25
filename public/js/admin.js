@@ -180,10 +180,8 @@
         const ai = cfg.ai || {};
         const overrideEl = document.getElementById('cfg-ai-override');
         const allowEl = document.getElementById('cfg-ai-allowed');
-        const preferGammaEl = document.getElementById('cfg-ai-prefer-gamma');
         if (overrideEl) overrideEl.checked = !!ai.autoApproveOverride;
         if (allowEl) allowEl.value = (Array.isArray(ai.allowedDomains) ? ai.allowedDomains.join('\n') : '');
-        if (preferGammaEl) preferGammaEl.checked = !!ai.preferGammaCards;
       }catch{}
       // Surface environment info (AUTO_APPROVE and AI providers) if present
       try{
@@ -226,8 +224,7 @@
         .split(/\r?\n/)
         .map(s=>s.trim())
         .filter(Boolean);
-  const preferGammaEl = document.getElementById('cfg-ai-prefer-gamma');
-  const ai = { autoApproveOverride: !!(overrideEl && overrideEl.checked), allowedDomains, preferGammaCards: !!(preferGammaEl && preferGammaEl.checked) };
+  const ai = { autoApproveOverride: !!(overrideEl && overrideEl.checked), allowedDomains };
       // PDF settings
       const imgs = document.getElementById('cfg-pdf-images');
       const logos = document.getElementById('cfg-pdf-logos');

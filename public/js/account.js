@@ -347,17 +347,17 @@
     }
   }
   
-  function formatCurrency(amount, currency = 'USD') {
+  function formatCurrency(amount, currency = 'EGP') {
     if (typeof amount === 'string') return amount; // Already formatted
     
     try {
       return new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: currency || 'USD',
+  currency: currency || 'EGP',
         maximumFractionDigits: 0
       }).format(amount);
     } catch {
-      return `${amount.toLocaleString()} ${currency || 'USD'}`;
+  return `${amount.toLocaleString()} ${currency || 'EGP'}`;
     }
   }
 

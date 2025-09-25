@@ -131,7 +131,7 @@
             ${pn? `<span class="chip">PN: ${pn}</span>`:''}
             ${brand? `<span class="chip">${brand}</span>`:''}
             ${availability? `<span class="chip" title="Availability">${availability}</span>`:''}
-            ${price!==''? `<span class="chip price">USD ${price}</span>`:''}
+            ${price!==''? `<span class="chip price">${(window.QiqSession?.currency||'EGP')} ${price}</span>`:''}
           </div>
           ${link ? `<a href="${link}" target="_blank" rel="noopener" class="muted">Product page</a>` : ''}
           ${spec ? ` • <a href="${spec}" target="_blank" rel="noopener" class="muted">Spec Sheet</a>` : ''}
@@ -171,7 +171,7 @@
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${link?`<a href="${link}" target="_blank" rel="noopener">${name}</a>`:name}${spec?` <a href="${spec}" target="_blank" rel="noopener" class="muted" title="Spec Sheet" aria-label="Spec Sheet" style="margin-left:6px;display:inline-flex;align-items:center;color:#2563eb"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" style=\"vertical-align:middle\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><polyline points=\"14 2 14 8 20 8\"/><text x=\"7\" y=\"17\" font-size=\"8\" fill=\"#dc2626\" font-family=\"sans-serif\">PDF</text></svg></a>`:''}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${pn}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${brand}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${price!==''?`USD ${price}`:'-'}</td>
+  <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${price!==''?`${(window.QiqSession?.currency||'EGP')} ${price}`:'-'}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:center">
           <button class="btn" type="button"
             data-name="${name}"
@@ -382,7 +382,7 @@
               <div style="font-size:12px;color:#6b7280">${p.sku || ''}</div>
             </div>
             <div style="display:flex;gap:6px;align-items:center">
-              <span class="muted" style="font-size:12px">${p.price?('USD '+p.price):''}</span>
+              <span class="muted" style="font-size:12px">${p.price?((window.QiqSession?.currency||'EGP')+' '+p.price):''}</span>
               <button class="btn" onclick="AddToQuote({name:'${p.name.replace(/'/g,"&#39;")}', price:'${p.price||''}', pn:'${p.sku||''}', image:'${p.image||''}', link:'', manufacturer:'${(p.manufacturer||'').replace(/'/g,"&#39;")}', source:'Favorites'})">Add</button>
             </div>
           </div>`).join('') + '</div>'

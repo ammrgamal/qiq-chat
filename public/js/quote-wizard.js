@@ -31,8 +31,8 @@
         <label>المسمى الوظيفي<input id="wiz-title" type="text" value="${esc(saved?.title||'')}" placeholder="مثال: مدير تقنية المعلومات" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
         <label>العملة
           <select id="wiz-currency" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px">
-            <option value="USD" ${saved?.currency==='USD'?'selected':''}>$ USD</option>
             <option value="EGP" ${saved?.currency==='EGP'?'selected':''}>جنيه EGP</option>
+            <option value="USD" ${saved?.currency==='USD'?'selected':''}>$ USD</option>
             <option value="SAR" ${saved?.currency==='SAR'?'selected':''}>ر.س SAR</option>
           </select>
         </label>
@@ -88,7 +88,7 @@
       action: 'download',
       number,
       date: new Date().toISOString().slice(0,10),
-      currency: client.currency || 'USD',
+  currency: client.currency || 'EGP',
       client: { name: client.name||'', email: client.email||'', contact: client.company||'', title: client.title||'', phone: '' },
       project: { name: client.projectName||'', site: client.projectSite||'' },
       items
@@ -124,7 +124,7 @@
       projectName = byId('wiz-project-name') || projectName;
       projectSite = byId('wiz-project-site') || projectSite;
       title = byId('wiz-title') || title;
-      currency = byId('wiz-currency') || currency || 'USD';
+  currency = byId('wiz-currency') || currency || 'EGP';
     }catch{}
 
     if (!name || !email){ window.QiqToast?.error?.('يرجى إدخال الاسم والبريد الإلكتروني'); return; }
@@ -135,11 +135,11 @@
     payload.action = action;
     payload.client.name = name; payload.client.email = email; payload.client.contact = company; payload.client.title = title;
     payload.project.name = projectName; payload.project.site = projectSite;
-    payload.currency = currency || 'USD';
+  payload.currency = currency || 'EGP';
 
     // Convert unit prices from USD to selected currency using official CDN API
     try{
-      const from = 'usd'; const to = (currency||'USD').toLowerCase();
+  const from = 'usd'; const to = (currency||'EGP').toLowerCase();
       if (to !== 'usd'){
         const res = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${from}.json`);
         let rate = 1; if (res.ok){ const data = await res.json(); rate = Number(data?.[from]?.[to]||1) || 1; }
