@@ -17,10 +17,29 @@ function getFromAddress() {
   return /</.test(email) ? email : `${name} <${email}>`;
 }
 
+function htmlToText(html){
+  try{
+    const s = String(html||'');
+    // very naive text extraction: remove tags and collapse whitespace
+    return s
+      .replace(/<\/(head|style|script)[^>]*>[^]*?<\/(head|style|script)>/gi,'')
+      .replace(/<[^>]+>/g,' ')
+      .replace(/&nbsp;/g,' ')
+      .replace(/&amp;/g,'&')
+      .replace(/&lt;/g,'<')
+      .replace(/&gt;/g,'>')
+      .replace(/&quot;/g,'"')
+      .replace(/&#39;/g,'"')
+      .replace(/\s+/g,' ') 
+      .trim();
+  }catch{ return ''; }
+}
+
 async function sendWithResend({ to, subject, html, from, attachments }){
   const key = process.env.RESEND_API_KEY;
   if (!key) return { ok:false, disabled:true };
   try {
+    const text = htmlToText(html);
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -32,6 +51,7 @@ async function sendWithResend({ to, subject, html, from, attachments }){
         to,
         subject,
         html,
+        text: text || undefined,
         // Resend expects attachments as [{ filename, content, path, type }]
         attachments: Array.isArray(attachments) && attachments.length
           ? attachments.map(a => ({ filename: a.filename, content: a.content, path: a.path, type: a.type }))
@@ -55,6 +75,7 @@ async function sendWithSendGrid({ to, subject, html, from, attachments }){
   const key = process.env.SENDGRID_API_KEY;
   if (!key) return { ok:false, disabled:true };
   try{
+    const text = htmlToText(html);
     const res = await fetch('https://api.sendgrid.com/v3/mail/send',{
       method:'POST',
       headers:{ 'authorization': `Bearer ${key}`, 'content-type':'application/json' },
@@ -62,7 +83,10 @@ async function sendWithSendGrid({ to, subject, html, from, attachments }){
         personalizations:[{ to:[{ email: Array.isArray(to) ? to[0] : to }] }],
         from:{ email: from || getFromAddress() },
         subject,
-        content:[{ type:'text/html', value: html }],
+        content:[
+          ...(text ? [{ type:'text/plain', value: text }] : []),
+          { type:'text/html', value: html }
+        ],
         attachments: Array.isArray(attachments) && attachments.length
           ? attachments.map(a => ({
               filename: a.filename,
