@@ -290,13 +290,15 @@ export default async function handler(req, res){
       { filename: `${baseName}.csv`, type: 'text/csv', content: csvB64 }
     ];
 
-    // Always notify admin
-    const adminEmail = 'ammr.gamal@gmail.com';
+  // Always notify admin (configurable via env with fallback)
+  const adminEmail = process.env.QUOTE_NOTIFY_EMAIL || process.env.EMAIL_TO || 'ammr.gamal@gmail.com';
     const subject = `QIQ – ${action||'action'} — ${payload.number||''}`;
     const html = buildSummaryHtml(payload, action);
     const adminRes = await sendEmail({ to: adminEmail, subject, html, attachments });
     if (!adminRes?.ok) {
       console.warn('Admin email failed', adminRes);
+    } else {
+      try { console.log('Admin email sent', { provider: adminRes.provider, id: adminRes.id||null, usedOnboarding: !!adminRes.usedOnboarding }); } catch {}
     }
 
     // If sending to customer ('send' action), email the client too
@@ -306,6 +308,7 @@ export default async function handler(req, res){
       if (to) {
         clientRes = await sendEmail({ to, subject: `Your quotation ${payload.number||''}`, html, attachments });
         if (!clientRes?.ok) console.warn('Client email failed', clientRes);
+        else { try { console.log('Client email sent', { provider: clientRes.provider, id: clientRes.id||null, usedOnboarding: !!clientRes.usedOnboarding }); } catch {} }
       }
     }
 
