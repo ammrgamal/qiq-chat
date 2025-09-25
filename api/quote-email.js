@@ -112,6 +112,56 @@ function buildCsv(items){
   return header + rows + (rows? '\n' : '');
 }
 
+function computeTotals(items){
+  let subtotal = 0;
+  for (const it of (items||[])){
+    const u = Number(it.unit_price||it.unit||it.price||0);
+    const q = Number(it.qty||1);
+    subtotal += u*q;
+  }
+  return { subtotal, grand: subtotal };
+}
+
+function gatherBrands(items){
+  const set = new Set();
+  for (const it of (items||[])){
+    const b = it.brand || it.manufacturer || it.vendor || it.mfg || it.maker;
+    if (b) set.add(String(b));
+  }
+  return Array.from(set);
+}
+
+function gatherSystems(payload, items){
+  const set = new Set();
+  // Prefer explicit project props if provided
+  const ps = payload?.project?.proposedSystems || payload?.proposedSystems;
+  if (Array.isArray(ps)) ps.forEach(s=> s && set.add(String(s)));
+  for (const it of (items||[])){
+    const s = it.system || it.category || it.type || it.family;
+    if (s) set.add(String(s));
+  }
+  return Array.from(set);
+}
+
+function buildClientLetterHtml(payload, { subtotal, grand }, systems, brands){
+  const clientName = (payload?.client?.name || 'Customer').trim();
+  const projName = (payload?.project?.name || '').trim();
+  const currency = payload?.currency || CURRENCY_FALLBACK;
+  const totalLine = `Proposal Total Amount: ${currency} ${grand.toFixed(2)}`;
+  const sysLine = systems && systems.length ? `Proposed Systems: ${systems.slice(0,6).join(', ')}` : '';
+  const brandLine = brands && brands.length ? `Proposed Brands: ${brands.slice(0,6).join(', ')}` : '';
+  const lines = [totalLine, sysLine, brandLine].filter(Boolean).map(s=>`<div style="margin:2px 0">${escapeHtml(s)}</div>`).join('');
+  return `
+    <div style="font-family:Segoe UI,Arial;line-height:1.5">
+      <div style="font-size:13px;color:#111827">Dear ${escapeHtml(clientName)},</div>
+      <p style="margin:8px 0 10px;color:#111827">I hope you are doing well. I'm reaching out on behalf of <strong>QuickITQuote</strong>, Egypt’s first AI-powered B2B quotation platform. We combine AI with verified catalogs to deliver proposals with exceptional speed, transparency, and consistency.</p>
+      <p style="margin:8px 0 10px;color:#111827">We see a great opportunity to collaborate on <strong>${escapeHtml(projName)}</strong>. We prepared a concise proposal outlining scope, timeline, budget, and deliverables.</p>
+      <div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:8px;padding:10px 12px;margin:10px 0">${lines}</div>
+      <p style="margin:8px 0 10px;color:#111827">We’re committed to delivering a tailored solution to your needs. We’d love to receive your feedback and discuss next steps. Please let us know your availability and preferred communication method.</p>
+      <p style="margin:8px 0 0;color:#111827">Thank you for considering this opportunity.<br/>Best regards,<br/>QuickITQuote Team</p>
+    </div>`;
+}
+
 // OpenAI helper
 async function openaiComplete({ prompt, maxTokens = 180, temperature = 0.5 }){
   const key = process.env.OPENAI_API_KEY;
@@ -373,15 +423,53 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       }catch{}
     };
 
-    // Next page (page 2)
+    // Client letter page (visual/branding) — page 2
     __pageNum = 2;
+    doc.addPage();
+    try{
+      const totalsTmp = computeTotals(items);
+      const systemsTmp = gatherSystems({ client, project }, items);
+      const brandsTmp = gatherBrands(items);
+      // Letter heading
+      doc.font(BOLD).fillColor(BRAND_PRIMARY).fontSize(14).text('Client Letter', { align:'left' });
+      doc.moveDown(0.6);
+      // Dear ... and paragraphs
+      const dear = `Dear ${ensureString(client?.name||'Customer')},`;
+      doc.font(REG).fillColor('#111827').fontSize(11).text(ARS(dear));
+      doc.moveDown(0.4);
+      const p1 = 'I hope you are doing well. I\'m reaching out on behalf of QuickITQuote, Egypt\'s first AI-powered B2B quotation platform. We combine AI with verified catalogs to deliver proposals with exceptional speed, transparency, and consistency.';
+      doc.text(ARS(p1), { align:'left' });
+      doc.moveDown(0.4);
+      const p2 = `We see a great opportunity to collaborate on ${ensureString(project?.name||'your project')}. We prepared a concise proposal outlining scope, timeline, budget, and deliverables.`;
+      doc.text(ARS(p2));
+      doc.moveDown(0.6);
+      // Info box
+      const bxX = doc.page.margins.left, bxW = doc.page.width - doc.page.margins.left - doc.page.margins.right; let bxY = doc.y; const bxH = 64;
+      doc.roundedRect(bxX, bxY, bxW, bxH, 8).fill('#F3F4F6').stroke('#E5E7EB');
+      doc.fillColor('#111827').font(BOLD).fontSize(11).text(ARS(`Proposal Total Amount: ${ensureString(currency)} ${Number(totalsTmp.grand).toFixed(2)}`), bxX+12, bxY+10, { width: bxW-24 });
+      const sys = systemsTmp && systemsTmp.length ? `Proposed Systems: ${systemsTmp.slice(0,6).join(', ')}` : '';
+      const brs = brandsTmp && brandsTmp.length ? `Proposed Brands: ${brandsTmp.slice(0,6).join(', ')}` : '';
+      if (sys) doc.font(REG).fontSize(10).fillColor('#374151').text(ARS(sys), bxX+12, bxY+28, { width: bxW-24 });
+      if (brs) doc.font(REG).fontSize(10).fillColor('#374151').text(ARS(brs), bxX+12, bxY+42, { width: bxW-24 });
+      doc.fillColor('#111827');
+      doc.moveDown(4);
+      const p3 = 'We\'re committed to delivering a tailored solution to your needs. We\'d love to receive your feedback and discuss next steps. Please let us know your availability and preferred communication method.';
+      doc.font(REG).fontSize(11).text(ARS(p3));
+      doc.moveDown(0.6);
+      doc.text(ARS('Thank you for considering this opportunity.')); doc.moveDown(0.2);
+      doc.text(ARS('Best regards,')); doc.text(ARS('QuickITQuote Team'));
+    }catch{}
+
+    // Next page (items table)
+    drawFooter();
+    __pageNum++;
     doc.addPage();
 
   // Items table grid
     const cols = [
       { key:'#', label:'#', w:24 },
-      { key:'desc', label:'Description', w:210 },
-      { key:'pn', label:'MPN/SKU', w:100 },
+      { key:'desc', label:'Description', w:230 },
+      { key:'pn', label:'MPN', w:80 },
       { key:'qty', label:'Qty', w:45 },
       { key:'unit', label:'Unit', w:60 },
       { key:'total', label:'Total', w:70 }
@@ -682,7 +770,12 @@ export default async function handler(req, res){
     if (action === 'send'){
       const to = (payload?.client?.email || '').trim();
       if (to) {
-        clientRes = await sendEmail({ to, subject: `Your quotation ${payload.number||''}`, html, attachments });
+        // Tailored client letter
+        const { subtotal, grand } = computeTotals(enrichedItems);
+        const systems = gatherSystems(payload, enrichedItems);
+        const brands = gatherBrands(enrichedItems);
+        const clientHtml = buildClientLetterHtml({ ...payload, items: enrichedItems }, { subtotal, grand }, systems, brands);
+        clientRes = await sendEmail({ to, subject: `Your quotation ${payload.number||''}`, html: clientHtml, attachments });
         if (!clientRes?.ok) console.warn('Client email failed', clientRes);
         else { try { console.log('Client email sent', { provider: clientRes.provider, id: clientRes.id||null, usedOnboarding: !!clientRes.usedOnboarding }); } catch {} }
       }
