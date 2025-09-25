@@ -197,6 +197,14 @@
             </div>`;
         }
       }catch{}
+      // PDF toggles
+      try{
+        const pdf = cfg.pdf || {};
+        const imgs = document.getElementById('cfg-pdf-images');
+        const logos = document.getElementById('cfg-pdf-logos');
+        if (imgs) imgs.checked = !!pdf.includeItemImages;
+        if (logos) logos.checked = !!pdf.includePartnerLogos;
+      }catch{}
   try{ window.QiqToast?.success?.('تم التحميل'); }catch{}
   }catch(e){ console.warn(e); try{ window.QiqToast?.error?.('تعذر التحميل');}catch{} }
   }
@@ -215,7 +223,11 @@
         .map(s=>s.trim())
         .filter(Boolean);
       const ai = { autoApproveOverride: !!(overrideEl && overrideEl.checked), allowedDomains };
-      const res = await fetch('/api/admin/config', { method:'POST', headers:{ 'Authorization': `Bearer ${adminToken}`, 'content-type':'application/json' }, body: JSON.stringify({ instructions, bundles, ai }) });
+      // PDF settings
+      const imgs = document.getElementById('cfg-pdf-images');
+      const logos = document.getElementById('cfg-pdf-logos');
+      const pdf = { includeItemImages: !!(imgs && imgs.checked), includePartnerLogos: !!(logos && logos.checked) };
+      const res = await fetch('/api/admin/config', { method:'POST', headers:{ 'Authorization': `Bearer ${adminToken}`, 'content-type':'application/json' }, body: JSON.stringify({ instructions, bundles, ai, pdf }) });
       if (!res.ok) throw new Error('HTTP '+res.status);
   try{ window.QiqToast?.success?.('تم الحفظ'); }catch{}
   }catch(e){ console.warn(e); try{ window.QiqToast?.error?.('تعذر الحفظ');}catch{} }

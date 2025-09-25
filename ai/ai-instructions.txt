@@ -8,3 +8,70 @@
 - لا تفتح صفحات خارجية؛ كل شيء يتم داخل نفس الصفحة.
 - إذا لم يكن واثقًا مما يريد، اسأله أسئلة تساعده على تحديد احتياجه (الكمية، المدة، الميزانية، الموقع).
 - عند وجود منتجات مقترحة، اذكر الأهم فقط (3-5) واقترح إضافتها للعرض.
+
+==========================================================
+QuickITQuote PDF Quotation Generator – Instruction Set
+==========================================================
+
+Goal:
+- Generate a rich, professional, branded PDF quotation for IT products using data from Algolia + AI enhancements. Output should match GBG-style proposals and promote QuickITQuote services clearly.
+
+Data Sources:
+- Product Image → image (Algolia)
+- Datasheet PDF → spec_sheet (Algolia)
+- Name, Description, Price → Algolia
+- AI Description → via OpenAI API
+- Optional Brand Brochures → via Gemini API (Google)
+
+Required Sections (per item):
+1) Product Thumbnail Image
+2) Title (from name)
+3) MPN / SKU
+4) Short Description (from Algolia or generated via OpenAI if missing)
+5) Price, Currency
+6) Datasheet Link (use URL from spec_sheet)
+7) AI-generated marketing/solution paragraph (via OpenAI)
+
+PDF Intro Page:
+- Use QuickITQuote.com branding (colors, fonts, logo)
+- Title: “Official Quotation”
+- Subtitle: “Smart IT Procurement powered by QuickITQuote.com”
+- Include:
+	- Quote Number + Date
+	- Client Info (from quote session)
+	- “Prepared by QuickITQuote.com – Egypt’s First AI-Powered B2B IT Quotation Platform”
+
+PDF Closing Page:
+- Company Profile generated from website ai.quickitquote.com:
+	- Summary of services:
+		- Accurate BOQs
+		- AI-assisted alternatives
+		- Verified solutions
+		- Real-time pricing
+		- Local availability
+	- Mention industry coverage: Healthcare, Finance, Education, Government...
+	- Include partner logos if needed (Cisco, Fortinet, Veeam, etc.)
+
+Styling & Layout:
+- Font: Use Roboto or Open Sans
+- Brand Colors: #3C52B2 (primary), #EDF0FC (background)
+- Headings in bold blue
+- Consistent spacing and visual alignment
+- No placeholder or “Unknown” values should appear
+- All units in EGP or USD depending on session
+
+OpenAI Prompt for item description (fallback):
+"Generate a short, professional product description for [Product Name] that highlights its use case, benefits, and ideal customer. Keep it concise and business-focused."
+
+Gemini API Prompt (optional for visuals):
+"Find a high-quality image or brochure for [Product Name] from the official vendor website."
+
+Don’ts:
+- Don’t include empty or 'unknown' fields
+- Don’t show internal fields like objectID or internal cost
+- Don’t repeat identical rows unless quantity > 1
+
+Do:
+- Use Algolia data directly
+- Fallback to OpenAI or Gemini only when necessary
+- Auto-generate full PDF with 1-click (backend endpoint or local script)

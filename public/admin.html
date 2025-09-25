@@ -201,6 +201,18 @@
 cdn.example.org" style="width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:8px"></textarea>
           <div class="muted" style="font-size:12px">إذا تُركت القائمة فارغة سيتم السماح بكل النطاقات عند التفعيل.</div>
         </fieldset>
+        <fieldset style="border:1px solid #e5e7eb;border-radius:8px;padding:8px">
+          <legend style="color:#374151;font-size:12px">PDF Output</legend>
+          <label class="checkbox" style="display:flex;gap:8px;align-items:center">
+            <input type="checkbox" id="cfg-pdf-images" />
+            <span>تضمين صور المنتجات (BOQ Thumbnails)</span>
+          </label>
+          <label class="checkbox" style="display:flex;gap:8px;align-items:center;margin-top:6px">
+            <input type="checkbox" id="cfg-pdf-logos" />
+            <span>إدراج شعارات الشركاء في صفحة الخاتمة</span>
+          </label>
+          <div class="muted" style="font-size:12px">مفعّل افتراضياً في الإنتاج، ويمكن تعطيله هنا.</div>
+        </fieldset>
         <label>تعليمات ديناميكية:</label>
         <textarea id="cfg-instructions" rows="8" style="width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:8px"></textarea>
         <label>Bundles (JSON Array):</label>

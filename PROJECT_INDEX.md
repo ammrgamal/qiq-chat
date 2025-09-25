@@ -1,9 +1,9 @@
 # Project Index — qiq-chat
-Generated: 2025-09-25T11:20:43.140Z
+Generated: 2025-09-25T12:56:28.290Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
-- Total size: 960.0 KB
-- Files: 92
+- Total size: 981.7 KB
+- Files: 93
 - Directories: 19
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
@@ -61,10 +61,10 @@ qiq-chat/
 │   ├── algoliaMapper.spec.ts (525 B)
 │   └── pdfTotals.spec.ts (1.3 KB)
 ├── .storage/
-│   ├── activity.json (14.7 KB)
+│   ├── activity.json (16.9 KB)
 │   └── quotations.json (672 B)
 ├── ai/
-│   └── ai-instructions.txt (997 B)
+│   └── ai-instructions.txt (3.5 KB)
 ├── api/
 │   ├── _lib/
 │   │   ├── email.js (5.4 KB)
@@ -72,7 +72,7 @@ qiq-chat/
 │   ├── admin/
 │   │   ├── activity.js (335 B)
 │   │   ├── admin.js (8.2 KB)
-│   │   ├── config.js (3.1 KB)
+│   │   ├── config.js (3.6 KB)
 │   │   ├── delete-quotation.js (346 B)
 │   │   ├── delete-user.js (336 B)
 │   │   ├── login.js (236 B)
@@ -101,7 +101,7 @@ qiq-chat/
 │   ├── hello-leads.js (3.0 KB)
 │   ├── maintenance.js (3.9 KB)
 │   ├── pdf-ai.js (14.4 KB)
-│   ├── quote-email.js (14.5 KB)
+│   ├── quote-email.js (27.8 KB)
 │   ├── quote.js (741 B)
 │   ├── search-health.js (1.2 KB)
 │   ├── search.js (2.7 KB)
@@ -118,7 +118,7 @@ qiq-chat/
 │   ├── js/
 │   │   ├── account.js (22.9 KB)
 │   │   ├── admin-quotes.js (11.3 KB)
-│   │   ├── admin.js (24.7 KB)
+│   │   ├── admin.js (25.3 KB)
 │   │   ├── analytics.js (19.2 KB)
 │   │   ├── api.js (1.8 KB)
 │   │   ├── experimental-banner.js (2.3 KB)
@@ -139,7 +139,7 @@ qiq-chat/
 │   │   └── user-features.js (11.8 KB)
 │   ├── account.html (2.2 KB)
 │   ├── admin-quotes.html (4.2 KB)
-│   ├── admin.html (12.3 KB)
+│   ├── admin.html (13.1 KB)
 │   ├── index.html (9.3 KB)
 │   ├── logo.png (15.7 KB)
 │   ├── products-list.html (21.5 KB)
@@ -149,7 +149,8 @@ qiq-chat/
 │   ├── generate-index.mjs (5.3 KB)
 │   ├── smoke.ps1 (1.8 KB)
 │   ├── test-hello-leads.mjs (1.1 KB)
-│   └── test-pdf-ai.mjs (1.2 KB)
+│   ├── test-pdf-ai.mjs (1.2 KB)
+│   └── test-quote-email.mjs (1.8 KB)
 ├── src/
 │   └── search/
 │       ├── algoliaSettings.ts (791 B)

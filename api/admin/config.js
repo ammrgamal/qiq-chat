@@ -16,11 +16,12 @@ async function readConfig(){
     const t = await fs.readFile(CONFIG_FILE,'utf8');
     const j = JSON.parse(t);
     // Back-compat shape
-    return Object.assign({ instructions:'', bundles:[], ai:{ autoApproveOverride:false, allowedDomains:[] } }, j, {
-      ai: Object.assign({ autoApproveOverride:false, allowedDomains:[] }, j.ai||{})
+    return Object.assign({ instructions:'', bundles:[], ai:{ autoApproveOverride:false, allowedDomains:[] }, pdf:{ includeItemImages: process.env.NODE_ENV==='production', includePartnerLogos: process.env.NODE_ENV==='production' } }, j, {
+      ai: Object.assign({ autoApproveOverride:false, allowedDomains:[] }, j.ai||{}),
+      pdf: Object.assign({ includeItemImages: process.env.NODE_ENV==='production', includePartnerLogos: process.env.NODE_ENV==='production' }, j.pdf||{})
     });
   }catch{
-    return { instructions:'', bundles:[], ai:{ autoApproveOverride:false, allowedDomains:[] } };
+    return { instructions:'', bundles:[], ai:{ autoApproveOverride:false, allowedDomains:[] }, pdf:{ includeItemImages: process.env.NODE_ENV==='production', includePartnerLogos: process.env.NODE_ENV==='production' } };
   }
 }
 async function writeConfig(cfg){
@@ -33,6 +34,10 @@ async function writeConfig(cfg){
       ai: {
         autoApproveOverride: !!(cfg.ai && cfg.ai.autoApproveOverride),
         allowedDomains: Array.isArray(cfg.ai?.allowedDomains) ? cfg.ai.allowedDomains.map(String) : []
+      },
+      pdf: {
+        includeItemImages: !!(cfg.pdf && cfg.pdf.includeItemImages),
+        includePartnerLogos: !!(cfg.pdf && cfg.pdf.includePartnerLogos)
       }
     };
     await fs.writeFile(CONFIG_FILE, JSON.stringify(out,null,2),'utf8');
@@ -58,8 +63,8 @@ export default async function handler(req, res){
       return res.json({ ...cfg, _env: info });
     }
     if (req.method === 'POST'){
-      const { instructions = '', bundles = [], ai = {} } = req.body || {};
-      const cfg = { instructions: String(instructions||''), bundles: Array.isArray(bundles)? bundles : [], ai };
+      const { instructions = '', bundles = [], ai = {}, pdf = {} } = req.body || {};
+      const cfg = { instructions: String(instructions||''), bundles: Array.isArray(bundles)? bundles : [], ai, pdf };
       const ok = await writeConfig(cfg);
       if (!ok) return res.status(500).json({ error:'Failed to save config' });
       return res.json({ ok:true });
