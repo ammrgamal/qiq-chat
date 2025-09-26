@@ -1,10 +1,10 @@
 # Project Index — qiq-chat
-Generated: 2025-09-25T17:07:51.926Z
+Generated: 2025-09-26T09:04:18.668Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
-- Total size: 1009.5 KB
-- Files: 93
-- Directories: 19
+- Total size: 1.0 MB
+- Files: 97
+- Directories: 20
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
 
@@ -42,6 +42,7 @@ This file is auto-generated. Share it with ChatGPT for context.
   - api/users/verify.js
 - api/agent.js
 - api/boq-parse.js
+- api/bundles-align.js
 - api/chat.js
 - api/compare.js
 - api/hello-leads.js
@@ -61,7 +62,7 @@ qiq-chat/
 │   ├── algoliaMapper.spec.ts (525 B)
 │   └── pdfTotals.spec.ts (1.3 KB)
 ├── .storage/
-│   ├── activity.json (19.1 KB)
+│   ├── activity.json (19.5 KB)
 │   └── quotations.json (672 B)
 ├── ai/
 │   └── ai-instructions.txt (3.5 KB)
@@ -96,7 +97,8 @@ qiq-chat/
 │   │   └── verify.js (1.6 KB)
 │   ├── agent.js (1.5 KB)
 │   ├── boq-parse.js (4.5 KB)
-│   ├── chat.js (9.3 KB)
+│   ├── bundles-align.js (5.5 KB)
+│   ├── chat.js (9.7 KB)
 │   ├── compare.js (2.8 KB)
 │   ├── hello-leads.js (3.0 KB)
 │   ├── maintenance.js (3.9 KB)
@@ -130,8 +132,8 @@ qiq-chat/
 │   │   ├── products-search.js (6.7 KB)
 │   │   ├── quote-actions.js (41.7 KB)
 │   │   ├── quote-form.js (3.0 KB)
-│   │   ├── quote-wizard.js (18.1 KB)
-│   │   ├── quote.js (75.2 KB)
+│   │   ├── quote-wizard.js (22.2 KB)
+│   │   ├── quote.js (73.9 KB)
 │   │   ├── security.js (7.6 KB)
 │   │   ├── toast.js (4.3 KB)
 │   │   ├── ui-chat.js (14.3 KB)
@@ -146,6 +148,10 @@ qiq-chat/
 │   ├── project-instructions.md (4.1 KB)
 │   └── quote.html (21.7 KB)
 ├── scripts/
+│   ├── bundle_miner/
+│   │   ├── main.py (13.5 KB)
+│   │   ├── README.md (2.0 KB)
+│   │   └── requirements.txt (48 B)
 │   ├── generate-index.mjs (5.3 KB)
 │   ├── smoke.ps1 (1.8 KB)
 │   ├── test-hello-leads.mjs (1.1 KB)
@@ -166,7 +172,7 @@ qiq-chat/
 ├── package.json (922 B)
 ├── PROJECT_INDEX.md (12.3 KB)
 ├── quote.html (12.8 KB)
-├── server.js (6.5 KB)
+├── server.js (6.6 KB)
 └── test-flow.html (6.0 KB)
 ```
 

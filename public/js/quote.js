@@ -190,15 +190,7 @@
       if (pendingItems) {
         const items = JSON.parse(pendingItems);
         let imported = 0;
-        const existingKeys = new Set();
-        // Collect any existing keys (just in case)
-        itemsBody.querySelectorAll('tr').forEach(tr=>{
-          const k = (tr.querySelector('.in-pn')?.value || '').toString().toUpperCase();
-          if (k) existingKeys.add(k);
-        });
         items.forEach((item) => {
-          const key = (item.pn || item.sku || '').toString().toUpperCase();
-          if (key && existingKeys.has(key)) return; // skip duplicates
           addRowFromData({
             desc: item.name || "—",
             pn: item.pn || item.sku || "",
@@ -207,7 +199,6 @@
             manufacturer: item.manufacturer || "",
             image: item.image || ''
           });
-          if (key) existingKeys.add(key);
           imported++;
         });
         if (imported > 0) {
@@ -224,14 +215,7 @@
         const staged = stagedRaw ? JSON.parse(stagedRaw) : [];
         if (Array.isArray(staged) && staged.length) {
           let imported = 0;
-          const existing = new Set();
-          itemsBody.querySelectorAll('tr').forEach(tr=>{
-            const k = (tr.querySelector('.in-pn')?.value || '').toString().toUpperCase();
-            if (k) existing.add(k);
-          });
           staged.forEach((it) => {
-            const key = (it.PN_SKU || it.pn || it.sku || '').toString().toUpperCase();
-            if (key && existing.has(key)) return; // avoid duplicates
             addRowFromData({
               desc: it.Name || it.name || "—",
               pn: it.PN_SKU || it.pn || it.sku || "",
@@ -240,7 +224,6 @@
               manufacturer: it.manufacturer || it.brand || it.vendor || "",
               image: it.image || ''
             });
-            if (key) existing.add(key);
             imported++;
           });
           if (imported > 0) {
@@ -329,14 +312,7 @@
       if (!stagedRaw) return showNotification("لا يوجد عناصر Staged مخزنة", "error");
       const staged = JSON.parse(stagedRaw) || [];
       let loadedCount = 0;
-      const existingKeys = new Set(
-        Array.from(itemsBody.querySelectorAll('tr'))
-          .map(tr => (tr.querySelector('.in-pn')?.value || '').toString().toUpperCase())
-          .filter(Boolean)
-      );
       staged.forEach((it) => {
-        const pn = (it.PN_SKU || it.pn || it.sku || '').toString().toUpperCase();
-        if (pn && existingKeys.has(pn)) return; // تجنب التكرار
         addRowFromData({
           desc: it.Name || it.name || "—",
           pn: it.PN_SKU || it.pn || it.sku || "",
@@ -346,7 +322,6 @@
           image: it.image || '',
           spec_sheet: it.spec_sheet || it.specsheet || ''
         });
-        if (pn) existingKeys.add(pn);
         loadedCount++;
       });
       recalcTotals();

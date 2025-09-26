@@ -99,6 +99,8 @@ route('post', '/api/maintenance', 'maintenance.js');
 route('post', '/api/pdf-ai', 'pdf-ai.js');
 route('post', '/api/hello-leads', 'hello-leads.js');
 route('post', '/api/quote-email', 'quote-email.js');
+// Bundles alignment (Algolia-constrained)
+route('post', '/api/bundles/align', 'bundles-align.js');
 // BOQ parse endpoint (upload-less; accepts base64 or text rows)
 route('post', '/api/boq/parse', 'boq-parse.js');
 // Admin config endpoints

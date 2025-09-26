@@ -42,9 +42,37 @@
       </div>`;
   }
 
-  function buildItemsTable(items){
-    if (!items.length) return '<div class="muted">لا توجد عناصر مضافة بعد.</div>';
-    const rows = items.map((it,i)=>{
+  async function aiGroup(items, client){
+    try{
+      const r = await fetch('/api/pdf-ai', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ items: items.map(it=>({ description: it.name||it.description||'', pn: it.pn||it.sku||'', brand: it.brand||it.manufacturer||'' })), client:{ name: client?.name||'' }, project:{ name: client?.projectName||'', site: client?.projectSite||'' } }) });
+      const j = await r.json().catch(()=>({}));
+      const data = j?.data; const prods = Array.isArray(data?.products)? data.products : [];
+      if (!prods.length) return null;
+      // Simple grouping heuristic: group by first word(s) of product title up to 2 tokens
+      const groups = new Map();
+      prods.forEach((p, idx)=>{
+        const raw = String(p.title||'').trim();
+        const key = raw ? raw.split(/[\s·•\-–—\|]+/).slice(0,2).join(' ') : 'Items';
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(idx);
+      });
+      return { groups, products: prods };
+    }catch{ return null; }
+  }
+
+  function fallbackGroup(items){
+    const groups = new Map();
+    items.forEach((it, idx)=>{
+      const k = (it.brand || it.manufacturer || '').trim() || 'Items';
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(idx);
+    });
+    return groups;
+  }
+
+  function renderTable(items, currency, grouping){
+    const rows = (idxList)=> idxList.map((i)=>{
+      const it = items[i];
       const name = esc(it.name || it.description || '-');
       const pn   = esc(it.pn || it.sku || '');
       const qty  = Number(it.qty||1);
@@ -59,17 +87,45 @@
       </tr>`;
     }).join('');
     const t = totals(items);
+    if (!grouping){
+      return `<div class="table-wrap" style="overflow:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">#</th>
+            <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">الوصف</th>
+            <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">الكمية</th>
+            <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">سعر الوحدة</th>
+            <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">الإجمالي</th>
+          </tr></thead>
+          <tbody>${rows(items.map((_,i)=>i))}</tbody>
+        </table>
+        <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+          <div style="color:#6b7280">العملة: <strong id="wiz-currency-view"></strong></div>
+          <div style="text-align:left">
+            <div>Subtotal: <strong>${t.subtotal.toFixed(2)}</strong></div>
+            <div>Grand Total: <strong>${t.grand.toFixed(2)}</strong></div>
+          </div>
+        </div>
+      </div>`;
+    }
+    // Grouped rendering
+    let sections = '';
+    grouping.forEach((idxs, title)=>{
+      const block = `<div style="margin:10px 0 4px;font-weight:600;color:#111827">${esc(title)}</div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:8px">
+          <thead><tr>
+            <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">#</th>
+            <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">الوصف</th>
+            <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">الكمية</th>
+            <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">سعر الوحدة</th>
+            <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">الإجمالي</th>
+          </tr></thead>
+          <tbody>${rows(idxs)}</tbody>
+        </table>`;
+      sections += block;
+    });
     return `<div class="table-wrap" style="overflow:auto">
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr>
-          <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">#</th>
-          <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">الوصف</th>
-          <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">الكمية</th>
-          <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">سعر الوحدة</th>
-          <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">الإجمالي</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
+      ${sections}
       <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
         <div style="color:#6b7280">العملة: <strong id="wiz-currency-view"></strong></div>
         <div style="text-align:left">
@@ -78,6 +134,20 @@
         </div>
       </div>
     </div>`;
+  }
+
+  async function buildItemsTable(items){
+    if (!items.length) return '<div class="muted">لا توجد عناصر مضافة بعد.</div>';
+    const client = loadClient();
+    let grouping = null;
+    const ai = await aiGroup(items, client);
+    if (ai && ai.groups && ai.groups.size){
+      grouping = ai.groups;
+    } else {
+      grouping = fallbackGroup(items);
+    }
+    const cur = client?.currency || 'EGP';
+    return renderTable(items, cur, grouping);
   }
 
   function loadClient(){ try{ return JSON.parse(localStorage.getItem(STATE_KEY)||'null')||{}; }catch{ return {}; } }
@@ -222,7 +292,7 @@
     const items = getItems();
     const saved = loadClient();
     const html1 = buildClientForm(saved);
-  const html2 = buildItemsTable(items);
+    let html2 = '<div class="muted">جارٍ تجهيز العناصر…</div>';
     const steps = `
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <div class="chip ${step===1?'active':''}">1) بيانات العميل</div>
@@ -251,7 +321,7 @@
     }catch{}
 
     // Robustly wire handlers after iframe content is ready (load + retry fallback)
-    function bindInside(){
+    async function bindInside(){
   const frame = window.QiqModal?.getFrame?.();
       const doc = frame?.contentDocument; if (!doc) return false;
       const q = (sel)=> doc.getElementById(sel);
@@ -283,7 +353,22 @@
       on(send, 'click', (e)=>{ e.preventDefault(); handle('send'); });
       on(cust, 'click', (e)=>{ e.preventDefault(); handle('custom'); });
   // removed duplicate back button
-  try{ const cur = (window.parent.localStorage.getItem(STATE_KEY) && JSON.parse(window.parent.localStorage.getItem(STATE_KEY))?.currency) || 'EGP'; const el = doc.getElementById('wiz-currency-view'); if (el) el.textContent = cur; }catch{}
+      try{ const cur = (window.parent.localStorage.getItem(STATE_KEY) && JSON.parse(window.parent.localStorage.getItem(STATE_KEY))?.currency) || 'EGP'; const el = doc.getElementById('wiz-currency-view'); if (el) el.textContent = cur; }catch{}
+      // If step 2, replace placeholder with grouped table asynchronously
+      if (!next && dl && send && cust){
+        try{
+          const itemsNow = getItems();
+          const clientNow = loadClient();
+          const html = await buildItemsTable(itemsNow);
+          const cont = doc.body; if (cont){ window.parent.QiqModal?.setHtml?.(css + steps + html + `
+          <div class=\"wiz-actions\">
+            <button class=\"btn secondary\" id=\"wiz-back\">رجوع</button>
+            <button class=\"btn\" id=\"wiz-download\">Download PDF</button>
+            <button class=\"btn\" id=\"wiz-send\">Send by Email</button>
+            <button class=\"btn\" id=\"wiz-custom\">Get Custom Quote</button>
+          </div>` ); }
+        }catch{}
+      }
   return true;
     }
     // Try bind immediately, then via load, then retries
