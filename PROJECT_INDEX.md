@@ -1,9 +1,9 @@
 # Project Index — qiq-chat
-Generated: 2025-09-26T09:04:18.668Z
+Generated: 2025-09-26T17:34:20.142Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
 - Total size: 1.0 MB
-- Files: 97
+- Files: 98
 - Directories: 20
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
@@ -14,6 +14,7 @@ This file is auto-generated. Share it with ChatGPT for context.
 
 - _lib/
   - api/_lib/email.js
+  - api/_lib/helloleads.js
   - api/_lib/jwt.js
 - admin/
   - api/admin/activity.js
@@ -69,6 +70,7 @@ qiq-chat/
 ├── api/
 │   ├── _lib/
 │   │   ├── email.js (5.4 KB)
+│   │   ├── helloleads.js (2.9 KB)
 │   │   └── jwt.js (1.5 KB)
 │   ├── admin/
 │   │   ├── activity.js (335 B)
@@ -100,7 +102,7 @@ qiq-chat/
 │   ├── bundles-align.js (5.5 KB)
 │   ├── chat.js (9.7 KB)
 │   ├── compare.js (2.8 KB)
-│   ├── hello-leads.js (3.0 KB)
+│   ├── hello-leads.js (855 B)
 │   ├── maintenance.js (3.9 KB)
 │   ├── pdf-ai.js (14.4 KB)
 │   ├── quote-email.js (46.5 KB)
@@ -151,7 +153,7 @@ qiq-chat/
 │   ├── bundle_miner/
 │   │   ├── main.py (13.5 KB)
 │   │   ├── README.md (2.0 KB)
-│   │   └── requirements.txt (48 B)
+│   │   └── requirements.txt (47 B)
 │   ├── generate-index.mjs (5.3 KB)
 │   ├── smoke.ps1 (1.8 KB)
 │   ├── test-hello-leads.mjs (1.1 KB)
@@ -170,7 +172,7 @@ qiq-chat/
 ├── jest.config.cjs (154 B)
 ├── package-lock.json (312.3 KB)
 ├── package.json (922 B)
-├── PROJECT_INDEX.md (12.3 KB)
+├── PROJECT_INDEX.md (12.6 KB)
 ├── quote.html (12.8 KB)
 ├── server.js (6.6 KB)
 └── test-flow.html (6.0 KB)
