@@ -98,6 +98,8 @@ route('post', '/api/compare', 'compare.js');
 route('post', '/api/maintenance', 'maintenance.js');
 route('post', '/api/pdf-ai', 'pdf-ai.js');
 route('post', '/api/hello-leads', 'hello-leads.js');
+route('post', '/api/v0-chat', 'v0-chat.js');
+route('get', '/api/algolia-config', 'algolia-config.js');
 // BOQ parse endpoint (upload-less; accepts base64 or text rows)
 route('post', '/api/boq/parse', 'boq-parse.js');
 // Admin config endpoints
@@ -141,6 +143,7 @@ app.get('/health', (req, res) => {
     (process.env.HELLOLEADS_API_KEY || process.env.HELLO_LEADS_API_KEY || process.env.Heallo_Leads_API_Key_Token)
     && (process.env.HELLOLEADS_LIST_KEY || process.env.HELLO_LEADS_LIST_KEY || process.env.Heallo_Leads_QuickITQuote_List_Key)
   );
+  const hasV0API = Boolean(process.env.V0_API_Key || process.env.V0_API_KEY || process.env.UI_API_Key);
   const fastMode = /^(1|true|yes)$/i.test(String(process.env.FAST_MODE || ''));
   const autoApprove = /^(1|true|yes)$/i.test(String(process.env.AUTO_APPROVE || ''));
   res.json({
@@ -156,6 +159,7 @@ app.get('/health', (req, res) => {
       hasResend,
       emailFrom,
       hasHelloLeads,
+      hasV0API,
       algoliaIndex: process.env.ALGOLIA_INDEX || null
     }
   });
