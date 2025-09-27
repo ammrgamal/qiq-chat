@@ -24,22 +24,54 @@
 
   function buildClientForm(saved){
     return `
-      <div style="display:grid;gap:10px;grid-template-columns:1fr 1fr">
-        <label style="grid-column:1/-1">الاسم الكامل<input id="wiz-name" type="text" value="${esc(saved?.name||'')}" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
-        <label>البريد الإلكتروني<input id="wiz-email" type="email" value="${esc(saved?.email||'')}" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
-        <label>اسم الشركة (اختياري)<input id="wiz-company" type="text" value="${esc(saved?.company||'')}" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
-        <label>المسمى الوظيفي<input id="wiz-title" type="text" value="${esc(saved?.title||'')}" placeholder="مثال: مدير تقنية المعلومات" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
+      <form id="wizard-form" style="display:grid;gap:10px;grid-template-columns:1fr 1fr">
+        <label style="grid-column:1/-1">الاسم الكامل<span style="color:#dc2626"> *</span>
+          <input id="wiz-name" name="name" type="text" value="${esc(saved?.name||'')}" required 
+                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
+        </label>
+        
+        <label>البريد الإلكتروني<span style="color:#dc2626"> *</span>
+          <input id="wiz-email" name="email" type="email" value="${esc(saved?.email||'')}" required 
+                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
+        </label>
+        
+        <label>اسم الشركة (اختياري)
+          <input id="wiz-company" name="company" type="text" value="${esc(saved?.company||'')}" 
+                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
+        </label>
+        
+        <label>المسمى الوظيفي
+          <input id="wiz-title" name="title" type="text" value="${esc(saved?.title||'')}" 
+                 placeholder="مثال: مدير تقنية المعلومات" 
+                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
+        </label>
+        
         <label>العملة
-          <select id="wiz-currency" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px">
+          <select id="wiz-currency" name="currency" 
+                  style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
             <option value="EGP" ${saved?.currency==='EGP'?'selected':''}>جنيه EGP</option>
             <option value="USD" ${saved?.currency==='USD'?'selected':''}>$ USD</option>
             <option value="SAR" ${saved?.currency==='SAR'?'selected':''}>ر.س SAR</option>
           </select>
         </label>
-        <label>اسم المشروع<span style="color:#dc2626"> *</span><input id="wiz-project-name" type="text" value="${esc(saved?.projectName||'')}" placeholder="مثال: مشروع حماية الأجهزة - قسم المبيعات" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
-        <label>الموقع / الجهة (اختياري)<input id="wiz-project-site" type="text" value="${esc(saved?.projectSite||'')}" placeholder="مثال: القاهرة - المقر الرئيسي" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px"></label>
-        <label style="grid-column:1/-1">ملاحظات / متطلبات إضافية<textarea id="wiz-notes" rows="3" style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px">${esc(saved?.notes||'')}</textarea></label>
-      </div>`;
+        
+        <label>اسم المشروع<span style="color:#dc2626"> *</span>
+          <input id="wiz-project-name" name="projectName" type="text" value="${esc(saved?.projectName||'')}" required 
+                 placeholder="مثال: مشروع حماية الأجهزة - قسم المبيعات" 
+                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
+        </label>
+        
+        <label>الموقع / الجهة (اختياري)
+          <input id="wiz-project-site" name="projectSite" type="text" value="${esc(saved?.projectSite||'')}" 
+                 placeholder="مثال: القاهرة - المقر الرئيسي" 
+                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
+        </label>
+        
+        <label style="grid-column:1/-1">ملاحظات / متطلبات إضافية
+          <textarea id="wiz-notes" name="notes" rows="3" 
+                    style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px;resize:vertical">${esc(saved?.notes||'')}</textarea>
+        </label>
+      </form>`;
   }
 
   async function aiGroup(items, client){
@@ -322,31 +354,95 @@
 
     // Robustly wire handlers after iframe content is ready (load + retry fallback)
     async function bindInside(){
-  const frame = window.QiqModal?.getFrame?.();
-      const doc = frame?.contentDocument; if (!doc) return false;
-      const q = (sel)=> doc.getElementById(sel);
+      const frame = window.QiqModal?.getFrame?.();
+      const doc = frame?.contentDocument; 
+      if (!doc) return false;
+      
+      // Enhanced element detection
+      console.log('🔍 Looking for wizard elements in frame...');
       const next = q('wiz-next');
       const back = q('wiz-back');
       const dl   = q('wiz-download');
       const send = q('wiz-send');
       const cust = q('wiz-custom');
-  const back1= null;
+      
+      console.log('🎯 Found elements:', { 
+        next: !!next, 
+        back: !!back, 
+        dl: !!dl, 
+        send: !!send, 
+        cust: !!cust 
+      });
+      
       // If none found yet, not ready
-  if (!next && !dl && !send && !cust && !back) return false;
+      if (!next && !dl && !send && !cust && !back) {
+        console.log('⚠️ No wizard elements found, will retry...');
+        return false;
+      }
+      
       // Helper to avoid double binding
-      const on = (el, type, fn)=>{ if (!el) return; if (el.__bound) return; el.__bound = true; el.addEventListener(type, fn); };
-      on(next, 'click', (e)=>{ e.preventDefault();
+      const on = (el, type, fn)=>{ 
+        if (!el) return; 
+        if (el.__bound) return; 
+        el.__bound = true; 
+        el.addEventListener(type, fn); 
+      };
+      
+      // Enhanced Next button handler with better form validation
+      on(next, 'click', (e)=>{ 
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('Next button clicked - starting validation');
+        
         const name = doc.getElementById('wiz-name')?.value.trim();
         const email= doc.getElementById('wiz-email')?.value.trim();
         const projectName = doc.getElementById('wiz-project-name')?.value.trim();
         const company = doc.getElementById('wiz-company')?.value.trim();
         const notes = doc.getElementById('wiz-notes')?.value.trim();
         const projectSite = doc.getElementById('wiz-project-site')?.value.trim();
-        if (!name || !email){ window.parent.QiqToast?.error?.('\u064a\u0631\u062c\u0649 \u0625\u062f\u062e\u0627\u0644 \u0627\u0644\u0627\u0633\u0645 \u0648\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a'); return; }
-        if (!projectName){ window.parent.QiqToast?.error?.('\u064a\u0631\u062c\u0649 \u0625\u062f\u062e\u0627\u0644 \u0627\u0633\u0645 \u0627\u0644\u0645\u0634\u0631\u0648\u0639'); return; }
+        const title = doc.getElementById('wiz-title')?.value.trim();
+        
+        console.log('Form data:', { name, email, projectName, company });
+        
+        // Validation with better error messages
+        if (!name || name.length < 2) { 
+          window.parent.QiqToast?.error?.('يرجى إدخال الاسم الكامل (حرفين على الأقل)'); 
+          doc.getElementById('wiz-name')?.focus();
+          return; 
+        }
+        
+        if (!email || !email.includes('@')) { 
+          window.parent.QiqToast?.error?.('يرجى إدخال بريد إلكتروني صحيح'); 
+          doc.getElementById('wiz-email')?.focus();
+          return; 
+        }
+        
+        if (!projectName || projectName.length < 3) { 
+          window.parent.QiqToast?.error?.('يرجى إدخال اسم المشروع (3 أحرف على الأقل)'); 
+          doc.getElementById('wiz-project-name')?.focus();
+          return; 
+        }
+        
         const currency = doc.getElementById('wiz-currency')?.value || 'EGP';
-        window.parent.localStorage.setItem(STATE_KEY, JSON.stringify({ name, email, company, notes, projectName, projectSite, currency }));
-        render(2);
+        
+        // Save data and proceed
+        const clientData = { name, email, company, notes, projectName, projectSite, currency, title };
+        
+        try {
+          window.parent.localStorage.setItem(STATE_KEY, JSON.stringify(clientData));
+          console.log('Client data saved successfully');
+          window.parent.QiqToast?.success?.('تم حفظ البيانات بنجاح');
+          
+          // Small delay then proceed to step 2
+          setTimeout(() => {
+            render(2);
+          }, 300);
+          
+        } catch (error) {
+          console.error('Error saving client data:', error);
+          window.parent.QiqToast?.error?.('خطأ في حفظ البيانات');
+        }
       });
       on(back, 'click', (e)=>{ e.preventDefault(); render(1); });
       on(dl,   'click', (e)=>{ e.preventDefault(); handle('download'); });
@@ -369,14 +465,48 @@
           </div>` ); }
         }catch{}
       }
-  return true;
+      return true;
     }
-    // Try bind immediately, then via load, then retries
-    if (!bindInside()){
+    
+    // Enhanced retry mechanism with better logging
+    console.log('🚀 Starting wizard binding process...');
+    
+    if (!bindInside()) {
+      console.log('🔄 Initial binding failed, setting up retries...');
+      
       const frame = window.QiqModal?.getFrame?.();
-      try{ frame?.addEventListener('load', bindInside, { once: true }); }catch{}
-      let tries = 0; const max = 40; // ~4s
-      const iv = setInterval(()=>{ if (bindInside() || ++tries>=max) clearInterval(iv); }, 100);
+      if (frame) {
+        console.log('📄 Frame found, adding load listener...');
+        try { 
+          frame.addEventListener('load', () => {
+            console.log('📄 Frame loaded, attempting to bind...');
+            setTimeout(bindInside, 100);
+          }, { once: true }); 
+        } catch(e) {
+          console.error('❌ Error adding load listener:', e);
+        }
+      } else {
+        console.log('❌ No frame found');
+      }
+      
+      let tries = 0; 
+      const maxTries = 50; // 5 seconds
+      console.log(`🔄 Starting retry loop (max ${maxTries} tries)`);
+      
+      const iv = setInterval(() => { 
+        tries++;
+        console.log(`🔄 Retry attempt ${tries}/${maxTries}`);
+        
+        if (bindInside()) {
+          console.log('✅ Binding successful after', tries, 'attempts');
+          clearInterval(iv);
+        } else if (tries >= maxTries) {
+          console.error('❌ Binding failed after', maxTries, 'attempts');
+          clearInterval(iv);
+        }
+      }, 100);
+    } else {
+      console.log('✅ Initial binding successful');
     }
   }
 

@@ -1,9 +1,9 @@
 # Project Index — qiq-chat
-Generated: 2025-09-27T08:08:57.224Z
+Generated: 2025-09-27T08:26:53.055Z
 
 - Root: C:\Users\essaw\OneDrive - GLOBAL BRANDS\Applications\GitHub\qiq-chat\qiq-chat
 - Total size: 1.3 MB
-- Files: 117
+- Files: 121
 - Directories: 21
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
@@ -122,8 +122,10 @@ qiq-chat/
 │   └── visitor-tracking.js (2.5 KB)
 ├── docs/
 │   ├── algolia_index_reference.md (2.7 KB)
+│   ├── ANTI_REPETITION_SYSTEM.md (6.0 KB)
 │   ├── CATALOG_ENHANCEMENTS_REPORT.md (7.9 KB)
 │   ├── COPILOT_INSTRUCTIONS.md (3.7 KB)
+│   ├── QUOTE_WIZARD_FIXES.md (6.4 KB)
 │   └── SETUP.md (3.1 KB)
 ├── public/
 │   ├── css/
@@ -136,10 +138,11 @@ qiq-chat/
 │   │   ├── admin-quotes.js (11.3 KB)
 │   │   ├── admin.js (25.5 KB)
 │   │   ├── analytics.js (19.2 KB)
+│   │   ├── anti-repetition.js (9.4 KB)
 │   │   ├── api.js (1.8 KB)
 │   │   ├── auto-bundle-generator.js (20.8 KB)
 │   │   ├── catalog-enhancements.js (17.4 KB)
-│   │   ├── chat-state-manager.js (12.7 KB)
+│   │   ├── chat-state-manager.js (13.9 KB)
 │   │   ├── experimental-banner.js (2.3 KB)
 │   │   ├── modal.js (10.3 KB)
 │   │   ├── pdf-admin.js (16.6 KB)
@@ -152,12 +155,13 @@ qiq-chat/
 │   │   ├── products-ui-enhanced.js (22.0 KB)
 │   │   ├── quote-actions.js (41.7 KB)
 │   │   ├── quote-form.js (3.0 KB)
-│   │   ├── quote-wizard.js (22.2 KB)
+│   │   ├── quote-wizard-debug.js (7.7 KB)
+│   │   ├── quote-wizard.js (25.7 KB)
 │   │   ├── quote.js (82.5 KB)
 │   │   ├── security.js (7.6 KB)
 │   │   ├── smart-boq-recommender.js (26.4 KB)
 │   │   ├── toast.js (4.3 KB)
-│   │   ├── ui-chat.js (24.2 KB)
+│   │   ├── ui-chat.js (26.3 KB)
 │   │   ├── ui-enhancements.js (25.0 KB)
 │   │   ├── user-features.js (11.8 KB)
 │   │   └── visitor-tracker.js (10.1 KB)
@@ -196,7 +200,7 @@ qiq-chat/
 ├── jest.config.cjs (154 B)
 ├── package-lock.json (312.3 KB)
 ├── package.json (922 B)
-├── PROJECT_INDEX.md (13.0 KB)
+├── PROJECT_INDEX.md (13.7 KB)
 ├── quote.html (12.8 KB)
 ├── server.js (6.7 KB)
 ├── SMART_SYSTEM_GUIDE.md (11.7 KB)

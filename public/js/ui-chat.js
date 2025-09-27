@@ -272,7 +272,10 @@
     {
       role: "system",
       content:
-        "أنت QuickITQuote Smart Assistant. بالعربي + الإنجليزي: تحدث بطريقة محادثة طبيعية، اجمع بيانات العميل خطوة بخطوة، وقدم اقتراحات ذكية من الكتالوج. تجنب تكرار نفس السؤال أو الرد."
+        "أنت QuickITQuote Smart Assistant. بالعربي + الإنجليزي: تحدث بطريقة محادثة طبيعية، اجمع بيانات العميل خطوة بخطوة، وقدم اقتراحات ذكية من الكتالوج. " +
+        "تجنب تكرار نفس السؤال أو الرد. إذا سألت نفس السؤال مرتين، غير أسلوب الطلب أو أعطي خيارات مختلفة. " +
+        "نوع أسلوبك في الكلام - استخدم أحياناً أسئلة مباشرة، وأحياناً اقتراحات، وأحياناً أمثلة عملية. " +
+        "إذا لم تحصل على إجابة واضحة، اقترح البدائل أو اعرض الكتالوج مباشرة."
     }
   ];
 
@@ -381,14 +384,49 @@
         }
       }
 
-      // عرض الرد النهائي
+      // عرض الرد النهائي مع معالجة التكرار المحسنة
       if (finalReply && finalReply !== '…') {
-        thinking.textContent = finalReply;
         
-        // فحص التكرار
-        if (chatStateManager && chatStateManager.isRepeatedReply(finalReply)) {
-          thinking.textContent += "\n\n🔄 أو هل تريد تفاصيل إضافية حول نقطة معينة؟";
+        let finalOutput = finalReply;
+        
+        // استخدام نظام منع التكرار المتقدم
+        if (window.antiRepetition) {
+          const conversationHistory = chatStateManager ? chatStateManager.getConversationLog() : [];
+          const analysis = window.antiRepetition.analyzeResponse(finalReply, conversationHistory);
+          
+          if (analysis.isRepeated || analysis.contextNeedsSwitch) {
+            console.warn('⚠️ Anti-repetition triggered:', analysis);
+            finalOutput = analysis.suggestedVariation || finalReply;
+            
+            // تسجيل التغيير
+            window.antiRepetition.recordResponse(finalOutput);
+            
+            if (chatStateManager) {
+              chatStateManager.addToConversationLog({
+                type: 'bot',
+                content: finalOutput,
+                timestamp: Date.now(),
+                wasAlternative: true,
+                originalResponse: finalReply
+              });
+            }
+          } else {
+            window.antiRepetition.recordResponse(finalReply);
+          }
+        } 
+        // النظام القديم كـ fallback
+        else if (chatStateManager && chatStateManager.isRepeatedReply(finalReply)) {
+          console.warn('⚠️ Fallback repetition detection');
+          const alternatives = [
+            "دعني أجرب طريقة أخرى. هل يمكنك توضيح احتياجاتك أكثر؟",
+            "ماذا لو بدأنا من زاوية مختلفة؟ ما أهم شيء تبحث عنه؟",
+            "يمكنني عرض الكتالوج مباشرة إذا كان ذلك مفيداً أكثر.",
+            "دعني أقترح عليك حلول عملية بدلاً من الأسئلة."
+          ];
+          finalOutput = alternatives[Math.floor(Math.random() * alternatives.length)];
         }
+        
+        thinking.textContent = finalOutput;
       } else {
         thinking.remove();
       }

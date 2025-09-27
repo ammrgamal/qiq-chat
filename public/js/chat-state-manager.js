@@ -144,8 +144,41 @@ class ChatStateManager {
 
     // فحص هل الرد مكرر
     isRepeatedReply(content) {
-        const hash = this.generateHash(content);
-        return hash === this.lastReplyHash;
+        if (!content || content.length < 10) return false;
+        
+        // تنظيف المحتوى للمقارنة
+        const cleanContent = content
+            .replace(/\n+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .replace(/[^\w\u0600-\u06FF]/g, '')
+            .toLowerCase()
+            .trim();
+            
+        const hash = this.generateHash(cleanContent);
+        
+        // فحص آخر 3 ردود بدلاً من واحد فقط
+        const recentReplies = this.conversationLog
+            .filter(entry => entry.type === 'bot')
+            .slice(-3)
+            .map(entry => this.generateHash(
+                entry.content
+                    .replace(/\n+/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .replace(/[^\w\u0600-\u06FF]/g, '')
+                    .toLowerCase()
+                    .trim()
+            ));
+        
+        const isRepeated = recentReplies.includes(hash);
+        
+        if (isRepeated) {
+            console.warn('⚠️ Detected repeated reply:', content.substring(0, 100));
+        }
+        
+        // حفظ hash الرد الحالي
+        this.lastReplyHash = hash;
+        
+        return isRepeated;
     }
 
     // تحليل مدخلات المستخدم لاستخراج المعلومات
