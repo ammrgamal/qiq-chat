@@ -620,38 +620,41 @@ class InterfaceFixes {
 
     // إصلاح معالج طلب عرض السعر
     fixQuoteWizard() {
-        // البحث عن جميع الأزرار المرتبطة بطلب عرض السعر
-        document.querySelectorAll('button, a').forEach(element => {
-            const text = element.textContent.toLowerCase();
-            const onclick = element.getAttribute('onclick');
-            
-            if (
-                text.includes('طلب عرض سعر') || 
-                text.includes('عرض سعر') ||
-                text.includes('التالي') ||
-                onclick?.includes('openQuoteModal')
-            ) {
-                element.addEventListener('click', (e) => {
+        // إذا كان النظام الرئيسي للمعالج موجوداً، لا تقم بإنشاء معالجة بديلة هنا
+        if (window.QiqQuoteWizard && typeof window.QiqQuoteWizard.open === 'function') {
+            // اربط الأزرار القياسية فقط إن لم تكن مربوطة بالفعل
+            document.querySelectorAll('[data-open-quote-wizard]').forEach(btn => {
+                if (btn.__qiqWizardBound) return;
+                btn.__qiqWizardBound = true;
+                btn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    this.openQuoteWizard();
+                    window.QiqQuoteWizard.open();
                 });
-            }
+            });
+            return;
+        }
+
+        // خلاف ذلك: اربط كوداً احتياطياً بسيطاً لفتح نافذة بديلة
+        document.querySelectorAll('[data-open-quote-wizard]').forEach(element => {
+            if (element.__qiqWizardBound) return;
+            element.__qiqWizardBound = true;
+            element.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.openQuoteWizard();
+            });
         });
     }
 
     // فتح معالج طلب عرض السعر
     openQuoteWizard() {
-        // محاولة استخدام النظام الموجود
-        if (window.openQuoteModal && typeof window.openQuoteModal === 'function') {
-            try {
-                window.openQuoteModal();
-                return;
-            } catch (error) {
-                console.warn('Quote modal function failed:', error);
-            }
+        // استخدم النظام الرئيسي إن وُجد
+        if (window.QiqQuoteWizard && typeof window.QiqQuoteWizard.open === 'function') {
+            return window.QiqQuoteWizard.open();
         }
-        
-        // إنشاء نافذة احتياطية
+        if (window.openQuoteModal && typeof window.openQuoteModal === 'function') {
+            try { return window.openQuoteModal(); } catch (error) { console.warn('Quote modal function failed:', error); }
+        }
+        // إنشاء نافذة احتياطية فقط إذا لم يوجد النظام الرئيسي
         this.createQuoteWizard();
     }
 

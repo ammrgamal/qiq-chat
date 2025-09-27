@@ -70,7 +70,14 @@
                 });
 
                 // Fix for generic "التالي" (Next) buttons
-                var nextButtons = document.querySelectorAll('button[type="submit"], .btn-primary, .qiq-btn.qiq-primary, button:contains("التالي")');
+                // Note: :contains is not a valid CSS selector. Select broad candidates then filter by text.
+                var candidates = Array.from(document.querySelectorAll('button[type="submit"], .btn-primary, .qiq-btn.qiq-primary, button'));
+                var nextButtons = candidates.filter(function(btn){
+                  try{
+                    var txt = (btn.textContent||'').trim();
+                    return btn.id === 'wiz-next' || /^(التالي|next)$/i.test(txt) || /التالي|next/i.test(txt);
+                  }catch{return false;}
+                });
                 nextButtons.forEach(function(btn) {
                   if (btn.__bound) return;
                   btn.__bound = true;

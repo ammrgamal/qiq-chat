@@ -1,5 +1,5 @@
 # Project Index — qiq-chat
-Generated: 2025-09-27T16:40:58.965Z
+Generated: 2025-09-27T17:05:28.466Z
 
 - Root: C:\Users\essaw\OneDrive - GLOBAL BRANDS\Applications\GitHub\qiq-chat\qiq-chat
 - Total size: 1.7 MB
@@ -164,8 +164,8 @@ qiq-chat/
 │   │   ├── error-handler-optimizer.js (15.8 KB)
 │   │   ├── experimental-banner.js (2.3 KB)
 │   │   ├── fixed-chat-system.js (44.0 KB)
-│   │   ├── interface-fixes.js (35.7 KB)
-│   │   ├── modal.js (10.3 KB)
+│   │   ├── interface-fixes.js (36.3 KB)
+│   │   ├── modal.js (10.8 KB)
 │   │   ├── openai-chat-system.js (28.6 KB)
 │   │   ├── pdf-admin.js (16.6 KB)
 │   │   ├── pdf-arabic-fonts.js (1.8 KB)
@@ -178,7 +178,7 @@ qiq-chat/
 │   │   ├── quote-actions.js (42.7 KB)
 │   │   ├── quote-badge.js (1.6 KB)
 │   │   ├── quote-form.js (3.0 KB)
-│   │   ├── quote-wizard-debug.js (7.7 KB)
+│   │   ├── quote-wizard-debug.js (7.9 KB)
 │   │   ├── quote-wizard.js (25.7 KB)
 │   │   ├── quote.js (82.8 KB)
 │   │   ├── security.js (7.6 KB)
@@ -228,7 +228,7 @@ qiq-chat/
 ├── jest.config.cjs (154 B)
 ├── package-lock.json (312.3 KB)
 ├── package.json (922 B)
-├── PROJECT_INDEX.md (14.9 KB)
+├── PROJECT_INDEX.md (15.2 KB)
 ├── quote.html (12.8 KB)
 ├── server.js (6.7 KB)
 ├── SMART_SYSTEM_GUIDE.md (11.7 KB)

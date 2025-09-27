@@ -5,6 +5,11 @@
 
 (function() {
     console.log('🔧 Quote Wizard Debug Script Loaded');
+    // If main wizard exists, do nothing to avoid duplicates
+    if (window.QiqQuoteWizard && typeof window.QiqQuoteWizard.open === 'function') {
+        console.log('ℹ️ Main QiqQuoteWizard detected – debug script will not rebind.');
+        return;
+    }
     
     // فحص وجود العناصر الأساسية
     function checkDependencies() {
@@ -39,7 +44,7 @@
     
     // تحسين معالجة النقر على زر العروض
     function enhanceQuoteWizardButton() {
-        const buttons = document.querySelectorAll('[data-open-quote-wizard]');
+    const buttons = document.querySelectorAll('[data-open-quote-wizard]');
         
         buttons.forEach((button, index) => {
             console.log(`🔘 Found quote wizard button ${index + 1}:`, button);
