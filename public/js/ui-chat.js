@@ -19,6 +19,20 @@
   const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c] || c));
   const PLACEHOLDER_IMG = "https://via.placeholder.com/68?text=IMG";
 
+  // Initialize Smart Systems
+  let chatStateManager = null;
+  let smartRecommender = null;
+  let isInitialized = false;
+
+  function initSmartSystems() {
+    if (!isInitialized && window.ChatStateManager && window.SmartBOQRecommender) {
+      chatStateManager = new ChatStateManager();
+      smartRecommender = new SmartBOQRecommender();
+      isInitialized = true;
+      console.log('🧠 Smart chat systems initialized');
+    }
+  }
+
   function addMsg(role, html, asHtml=false) {
     const wrap = document.createElement("div");
     wrap.className = "qiq-msg " + (role === "user" ? "user" : "bot");
@@ -29,11 +43,23 @@
     wrap.appendChild(bubble);
     win.appendChild(wrap);
     win.scrollTop = win.scrollHeight;
+    
+    // إضافة للسجل إذا كان النظام الذكي متاحاً
+    if (chatStateManager) {
+      chatStateManager.addToLog(role, typeof html === 'string' ? html : bubble.textContent);
+    }
+    
     return bubble;
   }
 
-  // رسالة ترحيب (بدون أزرار داخل الشات)
-  addMsg("bot", "أهلاً بك في QuickITQuote 👋\nاسأل عن منتج أو رخصة، وسنساعدك فوراً.");
+  // رسالة ترحيب ذكية
+  function showWelcomeMessage() {
+    if (chatStateManager && chatStateManager.state.phase === 'initial' && chatStateManager.conversationLog.length === 0) {
+      addMsg("bot", "أهلاً بك في QuickITQuote! 👋\n\nأنا مساعدك الذكي للعثور على أفضل الحلول التقنية.\n\nيمكنك:\n• البحث عن منتج معين (مثل: Kaspersky EDR)\n• وصف احتياجك (مثل: حماية لـ100 مستخدم)\n• طلب مقارنة بين المنتجات\n\nجرب أن تقول: 'عايز حماية Kaspersky لـ50 مستخدم'");
+    } else {
+      addMsg("bot", "أهلاً بك في QuickITQuote 👋\nاسأل عن منتج أو رخصة، وسنساعدك فوراً.");
+    }
+  }
 
   // Sample product data for testing (when API is not available)
   const sampleProducts = [
@@ -246,11 +272,67 @@
     {
       role: "system",
       content:
-        "أنت QuickITQuote Intake Bot. بالعربي + الإنجليزي: اجمع بيانات العميل خطوة بخطوة، واسأله إن كان يريد اقتراحات من الكتالوج. عندما يكتب اسم منتج أو موديل، سنعرض نتائج بحث أسفل رسالتك."
+        "أنت QuickITQuote Smart Assistant. بالعربي + الإنجليزي: تحدث بطريقة محادثة طبيعية، اجمع بيانات العميل خطوة بخطوة، وقدم اقتراحات ذكية من الكتالوج. تجنب تكرار نفس السؤال أو الرد."
     }
   ];
 
-  // إرسال الرسالة (سلوك حواري: لا بحث تلقائي)
+  // دالة الرد الذكي
+  async function generateSmartResponse(userText) {
+    if (!isInitialized) {
+      initSmartSystems();
+    }
+
+    if (chatStateManager && smartRecommender) {
+      // تحليل مدخلات المستخدم
+      const analysis = chatStateManager.analyzeUserInput(userText);
+      const chatAnalysis = smartRecommender.analyzeChatIntent(userText, chatStateManager.state);
+      
+      console.log('🔍 User input analysis:', { analysis, chatAnalysis });
+      
+      // تحديد إذا كان نحتاج بحث في الكتالوج
+      let shouldSearch = false;
+      let searchQuery = '';
+      
+      if (chatAnalysis.confidence > 0.6 || analysis.intent === 'search') {
+        shouldSearch = true;
+        searchQuery = chatAnalysis.searchQueries.length > 0 ? 
+          chatAnalysis.searchQueries[0] : 
+          userText;
+      }
+
+      // إنشاء رد ذكي
+      const smartReply = smartRecommender.generateSmartReply(chatAnalysis, chatStateManager.state);
+      
+      // تحديث حالة المحادثة
+      if (smartReply.suggestedPhase && smartReply.suggestedPhase !== chatStateManager.state.phase) {
+        chatStateManager.updateState({ phase: smartReply.suggestedPhase });
+      }
+
+      // إضافة الأسئلة المطروحة للسجل
+      if (smartReply.followUpQuestions) {
+        smartReply.followUpQuestions.forEach(q => {
+          chatStateManager.addAskedQuestion(q);
+        });
+      }
+
+      return {
+        reply: smartReply.reply,
+        shouldSearch,
+        searchQuery,
+        hits: [] // سيتم ملؤها بالبحث
+      };
+    }
+
+    // Fallback للنظام القديم
+    return {
+      reply: "احكي لي أكثر عن احتياجك عشان أساعدك بأفضل شكل.",
+      shouldSearch: /ابحث|search|عايز|أريد|need|want/.test(userText.toLowerCase()),
+      searchQuery: userText,
+      hits: []
+    };
+  }
+
+  // إرسال الرسالة (سلوك حواري ذكي)
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const userText = (input?.value || "").trim();
@@ -258,21 +340,94 @@
 
     input.value = "";
     addMsg("user", userText);
+
+    // إضافة للسجل
     messages.push({ role: "user", content: userText });
 
-    // 1) رد الشات من الخادم (قد يحتوي على hits اختيارياً)
     const thinking = addMsg("bot", "…");
     sendBtn && (sendBtn.disabled = true);
+    
     try {
-      const resp = await runChat(messages);
-      const showReply = (resp.reply || '').toString();
-      if (showReply && showReply.length < 1200) thinking.textContent = showReply; else thinking.remove();
-      // 2) عرض النتائج فقط لو الخادم رجّع hits
-      if (Array.isArray(resp.hits) && resp.hits.length) {
-        displayProductsInTable(resp.hits, "Matches & alternatives");
-        addMsg("bot", `تم العثور على ${resp.hits.length} نتيجة مطابقة. تحقق من الجدول أدناه.`);
-  try{ if(window.QiqToast?.success) window.QiqToast.success(`عُثر على ${resp.hits.length} عناصر`);}catch{}
+      // محاولة الرد الذكي أولاً
+      const smartResponse = await generateSmartResponse(userText);
+      
+      let finalReply = smartResponse.reply;
+      let hits = [];
+
+      // إذا كان الرد الذكي يقترح البحث، نفذه
+      if (smartResponse.shouldSearch) {
+        console.log('🔍 Smart search triggered:', smartResponse.searchQuery);
+        
+        // البحث في الكتالوج
+        hits = await runSearch(smartResponse.searchQuery, 6);
+        
+        // تحسين الرد بناءً على نتائج البحث
+        if (hits.length > 0) {
+          if (!smartResponse.reply.includes('وجدت') && !smartResponse.reply.includes('found')) {
+            finalReply += `\n\n✨ وجدت ${hits.length} منتجات مناسبة لك. شوف الاقتراحات في الجدول أدناه.`;
+          }
+          
+          // إضافة المنتجات للتوصيات في حالة الشات
+          if (chatStateManager) {
+            chatStateManager.state.recommendations = hits.slice(0, 3).map(h => ({
+              name: h.name,
+              price: h.price,
+              sku: h.sku
+            }));
+            chatStateManager.saveState();
+          }
+        } else if (smartResponse.shouldSearch) {
+          finalReply += "\n\nلم أجد نتائج مطابقة بالضبط، لكن يمكنك تجربة كلمات بحث أخرى أو اطلب مساعدة في تحديد البدائل المناسبة.";
+        }
       }
+
+      // عرض الرد النهائي
+      if (finalReply && finalReply !== '…') {
+        thinking.textContent = finalReply;
+        
+        // فحص التكرار
+        if (chatStateManager && chatStateManager.isRepeatedReply(finalReply)) {
+          thinking.textContent += "\n\n🔄 أو هل تريد تفاصيل إضافية حول نقطة معينة؟";
+        }
+      } else {
+        thinking.remove();
+      }
+
+      // عرض نتائج البحث
+      if (hits.length > 0) {
+        displayProductsInTable(hits, "اقتراحات ذكية");
+        try { 
+          if (window.QiqToast?.success) 
+            window.QiqToast.success(`✨ تم العثور على ${hits.length} اقتراح مناسب`);
+        } catch {}
+      }
+
+      // محاولة Fallback مع الخادم إذا فشل الرد الذكي
+      if (!finalReply || finalReply === '…') {
+        console.log('🔄 Falling back to server chat');
+        const resp = await runChat(messages);
+        const showReply = (resp.reply || '').toString();
+        
+        if (showReply && showReply.length < 1200) {
+          thinking.textContent = showReply;
+        } else {
+          thinking.remove();
+        }
+
+        // عرض نتائج الخادم
+        if (Array.isArray(resp.hits) && resp.hits.length) {
+          displayProductsInTable(resp.hits, "نتائج من الخادم");
+          addMsg("bot", `تم العثور على ${resp.hits.length} نتيجة إضافية.`);
+          try { 
+            if (window.QiqToast?.success) 
+              window.QiqToast.success(`عُثر على ${resp.hits.length} عناصر`);
+          } catch {}
+        }
+      }
+      
+    } catch (error) {
+      console.error('Chat error:', error);
+      thinking.textContent = "عذراً، حدث خطأ. حاول مرة أخرى أو أعد صياغة سؤالك.";
     } finally {
       sendBtn && (sendBtn.disabled = false);
     }
@@ -301,6 +456,89 @@
 
   // أزلنا الأزرار الداخلية واقتراحاتها للحفاظ على بساطة واجهة الشات
 
+  // إضافة زر "إنشاء BOQ ذكي" إذا كان لدينا توصيات
+  function addSmartBOQButton() {
+    if (chatStateManager && chatStateManager.state.recommendations.length > 0) {
+      const existingBtn = document.getElementById('smart-boq-btn');
+      if (!existingBtn) {
+        const btnHTML = `
+          <div style="margin: 10px 0; text-align: center;">
+            <button id="smart-boq-btn" class="qiq-btn qiq-primary" type="button" 
+                    style="background: linear-gradient(135deg, #10b981, #059669); border: none; padding: 12px 24px; border-radius: 8px; color: white; font-weight: 600;">
+              🚀 إنشاء BOQ ذكي من التوصيات
+            </button>
+          </div>
+        `;
+        
+        const lastMsg = win.lastElementChild;
+        if (lastMsg) {
+          lastMsg.insertAdjacentHTML('afterend', btnHTML);
+          
+          document.getElementById('smart-boq-btn').addEventListener('click', async () => {
+            await generateSmartBOQ();
+          });
+        }
+      }
+    }
+  }
+
+  // إنشاء BOQ ذكي من التوصيات
+  async function generateSmartBOQ() {
+    if (!chatStateManager || !smartRecommender) return;
+    
+    try {
+      const boq = await smartRecommender.generatePreliminaryBOQ(
+        chatStateManager.state.userNeeds,
+        chatStateManager.state.recommendations
+      );
+      
+      // إضافة العناصر للجدول
+      if (window.AddMultipleToQuote && boq.items.length > 0) {
+        boq.items.forEach(item => {
+          if (item.source === 'catalog') {
+            // إضافة المنتجات الحقيقية
+            window.AddToQuote({
+              dataset: {
+                name: item.name,
+                price: item.price.toString(),
+                pn: item.sku,
+                source: 'Smart BOQ'
+              }
+            });
+          }
+        });
+        
+        addMsg("bot", `✨ تم إنشاء BOQ ذكي بـ${boq.items.length} عنصر!\n\nالإجمالي التقريبي: ${boq.totalEstimate.toLocaleString()} ${window.QiqSession?.currency || 'EGP'}\n\n${boq.notes.join('\n')}`);
+        
+        try {
+          if (window.QiqToast?.success) 
+            window.QiqToast.success('تم إنشاء BOQ ذكي بنجاح!');
+        } catch {}
+      }
+      
+      // تحديث حالة المحادثة
+      chatStateManager.updateState({ 
+        phase: 'boq_ready',
+        boqRequested: true 
+      });
+      
+    } catch (error) {
+      console.error('Smart BOQ generation error:', error);
+      addMsg("bot", "عذراً، حدث خطأ في إنشاء BOQ. حاول إضافة المنتجات يدوياً.");
+    }
+  }
+
+  // تحديث دالة عرض المنتجات لتتضمن زر BOQ الذكي
+  const originalDisplayProducts = displayProductsInTable;
+  displayProductsInTable = function(hits, source) {
+    originalDisplayProducts(hits, source);
+    
+    // إضافة زر BOQ الذكي بعد عرض المنتجات
+    setTimeout(() => {
+      addSmartBOQButton();
+    }, 100);
+  };
+
   // Delegate: open any details link in modal if available
   document.addEventListener('click', function(ev){
     const a = ev.target.closest('a.qiq-open-modal');
@@ -312,5 +550,35 @@
       if (window.QiqModal) QiqModal.open(url, {title});
       else window.open(url, '_blank', 'noopener');
     }catch{}
+  });
+
+  // تهيئة النظام الذكي عند تحميل الصفحة
+  document.addEventListener('DOMContentLoaded', function() {
+    // انتظار تحميل المكتبات
+    let initAttempts = 0;
+    const maxAttempts = 10;
+    
+    const tryInit = () => {
+      initAttempts++;
+      
+      if (window.ChatStateManager && window.SmartBOQRecommender) {
+        initSmartSystems();
+        showWelcomeMessage();
+        
+        // إعادة تعيين الأنظمة إذا كانت المحادثة جديدة
+        if (chatStateManager && chatStateManager.conversationLog.length === 0) {
+          showWelcomeMessage();
+        }
+        
+        console.log('✅ Smart chat system ready');
+      } else if (initAttempts < maxAttempts) {
+        setTimeout(tryInit, 500);
+      } else {
+        console.warn('⚠️ Smart systems not loaded, using basic mode');
+        showWelcomeMessage();
+      }
+    };
+    
+    tryInit();
   });
 })();

@@ -1,10 +1,10 @@
 # Project Index — qiq-chat
-Generated: 2025-09-27T07:26:08.791Z
+Generated: 2025-09-27T08:08:57.224Z
 
 - Root: C:\Users\essaw\OneDrive - GLOBAL BRANDS\Applications\GitHub\qiq-chat\qiq-chat
-- Total size: 1.1 MB
-- Files: 104
-- Directories: 20
+- Total size: 1.3 MB
+- Files: 117
+- Directories: 21
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
 
@@ -31,6 +31,9 @@ This file is auto-generated. Share it with ChatGPT for context.
   - api/admin/users.js
 - assets/
   - fonts/
+- bundles/
+  - api/bundles/save.js
+  - api/bundles/search.js
 - storage/
   - api/storage/quotations.js
 - users/
@@ -89,6 +92,9 @@ qiq-chat/
 │   │   └── users.js (329 B)
 │   ├── assets/
 │   │   └── fonts/
+│   ├── bundles/
+│   │   ├── save.js (3.5 KB)
+│   │   └── search.js (6.1 KB)
 │   ├── storage/
 │   │   └── quotations.js (4.9 KB)
 │   ├── users/
@@ -116,11 +122,13 @@ qiq-chat/
 │   └── visitor-tracking.js (2.5 KB)
 ├── docs/
 │   ├── algolia_index_reference.md (2.7 KB)
+│   ├── CATALOG_ENHANCEMENTS_REPORT.md (7.9 KB)
 │   ├── COPILOT_INSTRUCTIONS.md (3.7 KB)
 │   └── SETUP.md (3.1 KB)
 ├── public/
 │   ├── css/
-│   │   └── styles.css (14.3 KB)
+│   │   ├── enhanced-catalog.css (11.0 KB)
+│   │   └── styles.css (15.5 KB)
 │   ├── fonts/
 │   │   └── README.txt (361 B)
 │   ├── js/
@@ -129,20 +137,27 @@ qiq-chat/
 │   │   ├── admin.js (25.5 KB)
 │   │   ├── analytics.js (19.2 KB)
 │   │   ├── api.js (1.8 KB)
+│   │   ├── auto-bundle-generator.js (20.8 KB)
+│   │   ├── catalog-enhancements.js (17.4 KB)
+│   │   ├── chat-state-manager.js (12.7 KB)
 │   │   ├── experimental-banner.js (2.3 KB)
-│   │   ├── modal.js (7.7 KB)
+│   │   ├── modal.js (10.3 KB)
 │   │   ├── pdf-admin.js (16.6 KB)
 │   │   ├── pdf-arabic-fonts.js (1.8 KB)
 │   │   ├── performance.js (5.6 KB)
+│   │   ├── product-data-enhancer.js (22.3 KB)
+│   │   ├── product-image-handler.js (14.9 KB)
 │   │   ├── products-search-enhanced.js (23.7 KB)
 │   │   ├── products-search.js (6.7 KB)
+│   │   ├── products-ui-enhanced.js (22.0 KB)
 │   │   ├── quote-actions.js (41.7 KB)
 │   │   ├── quote-form.js (3.0 KB)
 │   │   ├── quote-wizard.js (22.2 KB)
 │   │   ├── quote.js (82.5 KB)
 │   │   ├── security.js (7.6 KB)
+│   │   ├── smart-boq-recommender.js (26.4 KB)
 │   │   ├── toast.js (4.3 KB)
-│   │   ├── ui-chat.js (14.3 KB)
+│   │   ├── ui-chat.js (24.2 KB)
 │   │   ├── ui-enhancements.js (25.0 KB)
 │   │   ├── user-features.js (11.8 KB)
 │   │   └── visitor-tracker.js (10.1 KB)
@@ -151,10 +166,11 @@ qiq-chat/
 │   ├── admin.html (13.4 KB)
 │   ├── index.html (9.4 KB)
 │   ├── logo.png (15.7 KB)
-│   ├── products-list.html (21.5 KB)
+│   ├── products-list.html (23.4 KB)
 │   ├── project-instructions.md (4.1 KB)
 │   ├── quote.html (21.8 KB)
-│   └── test-helloleads.html (16.0 KB)
+│   ├── test-helloleads.html (16.0 KB)
+│   └── test-smart-system.html (21.4 KB)
 ├── scripts/
 │   ├── bundle_miner/
 │   │   ├── main.py (13.5 KB)
@@ -175,14 +191,15 @@ qiq-chat/
 ├── demo-table.html (5.8 KB)
 ├── DEPLOY_GUIDE.md (5.6 KB)
 ├── HELLOLEADS_INTEGRATION.md (6.3 KB)
-├── index.html (8.4 KB)
+├── index.html (9.8 KB)
 ├── index.js (956 B)
 ├── jest.config.cjs (154 B)
 ├── package-lock.json (312.3 KB)
 ├── package.json (922 B)
-├── PROJECT_INDEX.md (12.6 KB)
+├── PROJECT_INDEX.md (13.0 KB)
 ├── quote.html (12.8 KB)
 ├── server.js (6.7 KB)
+├── SMART_SYSTEM_GUIDE.md (11.7 KB)
 └── test-flow.html (6.0 KB)
 ```
 

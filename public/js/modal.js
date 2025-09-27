@@ -43,7 +43,8 @@
             // Attach comparison markdown to parent storage and toast
             window.__parentAttachComparison = function(md){ try{ const att = { kind:'ai-comparison', createdAt: new Date().toISOString(), markdown: String(md||'') };
               window.parent.localStorage.setItem('qiq_attached_comparison', JSON.stringify(att)); window.parent.QiqToast?.success?.('تم إرفاق المقارنة بصفحة العرض'); }catch(e){} };
-            // Wire quote wizard action buttons to parent handler (fallback binding inside iframe)
+            
+            // Enhanced wizard action handlers
             function wireWizard(){
               try{
                 var ids = [
@@ -58,7 +59,8 @@
                   if (!el || el.__bound) return;
                   el.__bound = true;
                   el.addEventListener('click', function(ev){
-                    try{ ev.preventDefault(); }catch{}
+                    try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
+                    console.log('Wizard action triggered:', pair[1]);
                     if (pair[1]==='download') return window.parent.QiqWizardHandle?.('download');
                     if (pair[1]==='send') return window.parent.QiqWizardHandle?.('send');
                     if (pair[1]==='custom') return window.parent.QiqWizardHandle?.('custom');
@@ -66,17 +68,89 @@
                     if (pair[1]==='back0') return window.parent.QiqWizardHandle?.('back-to-step1');
                   });
                 });
-              }catch(e){}
+
+                // Fix for generic "التالي" (Next) buttons
+                var nextButtons = document.querySelectorAll('button[type="submit"], .btn-primary, .qiq-btn.qiq-primary, button:contains("التالي")');
+                nextButtons.forEach(function(btn) {
+                  if (btn.__bound) return;
+                  btn.__bound = true;
+                  btn.style.pointerEvents = 'auto';
+                  btn.style.cursor = 'pointer';
+                  btn.disabled = false;
+                  
+                  btn.addEventListener('click', function(ev) {
+                    try { 
+                      ev.preventDefault(); 
+                      ev.stopPropagation(); 
+                      console.log('Next button clicked:', btn.textContent);
+                      
+                      // Handle form submission
+                      var form = btn.closest('form');
+                      if (form) {
+                        var formData = new FormData(form);
+                        var data = Object.fromEntries(formData.entries());
+                        console.log('Form data:', data);
+                        
+                        // Notify parent about form submission
+                        if (window.parent.QiqWizardHandle) {
+                          window.parent.QiqWizardHandle('form-submit', data);
+                        }
+                      }
+                    } catch(e) {
+                      console.error('Button click error:', e);
+                    }
+                  });
+                });
+
+              }catch(e){
+                console.error('Wire wizard error:', e);
+              }
             }
-            // Try immediately and over a short interval to catch dynamic inserts
+            
+            // Try immediately and over a longer interval
             wireWizard();
-            var __tries = 0; var __iv = setInterval(function(){ if (++__tries>30) return clearInterval(__iv); wireWizard(); }, 100);
-          }catch(e){}
+            var __tries = 0; 
+            var __iv = setInterval(function(){ 
+              if (++__tries>50) return clearInterval(__iv); 
+              wireWizard(); 
+            }, 200);
+            
+            // Also try on DOM changes
+            if (window.MutationObserver) {
+              var observer = new MutationObserver(function() {
+                wireWizard();
+              });
+              observer.observe(document.body, { childList: true, subtree: true });
+            }
+            
+          }catch(e){
+            console.error('Bridge setup error:', e);
+          }
         })();
       <\/script>`;
     return `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8" />
       <base target="_blank" />
-      <style>html,body{height:100%}body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;padding:16px;background:#fff;color:#111;line-height:1.5} .muted{color:#6b7280}</style>
+      <style>
+        html,body{height:100%;margin:0;padding:0}
+        body{font-family:Inter,system-ui,Segoe UI,Arial;padding:16px;background:#fff;color:#111;line-height:1.5} 
+        .muted{color:#6b7280}
+        button, .btn, .qiq-btn {
+          pointer-events: auto !important;
+          cursor: pointer !important;
+          opacity: 1 !important;
+        }
+        button[disabled] {
+          opacity: 0.6 !important;
+          cursor: not-allowed !important;
+        }
+        .modal-content {
+          max-height: none !important;
+          overflow: visible !important;
+        }
+        form {
+          display: block !important;
+        }
+      </style>
     </head><body>${String(innerHtml||'')}${bridge}</body></html>`;
   }
 
