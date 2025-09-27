@@ -1,9 +1,9 @@
 # Project Index — qiq-chat
-Generated: 2025-09-27T13:18:37.663Z
+Generated: 2025-09-27T14:45:40.808Z
 
 - Root: C:\Users\essaw\OneDrive - GLOBAL BRANDS\Applications\GitHub\qiq-chat\qiq-chat
 - Total size: 1.6 MB
-- Files: 133
+- Files: 138
 - Directories: 21
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
@@ -51,13 +51,17 @@ This file is auto-generated. Share it with ChatGPT for context.
 - api/compare.js
 - api/health.js
 - api/hello-leads.js
+- api/helloleads-enhanced.js
 - api/maintenance.js
 - api/pdf-ai.js
 - api/quote-email.js
+- api/quote-wizard-enhanced.js
 - api/quote.js
 - api/search-health.js
 - api/search.js
 - api/special-quote.js
+- api/v0-design.js
+- api/visitor-tracking-enhanced.js
 - api/visitor-tracking.js
 
 ## Tree (truncated)
@@ -112,13 +116,17 @@ qiq-chat/
 │   ├── compare.js (2.8 KB)
 │   ├── health.js (2.2 KB)
 │   ├── hello-leads.js (2.9 KB)
+│   ├── helloleads-enhanced.js (12.9 KB)
 │   ├── maintenance.js (3.9 KB)
 │   ├── pdf-ai.js (14.4 KB)
 │   ├── quote-email.js (52.8 KB)
+│   ├── quote-wizard-enhanced.js (18.9 KB)
 │   ├── quote.js (741 B)
 │   ├── search-health.js (1.2 KB)
 │   ├── search.js (2.7 KB)
 │   ├── special-quote.js (4.0 KB)
+│   ├── v0-design.js (10.9 KB)
+│   ├── visitor-tracking-enhanced.js (9.4 KB)
 │   └── visitor-tracking.js (2.5 KB)
 ├── docs/
 │   ├── algolia_index_reference.md (2.7 KB)
@@ -175,15 +183,16 @@ qiq-chat/
 │   │   ├── ui-chat.js (26.3 KB)
 │   │   ├── ui-enhancements.js (25.0 KB)
 │   │   ├── user-features.js (11.8 KB)
-│   │   └── visitor-tracker.js (10.1 KB)
+│   │   ├── visitor-tracker.js (10.1 KB)
+│   │   └── visitor-tracking-client.js (12.0 KB)
 │   ├── account.html (2.2 KB)
 │   ├── admin-quotes.html (4.2 KB)
 │   ├── admin.html (13.4 KB)
-│   ├── index.html (9.4 KB)
+│   ├── index.html (10.5 KB)
 │   ├── logo.png (15.7 KB)
-│   ├── products-list.html (24.2 KB)
+│   ├── products-list.html (25.3 KB)
 │   ├── project-instructions.md (4.1 KB)
-│   ├── quote.html (21.8 KB)
+│   ├── quote.html (23.0 KB)
 │   ├── test-helloleads.html (16.0 KB)
 │   └── test-smart-system.html (21.4 KB)
 ├── scripts/
@@ -212,7 +221,7 @@ qiq-chat/
 ├── jest.config.cjs (154 B)
 ├── package-lock.json (312.3 KB)
 ├── package.json (922 B)
-├── PROJECT_INDEX.md (13.9 KB)
+├── PROJECT_INDEX.md (14.5 KB)
 ├── quote.html (12.8 KB)
 ├── server.js (6.7 KB)
 ├── SMART_SYSTEM_GUIDE.md (11.7 KB)

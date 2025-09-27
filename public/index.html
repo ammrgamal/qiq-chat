@@ -177,5 +177,36 @@
     window.location.href = '/products-list.html';
   });
   </script>
+  
+  <!-- Enhanced Visitor Tracking Client -->
+  <script src="/js/visitor-tracking-client.js" defer></script>
+  
+  <!-- Professional Design System -->
+  <link rel="stylesheet" href="/css/professional-design.css">
+  
+  <!-- Enhanced Chat System Integration -->
+  <script src="/js/fixed-chat-system.js" defer></script>
+  <script src="/js/interface-fixes.js" defer></script>
+  
+  <!-- Enhanced Analytics and Tracking -->
+  <script>
+    // Initialize enhanced systems for chat page
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize fixed chat system with intelligent responses
+      if (typeof initializeFixedChatSystem === 'function') {
+        initializeFixedChatSystem();
+      }
+      
+      // Initialize visitor tracking for chat interactions
+      if (typeof initializeVisitorTracking === 'function') {
+        initializeVisitorTracking();
+      }
+      
+      // Track chat page view
+      if (typeof trackPageView === 'function') {
+        trackPageView('chat-home', 'Chat Interface');
+      }
+    });
+  </script>
 </body>
 </html>

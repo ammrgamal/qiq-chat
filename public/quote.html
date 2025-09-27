@@ -415,5 +415,39 @@
       }).catch(()=>{});
     })();
   </script>
+  
+  <!-- Enhanced Visitor Tracking Client -->
+  <script src="/js/visitor-tracking-client.js" defer></script>
+  
+  <!-- Professional Design System -->
+  <link rel="stylesheet" href="/css/professional-design.css">
+  
+  <!-- Enhanced Quote Wizard Integration -->
+  <script src="/js/interface-fixes.js" defer></script>
+  <script>
+    // Initialize enhanced quote wizard systems
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize visitor tracking for quote interactions
+      if (typeof initializeVisitorTracking === 'function') {
+        initializeVisitorTracking();
+      }
+      
+      // Initialize interface fixes for quote wizard
+      if (typeof initializeInterfaceFixes === 'function') {
+        initializeInterfaceFixes();
+      }
+      
+      // Track quote page view
+      if (typeof trackPageView === 'function') {
+        trackPageView('quote-wizard', 'Quote Creation');
+      }
+      
+      // Initialize enhanced quote form validation
+      const form = document.querySelector('form');
+      if (form && typeof enhanceQuoteForm === 'function') {
+        enhanceQuoteForm(form);
+      }
+    });
+  </script>
 </body>
 </html>

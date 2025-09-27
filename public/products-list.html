@@ -447,12 +447,45 @@
 	
 	<!-- Enhanced System Scripts -->
 	<script src="/js/advanced-state-manager.js" defer></script>
+	<!-- Enhanced Visitor Tracking Client -->
+	<script src="/js/visitor-tracking-client.js" defer></script>
+	
+	<!-- Professional Design System -->
+	<link rel="stylesheet" href="/css/professional-design.css">
+	
+	<!-- Enhanced API Integration Scripts -->
 	<script src="/js/error-handler-optimizer.js" defer></script>
 	<script src="/js/advanced-form-validator.js" defer></script>
 	<script src="/js/advanced-analytics.js" defer></script>
 	<script src="/js/system-initializer.js" defer></script>
 	<script src="/js/fixed-chat-system.js" defer></script>
 	<script src="/js/interface-fixes.js" defer></script>
+	
+	<!-- Enhanced Visitor Tracking Integration -->
+	<script>
+		// Initialize enhanced systems on page load
+		document.addEventListener('DOMContentLoaded', function() {
+			// Start visitor tracking with enhanced features
+			if (typeof initializeVisitorTracking === 'function') {
+				initializeVisitorTracking();
+			}
+			
+			// Initialize interface fixes for all reported issues
+			if (typeof initializeInterfaceFixes === 'function') {
+				initializeInterfaceFixes();
+			}
+			
+			// Initialize fixed chat system with intelligent responses
+			if (typeof initializeFixedChatSystem === 'function') {
+				initializeFixedChatSystem();
+			}
+			
+			// Track page view for analytics
+			if (typeof trackPageView === 'function') {
+				trackPageView('products-list', 'Product Catalog');
+			}
+		});
+	</script>
 	
 	<!-- Final System Check (must be loaded last) -->
 	<script src="/js/system-final-check.js" defer></script>
