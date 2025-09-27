@@ -182,39 +182,39 @@
   <script src="/js/visitor-tracking-client.js" defer></script>
   
   <!-- OpenAI Chat System Integration -->
+  <script>
+    // Global feature flags to avoid double-binding across chat systems
+    window.QIQ_ENABLE_OPENAI_CHAT = false; // keep OpenAI UI off on this page unless needed
+    window.QIQ_DISABLE_FIXED_CHAT = true;  // disable floating fixed chat on main chat page
+  </script>
   <script src="/js/openai-chat-system.js" defer></script>
   
   <!-- Professional Design System -->
   <link rel="stylesheet" href="/css/professional-design.css">
   
-  <!-- Enhanced Chat System Integration -->
+  <!-- Enhanced Chat System Integration (disabled on main chat page by flag) -->
   <script src="/js/fixed-chat-system.js" defer></script>
   <script src="/js/interface-fixes.js" defer></script>
   <script src="/js/quote-badge.js" defer></script>
   
   <!-- Enhanced Analytics and Tracking -->
   <script>
-    // Initialize enhanced systems for chat page
+    // Initialize enhanced systems for chat page without double-binding
     document.addEventListener('DOMContentLoaded', function() {
-      // Initialize OpenAI Chat System first (priority)
-      if (typeof initializeOpenAIChatSystem === 'function') {
-        initializeOpenAIChatSystem();
-      }
-      
-      // Initialize legacy chat system as fallback
-      if (typeof initializeFixedChatSystem === 'function') {
-        initializeFixedChatSystem();
-      }
-      
-      // Initialize visitor tracking for chat interactions
-      if (typeof initializeVisitorTracking === 'function') {
-        initializeVisitorTracking();
-      }
-      
-      // Track chat page view
-      if (typeof trackPageView === 'function') {
-        trackPageView('chat-home', 'Chat Interface');
-      }
+      try {
+        // Primary chat on this page is ui-chat.js bound to #qiq-form; no extra init needed
+        // OpenAI Chat can be turned on by setting window.QIQ_ENABLE_OPENAI_CHAT = true before load
+        if (window.QIQ_ENABLE_OPENAI_CHAT === true && typeof initializeOpenAIChatSystem === 'function') {
+          initializeOpenAIChatSystem();
+        }
+        // Visitor tracking
+        if (typeof initializeVisitorTracking === 'function') {
+          initializeVisitorTracking();
+        }
+        if (typeof trackPageView === 'function') {
+          trackPageView('chat-home', 'Chat Interface');
+        }
+      } catch (e) { console.warn('Init block error:', e); }
     });
   </script>
 </body>

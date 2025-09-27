@@ -1,5 +1,5 @@
 # Project Index — qiq-chat
-Generated: 2025-09-27T17:05:28.466Z
+Generated: 2025-09-27T17:32:26.631Z
 
 - Root: C:\Users\essaw\OneDrive - GLOBAL BRANDS\Applications\GitHub\qiq-chat\qiq-chat
 - Total size: 1.7 MB
@@ -144,7 +144,7 @@ qiq-chat/
 │   ├── css/
 │   │   ├── enhanced-catalog.css (11.0 KB)
 │   │   ├── professional-design.css (15.2 KB)
-│   │   └── styles.css (15.5 KB)
+│   │   └── styles.css (15.8 KB)
 │   ├── fonts/
 │   │   └── README.txt (361 B)
 │   ├── js/
@@ -163,10 +163,10 @@ qiq-chat/
 │   │   ├── enhanced-ui-components.js (28.6 KB)
 │   │   ├── error-handler-optimizer.js (15.8 KB)
 │   │   ├── experimental-banner.js (2.3 KB)
-│   │   ├── fixed-chat-system.js (44.0 KB)
+│   │   ├── fixed-chat-system.js (45.3 KB)
 │   │   ├── interface-fixes.js (36.3 KB)
 │   │   ├── modal.js (10.8 KB)
-│   │   ├── openai-chat-system.js (28.6 KB)
+│   │   ├── openai-chat-system.js (29.3 KB)
 │   │   ├── pdf-admin.js (16.6 KB)
 │   │   ├── pdf-arabic-fonts.js (1.8 KB)
 │   │   ├── performance.js (5.6 KB)
@@ -179,7 +179,7 @@ qiq-chat/
 │   │   ├── quote-badge.js (1.6 KB)
 │   │   ├── quote-form.js (3.0 KB)
 │   │   ├── quote-wizard-debug.js (7.9 KB)
-│   │   ├── quote-wizard.js (25.7 KB)
+│   │   ├── quote-wizard.js (25.8 KB)
 │   │   ├── quote.js (82.8 KB)
 │   │   ├── security.js (7.6 KB)
 │   │   ├── smart-boq-recommender.js (26.4 KB)
@@ -187,7 +187,7 @@ qiq-chat/
 │   │   ├── system-final-check.js (16.5 KB)
 │   │   ├── system-initializer.js (17.4 KB)
 │   │   ├── toast.js (4.3 KB)
-│   │   ├── ui-chat.js (26.4 KB)
+│   │   ├── ui-chat.js (31.1 KB)
 │   │   ├── ui-enhancements.js (25.0 KB)
 │   │   ├── user-features.js (12.1 KB)
 │   │   ├── visitor-tracker.js (10.1 KB)
@@ -195,7 +195,7 @@ qiq-chat/
 │   ├── account.html (2.2 KB)
 │   ├── admin-quotes.html (4.2 KB)
 │   ├── admin.html (13.4 KB)
-│   ├── index.html (10.8 KB)
+│   ├── index.html (11.2 KB)
 │   ├── logo.png (15.7 KB)
 │   ├── products-list.html (25.5 KB)
 │   ├── project-instructions.md (4.1 KB)

@@ -15,6 +15,18 @@ let currentSession = null;
  * تهيئة نظام الشات المحسن مع OpenAI Assistant
  */
 async function initializeOpenAIChatSystem() {
+    // Respect global toggle and avoid double init
+    if (typeof window !== 'undefined') {
+        if (window.QIQ_ENABLE_OPENAI_CHAT !== true) {
+            console.log('ℹ️ OpenAI Chat is disabled by flag (QIQ_ENABLE_OPENAI_CHAT). Skipping init.');
+            return;
+        }
+        if (window.__OPENAI_CHAT_INITIALIZED) {
+            console.log('ℹ️ OpenAI Chat already initialized.');
+            return;
+        }
+        window.__OPENAI_CHAT_INITIALIZED = true;
+    }
     try {
         // إنشاء thread جديد للمحادثة
         await createChatThread();
@@ -149,7 +161,8 @@ async function sendMessageToOpenAIAssistant(message, userContext = {}) {
 function setupChatEventHandlers() {
     // معالج إرسال الرسائل من الحقل الرئيسي
     const chatInput = document.getElementById('qiq-input');
-    const sendButton = document.getElementById('qiq-send');
+    // دعم كلٍ من id="qiq-send" و class="qiq-send"
+    const sendButton = document.querySelector('#qiq-send, .qiq-send');
     
     if (chatInput && sendButton) {
         // إرسال بالضغط على Enter
@@ -752,11 +765,14 @@ if (typeof window !== 'undefined') {
     window.initializeFixedChatSystem = initializeOpenAIChatSystem;
     
     // Auto-initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeOpenAIChatSystem);
-    } else {
-        // DOM is already loaded
-        setTimeout(initializeOpenAIChatSystem, 100);
+    // Only auto-initialize when explicitly enabled
+    if (window.QIQ_ENABLE_OPENAI_CHAT === true) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeOpenAIChatSystem);
+        } else {
+            // DOM is already loaded
+            setTimeout(initializeOpenAIChatSystem, 100);
+        }
     }
 }
 

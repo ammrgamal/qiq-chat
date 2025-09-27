@@ -357,10 +357,12 @@
       const frame = window.QiqModal?.getFrame?.();
       const doc = frame?.contentDocument; 
       if (!doc) return false;
+      // Safe element getter
+      const q = (id) => { try { return doc.getElementById(id); } catch { return null; } };
       
       // Enhanced element detection
       console.log('🔍 Looking for wizard elements in frame...');
-      const next = q('wiz-next');
+  const next = q('wiz-next');
       const back = q('wiz-back');
       const dl   = q('wiz-download');
       const send = q('wiz-send');

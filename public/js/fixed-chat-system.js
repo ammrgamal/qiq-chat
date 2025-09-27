@@ -5,6 +5,26 @@
 
 class FixedChatSystem {
     constructor() {
+        // Respect global flag to disable this layer when primary chat exists
+        if (typeof window !== 'undefined') {
+            if (window.QIQ_DISABLE_FIXED_CHAT === true) {
+                console.log('ℹ️ FixedChatSystem disabled by flag.');
+                this.isActive = false;
+                return;
+            }
+            // If the primary chat form exists on page, avoid auto init to prevent double-binding
+            if (document.getElementById('qiq-form')) {
+                console.log('ℹ️ Primary chat UI detected (#qiq-form). Skipping FixedChatSystem init.');
+                this.isActive = false;
+                return;
+            }
+            if (window.__FIXED_CHAT_INITIALIZED) {
+                console.log('ℹ️ FixedChatSystem already initialized.');
+                this.isActive = false;
+                return;
+            }
+            window.__FIXED_CHAT_INITIALIZED = true;
+        }
         this.isActive = false;
         this.messages = [];
         this.currentContext = null;
@@ -1113,11 +1133,17 @@ class FixedChatSystem {
 
 // تهيئة النظام
 document.addEventListener('DOMContentLoaded', function() {
-    window.fixedChat = new FixedChatSystem();
-    window.fixedChat.addStyles();
-    
-    // حفظ البيانات عند الإغلاق
-    window.addEventListener('beforeunload', () => {
-        window.fixedChat.saveData();
-    });
+    try {
+        // Initialize only when not disabled and when primary chat is absent
+        if (window.QIQ_DISABLE_FIXED_CHAT === true) return;
+        if (document.getElementById('qiq-form')) return;
+        window.fixedChat = new FixedChatSystem();
+        if (window.fixedChat && typeof window.fixedChat.addStyles === 'function') {
+            window.fixedChat.addStyles();
+        }
+        // حفظ البيانات عند الإغلاق
+        window.addEventListener('beforeunload', () => {
+            try { window.fixedChat && window.fixedChat.saveData && window.fixedChat.saveData(); } catch {}
+        });
+    } catch (e) { console.warn('FixedChat init skipped:', e); }
 });
