@@ -1,9 +1,9 @@
 # Project Index — qiq-chat
-Generated: 2025-09-26T17:38:05.387Z
+Generated: 2025-09-27T07:26:08.791Z
 
-- Root: C:\GitHub\qiq-chat\qiq-chat
-- Total size: 1.0 MB
-- Files: 98
+- Root: C:\Users\essaw\OneDrive - GLOBAL BRANDS\Applications\GitHub\qiq-chat\qiq-chat
+- Total size: 1.1 MB
+- Files: 104
 - Directories: 20
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
@@ -46,6 +46,7 @@ This file is auto-generated. Share it with ChatGPT for context.
 - api/bundles-align.js
 - api/chat.js
 - api/compare.js
+- api/health.js
 - api/hello-leads.js
 - api/maintenance.js
 - api/pdf-ai.js
@@ -54,6 +55,7 @@ This file is auto-generated. Share it with ChatGPT for context.
 - api/search-health.js
 - api/search.js
 - api/special-quote.js
+- api/visitor-tracking.js
 
 ## Tree (truncated)
 
@@ -70,7 +72,7 @@ qiq-chat/
 ├── api/
 │   ├── _lib/
 │   │   ├── email.js (5.4 KB)
-│   │   ├── helloleads.js (2.9 KB)
+│   │   ├── helloleads.js (4.2 KB)
 │   │   └── jwt.js (1.5 KB)
 │   ├── admin/
 │   │   ├── activity.js (335 B)
@@ -102,14 +104,16 @@ qiq-chat/
 │   ├── bundles-align.js (5.5 KB)
 │   ├── chat.js (9.7 KB)
 │   ├── compare.js (2.8 KB)
-│   ├── hello-leads.js (855 B)
+│   ├── health.js (2.2 KB)
+│   ├── hello-leads.js (2.9 KB)
 │   ├── maintenance.js (3.9 KB)
 │   ├── pdf-ai.js (14.4 KB)
-│   ├── quote-email.js (46.5 KB)
+│   ├── quote-email.js (52.8 KB)
 │   ├── quote.js (741 B)
 │   ├── search-health.js (1.2 KB)
 │   ├── search.js (2.7 KB)
-│   └── special-quote.js (4.0 KB)
+│   ├── special-quote.js (4.0 KB)
+│   └── visitor-tracking.js (2.5 KB)
 ├── docs/
 │   ├── algolia_index_reference.md (2.7 KB)
 │   ├── COPILOT_INSTRUCTIONS.md (3.7 KB)
@@ -135,20 +139,22 @@ qiq-chat/
 │   │   ├── quote-actions.js (41.7 KB)
 │   │   ├── quote-form.js (3.0 KB)
 │   │   ├── quote-wizard.js (22.2 KB)
-│   │   ├── quote.js (73.9 KB)
+│   │   ├── quote.js (82.5 KB)
 │   │   ├── security.js (7.6 KB)
 │   │   ├── toast.js (4.3 KB)
 │   │   ├── ui-chat.js (14.3 KB)
 │   │   ├── ui-enhancements.js (25.0 KB)
-│   │   └── user-features.js (11.8 KB)
+│   │   ├── user-features.js (11.8 KB)
+│   │   └── visitor-tracker.js (10.1 KB)
 │   ├── account.html (2.2 KB)
 │   ├── admin-quotes.html (4.2 KB)
 │   ├── admin.html (13.4 KB)
-│   ├── index.html (9.3 KB)
+│   ├── index.html (9.4 KB)
 │   ├── logo.png (15.7 KB)
 │   ├── products-list.html (21.5 KB)
 │   ├── project-instructions.md (4.1 KB)
-│   └── quote.html (21.7 KB)
+│   ├── quote.html (21.8 KB)
+│   └── test-helloleads.html (16.0 KB)
 ├── scripts/
 │   ├── bundle_miner/
 │   │   ├── main.py (13.5 KB)
@@ -167,6 +173,8 @@ qiq-chat/
 ├── .env (76 B)
 ├── .gitignore (71 B)
 ├── demo-table.html (5.8 KB)
+├── DEPLOY_GUIDE.md (5.6 KB)
+├── HELLOLEADS_INTEGRATION.md (6.3 KB)
 ├── index.html (8.4 KB)
 ├── index.js (956 B)
 ├── jest.config.cjs (154 B)
@@ -174,7 +182,7 @@ qiq-chat/
 ├── package.json (922 B)
 ├── PROJECT_INDEX.md (12.6 KB)
 ├── quote.html (12.8 KB)
-├── server.js (6.6 KB)
+├── server.js (6.7 KB)
 └── test-flow.html (6.0 KB)
 ```
 

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار تكامل HelloLeads - QuickITQuote</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background: #1d4ed8;
+        }
+        
+        .success { color: #059669; font-weight: bold; }
+        .error { color: #dc2626; font-weight: bold; }
+        .info { color: #2563eb; font-weight: bold; }
+        
+        .result-box {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+        
+        .status-success { background: #059669; }
+        .status-error { background: #dc2626; }
+        .status-unknown { background: #6b7280; }
+    </style>
+</head>
+<body>
+    <h1>🔧 اختبار تكامل HelloLeads</h1>
+    
+    <div class="test-section">
+        <h2>📊 حالة الاتصالات</h2>
+        <p>فحص حالة الخدمات المختلفة:</p>
+        <button class="test-button" onclick="checkConnectivity()">فحص الاتصالات</button>
+        <div id="connectivity-status"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>👤 اختبار تتبع الزائر</h2>
+        <p>اختبار نظام تتبع بيانات الزوار:</p>
+        <button class="test-button" onclick="testVisitorTracking()">اختبار التتبع</button>
+        <button class="test-button" onclick="showVisitorData()">عرض البيانات</button>
+        <div id="visitor-tracking-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📝 اختبار HelloLeads API</h2>
+        <p>اختبار إرسال lead تجريبي إلى HelloLeads:</p>
+        <button class="test-button" onclick="testHelloLeadsAPI()">إرسال Lead تجريبي</button>
+        <div id="helloleads-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>💰 اختبار كوتيشن كاملة</h2>
+        <p>اختبار إرسال كوتيشن مع بيانات الزائر:</p>
+        <button class="test-button" onclick="testFullQuote()">إرسال كوتيشن تجريبية</button>
+        <div id="quote-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔍 سجل الأحداث</h2>
+        <button class="test-button" onclick="clearLog()">مسح السجل</button>
+        <div id="event-log" class="result-box"></div>
+    </div>
+
+    <!-- Load visitor tracker -->
+    <script src="/js/visitor-tracker.js"></script>
+    
+    <script>
+        let eventLog = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleString('ar-SA');
+            eventLog.push({ timestamp, message, type });
+            updateEventLog();
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function updateEventLog() {
+            const logDiv = document.getElementById('event-log');
+            logDiv.innerHTML = eventLog.map(entry => 
+                `<div class="${entry.type}"><strong>${entry.timestamp}:</strong> ${entry.message}</div>`
+            ).reverse().join('');
+        }
+        
+        function clearLog() {
+            eventLog = [];
+            updateEventLog();
+        }
+        
+        async function checkConnectivity() {
+            log('فحص حالة الاتصالات...', 'info');
+            const statusDiv = document.getElementById('connectivity-status');
+            
+            try {
+                const response = await fetch('/health');
+                const health = await response.json();
+                const env = health.env || {};
+                
+                const services = [
+                    { name: 'HelloLeads', status: env.hasHelloLeads },
+                    { name: 'OpenAI', status: env.hasOpenAI },
+                    { name: 'Resend Email', status: env.hasResend },
+                    { name: 'Gemini', status: env.hasGemini },
+                    { name: 'Algolia', status: env.hasAlgolia }
+                ];
+                
+                const statusHTML = services.map(service => {
+                    const statusClass = service.status ? 'status-success' : 'status-error';
+                    const statusText = service.status ? 'متصل' : 'غير متصل';
+                    return `
+                        <div style="margin: 8px 0;">
+                            <span class="status-indicator ${statusClass}"></span>
+                            <strong>${service.name}:</strong> ${statusText}
+                        </div>
+                    `;
+                }).join('');
+                
+                statusDiv.innerHTML = `<div class="result-box">${statusHTML}</div>`;
+                log('تم فحص حالة الاتصالات بنجاح', 'success');
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="result-box error">خطأ في فحص الاتصالات: ${error.message}</div>`;
+                log(`خطأ في فحص الاتصالات: ${error.message}`, 'error');
+            }
+        }
+        
+        function testVisitorTracking() {
+            log('اختبار نظام تتبع الزوار...', 'info');
+            const resultDiv = document.getElementById('visitor-tracking-result');
+            
+            if (window.qiqTracker) {
+                // Test tracking events
+                window.qiqTracker.trackEvent('test_event', { test: true });
+                window.qiqTracker.trackEvent('button_click', { button: 'test_tracking' });
+                
+                resultDiv.innerHTML = `
+                    <div class="result-box success">
+                        ✅ تم تفعيل نظام التتبع بنجاح<br>
+                        معرف الجلسة: ${window.qiqTracker.sessionId}
+                    </div>
+                `;
+                log('نظام تتبع الزوار يعمل بشكل صحيح', 'success');
+            } else {
+                resultDiv.innerHTML = `<div class="result-box error">❌ نظام التتبع غير مُفعّل</div>`;
+                log('فشل في تحميل نظام تتبع الزوار', 'error');
+            }
+        }
+        
+        function showVisitorData() {
+            log('عرض بيانات الزائر...', 'info');
+            const resultDiv = document.getElementById('visitor-tracking-result');
+            
+            if (window.qiqTracker) {
+                const trackingData = window.qiqTracker.getTrackingDataForQuote();
+                resultDiv.innerHTML = `
+                    <div class="result-box">
+                        <h4>بيانات الزائر الحالي:</h4>
+                        <pre>${JSON.stringify(trackingData, null, 2)}</pre>
+                    </div>
+                `;
+                log('تم عرض بيانات الزائر', 'success');
+            } else {
+                resultDiv.innerHTML = `<div class="result-box error">نظام التتبع غير متاح</div>`;
+                log('نظام التتبع غير متاح لعرض البيانات', 'error');
+            }
+        }
+        
+        async function testHelloLeadsAPI() {
+            log('اختبار HelloLeads API...', 'info');
+            const resultDiv = document.getElementById('helloleads-result');
+            
+            const testLead = {
+                client: {
+                    name: 'شركة الاختبار المحدودة',
+                    contact: 'أحمد محمد',
+                    email: 'test@example.com',
+                    phone: '+966501234567'
+                },
+                project: {
+                    name: 'مشروع اختبار النظام',
+                    site: 'الرياض، المملكة العربية السعودية'
+                },
+                items: [
+                    { description: 'جهاز كمبيوتر مكتبي', pn: 'TEST-001', qty: 2 },
+                    { description: 'شاشة LED 24 بوصة', pn: 'TEST-002', qty: 2 }
+                ],
+                number: `TEST-${Date.now()}`,
+                date: new Date().toISOString().slice(0, 10),
+                source: 'test-integration',
+                quotation: {
+                    id: `TEST-${Date.now()}`,
+                    action: 'test',
+                    currency: 'SAR',
+                    total: 5000,
+                    itemCount: 2
+                }
+            };
+            
+            // Add visitor data if available
+            if (window.qiqTracker) {
+                testLead.visitor = window.qiqTracker.getTrackingDataForQuote().visitor;
+            }
+            
+            try {
+                const response = await fetch('/api/hello-leads', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testLead)
+                });
+                
+                const result = await response.json();
+                
+                if (result.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result-box success">
+                            ✅ تم إرسال Lead إلى HelloLeads بنجاح
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                    log('تم إرسال Lead تجريبي إلى HelloLeads بنجاح', 'success');
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result-box error">
+                            ❌ فشل في إرسال Lead إلى HelloLeads
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                    log(`فشل في إرسال Lead: ${result.reason || 'unknown'}`, 'error');
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-box error">خطأ في الشبكة: ${error.message}</div>`;
+                log(`خطأ في اختبار HelloLeads API: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testFullQuote() {
+            log('اختبار إرسال كوتيشن كاملة...', 'info');
+            const resultDiv = document.getElementById('quote-result');
+            
+            const testQuote = {
+                action: 'custom',
+                adminNotify: true,
+                number: `TEST-QUOTE-${Date.now()}`,
+                date: new Date().toISOString().slice(0, 10),
+                currency: 'SAR',
+                client: {
+                    name: 'شركة التجارب التقنية',
+                    contact: 'سارة أحمد',
+                    email: 'sara@testtech.com',
+                    phone: '+966507654321'
+                },
+                project: {
+                    name: 'مشروع تطوير البنية التحتية IT',
+                    site: 'جدة، المملكة العربية السعودية'
+                },
+                items: [
+                    {
+                        description: 'خادم Dell PowerEdge',
+                        pn: 'PE-R750-001',
+                        unit_price: 15000,
+                        qty: 1,
+                        brand: 'Dell',
+                        spec_sheet: 'https://example.com/dell-spec.pdf'
+                    },
+                    {
+                        description: 'سويتش 48 منفذ',
+                        pn: 'SW-48P-001',
+                        unit_price: 3500,
+                        qty: 2,
+                        brand: 'Cisco'
+                    }
+                ],
+                include_installation_5pct: true,
+                source: 'test-full-quote'
+            };
+            
+            // Add visitor tracking data
+            if (window.qiqTracker) {
+                testQuote.visitor = window.qiqTracker.getTrackingDataForQuote().visitor;
+            }
+            
+            try {
+                const response = await fetch('/api/quote-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testQuote)
+                });
+                
+                const result = await response.json();
+                
+                if (result.ok) {
+                    const helloLeadsStatus = result.helloleads ? 
+                        (result.helloleads.ok ? '✅ نجح' : '❌ فشل') : '⚠️ غير مُفعّل';
+                    
+                    resultDiv.innerHTML = `
+                        <div class="result-box success">
+                            ✅ تم إرسال الكوتيشن بنجاح<br>
+                            📧 الإيميل: ${result.email?.admin?.ok ? 'نجح' : 'فشل'}<br>
+                            📋 HelloLeads: ${helloLeadsStatus}<br>
+                            <details style="margin-top: 10px;">
+                                <summary>عرض التفاصيل الكاملة</summary>
+                                <pre>${JSON.stringify(result, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+                    log('تم إرسال كوتيشن تجريبية كاملة بنجاح', 'success');
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result-box error">
+                            ❌ فشل في إرسال الكوتيشن
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                    log('فشل في إرسال الكوتيشن التجريبية', 'error');
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-box error">خطأ في الشبكة: ${error.message}</div>`;
+                log(`خطأ في اختبار الكوتيشن الكاملة: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            log('تم تحميل صفحة اختبار HelloLeads', 'info');
+            
+            // Auto-check connectivity
+            setTimeout(checkConnectivity, 1000);
+            
+            // Test visitor tracking when available
+            setTimeout(() => {
+                if (window.qiqTracker) {
+                    log('تم تفعيل نظام تتبع الزوار تلقائياً', 'success');
+                    window.qiqTracker.trackEvent('test_page_loaded');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
