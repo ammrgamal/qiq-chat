@@ -112,10 +112,11 @@
   }
 
   function hitToCard(h){
+    const FALLBACK_IMG = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#9ca3af' font-size='28'>IMG</text></svg>");
     const name  = esc(h?.name || '(No name)');
     const price = h?.price !== undefined && h?.price !== '' ? Number(h.price) : '';
     const pn    = esc(h?.pn || h?.sku || h?.objectID || '');
-    const img   = esc(h?.image || 'https://via.placeholder.com/68?text=IMG');
+  const img   = esc(h?.image || FALLBACK_IMG);
   const brand = esc(h?.brand || h?.manufacturer || '');
   const availabilityRaw = h?.availability;
   const availability = typeof availabilityRaw === 'string' ? availabilityRaw : (availabilityRaw === true ? 'in-stock' : (availabilityRaw === false ? 'backorder' : ''));
@@ -124,7 +125,7 @@
     const id    = pn || name;
     return `
       <div class="card">
-        <img src="${img}" alt="${name}" onerror="this.src='https://via.placeholder.com/68?text=IMG'" />
+  <img src="${img}" alt="${name}" onerror="this.src='${FALLBACK_IMG}'" />
         <div>
           <div class="name">${name}</div>
           <div class="chips">
@@ -156,10 +157,11 @@
 
   // Table row renderer for table view
   function hitToRow(h){
+    const FALLBACK_IMG = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#9ca3af' font-size='28'>IMG</text></svg>");
     const name  = esc(h?.name || '(No name)');
     const price = h?.price !== undefined && h?.price !== '' ? Number(h.price) : '';
     const pn    = esc(h?.pn || h?.sku || h?.objectID || '');
-    const img   = esc(h?.image || 'https://via.placeholder.com/68?text=IMG');
+  const img   = esc(h?.image || FALLBACK_IMG);
   const brand = esc(h?.brand || h?.manufacturer || '');
   const availabilityRaw = h?.availability;
   const availability = typeof availabilityRaw === 'string' ? availabilityRaw : (availabilityRaw === true ? 'in-stock' : (availabilityRaw === false ? 'backorder' : ''));
@@ -167,7 +169,7 @@
     const spec  = esc(h?.spec_sheet || h?.specsheet || h?.datasheet || '');
     return `
       <tr>
-        <td style="padding:8px 10px;border-bottom:1px solid var(--border)"><img src="${img}" alt="${name}" style="width:44px;height:44px;border-radius:8px;object-fit:cover" onerror="this.src='https://via.placeholder.com/44?text=IMG'"/></td>
+  <td style="padding:8px 10px;border-bottom:1px solid var(--border)"><img src="${img}" alt="${name}" style="width:44px;height:44px;border-radius:8px;object-fit:cover" onerror="this.src='${FALLBACK_IMG}'"/></td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${link?`<a href="${link}" target="_blank" rel="noopener">${name}</a>`:name}${spec?` <a href="${spec}" target="_blank" rel="noopener" class="muted" title="Spec Sheet" aria-label="Spec Sheet" style="margin-left:6px;display:inline-flex;align-items:center;color:#2563eb"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" style=\"vertical-align:middle\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><polyline points=\"14 2 14 8 20 8\"/><text x=\"7\" y=\"17\" font-size=\"8\" fill=\"#dc2626\" font-family=\"sans-serif\">PDF</text></svg></a>`:''}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${pn}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${brand}</td>
@@ -376,7 +378,7 @@
       const html = favs.length ? (
         '<div style="display:flex;flex-direction:column;gap:8px">' + favs.map(p=> `
           <div style="display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;border-bottom:1px solid #e5e7eb;padding:8px 0">
-            <img src="${p.image || 'https://via.placeholder.com/48'}" style="width:48px;height:48px;border-radius:8px;object-fit:cover"/>
+            <img src="${p.image || 'data:image/svg+xml;utf8,' + encodeURIComponent("<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\'><rect width=\'100%\' height=\'100%\' fill=\'#f3f4f6\'/><text x=\'50%\' y=\'55%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'#9ca3af\' font-size=\'10\'>IMG</text></svg>") }" style="width:48px;height:48px;border-radius:8px;object-fit:cover"/>
             <div style="min-width:0">
               <div style="font-weight:600;white-space:nowrap;text-overflow:ellipsis;overflow:hidden">${p.name}</div>
               <div style="font-size:12px;color:#6b7280">${p.sku || ''}</div>
@@ -411,9 +413,15 @@
           </div>
         </div>`;
       const safety = setTimeout(()=>{ if (!resolved) window.QiqModal?.setHtml?.(timeoutHtml); }, 10000);
-      const r = await fetch('/api/compare', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ products }) });
-      let md = 'No comparison available';
-      try{ const data = await r.json(); md = data?.summaryMarkdown || md; }catch{}
+      let md = '—';
+      try{
+        const r = await fetch('/api/compare', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ products }) });
+        const data = await r.json().catch(()=>({}));
+        md = data?.summaryMarkdown || '—';
+      }catch{}
+      if (!md || md==='—'){
+        md = `المقارنة السريعة:\n\n${products.map((p,i)=>`${i+1}. ${p.name}${p.pn?` (PN: ${p.pn})`:''}${p.brand?` • ${p.brand}`:''}${p.price?` • ${(window.QiqSession?.currency||'EGP')} ${p.price}`:''}`).join('\n')}`;
+      }
       const html = `
         <div style="padding:16px; display:flex; flex-direction:column; gap:12px">
           <div style="white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e5e7eb; max-height:60vh; overflow:auto">${md.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>

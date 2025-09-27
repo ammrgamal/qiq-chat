@@ -382,13 +382,14 @@ function generateEnhancedComparisonHTML(products, enhancer) {
                             <th style="text-align: right; padding: 16px; border-bottom: 2px solid #e5e7eb; font-weight: 700; color: #374151;">الخاصية</th>`;
     
     products.forEach((product, index) => {
-        const productImage = product.image || 'https://via.placeholder.com/80x80?text=IMG';
+        const FALLBACK80 = 'data:image/svg+xml;utf8,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#9ca3af' font-size='16'>IMG</text></svg>");
+        const productImage = product.image || FALLBACK80;
         html += `
             <th style="text-align: center; padding: 16px; border-bottom: 2px solid #e5e7eb; min-width: 180px;">
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
                     <img src="${productImage}" 
                          style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
-                         onerror="this.src='https://via.placeholder.com/80x80?text=IMG'" />
+                         onerror="this.src='${FALLBACK80}'" />
                     <div style="text-align: center;">
                         <div style="font-weight: 600; color: #111827; margin-bottom: 4px; line-height: 1.3;">
                             ${(product.name || 'منتج غير معروف').substring(0, 40)}${product.name && product.name.length > 40 ? '...' : ''}

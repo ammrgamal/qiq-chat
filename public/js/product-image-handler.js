@@ -248,16 +248,15 @@ class ProductImageHandler {
 
     // الحصول على صورة placeholder
     getPlaceholderImage(product, size) {
-        const sizeMap = {
-            small: '100x100',
-            medium: '200x200',
-            large: '400x400'
-        };
-        
-        const dimensions = sizeMap[size] || '200x200';
-        const productName = encodeURIComponent((product.name || 'منتج').substring(0, 20));
-        
-        return `https://via.placeholder.com/${dimensions}/e5e7eb/374151?text=${productName}`;
+        // استخدم SVG محلي بسيط بدل نطاقات خارجية
+        const sizeValue = size === 'small' ? 100 : size === 'large' ? 400 : 200;
+        const productName = (product.name || 'منتج').substring(0, 12);
+        return `data:image/svg+xml,${encodeURIComponent(`
+            <svg width="${sizeValue}" height="${sizeValue}" xmlns="http://www.w3.org/2000/svg">
+                <rect width="${sizeValue}" height="${sizeValue}" fill="#e5e7eb" rx="10"/>
+                <text x="50%" y="54%" text-anchor="middle" font-size="${Math.max(10, Math.floor(sizeValue/10))}" font-family="Arial" fill="#6b7280">${productName}</text>
+            </svg>
+        `)}`;
     }
 
     // إنتاج صورة المنتج
@@ -336,7 +335,33 @@ class ProductImageHandler {
         const productData = JSON.parse(imgElement.dataset.product || '{}');
         const size = imgElement.dataset.size || 'medium';
         
-        const imageData = await this.processProductImage(productData, { size });
+        let imageData = await this.processProductImage(productData, { size });
+        // إن لم تتوفر صورة مناسبة جرّب نقطة إثراء الصور/المواصفات في الخلفية
+        if (!imageData?.url || imageData.url.startsWith('data:image') ) {
+            try {
+                const resp = await fetch('/api/media-enrich', {
+                    method: 'POST', headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ product: productData })
+                });
+                if (resp.ok) {
+                    const j = await resp.json();
+                    const img = j?.data?.image;
+                    const specs = j?.data?.specs;
+                    if (img && typeof img === 'string') {
+                        imageData.url = img;
+                        try {
+                            // حدّث البيانات المضمّنة داخل العنصر ليستفيد باقي النظام
+                            const merged = { ...(productData||{}), image: img };
+                            if (specs && typeof specs === 'object') merged.specifications = Object.assign({}, merged.specifications||{}, specs);
+                            imgElement.dataset.product = JSON.stringify(merged);
+                            // أبلغ النظام بقدوم مواصفات/صورة جديدة
+                            const ev = new CustomEvent('productEnriched', { detail: { product: merged, image: img, specs: specs||{} } });
+                            document.dispatchEvent(ev);
+                        } catch {}
+                    }
+                }
+            } catch {}
+        }
         
         // تطبيق البيانات المحسنة
         imgElement.src = imageData.url;

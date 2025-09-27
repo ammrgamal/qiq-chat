@@ -13,13 +13,12 @@
         const brand = enhancedHit?.brand || enhancedHit?.manufacturer || hit?.brand || hit?.manufacturer || hit?.vendor || hit?.company || 'غير محدد';
         const description = enhancedHit?.description || hit?.description || hit?.spec || hit?.details || '';
         
-        // معالجة الصورة مع التحسينات
+        // معالجة الصورة مع التحسينات - استخدام SVG احتياطي محلي بدل نطاقات خارجية
+        const FALLBACK60 = 'data:image/svg+xml;utf8,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#9ca3af' font-size='14'>IMG</text></svg>");
+        // إن وُجدت صورة أصلية استخدمها؛ وإلا اعرض SVG لحين التحميل عبر المعالج
         let image = enhancedHit?.image || hit?.image || hit?.image_url || hit?.thumbnail || '';
-        if (!image && window.productImageHandler) {
-            // سيتم تحميل صورة محسنة لاحقاً
-            image = 'https://via.placeholder.com/60x60/f3f4f6/9ca3af?text=جاري+التحميل';
-        } else if (!image) {
-            image = 'https://via.placeholder.com/60x60?text=IMG';
+        if (!image) {
+            image = FALLBACK60;
         }
         
         const link = pn ? `/products-list.html?q=${encodeURIComponent(pn)}` : '#';
@@ -40,12 +39,12 @@
 
         const cardHTML = `
         <div class="card" data-id="${safePn}" id="${cardId}">
-            <img src="${safeImage}" 
-                 alt="${safeName}" 
-                 class="product-image"
-                 data-product='${JSON.stringify(enhancedHit || hit)}'
+          <img src="${safeImage}" 
+              alt="${safeName}" 
+              class="product-image"
+              data-product='${escapeHtml(JSON.stringify(enhancedHit || hit))}'
                  data-size="small"
-                 onerror="this.src='https://via.placeholder.com/60x60?text=IMG'; this.onerror=null;" 
+                 onerror="this.src='${FALLBACK60}'; this.onerror=null;" 
                  loading="lazy" />
             
             <div class="card-content">
@@ -305,9 +304,9 @@
             html += `
                 <th style="text-align: center; padding: 12px; border: 1px solid #e5e7eb;">
                     <div style="display: flex; flex-direction: column; align-items: center;">
-                        <img src="${product.image || 'https://via.placeholder.com/60x60?text=IMG'}" 
-                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;"
-                             onerror="this.src='https://via.placeholder.com/60x60?text=IMG'" />
+                    <img src="${product.image || FALLBACK60}" 
+                        style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;"
+                        onerror="this.src='${FALLBACK60}'" />
                         <button onclick="window.QiqComparison?.remove('${product.id}'); window.location.reload();" 
                                 class="btn danger" style="padding: 4px 8px; font-size: 12px;">
                             ✕ إزالة

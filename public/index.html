@@ -181,18 +181,27 @@
   <!-- Enhanced Visitor Tracking Client -->
   <script src="/js/visitor-tracking-client.js" defer></script>
   
+  <!-- OpenAI Chat System Integration -->
+  <script src="/js/openai-chat-system.js" defer></script>
+  
   <!-- Professional Design System -->
   <link rel="stylesheet" href="/css/professional-design.css">
   
   <!-- Enhanced Chat System Integration -->
   <script src="/js/fixed-chat-system.js" defer></script>
   <script src="/js/interface-fixes.js" defer></script>
+  <script src="/js/quote-badge.js" defer></script>
   
   <!-- Enhanced Analytics and Tracking -->
   <script>
     // Initialize enhanced systems for chat page
     document.addEventListener('DOMContentLoaded', function() {
-      // Initialize fixed chat system with intelligent responses
+      // Initialize OpenAI Chat System first (priority)
+      if (typeof initializeOpenAIChatSystem === 'function') {
+        initializeOpenAIChatSystem();
+      }
+      
+      // Initialize legacy chat system as fallback
       if (typeof initializeFixedChatSystem === 'function') {
         initializeFixedChatSystem();
       }

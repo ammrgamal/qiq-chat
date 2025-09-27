@@ -236,6 +236,7 @@
 		<script src="/js/products-search-enhanced.js"></script>
 		<script src="/js/quote-wizard.js"></script>
 		<script src="/js/quote-wizard-debug.js"></script>
+		<script src="/js/quote-badge.js"></script>
 	<script>
 	// Theme toggle hook
 	document.addEventListener('DOMContentLoaded', function(){
@@ -450,6 +451,9 @@
 	<!-- Enhanced Visitor Tracking Client -->
 	<script src="/js/visitor-tracking-client.js" defer></script>
 	
+	<!-- OpenAI Chat System Integration -->
+	<script src="/js/openai-chat-system.js" defer></script>
+	
 	<!-- Professional Design System -->
 	<link rel="stylesheet" href="/css/professional-design.css">
 	
@@ -461,7 +465,7 @@
 	<script src="/js/fixed-chat-system.js" defer></script>
 	<script src="/js/interface-fixes.js" defer></script>
 	
-	<!-- Enhanced Visitor Tracking Integration -->
+	<!-- Enhanced System Integration -->
 	<script>
 		// Initialize enhanced systems on page load
 		document.addEventListener('DOMContentLoaded', function() {
@@ -470,12 +474,17 @@
 				initializeVisitorTracking();
 			}
 			
+			// Initialize OpenAI Chat System first
+			if (typeof initializeOpenAIChatSystem === 'function') {
+				initializeOpenAIChatSystem();
+			}
+			
 			// Initialize interface fixes for all reported issues
 			if (typeof initializeInterfaceFixes === 'function') {
 				initializeInterfaceFixes();
 			}
 			
-			// Initialize fixed chat system with intelligent responses
+			// Initialize legacy chat system as fallback
 			if (typeof initializeFixedChatSystem === 'function') {
 				initializeFixedChatSystem();
 			}

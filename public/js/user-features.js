@@ -150,6 +150,8 @@ class ProductComparison {
       return '<p>يرجى إضافة منتجين على الأقل للمقارنة</p>';
     }
 
+    const FALLBACK60 = 'data:image/svg+xml;utf8,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#9ca3af' font-size='14'>IMG</text></svg>");
+
     const allSpecs = new Set();
     this.compareList.forEach(product => {
       Object.keys(product.specifications || {}).forEach(spec => allSpecs.add(spec));
@@ -162,7 +164,7 @@ class ProductComparison {
             <th style="padding: 12px; text-align: right; border: 1px solid #e5e7eb;">المنتج</th>
             ${this.compareList.map(product => 
               `<th style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">
-                <img src="${product.image || 'https://via.placeholder.com/60'}" 
+                <img src="${product.image || FALLBACK60}" 
                      style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" />
                 <div style="margin-top: 8px; font-weight: 600;">${product.name}</div>
                 <div style="font-size: 12px; color: #6b7280;">${product.sku || ''}</div>

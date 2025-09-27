@@ -17,7 +17,7 @@
 
   /* ---- Helpers ---- */
   const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c] || c));
-  const PLACEHOLDER_IMG = "https://via.placeholder.com/68?text=IMG";
+  const PLACEHOLDER_IMG = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#9ca3af' font-size='28'>IMG</text></svg>");
 
   // Initialize Smart Systems
   let chatStateManager = null;
@@ -67,7 +67,7 @@
       name: "Kaspersky Endpoint Detection and Response",
       sku: "KES-EDR-120-2Y",
       price: "2500",
-      image: "https://via.placeholder.com/68x68/0066cc/ffffff?text=KES",
+  image: PLACEHOLDER_IMG,
       manufacturer: "Kaspersky",
       link: "#"
     },
@@ -75,7 +75,7 @@
       name: "Microsoft Office 365 Business Premium",
       sku: "O365-BP-100U",
       price: "1200",
-      image: "https://via.placeholder.com/68x68/ff6600/ffffff?text=O365",
+  image: PLACEHOLDER_IMG,
       manufacturer: "Microsoft",
       link: "#"
     },
@@ -83,7 +83,7 @@
       name: "VMware vSphere Standard",
       sku: "VMW-VS-STD",
       price: "5000",
-      image: "https://via.placeholder.com/68x68/009900/ffffff?text=VMW",
+  image: PLACEHOLDER_IMG,
       manufacturer: "VMware",
       link: "#"
     }

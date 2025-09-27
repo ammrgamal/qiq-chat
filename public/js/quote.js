@@ -157,7 +157,7 @@
 
   const defaultLogo = (state.logo || "/logo.png"); // غيّر المسار حسب مشروعك
   logoEl.src = defaultLogo;
-  logoEl.onerror = () => (logoEl.src = "https://via.placeholder.com/200x80?text=LOGO");
+  logoEl.onerror = () => (logoEl.src = 'data:image/svg+xml;utf8,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='200' height='80'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#9ca3af' font-size='18'>LOGO</text></svg>"));
 
   // Prefill currency
   $("currency").value = state.currency || "EGP";

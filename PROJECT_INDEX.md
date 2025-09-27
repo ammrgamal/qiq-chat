@@ -1,9 +1,9 @@
 # Project Index — qiq-chat
-Generated: 2025-09-27T14:45:40.808Z
+Generated: 2025-09-27T16:40:58.965Z
 
 - Root: C:\Users\essaw\OneDrive - GLOBAL BRANDS\Applications\GitHub\qiq-chat\qiq-chat
-- Total size: 1.6 MB
-- Files: 138
+- Total size: 1.7 MB
+- Files: 143
 - Directories: 21
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
@@ -53,6 +53,8 @@ This file is auto-generated. Share it with ChatGPT for context.
 - api/hello-leads.js
 - api/helloleads-enhanced.js
 - api/maintenance.js
+- api/media-enrich.js
+- api/openai-assistant.js
 - api/pdf-ai.js
 - api/quote-email.js
 - api/quote-wizard-enhanced.js
@@ -112,12 +114,14 @@ qiq-chat/
 │   ├── agent.js (1.5 KB)
 │   ├── boq-parse.js (4.5 KB)
 │   ├── bundles-align.js (5.5 KB)
-│   ├── chat.js (9.7 KB)
+│   ├── chat.js (12.8 KB)
 │   ├── compare.js (2.8 KB)
 │   ├── health.js (2.2 KB)
 │   ├── hello-leads.js (2.9 KB)
 │   ├── helloleads-enhanced.js (12.9 KB)
 │   ├── maintenance.js (3.9 KB)
+│   ├── media-enrich.js (6.4 KB)
+│   ├── openai-assistant.js (14.5 KB)
 │   ├── pdf-ai.js (14.4 KB)
 │   ├── quote-email.js (52.8 KB)
 │   ├── quote-wizard-enhanced.js (18.9 KB)
@@ -133,6 +137,7 @@ qiq-chat/
 │   ├── ANTI_REPETITION_SYSTEM.md (6.0 KB)
 │   ├── CATALOG_ENHANCEMENTS_REPORT.md (7.9 KB)
 │   ├── COPILOT_INSTRUCTIONS.md (3.7 KB)
+│   ├── OPENAI_ASSISTANT_INTEGRATION.md (8.4 KB)
 │   ├── QUOTE_WIZARD_FIXES.md (6.4 KB)
 │   └── SETUP.md (3.1 KB)
 ├── public/
@@ -161,38 +166,40 @@ qiq-chat/
 │   │   ├── fixed-chat-system.js (44.0 KB)
 │   │   ├── interface-fixes.js (35.7 KB)
 │   │   ├── modal.js (10.3 KB)
+│   │   ├── openai-chat-system.js (28.6 KB)
 │   │   ├── pdf-admin.js (16.6 KB)
 │   │   ├── pdf-arabic-fonts.js (1.8 KB)
 │   │   ├── performance.js (5.6 KB)
-│   │   ├── product-data-enhancer.js (22.3 KB)
-│   │   ├── product-image-handler.js (14.9 KB)
-│   │   ├── products-search-enhanced.js (23.7 KB)
-│   │   ├── products-search.js (6.7 KB)
-│   │   ├── products-ui-enhanced.js (22.0 KB)
-│   │   ├── quote-actions.js (41.7 KB)
+│   │   ├── product-data-enhancer.js (22.5 KB)
+│   │   ├── product-image-handler.js (16.8 KB)
+│   │   ├── products-search-enhanced.js (24.7 KB)
+│   │   ├── products-search.js (6.9 KB)
+│   │   ├── products-ui-enhanced.js (22.1 KB)
+│   │   ├── quote-actions.js (42.7 KB)
+│   │   ├── quote-badge.js (1.6 KB)
 │   │   ├── quote-form.js (3.0 KB)
 │   │   ├── quote-wizard-debug.js (7.7 KB)
 │   │   ├── quote-wizard.js (25.7 KB)
-│   │   ├── quote.js (82.5 KB)
+│   │   ├── quote.js (82.8 KB)
 │   │   ├── security.js (7.6 KB)
 │   │   ├── smart-boq-recommender.js (26.4 KB)
 │   │   ├── system-config.js (13.7 KB)
 │   │   ├── system-final-check.js (16.5 KB)
 │   │   ├── system-initializer.js (17.4 KB)
 │   │   ├── toast.js (4.3 KB)
-│   │   ├── ui-chat.js (26.3 KB)
+│   │   ├── ui-chat.js (26.4 KB)
 │   │   ├── ui-enhancements.js (25.0 KB)
-│   │   ├── user-features.js (11.8 KB)
+│   │   ├── user-features.js (12.1 KB)
 │   │   ├── visitor-tracker.js (10.1 KB)
 │   │   └── visitor-tracking-client.js (12.0 KB)
 │   ├── account.html (2.2 KB)
 │   ├── admin-quotes.html (4.2 KB)
 │   ├── admin.html (13.4 KB)
-│   ├── index.html (10.5 KB)
+│   ├── index.html (10.8 KB)
 │   ├── logo.png (15.7 KB)
-│   ├── products-list.html (25.3 KB)
+│   ├── products-list.html (25.5 KB)
 │   ├── project-instructions.md (4.1 KB)
-│   ├── quote.html (23.0 KB)
+│   ├── quote.html (23.3 KB)
 │   ├── test-helloleads.html (16.0 KB)
 │   └── test-smart-system.html (21.4 KB)
 ├── scripts/
@@ -221,7 +228,7 @@ qiq-chat/
 ├── jest.config.cjs (154 B)
 ├── package-lock.json (312.3 KB)
 ├── package.json (922 B)
-├── PROJECT_INDEX.md (14.5 KB)
+├── PROJECT_INDEX.md (14.9 KB)
 ├── quote.html (12.8 KB)
 ├── server.js (6.7 KB)
 ├── SMART_SYSTEM_GUIDE.md (11.7 KB)
