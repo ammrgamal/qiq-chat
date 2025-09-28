@@ -1,9 +1,9 @@
 # Project Index — qiq-chat
-Generated: 2025-09-28T09:58:21.326Z
+Generated: 2025-09-28T11:20:08.828Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
 - Total size: 1.7 MB
-- Files: 145
+- Files: 146
 - Directories: 21
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
@@ -75,7 +75,7 @@ qiq-chat/
 │   ├── algoliaMapper.spec.ts (525 B)
 │   └── pdfTotals.spec.ts (1.3 KB)
 ├── .storage/
-│   ├── activity.json (26.4 KB)
+│   ├── activity.json (26.8 KB)
 │   └── quotations.json (720 B)
 ├── ai/
 │   └── ai-instructions.txt (3.5 KB)
@@ -124,7 +124,7 @@ qiq-chat/
 │   ├── media-enrich.js (4.2 KB)
 │   ├── openai-assistant.js (14.5 KB)
 │   ├── pdf-ai.js (14.4 KB)
-│   ├── quote-email.js (54.0 KB)
+│   ├── quote-email.js (55.2 KB)
 │   ├── quote-wizard-enhanced.js (18.9 KB)
 │   ├── quote.js (741 B)
 │   ├── search-health.js (1.2 KB)
@@ -211,6 +211,7 @@ qiq-chat/
 │   │   ├── README.md (2.0 KB)
 │   │   └── requirements.txt (47 B)
 │   ├── generate-index.mjs (5.3 KB)
+│   ├── run-quote-email-once.ps1 (4.6 KB)
 │   ├── smoke.ps1 (4.9 KB)
 │   ├── test-hello-leads.mjs (1.1 KB)
 │   ├── test-pdf-ai.mjs (1.2 KB)

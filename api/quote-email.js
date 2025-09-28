@@ -4,7 +4,7 @@
 // Returns { ok, pdfBase64, csvBase64 } (pdfBase64 only for download action)
 
 import { sendEmail } from './_lib/email.js';
-import { createLead } from './_lib/helloleads.js';
+import { createLead, hasHelloLeads } from './_lib/helloleads.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -20,6 +20,38 @@ const FONT_DIRS = [
 const BRAND_PRIMARY = process.env.PDF_BRAND_COLOR || '#3C52B2';
 const BRAND_BG      = process.env.PDF_BG_COLOR || '#EDF0FC';
 const CURRENCY_FALLBACK = process.env.DEFAULT_CURRENCY || 'USD';
+
+// ============ Small utility helpers (missing earlier) ============
+function ensureString(v){ return (v == null ? '' : String(v)).trim(); }
+function b64(s){ try { return Buffer.from(String(s||''), 'utf8').toString('base64'); } catch { return ''; } }
+function csvEscape(v){
+  const s = ensureString(v);
+  if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+function buildCsv(items){
+  const arr = Array.isArray(items) ? items : [];
+  const header = ['#','Description','MPN','Qty','Unit'];
+  const rows = arr.map((it, i)=>[
+    i+1,
+    ensureString(it.description_en || it.description || it.description_enriched || it.name || '-'),
+    ensureString(it.pn||''),
+    Number(it.qty||1),
+    Number(it.unit_price||it.unit||it.price||0)
+  ]);
+  const lines = [header, ...rows].map(r=> r.map(csvEscape).join(','));
+  return lines.join('\n');
+}
+async function tryLoadLocal(fp){ try { return await fs.readFile(fp); } catch { return null; } }
+async function fetchImageBuffer(url){
+  try {
+    if (!url) return null;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const ab = await r.arrayBuffer();
+    return Buffer.from(ab);
+  } catch { return null; }
+}
 
 // ============ Lightweight Arabic shaping helpers (optional deps) ============
 let __arShapeFn = null;
