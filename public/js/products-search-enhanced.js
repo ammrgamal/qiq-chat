@@ -111,6 +111,15 @@
     pagination.querySelectorAll('button[data-p]')?.forEach(btn=> btn.addEventListener('click', ()=> onPage?.(Number(btn.dataset.p)||0)));
   }
 
+  function priceLabel(price){
+    if (price === '' || price === undefined || price === null) return '';
+    const usd = Number(price);
+    if (!isFinite(usd)) return '';
+    try{ if (window.QiqCurrency) return `<span class="chip price">${window.QiqCurrency.format(usd)}</span>`; }catch{}
+    const code = (window.QiqSession?.currency||'USD');
+    return `<span class="chip price">${code} ${usd}</span>`;
+  }
+
   function hitToCard(h){
     const FALLBACK_IMG = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#9ca3af' font-size='28'>IMG</text></svg>");
     const name  = esc(h?.name || '(No name)');
@@ -132,7 +141,7 @@
             ${pn? `<span class="chip">PN: ${pn}</span>`:''}
             ${brand? `<span class="chip">${brand}</span>`:''}
             ${availability? `<span class="chip" title="Availability">${availability}</span>`:''}
-            ${price!==''? `<span class="chip price">${(window.QiqSession?.currency||'EGP')} ${price}</span>`:''}
+            ${price!==''? priceLabel(price):''}
           </div>
           ${link ? `<a href="${link}" target="_blank" rel="noopener" class="muted">Product page</a>` : ''}
           ${spec ? ` • <a href="${spec}" target="_blank" rel="noopener" class="muted">Spec Sheet</a>` : ''}
@@ -167,7 +176,7 @@
   const availability = typeof availabilityRaw === 'string' ? availabilityRaw : (availabilityRaw === true ? 'in-stock' : (availabilityRaw === false ? 'backorder' : ''));
     const link  = esc(h?.link || '');
     const spec  = esc(h?.spec_sheet || h?.specsheet || h?.datasheet || '');
-    const priceCell = (price!==''?`${(window.QiqSession?.currency||'EGP')} ${price}`:'-');
+    const priceCell = (price!==''?(window.QiqCurrency?window.QiqCurrency.format(price):((window.QiqSession?.currency||'USD')+' '+price)):'-');
     return `
       <tr>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)"><img src="${img}" alt="${name}" style="width:44px;height:44px;border-radius:8px;object-fit:cover" onerror="this.src='${FALLBACK_IMG}'"/></td>
@@ -241,7 +250,7 @@
         lastQuery = q;
       }
 
-      const mode = localStorage.getItem('qiq_view_mode') || 'list-lines';
+  const mode = localStorage.getItem('qiq_view_mode') || 'list-lines';
       if (mode === 'table' && resultsTbody) {
         resultsEl.innerHTML = '';
         // quick skeleton while filling table
@@ -456,7 +465,9 @@
           </div>
         </div>`;
       const safety = setTimeout(()=>{ if (!resolved) window.QiqModal?.setHtml?.(timeoutHtml); }, 10000);
-      let md = '—';
+        let md = '—'; // Initialize markdown variable
+        // Ensure modal is above overlays
+        try{ const m = document.getElementById('qiq-modal'); if (m) m.style.zIndex = '9999'; }catch{}
       try{
         const r = await fetch('/api/compare', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ products }) });
         const data = await r.json().catch(()=>({}));
@@ -484,9 +495,25 @@
     finally { window.__cmpBusy = false; }
   });
 
+    // Quote wizard open fallback if the dataset button fails due to other scripts
+    document.addEventListener('click', (e)=>{
+      const btn = e.target.closest('[data-open-quote-wizard]');
+      if (btn) {
+        e.preventDefault();
+        try { window.QiqQuoteWizard?.open(); } catch {}
+      }
+    });
   // init
   const q0 = getParam('q');
   if (q0) { input.value = q0; render(q0, 0); } else { render('', 0); }
   // apply stored view
   applyView(localStorage.getItem('qiq_view_mode') || 'list-lines');
+
+  // Re-render prices on currency change or explicit refresh
+  window.addEventListener('qiq-currency-changed', ()=>{
+    render((input?.value||'').trim(), 0);
+  });
+  window.addEventListener('qiq-refresh-prices', ()=>{
+    render((input?.value||'').trim(), 0);
+  });
 })();

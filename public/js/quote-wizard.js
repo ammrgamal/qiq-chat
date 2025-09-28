@@ -49,9 +49,10 @@
         <label>العملة
           <select id="wiz-currency" name="currency" 
                   style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
-            <option value="EGP" ${saved?.currency==='EGP'?'selected':''}>جنيه EGP</option>
-            <option value="USD" ${saved?.currency==='USD'?'selected':''}>$ USD</option>
+            <option value="USD" ${(!saved?.currency || saved?.currency==='USD')?'selected':''}>$ USD</option>
+            <option value="EUR" ${saved?.currency==='EUR'?'selected':''}>€ EUR</option>
             <option value="SAR" ${saved?.currency==='SAR'?'selected':''}>ر.س SAR</option>
+            <option value="EGP" ${saved?.currency==='EGP'?'selected':''}>جنيه EGP</option>
           </select>
         </label>
         

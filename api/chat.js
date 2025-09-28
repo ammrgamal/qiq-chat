@@ -14,7 +14,8 @@ let AI_CACHE = { text: '', mtimeMs: 0 };
 
 // OpenAI Assistant Configuration
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const ASSISTANT_ID = 'asst_OYoqbbkPzgI6kojL6iliOiM';
+// Read assistant id from env to avoid hard-coding account-specific IDs
+const ASSISTANT_ID = process.env.OPENAI_ASSISTANT_ID || process.env.OPENAI_ASSISTANT || '';
 
 async function readAiInstructionsCached(){
   try{
@@ -75,8 +76,8 @@ export default async function handler(req, res) {
     const adminCfg = await readAdminConfig();
     const aiFile = await readAiInstructionsCached();
     
-    // Try OpenAI Assistant first if available
-    if (OPENAI_API_KEY && !FAST_MODE) {
+    // Try OpenAI Assistant first if available and assistant id configured
+    if (OPENAI_API_KEY && ASSISTANT_ID && !FAST_MODE) {
       try {
         const lastMessage = messages[messages.length - 1]?.content || '';
         const assistantResponse = await callOpenAIAssistant(lastMessage, {
@@ -98,7 +99,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // Fallback to fast mode or legacy behavior
+  // Fallback to fast mode or legacy behavior
     const lastRaw = String(messages[messages.length - 1]?.content || '');
     const last = lastRaw.toLowerCase();
     const base = [
@@ -120,14 +121,12 @@ export default async function handler(req, res) {
     else if (/(firewall|fortinet|palo|cisco|checkpoint)/i.test(last)) reply = 'Firewall — سرعة الانترنت/Throughput؟ عدد المستخدمين؟ تفضّل UTM/SD‑WAN؟\nEN: Firewall — Internet speed/throughput, users count, UTM/SD‑WAN preferred?';
     else if (/(wifi|access point|ap)/i.test(last)) reply = 'Wi‑Fi — المساحة التقريبية/عدد القاعات؟ السرعات المتوقعة؟ Indoor/Outdoor؟\nEN: Wi‑Fi — area coverage, expected speeds, indoor/outdoor?';
     
-    // Search for products if explicitly requested
+    // Search for products when intent is detected (Arabic/English) or query looks like PN/brand
     let hits = [];
-    if (/(ابحث|search|هات منتجات|products)/i.test(last)) {
-      try { 
-        hits = await searchAlgolia({ 
-          query: last.replace(/(ابحث|search)/ig, '').trim() || 'kaspersky', 
-          hitsPerPage: 6 
-        }); 
+    if (looksLikeProductQuery(lastRaw) || /(ابحث|search|هات منتجات|products)/i.test(last)) {
+      try {
+        const q = lastRaw.replace(/(ابحث|search|هات منتجات|products)/ig, '').trim() || lastRaw;
+        hits = await searchAlgolia({ query: q || 'kaspersky', hitsPerPage: 6 });
       } catch {}
     }
     
@@ -325,4 +324,20 @@ function getFallbackResponse(message) {
   }
   
   return 'أهلاً بك! كيف يمكنني مساعدتك في العثور على أفضل حلول IT لاحتياجاتك؟';
+}
+
+// Heuristics to detect product-like queries (brands, SKUs, presence of digits and dashes, etc.)
+function looksLikeProductQuery(text = ''){
+  const t = String(text || '').trim();
+  if (!t) return false;
+  // Common IT brands/keywords
+  const brands = /(kaspersky|microsoft|hp|dell|lenovo|cisco|juniper|fortinet|palo|hpe|aruba|ubiquiti|tplink|mikrotik|vmware|esxi|synology|qnap|intel|amd|nvidia|epson|canon|brother|yealink|grandstream)/i;
+  if (brands.test(t)) return true;
+  // Looks like a part number (mix of letters+digits with dash or slash)
+  if (/[A-Za-z]{2,}[-_\/][A-Za-z0-9]{2,}/.test(t)) return true;
+  // Short tokens often used as PNs (e.g., EDR, E5, i7-1255U)
+  if (/\b([A-Za-z]{2,3}\d{1,4}|i[3579]-\d{3,5}[A-Za-z]?)\b/.test(t)) return true;
+  // Arabic request for specific model
+  if (/(موديل|طراز|رقم جزء|بارت نمبر)/i.test(t)) return true;
+  return false;
 }

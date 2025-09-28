@@ -15,12 +15,12 @@ export default async function handler(req, res) {
     }
 
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-    const ASSISTANT_ID = 'asst_OYoqbbkPzgI6kojL6iliOiM';
+    const ASSISTANT_ID = process.env.OPENAI_ASSISTANT_ID || process.env.OPENAI_ASSISTANT || '';
 
-    if (!OPENAI_API_KEY) {
+    if (!OPENAI_API_KEY || !ASSISTANT_ID) {
         return res.status(200).json({
             success: false,
-            message: 'OpenAI API key not configured',
+            message: 'OpenAI Assistant not configured',
             fallback: true,
             response: 'مرحباً! كيف يمكنني مساعدتك اليوم؟'
         });

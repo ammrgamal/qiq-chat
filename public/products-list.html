@@ -125,6 +125,12 @@
 			<h1 style="margin:0">كتالوج المنتجات</h1>
 			<div class="muted" id="status"></div>
 			<div style="margin-inline-start:auto; display: flex; gap: 8px; align-items: center;">
+				<select id="qiq-currency-select" class="btn ghost" style="padding:6px 10px">
+					<option value="USD">USD $</option>
+					<option value="EUR">EUR €</option>
+					<option value="SAR">SAR ر.س</option>
+					<option value="EGP">EGP ج.م</option>
+				</select>
 				<button id="favorites-btn" class="btn ghost" style="position: relative;">
 					❤️ المفضلة
 					<span class="favorites-badge" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: none;">0</span>
@@ -225,6 +231,7 @@
 			</div>
 	</div>
 		<script src="/js/performance.js"></script>
+		<script src="/js/currency.js"></script>
 		<script src="/js/toast.js"></script>
 		<script src="/js/security.js"></script>
 		<script src="/js/user-features.js"></script>
@@ -244,6 +251,8 @@
 	<script>
 	// Theme toggle hook
 	document.addEventListener('DOMContentLoaded', function(){
+	  // Ensure app-wide default currency reflects USD
+	  try { window.QiqSession = window.QiqSession || {}; if (!window.QiqSession.currency) window.QiqSession.currency = 'USD'; } catch {}
 	  const btn = document.getElementById('themeToggle');
 	  if (!btn) return;
 	  const applyIcon = ()=> btn.textContent = (window.QiqTheme?.currentTheme === 'dark') ? '☀️' : '🌙';
@@ -252,6 +261,22 @@
 	  // Language toggle
 	  const langBtn = document.getElementById('langToggleCatalog');
 	  langBtn?.addEventListener('click', ()=>{ try{ window.QiqI18n?.toggle?.(); }catch{} });
+
+	  // Currency select wiring
+	  const curSel = document.getElementById('qiq-currency-select');
+	  if (curSel && window.QiqCurrency) {
+	    // Set current value
+	    try { curSel.value = window.QiqCurrency.currencyCode || 'USD'; } catch {}
+	    curSel.addEventListener('change', async function(){
+	      try {
+	        const code = this.value || 'USD';
+	        await window.QiqCurrency.ensureRates();
+	        window.QiqCurrency.setCurrency(code);
+	        // notify UI to refresh price labels
+	        window.dispatchEvent(new CustomEvent('qiq-refresh-prices'));
+	      } catch {}
+	    });
+	  }
 	});
 	</script>
 	<script>
