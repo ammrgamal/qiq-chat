@@ -107,6 +107,8 @@ route('post', '/api/bundles/align', 'bundles-align.js');
 route('post', '/api/media/enrich', 'media-enrich.js');
 // V0 UI generator bridge
 route('post', '/api/v0/ui', 'v0-ui.js');
+// Optional: V0 design generator (alternative endpoint)
+route('post', '/api/v0/design', 'v0-design.js');
 // BOQ parse endpoint (upload-less; accepts base64 or text rows)
 route('post', '/api/boq/parse', 'boq-parse.js');
 // Admin config endpoints

@@ -25,27 +25,31 @@
             style.textContent = css;
             document.head.appendChild(style);
 
-            // 2) Capture-phase delegated click to guarantee behavior
-            document.addEventListener('click', (e)=>{
+            function processPrimaryAction(e){
                 const t = e.target;
                 try{
                     // Wizard open
                     if (t.closest && t.closest('[data-open-quote-wizard]')){
-                        e.preventDefault();
+                        e.preventDefault(); e.stopImmediatePropagation();
                         if (window.QiqQuoteWizard?.open) return void window.QiqQuoteWizard.open();
                         if (window.QiqModal?.open) return void window.QiqModal.open('#', { title: 'عرض السعر', html: '<div style="padding:16px">يرجى إعادة تحميل الصفحة.</div>' });
-                        return;
+                        return true;
                     }
                     // Search / Clear / Apply Price
-                    if (t.closest && t.closest('#searchBtn')){ e.preventDefault(); return void (window.QiqCatalog?.search?.() || document.getElementById('searchBtn')?.click()); }
-                    if (t.closest && t.closest('#clearBtn')){ e.preventDefault(); return void (window.QiqCatalog?.clear?.()); }
-                    if (t.closest && t.closest('#applyPrice')){ e.preventDefault(); return void (window.QiqCatalog?.render?.()); }
+                    if (t.closest && t.closest('#searchBtn')){ e.preventDefault(); e.stopImmediatePropagation(); return void (window.QiqCatalog?.search?.() || document.getElementById('searchBtn')?.click()); }
+                    if (t.closest && t.closest('#clearBtn')){ e.preventDefault(); e.stopImmediatePropagation(); return void (window.QiqCatalog?.clear?.()); }
+                    if (t.closest && t.closest('#applyPrice')){ e.preventDefault(); e.stopImmediatePropagation(); return void (window.QiqCatalog?.render?.()); }
                     // View toggles
-                    if (t.closest && t.closest('#viewList')){ e.preventDefault(); window.QiqCatalog?.applyView?.('list-lines'); if (!document.getElementById('results')?.innerHTML?.trim()) window.QiqCatalog?.render?.(); return; }
-                    if (t.closest && t.closest('#viewGrid')){ e.preventDefault(); window.QiqCatalog?.applyView?.('grid'); if (!document.getElementById('results')?.innerHTML?.trim()) window.QiqCatalog?.render?.(); return; }
-                    if (t.closest && t.closest('#viewTable')){ e.preventDefault(); window.QiqCatalog?.applyView?.('table'); window.QiqCatalog?.render?.(); return; }
+                    if (t.closest && t.closest('#viewList')){ e.preventDefault(); e.stopImmediatePropagation(); window.QiqCatalog?.applyView?.('list-lines'); if (!document.getElementById('results')?.innerHTML?.trim()) window.QiqCatalog?.render?.(); return true; }
+                    if (t.closest && t.closest('#viewGrid')){ e.preventDefault(); e.stopImmediatePropagation(); window.QiqCatalog?.applyView?.('grid'); if (!document.getElementById('results')?.innerHTML?.trim()) window.QiqCatalog?.render?.(); return true; }
+                    if (t.closest && t.closest('#viewTable')){ e.preventDefault(); e.stopImmediatePropagation(); window.QiqCatalog?.applyView?.('table'); window.QiqCatalog?.render?.(); return true; }
                 }catch{}
-            }, true);
+                return false;
+            }
+            // 2) Capture-phase delegated click to guarantee behavior
+            document.addEventListener('click', (e)=>{ processPrimaryAction(e); }, true);
+            // 2b) Pointerdown rescue: fire early before other click hijackers
+            document.addEventListener('pointerdown', (e)=>{ processPrimaryAction(e); }, true);
 
             // 3) Mutation observer to re-ensure attributes aren’t removed
             if ('MutationObserver' in window){

@@ -289,9 +289,22 @@
 	      try{
 	        const prompt = 'Build a split layout with chat (left) and quote summary (right). Arabic labels, dark-mode-friendly. Include a form with a textarea#v0ChatInput and button#v0ChatSend. Render results in a div#v0ChatArea. Include a panel with buttons having data-add attributes to add items.';
 	        const context = { theme: (window.QiqTheme?.currentTheme||'light'), catalog: true };
-	        const r = await fetch('/api/v0/ui', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ prompt, context }) });
-	        const j = await r.json();
-	        const html = j?.html || '<div style="padding:16px;color:#6b7280">لا توجد واجهة مولدة. تحقق من مفاتيح V0.</div>';
+					let html = '';
+					try {
+						const r = await fetch('/api/v0/ui', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ prompt, context }) });
+						const j = await r.json();
+						html = j?.html || '';
+						if (!html) throw new Error('No HTML from /api/v0/ui');
+					} catch {
+						// Fallback to /api/v0/design if available
+						try {
+							const r2 = await fetch('/api/v0/design', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ prompt, type: 'component' }) });
+							const j2 = await r2.json();
+							html = j2?.component?.html || j2?.component || '<div style="padding:16px;color:#6b7280">لا توجد واجهة مولدة. تحقق من مفاتيح V0.</div>';
+						} catch {
+							html = '<div style="padding:16px;color:#6b7280">لا توجد واجهة مولدة. تحقق من مفاتيح V0.</div>';
+						}
+					}
 	        window.QiqModal?.open('#', { title:'واجهة V0', html, size:'lg' });
 	        // After modal loads, lightly enhance the generated UI without conflicting with existing code
 	        setTimeout(()=>{

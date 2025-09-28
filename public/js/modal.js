@@ -122,6 +122,7 @@
                         if (window.parent.QiqWizardHandle) {
                           window.parent.QiqWizardHandle('form-submit', data);
                         }
+                        try { form.requestSubmit ? form.requestSubmit() : form.submit(); } catch {}
                       }
                     } catch(e) {
                       console.error('Button click error:', e);

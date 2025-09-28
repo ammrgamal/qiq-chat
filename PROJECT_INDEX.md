@@ -1,5 +1,5 @@
 # Project Index — qiq-chat
-Generated: 2025-09-28T19:30:59.612Z
+Generated: 2025-09-28T20:05:10.522Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
 - Total size: 1.8 MB
@@ -168,14 +168,14 @@ qiq-chat/
 │   │   ├── experimental-banner.js (2.3 KB)
 │   │   ├── fixed-chat-system.js (45.3 KB)
 │   │   ├── interface-fixes.js (36.3 KB)
-│   │   ├── modal.js (12.4 KB)
+│   │   ├── modal.js (12.5 KB)
 │   │   ├── openai-chat-system.js (29.3 KB)
 │   │   ├── pdf-admin.js (16.6 KB)
 │   │   ├── pdf-arabic-fonts.js (1.8 KB)
 │   │   ├── performance.js (5.6 KB)
 │   │   ├── product-data-enhancer.js (22.5 KB)
 │   │   ├── product-image-handler.js (16.8 KB)
-│   │   ├── products-search-enhanced.js (31.7 KB)
+│   │   ├── products-search-enhanced.js (32.3 KB)
 │   │   ├── products-search.js (6.9 KB)
 │   │   ├── products-ui-enhanced.js (22.1 KB)
 │   │   ├── quote-actions.js (42.7 KB)
@@ -187,7 +187,7 @@ qiq-chat/
 │   │   ├── security.js (7.6 KB)
 │   │   ├── smart-boq-recommender.js (26.4 KB)
 │   │   ├── system-config.js (13.7 KB)
-│   │   ├── system-final-check.js (19.6 KB)
+│   │   ├── system-final-check.js (20.1 KB)
 │   │   ├── system-initializer.js (17.4 KB)
 │   │   ├── toast.js (4.3 KB)
 │   │   ├── ui-chat.js (32.3 KB)
@@ -200,7 +200,7 @@ qiq-chat/
 │   ├── admin.html (13.4 KB)
 │   ├── index.html (11.2 KB)
 │   ├── logo.png (15.7 KB)
-│   ├── products-list.html (32.0 KB)
+│   ├── products-list.html (32.6 KB)
 │   ├── project-instructions.md (4.1 KB)
 │   ├── quote.html (23.3 KB)
 │   ├── test-helloleads.html (16.0 KB)
@@ -234,7 +234,7 @@ qiq-chat/
 ├── package.json (922 B)
 ├── PROJECT_INDEX.md (15.3 KB)
 ├── quote.html (12.8 KB)
-├── server.js (7.3 KB)
+├── server.js (7.4 KB)
 ├── SMART_SYSTEM_GUIDE.md (11.7 KB)
 └── test-flow.html (6.0 KB)
 ```

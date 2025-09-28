@@ -576,4 +576,17 @@
       if (t.closest && t.closest('[data-open-quote-wizard]')){ e.preventDefault(); try { window.QiqQuoteWizard?.open?.(); } catch {} return; }
     }catch{}
   }, true);
+
+  // Keyboard activation rescue for key buttons (Enter/Space)
+  document.addEventListener('keydown', (e)=>{
+    try{
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const t = e.target;
+      if (t.closest && (t.closest('#searchBtn') || t.closest('#clearBtn') || t.closest('#applyPrice') || t.closest('#viewList') || t.closest('#viewGrid') || t.closest('#viewTable') || t.closest('[data-open-quote-wizard]'))){
+        e.preventDefault();
+        const fakeClick = new MouseEvent('click', { bubbles:true, cancelable:true, view:window });
+        t.dispatchEvent(fakeClick);
+      }
+    }catch{}
+  }, true);
 })();
