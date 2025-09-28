@@ -13,7 +13,7 @@
   const paginationEl = $('#pagination');
 
   function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-  const PLACEHOLDER = 'https://via.placeholder.com/68?text=IMG';
+  const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='68' height='68'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#9ca3af' font-size='12'>IMG</text></svg>");
 
   async function apiSearch(q, {hitsPerPage=20,page=0,filters={}}={}){
     try{

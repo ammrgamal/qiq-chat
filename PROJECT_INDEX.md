@@ -1,10 +1,10 @@
 # Project Index — qiq-chat
-Generated: 2025-09-28T05:37:40.915Z
+Generated: 2025-09-28T06:03:37.109Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
-- Total size: 1.0 MB
-- Files: 100
-- Directories: 20
+- Total size: 1.7 MB
+- Files: 144
+- Directories: 21
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
 
@@ -31,6 +31,9 @@ This file is auto-generated. Share it with ChatGPT for context.
   - api/admin/users.js
 - assets/
   - fonts/
+- bundles/
+  - api/bundles/save.js
+  - api/bundles/search.js
 - storage/
   - api/storage/quotations.js
 - users/
@@ -46,16 +49,23 @@ This file is auto-generated. Share it with ChatGPT for context.
 - api/bundles-align.js
 - api/chat.js
 - api/compare.js
+- api/health.js
 - api/hello-leads.js
+- api/helloleads-enhanced.js
 - api/maintenance.js
 - api/media-enrich.js
+- api/openai-assistant.js
 - api/pdf-ai.js
 - api/quote-email.js
+- api/quote-wizard-enhanced.js
 - api/quote.js
 - api/search-health.js
 - api/search.js
 - api/special-quote.js
+- api/v0-design.js
 - api/v0-ui.js
+- api/visitor-tracking-enhanced.js
+- api/visitor-tracking.js
 
 ## Tree (truncated)
 
@@ -65,14 +75,14 @@ qiq-chat/
 │   ├── algoliaMapper.spec.ts (525 B)
 │   └── pdfTotals.spec.ts (1.3 KB)
 ├── .storage/
-│   ├── activity.json (21.2 KB)
+│   ├── activity.json (22.1 KB)
 │   └── quotations.json (672 B)
 ├── ai/
 │   └── ai-instructions.txt (3.5 KB)
 ├── api/
 │   ├── _lib/
 │   │   ├── email.js (5.4 KB)
-│   │   ├── helloleads.js (2.9 KB)
+│   │   ├── helloleads.js (4.2 KB)
 │   │   └── jwt.js (1.5 KB)
 │   ├── admin/
 │   │   ├── activity.js (335 B)
@@ -89,6 +99,9 @@ qiq-chat/
 │   │   └── users.js (329 B)
 │   ├── assets/
 │   │   └── fonts/
+│   ├── bundles/
+│   │   ├── save.js (3.5 KB)
+│   │   └── search.js (6.1 KB)
 │   ├── storage/
 │   │   └── quotations.js (4.9 KB)
 │   ├── users/
@@ -102,57 +115,95 @@ qiq-chat/
 │   ├── agent.js (1.5 KB)
 │   ├── boq-parse.js (4.5 KB)
 │   ├── bundles-align.js (5.5 KB)
-│   ├── chat.js (9.7 KB)
+│   ├── chat.js (12.8 KB)
 │   ├── compare.js (2.8 KB)
-│   ├── hello-leads.js (855 B)
+│   ├── health.js (2.2 KB)
+│   ├── hello-leads.js (2.9 KB)
+│   ├── helloleads-enhanced.js (12.9 KB)
 │   ├── maintenance.js (4.1 KB)
-│   ├── media-enrich.js (3.0 KB)
+│   ├── media-enrich.js (4.2 KB)
+│   ├── openai-assistant.js (14.5 KB)
 │   ├── pdf-ai.js (14.4 KB)
-│   ├── quote-email.js (47.8 KB)
+│   ├── quote-email.js (54.0 KB)
+│   ├── quote-wizard-enhanced.js (18.9 KB)
 │   ├── quote.js (741 B)
 │   ├── search-health.js (1.2 KB)
 │   ├── search.js (2.8 KB)
 │   ├── special-quote.js (4.2 KB)
-│   └── v0-ui.js (2.6 KB)
+│   ├── v0-design.js (10.9 KB)
+│   ├── v0-ui.js (2.6 KB)
+│   ├── visitor-tracking-enhanced.js (9.4 KB)
+│   └── visitor-tracking.js (2.5 KB)
 ├── docs/
 │   ├── algolia_index_reference.md (2.7 KB)
+│   ├── ANTI_REPETITION_SYSTEM.md (6.0 KB)
+│   ├── CATALOG_ENHANCEMENTS_REPORT.md (7.9 KB)
 │   ├── COPILOT_INSTRUCTIONS.md (3.7 KB)
+│   ├── OPENAI_ASSISTANT_INTEGRATION.md (8.4 KB)
+│   ├── QUOTE_WIZARD_FIXES.md (6.4 KB)
 │   └── SETUP.md (3.1 KB)
 ├── public/
 │   ├── css/
-│   │   └── styles.css (14.3 KB)
+│   │   ├── enhanced-catalog.css (11.0 KB)
+│   │   ├── professional-design.css (15.2 KB)
+│   │   └── styles.css (15.8 KB)
 │   ├── fonts/
 │   │   └── README.txt (361 B)
 │   ├── js/
 │   │   ├── account.js (22.9 KB)
 │   │   ├── admin-quotes.js (11.3 KB)
 │   │   ├── admin.js (25.5 KB)
+│   │   ├── advanced-analytics.js (20.3 KB)
+│   │   ├── advanced-form-validator.js (18.5 KB)
+│   │   ├── advanced-state-manager.js (16.0 KB)
 │   │   ├── analytics.js (19.2 KB)
+│   │   ├── anti-repetition.js (9.4 KB)
 │   │   ├── api.js (1.8 KB)
+│   │   ├── auto-bundle-generator.js (20.8 KB)
+│   │   ├── catalog-enhancements.js (17.4 KB)
+│   │   ├── chat-state-manager.js (13.9 KB)
+│   │   ├── enhanced-ui-components.js (28.6 KB)
+│   │   ├── error-handler-optimizer.js (15.8 KB)
 │   │   ├── experimental-banner.js (2.3 KB)
-│   │   ├── modal.js (7.7 KB)
+│   │   ├── fixed-chat-system.js (45.3 KB)
+│   │   ├── interface-fixes.js (36.3 KB)
+│   │   ├── modal.js (10.8 KB)
+│   │   ├── openai-chat-system.js (29.3 KB)
 │   │   ├── pdf-admin.js (16.6 KB)
 │   │   ├── pdf-arabic-fonts.js (1.8 KB)
 │   │   ├── performance.js (5.6 KB)
-│   │   ├── products-search-enhanced.js (25.7 KB)
-│   │   ├── products-search.js (6.7 KB)
-│   │   ├── quote-actions.js (41.7 KB)
+│   │   ├── product-data-enhancer.js (22.5 KB)
+│   │   ├── product-image-handler.js (16.8 KB)
+│   │   ├── products-search-enhanced.js (26.8 KB)
+│   │   ├── products-search.js (6.9 KB)
+│   │   ├── products-ui-enhanced.js (22.1 KB)
+│   │   ├── quote-actions.js (42.7 KB)
+│   │   ├── quote-badge.js (1.6 KB)
 │   │   ├── quote-form.js (3.0 KB)
-│   │   ├── quote-wizard.js (22.2 KB)
-│   │   ├── quote.js (73.9 KB)
+│   │   ├── quote-wizard-debug.js (7.9 KB)
+│   │   ├── quote-wizard.js (25.8 KB)
+│   │   ├── quote.js (82.8 KB)
 │   │   ├── security.js (7.6 KB)
+│   │   ├── smart-boq-recommender.js (26.4 KB)
+│   │   ├── system-config.js (13.7 KB)
+│   │   ├── system-final-check.js (16.5 KB)
+│   │   ├── system-initializer.js (17.4 KB)
 │   │   ├── toast.js (4.3 KB)
-│   │   ├── ui-chat.js (14.3 KB)
+│   │   ├── ui-chat.js (31.1 KB)
 │   │   ├── ui-enhancements.js (25.0 KB)
-│   │   └── user-features.js (11.8 KB)
+│   │   ├── user-features.js (12.1 KB)
+│   │   ├── visitor-tracker.js (10.1 KB)
+│   │   └── visitor-tracking-client.js (12.0 KB)
 │   ├── account.html (2.2 KB)
 │   ├── admin-quotes.html (4.2 KB)
 │   ├── admin.html (13.4 KB)
-│   ├── index.html (9.3 KB)
+│   ├── index.html (11.2 KB)
 │   ├── logo.png (15.7 KB)
-│   ├── products-list.html (26.9 KB)
+│   ├── products-list.html (31.0 KB)
 │   ├── project-instructions.md (4.1 KB)
-│   └── quote.html (21.7 KB)
+│   ├── quote.html (23.3 KB)
+│   ├── test-helloleads.html (16.0 KB)
+│   └── test-smart-system.html (21.4 KB)
 ├── scripts/
 │   ├── bundle_miner/
 │   │   ├── main.py (13.5 KB)
@@ -171,14 +222,18 @@ qiq-chat/
 ├── .env (76 B)
 ├── .gitignore (71 B)
 ├── demo-table.html (5.8 KB)
-├── index.html (8.4 KB)
+├── DEPLOY_GUIDE.md (5.6 KB)
+├── ENHANCED_SYSTEM_DOCS.md (11.4 KB)
+├── HELLOLEADS_INTEGRATION.md (6.3 KB)
+├── index.html (9.8 KB)
 ├── index.js (956 B)
 ├── jest.config.cjs (154 B)
 ├── package-lock.json (312.3 KB)
 ├── package.json (922 B)
-├── PROJECT_INDEX.md (12.6 KB)
+├── PROJECT_INDEX.md (14.8 KB)
 ├── quote.html (12.8 KB)
-├── server.js (6.9 KB)
+├── server.js (7.0 KB)
+├── SMART_SYSTEM_GUIDE.md (11.7 KB)
 └── test-flow.html (6.0 KB)
 ```
 

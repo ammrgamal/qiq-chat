@@ -157,7 +157,7 @@
 
   const defaultLogo = (state.logo || "/logo.png"); // غيّر المسار حسب مشروعك
   logoEl.src = defaultLogo;
-  logoEl.onerror = () => (logoEl.src = "https://via.placeholder.com/200x80?text=LOGO");
+  logoEl.onerror = () => (logoEl.src = 'data:image/svg+xml;utf8,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='200' height='80'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#9ca3af' font-size='18'>LOGO</text></svg>"));
 
   // Prefill currency
   $("currency").value = state.currency || "EGP";
@@ -717,12 +717,30 @@
     showPayloadPreview(payload);
     setLoadingState(e.target, true);
     try {
-      // Create lead first in HelloLeads
+      // Send to HelloLeads with enhanced data
       try{
-        const leadRes = await fetch('/api/hello-leads', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
+        const leadRes = await fetch('/api/hello-leads', { 
+          method:'POST', 
+          headers:{'content-type':'application/json'}, 
+          body: JSON.stringify({
+            ...payload,
+            quotation: {
+              id: payload.number,
+              action: 'special-price',
+              currency: payload.currency,
+              total: calculateQuoteTotal(),
+              itemCount: payload.items.length
+            }
+          })
+        });
         const leadJson = await leadRes.json().catch(()=>({}));
-        console.info('HelloLeads:', leadRes.status, leadJson?.ok); // non-blocking
-      }catch{}
+        if (leadJson.ok) {
+          console.log('✅ HelloLeads: Special price lead created');
+        } else {
+          console.warn('⚠️ HelloLeads:', leadJson);
+        }
+      }catch(e){ console.warn('HelloLeads error:', e); }
+      
       const r = await fetch("/api/special-quote", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -772,12 +790,30 @@
     showPayloadPreview(payload);
     setLoadingState(e.target, true);
     try {
-      // Create lead first in HelloLeads
+      // Send to HelloLeads with enhanced data
       try{
-        const leadRes = await fetch('/api/hello-leads', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload) });
+        const leadRes = await fetch('/api/hello-leads', { 
+          method:'POST', 
+          headers:{'content-type':'application/json'}, 
+          body: JSON.stringify({
+            ...payload,
+            quotation: {
+              id: payload.number,
+              action: 'standard-quote',
+              currency: payload.currency,
+              total: calculateQuoteTotal(),
+              itemCount: payload.items.length
+            }
+          })
+        });
         const leadJson = await leadRes.json().catch(()=>({}));
-        console.info('HelloLeads:', leadRes.status, leadJson?.ok); // non-blocking
-      }catch{}
+        if (leadJson.ok) {
+          console.log('✅ HelloLeads: Standard quote lead created');
+        } else {
+          console.warn('⚠️ HelloLeads:', leadJson);
+        }
+      }catch(e){ console.warn('HelloLeads error:', e); }
+      
       const r = await fetch("/api/special-quote", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -796,6 +832,84 @@
   });
 
   // ===== New Event Handlers =====
+  
+  // Send to Quote API (Download/Send/Custom) with HelloLeads integration
+  ["download", "send", "custom"].forEach(action => {
+    const btn = $(`btn-${action}`);
+    if (btn) {
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        if (!validateRequiredBeforePDF()) return;
+        
+        const payload = buildPayload({ reason: `${action}-quote` });
+        payload.action = action; // Add action to payload
+        payload.adminNotify = true; // Always notify admin
+        
+        showPayloadPreview(payload);
+        setLoadingState(e.target, true);
+        
+        try {
+          const response = await fetch("/api/quote-email", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            
+            // Show success message based on action
+            const messages = {
+              download: "تم إنشاء PDF بنجاح",
+              send: "تم إرسال العرض بالبريد الإلكتروني",
+              custom: "تم إرسال طلب العرض المخصص"
+            };
+            
+            showNotification(messages[action] || "تم المعالجة بنجاح", "success");
+            
+            // Log HelloLeads status
+            if (result.helloleads) {
+              if (result.helloleads.ok) {
+                console.log("✅ HelloLeads: Lead created successfully");
+              } else {
+                console.warn("⚠️ HelloLeads:", result.helloleads);
+              }
+            }
+            
+            // Handle PDF download for download action
+            if (action === "download" && result.pdfBase64) {
+              try {
+                const pdfBlob = new Blob([Uint8Array.from(atob(result.pdfBase64), c => c.charCodeAt(0))], 
+                  { type: 'application/pdf' });
+                const url = URL.createObjectURL(pdfBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${payload.number || 'quotation'}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+              } catch (downloadError) {
+                console.warn("PDF download failed:", downloadError);
+                showNotification("PDF تم إنشاؤه ولكن تعذر تنزيله تلقائياً", "warning");
+              }
+            }
+            
+          } else {
+            const errorData = await response.text();
+            console.error("Quote API failed:", response.status, errorData);
+            showNotification("تعذر معالجة الطلب", "error");
+          }
+          
+        } catch (error) {
+          console.error("Quote submission error:", error);
+          showNotification("تعذر الاتصال بالخادم", "error");
+        } finally {
+          setLoadingState(e.target, false);
+        }
+      });
+    }
+  });
   
   // Proceed to Request Quote CTA
   const proceedBtn = $("btn-proceed-quote");
@@ -1175,6 +1289,105 @@
     grandCell.textContent = fmt(subtotalConverted + installAmount, toCurrency);
   }
 
+  // ===== Visitor Tracking Functions (Updated to use QiqTracker) =====
+  function getVisitorTrackingData() {
+    // Use the global visitor tracker if available
+    if (window.qiqTracker) {
+      return window.qiqTracker.getTrackingDataForQuote().visitor;
+    }
+    
+    // Fallback to manual tracking
+    return {
+      sessionId: getOrCreateSessionId(),
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      screenResolution: `${screen.width}x${screen.height}`,
+      viewportSize: `${window.innerWidth}x${window.innerHeight}`,
+      referer: document.referrer,
+      currentUrl: window.location.href,
+      utm: extractUtmFromUrl(),
+      visitDuration: calculateVisitDuration(),
+      pageviews: getPageviewCount(),
+      device: detectDeviceType(),
+      browser: detectBrowser()
+    };
+  }
+
+  function getOrCreateSessionId() {
+    const sessionKey = 'qiq_session_id';
+    let sessionId = sessionStorage.getItem(sessionKey);
+    if (!sessionId) {
+      sessionId = `qiq_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      sessionStorage.setItem(sessionKey, sessionId);
+      // Also store session start time
+      sessionStorage.setItem('qiq_session_start', Date.now().toString());
+    }
+    return sessionId;
+  }
+
+  function extractUtmFromUrl() {
+    const utm = {};
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(param => {
+      if (urlParams.has(param)) {
+        utm[param] = urlParams.get(param);
+      }
+    });
+    
+    // Also check for stored UTM from first visit
+    const storedUtm = sessionStorage.getItem('qiq_utm_data');
+    if (storedUtm && Object.keys(utm).length === 0) {
+      try {
+        return JSON.parse(storedUtm);
+      } catch (e) {
+        // Ignore invalid stored data
+      }
+    }
+    
+    // Store UTM for session if we have any
+    if (Object.keys(utm).length > 0) {
+      sessionStorage.setItem('qiq_utm_data', JSON.stringify(utm));
+    }
+    
+    return utm;
+  }
+
+  function calculateVisitDuration() {
+    const sessionStart = sessionStorage.getItem('qiq_session_start');
+    if (sessionStart) {
+      return Math.round((Date.now() - parseInt(sessionStart)) / 1000); // in seconds
+    }
+    return 0;
+  }
+
+  function getPageviewCount() {
+    const countKey = 'qiq_pageview_count';
+    let count = sessionStorage.getItem(countKey);
+    count = count ? parseInt(count) + 1 : 1;
+    sessionStorage.setItem(countKey, count.toString());
+    return count;
+  }
+
+  function detectDeviceType() {
+    const ua = navigator.userAgent.toLowerCase();
+    if (ua.includes('mobile') || ua.includes('android')) return 'mobile';
+    if (ua.includes('tablet') || ua.includes('ipad')) return 'tablet';
+    return 'desktop';
+  }
+
+  function detectBrowser() {
+    const ua = navigator.userAgent.toLowerCase();
+    if (ua.includes('chrome') && !ua.includes('edg')) return 'chrome';
+    if (ua.includes('firefox')) return 'firefox';
+    if (ua.includes('safari') && !ua.includes('chrome')) return 'safari';
+    if (ua.includes('edg')) return 'edge';
+    if (ua.includes('opera')) return 'opera';
+    return 'unknown';
+  }
+
   function buildPayload(extra) {
     const items = [];
     itemsBody.querySelectorAll("tr").forEach(tr => {
@@ -1212,9 +1425,50 @@
       payment_terms: $("payment-terms").value || "",
       terms: $("terms").value || "",
       include_installation_5pct: $("include-install").checked,
-      items
+      items,
+      // Add visitor tracking data
+      visitor: getVisitorTrackingData(),
+      source: determineQuoteSource()
     };
     return payload;
+  }
+
+  function calculateQuoteTotal() {
+    let total = 0;
+    itemsBody.querySelectorAll("tr").forEach(tr => {
+      const unit = num(tr.querySelector(".in-unit")?.value);
+      const qty = Math.max(1, parseInt(tr.querySelector(".in-qty")?.value || "1", 10));
+      total += unit * qty;
+    });
+    
+    // Add installation if enabled
+    if ($("include-install").checked) {
+      total += total * 0.05; // 5% installation fee
+    }
+    
+    return total;
+  }
+
+  function determineQuoteSource() {
+    // Determine the source of this quotation
+    const utmData = extractUtmFromUrl();
+    
+    if (utmData.utm_source) {
+      return utmData.utm_medium ? `${utmData.utm_source}/${utmData.utm_medium}` : utmData.utm_source;
+    }
+    
+    if (document.referrer) {
+      try {
+        const refHost = new URL(document.referrer).hostname;
+        if (refHost.includes('quickitquote')) return 'qiq-internal';
+        if (refHost.includes('google')) return 'google-organic';
+        return `referral/${refHost}`;
+      } catch (e) {
+        // Invalid referrer URL
+      }
+    }
+    
+    return 'qiq-quote-direct';
   }
 
   function showPayloadPreview(payload) {

@@ -10,12 +10,28 @@ export async function enrichItems(itemsInput) {
   const items = Array.isArray(itemsInput) ? itemsInput : [];
   if (!items.length) return { items: [], provider: 'gemini' };
 
+  // Lightweight in-memory cache (per-process). TTL defaults to 7 days unless overridden.
+  const ttlMs = Math.max(1, Number(process.env.MEDIA_ENRICH_TTL_HOURS || 24 * 7)) * 3600_000;
+  const now = Date.now();
+  globalThis.__qiqEnrichCache = globalThis.__qiqEnrichCache || new Map();
+  const cache = globalThis.__qiqEnrichCache;
+
   const out = [];
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(key)}`;
   for (const it of items) {
     const needsImage = !it.image;
     const needsSpec = !it.spec_sheet;
     if (!needsImage && !needsSpec) { out.push({}); continue; }
+    const cacheKey = makeKey(it);
+    const cached = cache.get(cacheKey);
+    if (cached && cached.expiresAt > now) {
+      // Only supply missing pieces from cache
+      out.push({
+        image: needsImage ? (cached.image || undefined) : undefined,
+        spec_sheet: needsSpec ? (cached.spec_sheet || undefined) : undefined
+      });
+      continue;
+    }
     const prompt = [
       'Given the following product info, return a JSON with direct imageUrl and specPdfUrl if confidently found. If unsure, return empty strings.\n',
       `Name: ${it.name || ''}\n`,
@@ -44,7 +60,12 @@ export async function enrichItems(itemsInput) {
         const text = j?.candidates?.[0]?.content?.parts?.[0]?.text || '';
         try { const parsed = JSON.parse(text); imageUrl = String(parsed?.imageUrl || ''); specPdfUrl = String(parsed?.specPdfUrl || ''); } catch {}
       }
-      out.push({ image: imageUrl || undefined, spec_sheet: specPdfUrl || undefined });
+      const record = { image: imageUrl || undefined, spec_sheet: specPdfUrl || undefined };
+      // Save to cache if something was found
+      if (record.image || record.spec_sheet) {
+        cache.set(cacheKey, { ...record, expiresAt: now + ttlMs });
+      }
+      out.push(record);
     } catch (e) {
       out.push({});
     }
@@ -65,4 +86,11 @@ export default async function handler(req, res) {
   } catch (e) {
     return res.status(500).json({ error: e?.message || 'enrich failed' });
   }
+}
+
+function makeKey(p = {}){
+  const brand = (p.brand || '').toString().trim().toLowerCase();
+  const pn = (p.pn || p.sku || '').toString().trim().toLowerCase();
+  const name = (p.name || '').toString().trim().toLowerCase();
+  return [brand, pn, name].filter(Boolean).join('|') || name || pn || brand;
 }

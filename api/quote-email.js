@@ -858,6 +858,146 @@ function buildSummaryHtml(payload, action){
 
 function escapeHtml(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]||c)); }
 
+// ===== Visitor Tracking & Lead Source Helpers =====
+function extractVisitorInfo(req, payload) {
+  const headers = req.headers || {};
+  const userAgent = headers['user-agent'] || '';
+  const referer = headers['referer'] || headers['referrer'] || '';
+  const forwardedFor = headers['x-forwarded-for'] || '';
+  const realIp = headers['x-real-ip'] || '';
+  const cfConnectingIp = headers['cf-connecting-ip'] || '';
+  
+  // Extract IP address (prioritize CF/proxy headers)
+  let ipAddress = cfConnectingIp || realIp || forwardedFor.split(',')[0]?.trim() || 
+                  req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
+  
+  // Extract browser/device info
+  const browserInfo = parseBrowserInfo(userAgent);
+  
+  // Extract UTM parameters or referrer info if available in payload
+  const utmData = extractUtmParameters(payload, referer);
+  
+  return {
+    ipAddress: ipAddress,
+    userAgent: userAgent,
+    referer: referer,
+    browser: browserInfo.browser,
+    os: browserInfo.os,
+    device: browserInfo.device,
+    timestamp: new Date().toISOString(),
+    utm: utmData,
+    sessionId: payload.sessionId || generateSessionId()
+  };
+}
+
+function parseBrowserInfo(userAgent) {
+  const ua = userAgent.toLowerCase();
+  
+  let browser = 'unknown';
+  let os = 'unknown';
+  let device = 'desktop';
+  
+  // Browser detection
+  if (ua.includes('chrome') && !ua.includes('edg')) browser = 'chrome';
+  else if (ua.includes('firefox')) browser = 'firefox';
+  else if (ua.includes('safari') && !ua.includes('chrome')) browser = 'safari';
+  else if (ua.includes('edg')) browser = 'edge';
+  else if (ua.includes('opera')) browser = 'opera';
+  
+  // OS detection
+  if (ua.includes('windows')) os = 'windows';
+  else if (ua.includes('mac')) os = 'macos';
+  else if (ua.includes('linux')) os = 'linux';
+  else if (ua.includes('android')) os = 'android';
+  else if (ua.includes('ios')) os = 'ios';
+  
+  // Device type detection
+  if (ua.includes('mobile') || ua.includes('android')) device = 'mobile';
+  else if (ua.includes('tablet') || ua.includes('ipad')) device = 'tablet';
+  
+  return { browser, os, device };
+}
+
+function extractUtmParameters(payload, referer) {
+  const utm = {};
+  
+  // Try to extract UTM from payload if provided by frontend
+  if (payload.utm) {
+    Object.assign(utm, payload.utm);
+  }
+  
+  // Try to extract from referer URL
+  try {
+    const url = new URL(referer);
+    const searchParams = url.searchParams;
+    
+    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach(param => {
+      if (searchParams.has(param)) {
+        utm[param] = searchParams.get(param);
+      }
+    });
+  } catch (e) {
+    // Invalid referer URL, ignore
+  }
+  
+  // Determine source from referer if no UTM
+  if (!utm.utm_source && referer) {
+    try {
+      const refererHost = new URL(referer).hostname;
+      if (refererHost.includes('google')) utm.utm_source = 'google';
+      else if (refererHost.includes('facebook')) utm.utm_source = 'facebook';
+      else if (refererHost.includes('linkedin')) utm.utm_source = 'linkedin';
+      else if (refererHost.includes('twitter')) utm.utm_source = 'twitter';
+      else utm.utm_source = refererHost;
+    } catch (e) {
+      utm.utm_source = 'direct';
+    }
+  } else if (!utm.utm_source) {
+    utm.utm_source = 'direct';
+  }
+  
+  return utm;
+}
+
+function determineLeadSource(payload, visitorInfo) {
+  // Priority order for determining lead source
+  
+  // 1. Explicit source in payload
+  if (payload.source) return payload.source;
+  
+  // 2. UTM source if available
+  if (visitorInfo.utm?.utm_source) {
+    const source = visitorInfo.utm.utm_source;
+    const medium = visitorInfo.utm?.utm_medium || '';
+    
+    if (medium) {
+      return `${source}/${medium}`;
+    }
+    return source;
+  }
+  
+  // 3. Referer-based source
+  if (visitorInfo.referer) {
+    try {
+      const refererHost = new URL(visitorInfo.referer).hostname;
+      if (refererHost.includes('quickitquote')) return 'qiq-website';
+      if (refererHost.includes('google')) return 'google-organic';
+      return `referral/${refererHost}`;
+    } catch (e) {
+      // Invalid referer URL
+    }
+  }
+  
+  // 4. Default based on context
+  return 'qiq-quote-direct';
+}
+
+function generateSessionId() {
+  return `qiq_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function sanitizeName(s){ return String(s||'').replace(/[^a-zA-Z0-9\-_ ]/g, '').replace(/\s+/g, '_').slice(0, 120); }
+
 // Safely render **bold** segments in HTML while escaping other content
 function formatBoldHtml(v){
   const safe = escapeHtml(v==null?'':String(v));
@@ -955,7 +1095,59 @@ export default async function handler(req, res){
     }
 
     // Respond with base64s for download
-  return res.status(200).json({ ok:true, pdfBase64: pdfB64, csvBase64: csvB64, email: { admin: adminRes||null, client: clientRes } });
+    
+    // ===== HelloLeads Integration =====
+    // Send quotation data to HelloLeads for lead tracking
+    let helloLeadsResult = null;
+    if (hasHelloLeads()) {
+      try {
+        // Extract visitor/session information from headers or payload
+        const visitorInfo = extractVisitorInfo(req, payload);
+        
+        // Prepare lead data for HelloLeads
+        const leadData = {
+          client: payload.client || {},
+          project: payload.project || {},
+          items: enrichedItems || [],
+          number: payload.number || '',
+          date: payload.date || new Date().toISOString().slice(0, 10),
+          source: determineLeadSource(payload, visitorInfo),
+          visitor: visitorInfo,
+          quotation: {
+            id: payload.number,
+            action: action,
+            currency: currency,
+            total: computeTotals(enrichedItems).grand,
+            itemCount: enrichedItems.length
+          }
+        };
+        
+        helloLeadsResult = await createLead(leadData);
+        
+        if (helloLeadsResult.ok) {
+          console.log('✅ HelloLeads: Lead created successfully', {
+            quotationId: payload.number,
+            leadSource: leadData.source,
+            clientEmail: payload?.client?.email || 'N/A'
+          });
+        } else {
+          console.warn('⚠️ HelloLeads: Failed to create lead', helloLeadsResult);
+        }
+      } catch (error) {
+        console.error('❌ HelloLeads: Error creating lead', error);
+        helloLeadsResult = { ok: false, error: error.message };
+      }
+    } else {
+      console.log('ℹ️ HelloLeads: Not configured, skipping lead creation');
+    }
+
+  return res.status(200).json({ 
+    ok: true, 
+    pdfBase64: pdfB64, 
+    csvBase64: csvB64, 
+    email: { admin: adminRes||null, client: clientRes },
+    helloleads: helloLeadsResult
+  });
   }catch(e){
     console.error('quote-email error', e);
     return res.status(500).json({ ok:false, error:'Server error' });

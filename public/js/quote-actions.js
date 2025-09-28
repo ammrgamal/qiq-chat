@@ -1,5 +1,15 @@
 /* ========= Enhanced Quote Actions with Search ========= */
 (function () {
+  // Inline SVG fallback image (avoids blocked external placeholders)
+  const FALLBACK_IMG = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#9ca3af' font-size='28'>IMG</text></svg>");
+
+  // Dispatch a global event whenever staged items change
+  function emitStagedItemsChanged() {
+    try {
+      const count = (JSON.parse(localStorage.getItem('qiq_staged_items') || '[]') || []).length;
+      document.dispatchEvent(new CustomEvent('stagedItemsChanged', { detail: { count } }));
+    } catch {}
+  }
   const tbody     = document.getElementById("qiq-body");     // جدول البنود
   const grandCell = document.getElementById("qiq-grand");    // الإجمالي
   const addAllBtn = document.getElementById("qiq-add-all");  // زرار Add all matched (لو موجود)
@@ -195,7 +205,7 @@
     const name    = data.name  || "—";
     const price   = data.price || "";
     const unitNum = numFromPrice(price);
-    const img     = data.image || "https://via.placeholder.com/68?text=IMG";
+  const img     = data.image || FALLBACK_IMG;
   const link    = data.link  || "";
   const spec    = data.spec_sheet || "";
     const source  = data.source|| "Add";
@@ -210,7 +220,7 @@
         <img class="qiq-img" src="${img}" alt="${name}"
           width="32" height="32"
           style="max-width:32px;max-height:32px;cursor:pointer;border-radius:6px"
-          onerror="this.src='https://via.placeholder.com/32?text=IMG'"
+          onerror="this.src='"+FALLBACK_IMG+"'"
           onclick="openImagePreview('${img}')"
           title="اضغط لمعاينة الصورة">
       </td>
@@ -250,7 +260,7 @@
         const title = 'تفاصيل المنتج';
         const html = `
           <div style="display:flex;gap:12px;align-items:flex-start">
-            <img src="${img}" alt="${name}" style="width:96px;height:96px;border-radius:10px;object-fit:cover;background:#f3f4f6" onerror="this.src='https://via.placeholder.com/96?text=IMG'"/>
+            <img src="${img}" alt="${name}" style="width:96px;height:96px;border-radius:10px;object-fit:cover;background:#f3f4f6" onerror="this.src='${FALLBACK_IMG}'"/>
             <div>
               <div style="font-weight:700;margin-bottom:6px">${name}</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">
@@ -329,6 +339,7 @@
     tbody.appendChild(tr);
     recalcTotals();
   updateStagedItemsFromTable();
+    emitStagedItemsChanged();
     
     // إضافة إلى السجل
     addToLog('إضافة', name, `المصدر: ${source}`);
@@ -371,6 +382,7 @@
       }
     });
     localStorage.setItem('qiq_staged_items', JSON.stringify(products));
+  emitStagedItemsChanged();
     // If a reference is active, also save snapshot under that reference key
     try{
       const ref = localStorage.getItem('qiq_boq_current_ref') || '';
@@ -428,8 +440,9 @@
       
       existingProducts.push(productToSave);
       
-      // حفظ القائمة المحدثة
-  localStorage.setItem('qiq_staged_items', JSON.stringify(existingProducts));
+    // حفظ القائمة المحدثة
+    localStorage.setItem('qiq_staged_items', JSON.stringify(existingProducts));
+    emitStagedItemsChanged();
       
       console.log('Product saved to localStorage:', productToSave);
     } catch (error) {
@@ -463,7 +476,7 @@
         payload.price = '';
       }
       if (!payload.image) {
-        payload.image = "https://via.placeholder.com/68?text=IMG";
+  payload.image = 'data:image/svg+xml;utf8,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='68' height='68'><rect width='100%' height='100%' fill='#f3f4f6'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' fill='#9ca3af' font-size='12'>IMG</text></svg>");
       }
 
       // أضف المنتج للجدول فعلياً

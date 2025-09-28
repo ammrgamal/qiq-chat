@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار النظام الذكي - QuickITQuote</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            background: #f8fafc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+        }
+        
+        .test-button.secondary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+        
+        .test-button.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        .success { color: #059669; font-weight: bold; }
+        .error { color: #dc2626; font-weight: bold; }
+        .info { color: #2563eb; font-weight: bold; }
+        .warning { color: #d97706; font-weight: bold; }
+        
+        .result-box {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+        }
+        
+        .status-success { background: #059669; }
+        .status-error { background: #dc2626; }
+        .status-warning { background: #d97706; }
+        .status-unknown { background: #6b7280; }
+        
+        .chat-demo {
+            background: #111827;
+            color: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .chat-message {
+            margin: 10px 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+        
+        .user-message {
+            background: #1f2937;
+            text-align: left;
+        }
+        
+        .bot-message {
+            background: #065f46;
+        }
+        
+        .bundle-card {
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .bundle-header {
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+        
+        .bundle-description {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        
+        .bundle-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .bundle-item {
+            background: #eff6ff;
+            color: #1e40af;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 اختبار النظام الذكي - QuickITQuote</h1>
+        
+        <div class="test-section">
+            <h2>🔧 حالة النظم الذكية</h2>
+            <p>فحص تحميل وتشغيل النظم الذكية:</p>
+            <button class="test-button" onclick="checkSmartSystems()">فحص النظم الذكية</button>
+            <div id="smart-systems-status"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>💬 اختبار إدارة حالة المحادثة</h2>
+            <p>اختبار ChatStateManager:</p>
+            <button class="test-button" onclick="testChatStateManager()">اختبار إدارة الحالة</button>
+            <button class="test-button secondary" onclick="resetChatState()">إعادة تعيين الحالة</button>
+            <div id="chat-state-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🎯 اختبار نظام التوصيات</h2>
+            <p>اختبار SmartBOQRecommender:</p>
+            <button class="test-button" onclick="testSmartRecommender()">اختبار التوصيات</button>
+            <button class="test-button secondary" onclick="simulateConversation()">محاكاة محادثة</button>
+            <div id="recommender-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📦 اختبار التجميعات التلقائية</h2>
+            <p>اختبار AutoBundleGenerator:</p>
+            <button class="test-button" onclick="testBundleGeneration()">توليد التجميعات</button>
+            <button class="test-button secondary" onclick="searchBundles()">البحث في التجميعات</button>
+            <div id="bundle-result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔄 اختبار المحادثة التفاعلية</h2>
+            <p>محاكاة محادثة كاملة مع النظام الذكي:</p>
+            <div class="chat-demo" id="interactive-chat"></div>
+            <div style="margin-top: 10px;">
+                <input type="text" id="user-input" placeholder="اكتب رسالتك هنا..." style="width: 70%; padding: 8px; border-radius: 4px; border: 1px solid #d1d5db;">
+                <button class="test-button" onclick="sendMessage()">إرسال</button>
+                <button class="test-button danger" onclick="clearChat()">مسح</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 إحصائيات الأداء</h2>
+            <button class="test-button secondary" onclick="showPerformanceStats()">عرض الإحصائيات</button>
+            <div id="performance-stats"></div>
+        </div>
+    </div>
+
+    <!-- تحميل النظم الذكية -->
+    <script src="/public/js/chat-state-manager.js"></script>
+    <script src="/public/js/smart-boq-recommender.js"></script>
+    <script src="/public/js/auto-bundle-generator.js"></script>
+
+    <script>
+        let testChatManager = null;
+        let testRecommender = null;
+        let testBundleGenerator = null;
+        let conversationDemo = [];
+
+        function log(message, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // فحص النظم الذكية
+        function checkSmartSystems() {
+            log('فحص حالة النظم الذكية...', 'info');
+            const statusDiv = document.getElementById('smart-systems-status');
+            
+            const systems = [
+                { name: 'ChatStateManager', available: !!window.ChatStateManager },
+                { name: 'SmartBOQRecommender', available: !!window.SmartBOQRecommender },
+                { name: 'AutoBundleGenerator', available: !!window.AutoBundleGenerator }
+            ];
+            
+            const statusHTML = systems.map(system => {
+                const statusClass = system.available ? 'status-success' : 'status-error';
+                const statusText = system.available ? 'متاح' : 'غير متاح';
+                return `
+                    <div style="margin: 8px 0;">
+                        <span class="status-indicator ${statusClass}"></span>
+                        <strong>${system.name}:</strong> ${statusText}
+                    </div>
+                `;
+            }).join('');
+            
+            statusDiv.innerHTML = `<div class="result-box">${statusHTML}</div>`;
+            
+            // تهيئة الأنظمة إذا كانت متاحة
+            if (window.ChatStateManager) {
+                testChatManager = new ChatStateManager();
+                log('تم تهيئة ChatStateManager', 'success');
+            }
+            
+            if (window.SmartBOQRecommender) {
+                testRecommender = new SmartBOQRecommender();
+                log('تم تهيئة SmartBOQRecommender', 'success');
+            }
+            
+            if (window.AutoBundleGenerator) {
+                testBundleGenerator = new AutoBundleGenerator();
+                log('تم تهيئة AutoBundleGenerator', 'success');
+            }
+        }
+
+        // اختبار إدارة حالة المحادثة
+        function testChatStateManager() {
+            if (!testChatManager) {
+                document.getElementById('chat-state-result').innerHTML = 
+                    '<div class="result-box error">ChatStateManager غير متاح</div>';
+                return;
+            }
+
+            log('اختبار إدارة حالة المحادثة...', 'info');
+            
+            // اختبار تحديث الحالة
+            testChatManager.updateUserNeeds({
+                solution: 'Security',
+                users: 50,
+                brand: 'Kaspersky'
+            });
+            
+            // اختبار تحليل المدخلات
+            const analysis = testChatManager.analyzeUserInput('عايز Kaspersky EDR لـ100 مستخدم');
+            
+            // اختبار الحصول على الإجراء التالي
+            const nextAction = testChatManager.getNextAction();
+            
+            const result = {
+                currentState: testChatManager.state,
+                inputAnalysis: analysis,
+                nextAction: nextAction,
+                stateSummary: testChatManager.getStateSummary()
+            };
+            
+            document.getElementById('chat-state-result').innerHTML = 
+                `<div class="result-box success">${JSON.stringify(result, null, 2)}</div>`;
+                
+            log('اختبار ChatStateManager مكتمل', 'success');
+        }
+
+        // إعادة تعيين حالة المحادثة
+        function resetChatState() {
+            if (testChatManager) {
+                testChatManager.resetState();
+                log('تم إعادة تعيين حالة المحادثة', 'success');
+                testChatStateManager();
+            }
+        }
+
+        // اختبار نظام التوصيات
+        function testSmartRecommender() {
+            if (!testRecommender || !testChatManager) {
+                document.getElementById('recommender-result').innerHTML = 
+                    '<div class="result-box error">النظم المطلوبة غير متاحة</div>';
+                return;
+            }
+
+            log('اختبار نظام التوصيات الذكية...', 'info');
+            
+            const userInput = 'عايز حماية Kaspersky لـ75 مستخدم مع firewall';
+            const chatAnalysis = testRecommender.analyzeChatIntent(userInput, testChatManager.state);
+            const smartReply = testRecommender.generateSmartReply(chatAnalysis, testChatManager.state);
+            
+            const result = {
+                userInput: userInput,
+                analysis: chatAnalysis,
+                smartReply: smartReply,
+                brandMapping: testRecommender.getBrandMapping(),
+                solutions: Object.keys(testRecommender.getSolutionTemplates())
+            };
+            
+            document.getElementById('recommender-result').innerHTML = 
+                `<div class="result-box success">${JSON.stringify(result, null, 2)}</div>`;
+                
+            log('اختبار SmartBOQRecommender مكتمل', 'success');
+        }
+
+        // محاكاة محادثة
+        function simulateConversation() {
+            if (!testRecommender || !testChatManager) return;
+            
+            const conversationSteps = [
+                'السلام عليكم',
+                'عايز حماية للشركة',
+                'الشركة فيها 100 موظف',
+                'نفضل Kaspersky',
+                'الميزانية حوالي 50000 جنيه',
+                'نعم عرض المنتجات من الكتالوج'
+            ];
+            
+            let resultHTML = '<div class="chat-demo">';
+            
+            conversationSteps.forEach((input, index) => {
+                // تحديث حالة المحادثة
+                testChatManager.addToLog('user', input);
+                const analysis = testChatManager.analyzeUserInput(input);
+                const chatAnalysis = testRecommender.analyzeChatIntent(input, testChatManager.state);
+                const reply = testRecommender.generateSmartReply(chatAnalysis, testChatManager.state);
+                
+                resultHTML += `
+                    <div class="chat-message user-message">👤 ${input}</div>
+                    <div class="chat-message bot-message">🤖 ${reply.reply}</div>
+                `;
+                
+                testChatManager.addToLog('assistant', reply.reply);
+                
+                // تحديث المرحلة
+                if (reply.suggestedPhase) {
+                    testChatManager.updateState({ phase: reply.suggestedPhase });
+                }
+            });
+            
+            resultHTML += '</div>';
+            document.getElementById('recommender-result').innerHTML = resultHTML;
+            
+            log('محاكاة المحادثة مكتملة', 'success');
+        }
+
+        // اختبار توليد التجميعات
+        async function testBundleGeneration() {
+            if (!testBundleGenerator) {
+                document.getElementById('bundle-result').innerHTML = 
+                    '<div class="result-box error">AutoBundleGenerator غير متاح</div>';
+                return;
+            }
+
+            log('اختبار توليد التجميعات التلقائي...', 'info');
+            document.getElementById('bundle-result').innerHTML = 
+                '<div class="result-box info">جاري توليد التجميعات...</div>';
+            
+            try {
+                const bundles = await testBundleGenerator.startAutoGeneration();
+                
+                let bundleHTML = '<div>';
+                bundles.forEach(bundle => {
+                    bundleHTML += `
+                        <div class="bundle-card">
+                            <div class="bundle-header">${bundle.name}</div>
+                            <div class="bundle-description">${bundle.description}</div>
+                            <div class="bundle-items">
+                                ${bundle.items.map(item => 
+                                    `<span class="bundle-item">${item.name}</span>`
+                                ).join('')}
+                            </div>
+                            <div style="margin-top: 8px; font-size: 12px; color: #6b7280;">
+                                المصدر: ${bundle.source} | الثقة: ${(bundle.confidence * 100).toFixed(0)}%
+                            </div>
+                        </div>
+                    `;
+                });
+                bundleHTML += '</div>';
+                
+                document.getElementById('bundle-result').innerHTML = bundleHTML;
+                log(`تم توليد ${bundles.length} تجميعة`, 'success');
+                
+            } catch (error) {
+                document.getElementById('bundle-result').innerHTML = 
+                    `<div class="result-box error">خطأ في توليد التجميعات: ${error.message}</div>`;
+                log('خطأ في توليد التجميعات: ' + error.message, 'error');
+            }
+        }
+
+        // البحث في التجميعات
+        async function searchBundles() {
+            log('البحث في التجميعات...', 'info');
+            
+            try {
+                const response = await fetch('/api/bundles/search?query=security&userCount=50');
+                const data = await response.json();
+                
+                let resultHTML = '<div class="result-box success">';
+                resultHTML += `البحث: security | المستخدمين: 50\n`;
+                resultHTML += `النتائج: ${data.bundles.length}\n\n`;
+                
+                data.bundles.forEach(bundle => {
+                    resultHTML += `${bundle.name}\n`;
+                    resultHTML += `الوصف: ${bundle.description}\n`;
+                    resultHTML += `العناصر: ${bundle.itemCount}\n`;
+                    resultHTML += `نطاق المستخدمين: ${bundle.userRange[0]}-${bundle.userRange[1]}\n\n`;
+                });
+                
+                resultHTML += '</div>';
+                document.getElementById('bundle-result').innerHTML = resultHTML;
+                
+            } catch (error) {
+                document.getElementById('bundle-result').innerHTML = 
+                    `<div class="result-box error">خطأ في البحث: ${error.message}</div>`;
+            }
+        }
+
+        // إرسال رسالة تفاعلية
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            
+            if (!message || !testChatManager || !testRecommender) return;
+            
+            const chatDiv = document.getElementById('interactive-chat');
+            
+            // إضافة رسالة المستخدم
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-message user-message';
+            userMsg.textContent = `👤 ${message}`;
+            chatDiv.appendChild(userMsg);
+            
+            // معالجة الرسالة
+            const analysis = testChatManager.analyzeUserInput(message);
+            const chatAnalysis = testRecommender.analyzeChatIntent(message, testChatManager.state);
+            const reply = testRecommender.generateSmartReply(chatAnalysis, testChatManager.state);
+            
+            // إضافة رد البوت
+            const botMsg = document.createElement('div');
+            botMsg.className = 'chat-message bot-message';
+            botMsg.textContent = `🤖 ${reply.reply}`;
+            chatDiv.appendChild(botMsg);
+            
+            // تحديث السجل
+            testChatManager.addToLog('user', message);
+            testChatManager.addToLog('assistant', reply.reply);
+            
+            // مسح الإدخال والتمرير للأسفل
+            input.value = '';
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+
+        // مسح المحادثة
+        function clearChat() {
+            document.getElementById('interactive-chat').innerHTML = '';
+            if (testChatManager) {
+                testChatManager.resetState();
+            }
+        }
+
+        // إحصائيات الأداء
+        function showPerformanceStats() {
+            if (!testChatManager) return;
+            
+            const stats = {
+                conversationLength: testChatManager.conversationLog.length,
+                currentPhase: testChatManager.state.phase,
+                collectedNeeds: Object.entries(testChatManager.state.userNeeds)
+                    .filter(([key, value]) => value !== null).length,
+                askedQuestions: testChatManager.state.askedQuestions.length,
+                recommendations: testChatManager.state.recommendations.length,
+                sessionDuration: Date.now() - new Date(testChatManager.state.lastUpdated).getTime(),
+                qualityScore: testRecommender ? 
+                    testRecommender.assessConversationQuality(testChatManager.conversationLog) : 
+                    null
+            };
+            
+            document.getElementById('performance-stats').innerHTML = 
+                `<div class="result-box success">${JSON.stringify(stats, null, 2)}</div>`;
+        }
+
+        // مراقبة إدخال Enter
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('user-input');
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // فحص تلقائي للنظم
+            setTimeout(checkSmartSystems, 1000);
+        });
+    </script>
+</body>
+</html>

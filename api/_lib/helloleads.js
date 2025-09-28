@@ -28,17 +28,24 @@ async function fetchWithRetry(url, opts, { retries = 1, backoffMs = 800 } = {}){
   throw lastErr || new Error('fetch failed');
 }
 
-export async function createLead({ client={}, project={}, items=[], number='', date='', source='qiq-quote' }={}){
+export async function createLead({ client={}, project={}, items=[], number='', date='', source='qiq-quote', visitor={}, quotation={} }={}){
   const { apiKey, listKey, endpoint } = readHelloLeadsEnv();
   if (!apiKey || !listKey){
     return { ok:false, skipped:true, reason:'missing_keys', provider:'HelloLeads' };
   }
   const lines = (Array.isArray(items)?items:[]).slice(0, 30).map((it,i)=>`${i+1}. ${it.description||it.name||''}${it.pn?` [${it.pn}]`:''} x${it.qty||1}`);
+  
+  // Enhanced notes with visitor and quotation info
   const notes = [
     `Quotation ${number||''} ${date?('('+date+')'):''}`.trim(),
     project.name ? `Project: ${project.name}` : '',
     project.requester_role ? `Role: ${project.requester_role}` : '',
     project.expected_closing_date ? `Expected Close: ${project.expected_closing_date}` : '',
+    quotation.total ? `Total: ${quotation.currency||'USD'} ${quotation.total}` : '',
+    quotation.itemCount ? `Items: ${quotation.itemCount}` : '',
+    visitor.browser ? `Browser: ${visitor.browser}/${visitor.os}` : '',
+    visitor.utm?.utm_source ? `Source: ${visitor.utm.utm_source}${visitor.utm.utm_medium ? '/'+visitor.utm.utm_medium : ''}` : '',
+    visitor.ipAddress && visitor.ipAddress !== 'unknown' ? `IP: ${visitor.ipAddress}` : '',
     lines.length ? 'Items:\n'+lines.join('\n') : ''
   ].filter(Boolean).join('\n');
 
@@ -53,7 +60,25 @@ export async function createLead({ client={}, project={}, items=[], number='', d
     requesterRole: project.requester_role || '',
     expectedClosingDate: project.expected_closing_date || '',
     source,
-    notes
+    notes,
+    // Enhanced visitor tracking fields
+    quotationId: number,
+    quotationDate: date,
+    quotationTotal: quotation.total || 0,
+    quotationCurrency: quotation.currency || 'USD',
+    quotationItemCount: quotation.itemCount || 0,
+    quotationAction: quotation.action || 'unknown',
+    visitorIp: visitor.ipAddress || '',
+    visitorBrowser: visitor.browser || '',
+    visitorOs: visitor.os || '',
+    visitorDevice: visitor.device || '',
+    visitorReferer: visitor.referer || '',
+    visitorSessionId: visitor.sessionId || '',
+    utmSource: visitor.utm?.utm_source || '',
+    utmMedium: visitor.utm?.utm_medium || '',
+    utmCampaign: visitor.utm?.utm_campaign || '',
+    utmTerm: visitor.utm?.utm_term || '',
+    utmContent: visitor.utm?.utm_content || ''
   };
 
   try{
