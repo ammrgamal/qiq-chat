@@ -148,8 +148,16 @@ app.get('/health', (req, res) => {
     process.env.GOOGLE_IMAGE_SPECS_API || process.env.Google_Image_Specs_API
   );
   const hasResend = Boolean(process.env.RESEND_API_KEY);
-  // Consider V0 usable only when both key and endpoint are configured
-  const hasV0 = Boolean(process.env.V0_API_KEY && (process.env.V0_API_ENDPOINT || process.env.V0_ENDPOINT));
+  // Consider V0 usable when key provided and either full endpoint or base URL from env is available
+  const hasV0 = Boolean(
+    process.env.V0_API_KEY && (
+      process.env.V0_API_ENDPOINT ||
+      process.env.V0_ENDPOINT ||
+      process.env.v0_API_Base_Main_Endpoint ||
+      process.env.v0_API_Base_URL ||
+      process.env.V0_API_BASE_URL
+    )
+  );
   const emailFrom = process.env.EMAIL_FROM || null;
   const hasHelloLeads = Boolean(
     (process.env.HELLOLEADS_API_KEY || process.env.HELLO_LEADS_API_KEY || process.env.Heallo_Leads_API_Key_Token)

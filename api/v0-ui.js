@@ -8,8 +8,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   try {
-    const apiKey = process.env.V0_API_KEY || '';
-    const endpoint = process.env.V0_API_ENDPOINT || process.env.V0_ENDPOINT || '';
+  const apiKey = process.env.V0_API_KEY || '';
+  // Accept multiple aliases and allow base URL that we'll expand to the main endpoint
+  const rawEndpoint = process.env.V0_API_ENDPOINT || process.env.V0_ENDPOINT || process.env.v0_API_Base_Main_Endpoint || '';
+  const baseUrl = process.env.v0_API_Base_URL || process.env.V0_API_BASE_URL || '';
+  const endpoint = rawEndpoint || (baseUrl ? (baseUrl.replace(/\/$/, '') + '/v1/chat/completions') : '');
     const { prompt = '', context = {} } = req.body || {};
     if (!apiKey || !endpoint) {
       // Provide a simple fallback HTML snippet to preview the idea without calling V0

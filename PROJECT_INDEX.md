@@ -1,5 +1,5 @@
 # Project Index — qiq-chat
-Generated: 2025-09-28T07:24:40.552Z
+Generated: 2025-09-28T09:58:21.326Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
 - Total size: 1.7 MB
@@ -75,14 +75,14 @@ qiq-chat/
 │   ├── algoliaMapper.spec.ts (525 B)
 │   └── pdfTotals.spec.ts (1.3 KB)
 ├── .storage/
-│   ├── activity.json (24.7 KB)
-│   └── quotations.json (672 B)
+│   ├── activity.json (26.4 KB)
+│   └── quotations.json (720 B)
 ├── ai/
 │   └── ai-instructions.txt (3.5 KB)
 ├── api/
 │   ├── _lib/
 │   │   ├── email.js (5.4 KB)
-│   │   ├── helloleads.js (4.2 KB)
+│   │   ├── helloleads.js (4.3 KB)
 │   │   └── jwt.js (1.5 KB)
 │   ├── admin/
 │   │   ├── activity.js (335 B)
@@ -115,7 +115,7 @@ qiq-chat/
 │   ├── agent.js (1.5 KB)
 │   ├── boq-parse.js (4.5 KB)
 │   ├── bundles-align.js (5.5 KB)
-│   ├── chat.js (13.9 KB)
+│   ├── chat.js (14.1 KB)
 │   ├── compare.js (2.8 KB)
 │   ├── health.js (2.2 KB)
 │   ├── hello-leads.js (2.9 KB)
@@ -131,7 +131,7 @@ qiq-chat/
 │   ├── search.js (2.8 KB)
 │   ├── special-quote.js (4.2 KB)
 │   ├── v0-design.js (10.9 KB)
-│   ├── v0-ui.js (2.6 KB)
+│   ├── v0-ui.js (2.9 KB)
 │   ├── visitor-tracking-enhanced.js (9.4 KB)
 │   └── visitor-tracking.js (2.5 KB)
 ├── docs/
@@ -211,7 +211,7 @@ qiq-chat/
 │   │   ├── README.md (2.0 KB)
 │   │   └── requirements.txt (47 B)
 │   ├── generate-index.mjs (5.3 KB)
-│   ├── smoke.ps1 (3.9 KB)
+│   ├── smoke.ps1 (4.9 KB)
 │   ├── test-hello-leads.mjs (1.1 KB)
 │   ├── test-pdf-ai.mjs (1.2 KB)
 │   └── test-quote-email.mjs (2.2 KB)
@@ -220,7 +220,7 @@ qiq-chat/
 │       ├── algoliaSettings.ts (791 B)
 │       ├── applySettings.ts (756 B)
 │       └── indexSchema.ts (1.5 KB)
-├── .env (76 B)
+├── .env (1.4 KB)
 ├── .gitignore (71 B)
 ├── demo-table.html (5.8 KB)
 ├── DEPLOY_GUIDE.md (5.6 KB)
@@ -233,7 +233,7 @@ qiq-chat/
 ├── package.json (922 B)
 ├── PROJECT_INDEX.md (15.2 KB)
 ├── quote.html (12.8 KB)
-├── server.js (7.1 KB)
+├── server.js (7.3 KB)
 ├── SMART_SYSTEM_GUIDE.md (11.7 KB)
 └── test-flow.html (6.0 KB)
 ```

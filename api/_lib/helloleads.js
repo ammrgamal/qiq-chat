@@ -10,10 +10,11 @@ function readHelloLeadsEnv(){
     || process.env.HELLO_LEADS_LIST_KEY
     || process.env.Heallo_Leads_QuickITQuote_List_Key
     || '';
+  const listName = process.env.HELLOLEADS_LIST_NAME || process.env.HELLO_LEADS_LIST_NAME || '';
   const endpoint = process.env.HELLOLEADS_ENDPOINT
     || process.env.HELLO_LEADS_ENDPOINT
     || 'https://app.helloleads.io/index.php/api/leads/add';
-  return { apiKey, listKey, endpoint };
+  return { apiKey, listKey, listName, endpoint };
 }
 
 async function fetchWithRetry(url, opts, { retries = 1, backoffMs = 800 } = {}){
@@ -29,7 +30,7 @@ async function fetchWithRetry(url, opts, { retries = 1, backoffMs = 800 } = {}){
 }
 
 export async function createLead({ client={}, project={}, items=[], number='', date='', source='qiq-quote', visitor={}, quotation={} }={}){
-  const { apiKey, listKey, endpoint } = readHelloLeadsEnv();
+  const { apiKey, listKey, listName, endpoint } = readHelloLeadsEnv();
   if (!apiKey || !listKey){
     return { ok:false, skipped:true, reason:'missing_keys', provider:'HelloLeads' };
   }
@@ -52,6 +53,7 @@ export async function createLead({ client={}, project={}, items=[], number='', d
   const payload = {
     apiKey,
     listKey,
+    listName,
     name: client.contact || client.name || '',
     email: client.email || '',
     phone: client.phone || '',

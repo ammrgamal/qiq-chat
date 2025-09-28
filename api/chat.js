@@ -15,7 +15,14 @@ let AI_CACHE = { text: '', mtimeMs: 0 };
 // OpenAI Assistant Configuration
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 // Read assistant id from env to avoid hard-coding account-specific IDs
-const ASSISTANT_ID = process.env.OPENAI_ASSISTANT_ID || process.env.OPENAI_ASSISTANT || '';
+// Accept multiple aliases for Assistant ID (to match various deployment env keys)
+const ASSISTANT_ID = (
+  process.env.OPENAI_ASSISTANT_ID ||
+  process.env.OPENAI_ASSISTANT ||
+  process.env.Assistant_ID ||
+  process.env.ASSISTANT_ID ||
+  ''
+);
 
 async function readAiInstructionsCached(){
   try{
