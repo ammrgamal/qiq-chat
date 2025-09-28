@@ -69,6 +69,26 @@
                   });
                 });
 
+                // Also bind any elements with data-wizard-action attribute
+                var actionEls = Array.from(document.querySelectorAll('[data-wizard-action]'));
+                actionEls.forEach(function(el){
+                  if (!el || el.__bound) return;
+                  el.__bound = true;
+                  el.addEventListener('click', function(ev){
+                    try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
+                    var action = (el.getAttribute('data-wizard-action')||'').toLowerCase();
+                    console.log('Wizard action (data-attr):', action);
+                    if (!action) return;
+                    if (action==='download' || action==='send' || action==='custom'){
+                      if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle(action);
+                    } else if (action==='back' || action==='back1'){
+                      return window.parent.QiqModal?.setHtml?.('');
+                    } else if (action==='back0' || action==='step1'){
+                      if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('back-to-step1');
+                    }
+                  });
+                });
+
                 // Fix for generic "التالي" (Next) buttons
                 // Note: :contains is not a valid CSS selector. Select broad candidates then filter by text.
                 var candidates = Array.from(document.querySelectorAll('button[type="submit"], .btn-primary, .qiq-btn.qiq-primary, button'));

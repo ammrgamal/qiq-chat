@@ -202,6 +202,42 @@
   }
 
   async function handle(action){
+    // Fast-path: special actions coming from iframe bridge
+    if (action === 'back-to-step1') {
+      try {
+        const frame = window.QiqModal?.getFrame?.();
+        const doc = frame?.contentDocument; const el = doc?.getElementById('wiz-busy'); if (el) el.remove();
+      } catch {}
+      return render(1);
+    }
+    if (action === 'form-submit') {
+      try {
+        const frame = window.QiqModal?.getFrame?.();
+        const doc = frame?.contentDocument;
+        const byId = (id)=> doc?.getElementById(id)?.value?.trim();
+        const name = byId('wiz-name') || '';
+        const email = byId('wiz-email') || '';
+        const projectName = byId('wiz-project-name') || '';
+        const company = byId('wiz-company') || '';
+        const notes = byId('wiz-notes') || '';
+        const projectSite = byId('wiz-project-site') || '';
+        const title = byId('wiz-title') || '';
+        const currency = byId('wiz-currency') || (loadClient()?.currency || 'EGP');
+
+        if (!name || name.length < 2){ window.QiqToast?.error?.('يرجى إدخال الاسم الكامل (حرفين على الأقل)'); return; }
+        if (!email || !email.includes('@')){ window.QiqToast?.error?.('يرجى إدخال بريد إلكتروني صحيح'); return; }
+        if (!projectName || projectName.length < 3){ window.QiqToast?.error?.('يرجى إدخال اسم المشروع (3 أحرف على الأقل)'); return; }
+
+        saveClient({ name, email, company, notes, projectName, projectSite, title, currency });
+        window.QiqToast?.success?.('تم حفظ البيانات بنجاح');
+        return render(2);
+      } catch {
+        window.QiqToast?.error?.('تعذر حفظ البيانات');
+        return;
+      }
+    }
+    
+    try { console.log('[Wizard] handle called with action:', action); } catch {}
     // Show a busy overlay in the modal dialog
     try{
       const frame = window.QiqModal?.getFrame?.();
@@ -279,12 +315,15 @@
       }
     }catch{}
     try{
+      try { console.log('[Wizard] POST /api/quote-email payload:', { action: payload.action, items: (payload.items||[]).length, client: payload.client?.email, currency: payload.currency }); } catch {}
       const r = await fetch('/api/quote-email', { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) });
       if (!r.ok){
         window.QiqToast?.error?.(`حدث خطأ أثناء الإرسال (HTTP ${r.status})`);
+        try { console.warn('[Wizard] quote-email HTTP error:', r.status); } catch {}
         return;
       }
       const j = await r.json();
+      try { console.log('[Wizard] quote-email response:', { status: r.status, email: j?.email, helloleads: j?.helloleads }); } catch {}
       done = true; setProgress(100);
       if (action === 'download' && j?.pdfBase64){
         const a = document.createElement('a');
@@ -317,6 +356,7 @@
       const frame = window.QiqModal?.getFrame?.();
       const doc = frame?.contentDocument; const el = doc?.getElementById('wiz-busy'); if (el) el.remove();
       ['wiz-download','wiz-send','wiz-custom','wiz-next','wiz-back','wiz-back-step1'].forEach(id=>{ try{ const b=doc.getElementById(id); if (b){ b.disabled=false; b.style.opacity='1'; } }catch{} });
+      try { console.log('[Wizard] UI restored after action'); } catch {}
     }catch{}
   }
   }
@@ -341,10 +381,10 @@
       </style>`;
     const inner = step===1 ? html1+`<div class="wiz-actions"><button class="btn" id="wiz-next">التالي</button></div>`
                            : html2+`<div class="wiz-actions">
-            <button class="btn secondary" id="wiz-back">رجوع</button>
-            <button class="btn" id="wiz-download">Download PDF</button>
-            <button class="btn" id="wiz-send">Send by Email</button>
-            <button class="btn" id="wiz-custom">Get Custom Quote</button>
+            <button class="btn secondary" id="wiz-back" data-wizard-action="back">رجوع</button>
+            <button class="btn" id="wiz-download" data-wizard-action="download">Download PDF</button>
+            <button class="btn" id="wiz-send" data-wizard-action="send">Send by Email</button>
+            <button class="btn" id="wiz-custom" data-wizard-action="custom">Get Custom Quote</button>
           </div>`;
     const panel = css + steps + inner;
 
@@ -461,10 +501,10 @@
           const html = await buildItemsTable(itemsNow);
           const cont = doc.body; if (cont){ window.parent.QiqModal?.setHtml?.(css + steps + html + `
           <div class=\"wiz-actions\">
-            <button class=\"btn secondary\" id=\"wiz-back\">رجوع</button>
-            <button class=\"btn\" id=\"wiz-download\">Download PDF</button>
-            <button class=\"btn\" id=\"wiz-send\">Send by Email</button>
-            <button class=\"btn\" id=\"wiz-custom\">Get Custom Quote</button>
+            <button class=\"btn secondary\" id=\"wiz-back\" data-wizard-action=\"back\">رجوع</button>
+            <button class=\"btn\" id=\"wiz-download\" data-wizard-action=\"download\">Download PDF</button>
+            <button class=\"btn\" id=\"wiz-send\" data-wizard-action=\"send\">Send by Email</button>
+            <button class=\"btn\" id=\"wiz-custom\" data-wizard-action=\"custom\">Get Custom Quote</button>
           </div>` ); }
         }catch{}
       }

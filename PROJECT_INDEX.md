@@ -1,5 +1,5 @@
 # Project Index — qiq-chat
-Generated: 2025-09-28T14:14:13.930Z
+Generated: 2025-09-28T18:49:10.265Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
 - Total size: 1.7 MB
@@ -168,7 +168,7 @@ qiq-chat/
 │   │   ├── experimental-banner.js (2.3 KB)
 │   │   ├── fixed-chat-system.js (45.3 KB)
 │   │   ├── interface-fixes.js (36.3 KB)
-│   │   ├── modal.js (11.1 KB)
+│   │   ├── modal.js (12.4 KB)
 │   │   ├── openai-chat-system.js (29.3 KB)
 │   │   ├── pdf-admin.js (16.6 KB)
 │   │   ├── pdf-arabic-fonts.js (1.8 KB)
@@ -182,7 +182,7 @@ qiq-chat/
 │   │   ├── quote-badge.js (1.6 KB)
 │   │   ├── quote-form.js (3.0 KB)
 │   │   ├── quote-wizard-debug.js (7.9 KB)
-│   │   ├── quote-wizard.js (25.9 KB)
+│   │   ├── quote-wizard.js (28.4 KB)
 │   │   ├── quote.js (82.8 KB)
 │   │   ├── security.js (7.6 KB)
 │   │   ├── smart-boq-recommender.js (26.4 KB)
@@ -192,7 +192,7 @@ qiq-chat/
 │   │   ├── toast.js (4.3 KB)
 │   │   ├── ui-chat.js (32.3 KB)
 │   │   ├── ui-enhancements.js (25.0 KB)
-│   │   ├── user-features.js (12.1 KB)
+│   │   ├── user-features.js (12.4 KB)
 │   │   ├── visitor-tracker.js (10.1 KB)
 │   │   └── visitor-tracking-client.js (12.0 KB)
 │   ├── account.html (2.2 KB)

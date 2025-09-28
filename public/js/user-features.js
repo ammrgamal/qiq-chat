@@ -424,3 +424,13 @@ function updateComparisonButton({ count }) {
     badge.style.display = count > 0 ? 'inline' : 'none';
   }
 }
+
+// Initialize badges on load
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    updateFavoritesButton({ count: window.QiqFavorites?.getAll()?.length || 0 });
+  } catch {}
+  try {
+    updateComparisonButton({ count: window.QiqComparison?.getAll()?.length || 0 });
+  } catch {}
+});
