@@ -1102,8 +1102,7 @@ export default async function handler(req, res){
     const body = req.body || {};
     const action = (body.action||'').toLowerCase();
     const payload = body;
-    // Non-blocking: create HelloLeads lead if keys exist
-    try { createLead({ client: payload.client, project: payload.project, items: payload.items, number: payload.number, date: payload.date, source: 'qiq-quote-email' }).catch(()=>{}); } catch {}
+    // HelloLeads integration is handled once, later, with visitor context
 
   // Phase 1: Authoritative conversion (USD base) then enrich items and build solution description
   const currency = payload.currency || CURRENCY_FALLBACK;

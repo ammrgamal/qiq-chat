@@ -516,4 +516,64 @@
   window.addEventListener('qiq-refresh-prices', ()=>{
     render((input?.value||'').trim(), 0);
   });
+
+  // Expose a minimal catalog API for external/failsafe triggers
+  try {
+    window.QiqCatalog = window.QiqCatalog || {};
+    window.QiqCatalog.render = (q, p=0)=> render(q==null ? (input?.value||'').trim() : String(q), Number(p)||0);
+    window.QiqCatalog.applyView = (mode)=> applyView(mode||localStorage.getItem('qiq_view_mode')||'list-lines');
+    window.QiqCatalog.search = ()=> render((input?.value||'').trim(), 0);
+    window.QiqCatalog.clear = ()=> {
+      if (input) input.value='';
+      const u = new URL(window.location.href); u.searchParams.delete('q'); history.replaceState(null,'',u.toString());
+      if (resultsEl) resultsEl.innerHTML=''; if (statusEl) statusEl.textContent='';
+      if (brandsList) brandsList.innerHTML=''; if (catsList) catsList.innerHTML='';
+      if (priceMinEl) priceMinEl.value=''; if (priceMaxEl) priceMaxEl.value='';
+      if (pagination) pagination.innerHTML='';
+      try { window.QiqToast?.info?.('تم مسح البحث', 2000); } catch {}
+      render('', 0);
+    };
+  } catch {}
+
+  // Capture-phase delegated click failsafe to ensure critical buttons always work
+  document.addEventListener('click', (e)=>{
+    try{
+      const t = e.target;
+      // Search button
+      if (t.closest && t.closest('#searchBtn')){ e.preventDefault(); window.QiqCatalog?.search?.(); return; }
+      // Clear button
+      if (t.closest && t.closest('#clearBtn')){ e.preventDefault(); window.QiqCatalog?.clear?.(); return; }
+      // Apply price
+      if (t.closest && t.closest('#applyPrice')){ e.preventDefault(); render((input?.value||'').trim(), 0); return; }
+      // View toggles
+      if (t.closest && t.closest('#viewList')){ e.preventDefault(); applyView('list-lines'); if (!resultsEl?.innerHTML?.trim()) render((input?.value||'').trim(), 0); return; }
+      if (t.closest && t.closest('#viewGrid')){ e.preventDefault(); applyView('grid'); if (!resultsEl?.innerHTML?.trim()) render((input?.value||'').trim(), 0); return; }
+      if (t.closest && t.closest('#viewTable')){ e.preventDefault(); applyView('table'); render((input?.value||'').trim(), 0); return; }
+      // Favorites toggle
+      const fav = t.closest && t.closest('.fav-btn');
+      if (fav){
+        e.preventDefault();
+        const product = { id: fav.dataset.id, name: fav.dataset.name, price: fav.dataset.price, image: fav.dataset.image, sku: fav.dataset.pn, manufacturer: fav.dataset.brand };
+        const added = window.QiqFavorites?.toggle?.(product);
+        if (added){ fav.classList.add('active'); window.QiqToast?.success?.('تمت الإضافة إلى المفضلة', 2000); }
+        else { fav.classList.remove('active'); window.QiqToast?.info?.('تمت الإزالة من المفضلة', 2000); }
+        return;
+      }
+      // Comparison toggle
+      const cmp = t.closest && t.closest('.cmp-btn');
+      if (cmp){
+        e.preventDefault();
+        const product = { id: cmp.dataset.id, name: cmp.dataset.name, price: cmp.dataset.price, image: cmp.dataset.image, sku: cmp.dataset.pn, manufacturer: cmp.dataset.brand };
+        if (window.QiqComparison?.isInComparison?.(product.id)){
+          window.QiqComparison.remove(product.id); cmp.classList.remove('active'); window.QiqToast?.info?.('تمت الإزالة من المقارنة', 2000);
+        } else {
+          try { window.QiqComparison.add(product); cmp.classList.add('active'); window.QiqToast?.success?.('تمت الإضافة إلى المقارنة', 2000); }
+          catch(err){ window.QiqToast?.warning?.(err?.message || 'تعذر الإضافة للمقارنة', 2000); }
+        }
+        return;
+      }
+      // Open wizard
+      if (t.closest && t.closest('[data-open-quote-wizard]')){ e.preventDefault(); try { window.QiqQuoteWizard?.open?.(); } catch {} return; }
+    }catch{}
+  }, true);
 })();

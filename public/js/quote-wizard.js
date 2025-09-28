@@ -431,7 +431,7 @@
         el.addEventListener(type, fn); 
       };
       
-      // Enhanced Next button handler with better form validation
+  // Enhanced Next button handler with better form validation
       on(next, 'click', (e)=>{ 
         e.preventDefault();
         e.stopPropagation();
@@ -491,6 +491,20 @@
       on(dl,   'click', (e)=>{ e.preventDefault(); handle('download'); });
       on(send, 'click', (e)=>{ e.preventDefault(); handle('send'); });
       on(cust, 'click', (e)=>{ e.preventDefault(); handle('custom'); });
+
+      // Bind any [data-wizard-action] inside the iframe too (safety)
+      try{
+        const acts = Array.from(doc.querySelectorAll('[data-wizard-action]'));
+        acts.forEach((el)=>{
+          if (el.__bound) return; el.__bound = true;
+          el.addEventListener('click', (ev)=>{
+            ev.preventDefault(); ev.stopPropagation();
+            const a = (el.getAttribute('data-wizard-action')||'').toLowerCase();
+            if (a==='download' || a==='send' || a==='custom') return handle(a);
+            if (a==='back' || a==='back1' || a==='step1' || a==='back0') return render(1);
+          });
+        });
+      }catch{}
   // removed duplicate back button
       try{ const cur = (window.parent.localStorage.getItem(STATE_KEY) && JSON.parse(window.parent.localStorage.getItem(STATE_KEY))?.currency) || 'EGP'; const el = doc.getElementById('wiz-currency-view'); if (el) el.textContent = cur; }catch{}
       // If step 2, replace placeholder with grouped table asynchronously
@@ -514,7 +528,7 @@
     // Enhanced retry mechanism with better logging
     console.log('🚀 Starting wizard binding process...');
     
-    if (!bindInside()) {
+  if (!bindInside()) {
       console.log('🔄 Initial binding failed, setting up retries...');
       
       const frame = window.QiqModal?.getFrame?.();
@@ -548,6 +562,15 @@
           clearInterval(iv);
         }
       }, 100);
+      // Observe mutations inside iframe to re-wire dynamically-added buttons
+      try{
+        const frame = window.QiqModal?.getFrame?.();
+        const doc = frame?.contentDocument;
+        if (doc && 'MutationObserver' in window){
+          const mo = new MutationObserver(()=>{ try{ bindInside(); }catch{} });
+          mo.observe(doc.body, { childList:true, subtree:true });
+        }
+      }catch{}
     } else {
       console.log('✅ Initial binding successful');
     }

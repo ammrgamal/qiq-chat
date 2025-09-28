@@ -1,8 +1,8 @@
 # Project Index — qiq-chat
-Generated: 2025-09-28T18:49:10.265Z
+Generated: 2025-09-28T19:09:26.004Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
-- Total size: 1.7 MB
+- Total size: 1.8 MB
 - Files: 146
 - Directories: 21
 - Max depth: 6
@@ -124,7 +124,7 @@ qiq-chat/
 │   ├── media-enrich.js (4.2 KB)
 │   ├── openai-assistant.js (14.5 KB)
 │   ├── pdf-ai.js (14.4 KB)
-│   ├── quote-email.js (57.8 KB)
+│   ├── quote-email.js (57.6 KB)
 │   ├── quote-wizard-enhanced.js (18.9 KB)
 │   ├── quote.js (741 B)
 │   ├── search-health.js (1.2 KB)
@@ -175,14 +175,14 @@ qiq-chat/
 │   │   ├── performance.js (5.6 KB)
 │   │   ├── product-data-enhancer.js (22.5 KB)
 │   │   ├── product-image-handler.js (16.8 KB)
-│   │   ├── products-search-enhanced.js (27.9 KB)
+│   │   ├── products-search-enhanced.js (31.7 KB)
 │   │   ├── products-search.js (6.9 KB)
 │   │   ├── products-ui-enhanced.js (22.1 KB)
 │   │   ├── quote-actions.js (42.7 KB)
 │   │   ├── quote-badge.js (1.6 KB)
 │   │   ├── quote-form.js (3.0 KB)
 │   │   ├── quote-wizard-debug.js (7.9 KB)
-│   │   ├── quote-wizard.js (28.4 KB)
+│   │   ├── quote-wizard.js (29.5 KB)
 │   │   ├── quote.js (82.8 KB)
 │   │   ├── security.js (7.6 KB)
 │   │   ├── smart-boq-recommender.js (26.4 KB)
