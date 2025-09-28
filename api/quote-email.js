@@ -43,13 +43,72 @@ function buildCsv(items){
   return lines.join('\n');
 }
 async function tryLoadLocal(fp){ try { return await fs.readFile(fp); } catch { return null; } }
+
+// Try to extract a usable image URL from many possible shapes/keys
+function extractImageUrl(it){
+  if (!it) return '';
+  const candidates = [];
+  const push = v => { if (typeof v === 'string' && v.trim()) candidates.push(v.trim()); };
+  // Common single-value keys
+  push(it.image); push(it.img); push(it.thumbnail); push(it.thumb); push(it.picture); push(it.Picture);
+  push(it.image_url); push(it.imageUrl); push(it.img_url); push(it.ImageURL); push(it['Image URL']);
+  // Nested/array shapes
+  const arrish = (v)=> Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []);
+  for (const k of ['images','media','photos','pictures']){
+    const v = it[k];
+    if (Array.isArray(v)){
+      for (const x of v){ if (typeof x === 'string') push(x); if (x && typeof x === 'object'){ push(x.url); push(x.src); } }
+    } else if (v && typeof v === 'object'){
+      for (const x of arrish(v)){ if (typeof x === 'string') push(x); if (x && typeof x === 'object'){ push(x.url); push(x.src); } }
+    }
+  }
+  // Data URL direct
+  if (typeof it.image === 'string' && it.image.startsWith('data:')) return it.image;
+  // First candidate
+  return candidates.find(u => /^https?:\/\//i.test(u) || u.startsWith('data:')) || '';
+}
+
+let __sharp = undefined; // lazy-loaded image converter
 async function fetchImageBuffer(url){
   try {
     if (!url) return null;
-    const r = await fetch(url);
+    // Data URL
+    if (url.startsWith('data:')){
+      const m = url.match(/^data:(.*?);base64,(.*)$/);
+      if (m){ try { return Buffer.from(m[2], 'base64'); } catch { return null; } }
+    }
+    const r = await fetch(url, { headers: { 'accept': 'image/png,image/jpeg;q=0.9,image/*;q=0.8,*/*;q=0.5' } });
     if (!r.ok) return null;
+    const type = r.headers.get('content-type') || '';
     const ab = await r.arrayBuffer();
-    return Buffer.from(ab);
+    let buf = Buffer.from(ab);
+    if (/image\/(png|jpeg|jpg)/i.test(type)) return buf;
+    if (/image\/webp/i.test(type)){
+      // Try convert WEBP → PNG using sharp if available
+      try{
+        if (__sharp === undefined){
+          try { __sharp = (await import('sharp')).default; } catch { __sharp = null; }
+        }
+        if (__sharp){
+          buf = await __sharp(buf).png().toBuffer();
+          return buf;
+        }
+      }catch{}
+      // Fallback: try URL param to request PNG
+      const urlObj = new URL(url);
+      if (!urlObj.searchParams.has('format')){ urlObj.searchParams.set('format','png'); }
+      else if (!urlObj.searchParams.has('fm')){ urlObj.searchParams.set('fm','png'); }
+      const r2 = await fetch(urlObj.toString(), { headers: { 'accept': 'image/png,image/jpeg,*/*' } });
+      if (r2.ok){
+        const t2 = r2.headers.get('content-type')||'';
+        const ab2 = await r2.arrayBuffer();
+        const b2 = Buffer.from(ab2);
+        if (/image\/(png|jpeg|jpg)/i.test(t2)) return b2;
+      }
+      return null;
+    }
+    // Unknown type: best effort
+    return buf;
   } catch { return null; }
 }
 
@@ -590,15 +649,15 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     }
     const norm = (items||[]);
     const prefs = await readAdminPdfPrefs();
-    const includeImages = prefs.includeItemImages || /^(1|true|yes)$/i.test(String(process.env.PDF_INCLUDE_IMAGES || ''));
+  const includeImages = prefs.includeItemImages || /^(1|true|yes)$/i.test(String(process.env.PDF_INCLUDE_IMAGES || ''));
     const imgBuffers = new Map();
     if (includeImages){
       for (const it of norm){
         try{
-          const key = it && (it.image || it["Image URL"] || it.thumbnail || it.img || '');
-          if (key && !imgBuffers.has(key)){
-            const buf = await fetchImageBuffer(key);
-            if (buf) imgBuffers.set(key, buf);
+          const keyUrl = extractImageUrl(it);
+          if (keyUrl && !imgBuffers.has(keyUrl)){
+            const buf = await fetchImageBuffer(keyUrl);
+            if (buf) imgBuffers.set(keyUrl, buf);
           }
         }catch{}
       }
@@ -641,7 +700,7 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       const colDescW = cols[1].w - 8;
       let imgBuf = null;
       if (includeImages){
-        const imgUrl = it.image || it["Image URL"] || it.thumbnail || it.img || '';
+        const imgUrl = extractImageUrl(it);
         imgBuf = imgBuffers.get(imgUrl) || null;
       }
       const linkUrl = resolveSpecLink(it);
