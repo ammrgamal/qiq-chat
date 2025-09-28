@@ -1,5 +1,5 @@
 # Project Index — qiq-chat
-Generated: 2025-09-28T13:42:25.535Z
+Generated: 2025-09-28T14:14:13.930Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
 - Total size: 1.7 MB
@@ -82,7 +82,7 @@ qiq-chat/
 ├── api/
 │   ├── _lib/
 │   │   ├── email.js (5.4 KB)
-│   │   ├── helloleads.js (4.5 KB)
+│   │   ├── helloleads.js (4.1 KB)
 │   │   └── jwt.js (1.5 KB)
 │   ├── admin/
 │   │   ├── activity.js (335 B)

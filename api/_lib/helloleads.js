@@ -1,4 +1,5 @@
 // api/_lib/helloleads.js — HelloLeads integration helpers (ESM)
+// Clean, single implementation of URL-authenticated AuthLead POST
 
 function readHelloLeadsEnv(){
   const apiKey = process.env.HELLOLEADS_API_KEY
@@ -10,13 +11,11 @@ function readHelloLeadsEnv(){
     || process.env.HELLO_LEADS_LIST_KEY
     || process.env.Heallo_Leads_QuickITQuote_List_Key
     || '';
-  const listName = process.env.HELLOLEADS_LIST_NAME || process.env.HELLO_LEADS_LIST_NAME || '';
   const ghuid = process.env.HELLOLEADS_GHUID || process.env.HELLO_LEADS_GHUID || process.env.HELLOLEADS_GH_UID || '';
-  // Documented URL-based AuthLead endpoint (token in URL)
   const endpoint = process.env.HELLOLEADS_ENDPOINT
     || process.env.HELLO_LEADS_ENDPOINT
     || 'https://app.helloleads.io/index.php/private/integrate/AuthLead';
-  return { apiKey, listKey, listName, ghuid, endpoint };
+  return { apiKey, listKey, ghuid, endpoint };
 }
 
 async function fetchWithRetry(url, opts, { retries = 1, backoffMs = 800 } = {}){
@@ -37,27 +36,22 @@ export async function createLead({ client={}, project={}, items=[], number='', d
     return { ok:false, skipped:true, reason:'missing_keys', provider:'HelloLeads' };
   }
 
-  // Prepare concise notes (cap items to avoid very long payloads)
   const lines = (Array.isArray(items)?items:[]).slice(0, 30).map((it,i)=>`${i+1}. ${it.description||it.name||''}${it.pn?` [${it.pn}]`:''} x${it.qty||1}`);
   const notes = [
     `Quotation ${number||''} ${date?('('+date+')'):''}`.trim(),
     project.name ? `Project: ${project.name}` : '',
-    quotation.total ? `Total: ${quotation.currency||'USD'} ${quotation.total}` : '',
-    visitor.utm?.utm_source ? `Source: ${visitor.utm.utm_source}${visitor.utm.utm_medium ? '/'+visitor.utm.utm_medium : ''}` : '',
-    visitor.ipAddress && visitor.ipAddress !== 'unknown' ? `IP: ${visitor.ipAddress}` : '',
+    quotation?.total != null ? `Total: ${(quotation.currency||'USD')} ${quotation.total}` : '',
+    visitor?.utm?.utm_source ? `Source: ${visitor.utm.utm_source}${visitor.utm.utm_medium ? '/'+visitor.utm.utm_medium : ''}` : '',
+    visitor?.ipAddress && visitor.ipAddress !== 'unknown' ? `IP: ${visitor.ipAddress}` : '',
     lines.length ? 'Items:\n'+lines.join('\n') : ''
   ].filter(Boolean).join('\n');
 
-  // Split name into first/last for API fields
   const fullName = (client.contact || client.name || '').trim();
   const [first_name, ...rest] = fullName ? fullName.split(/\s+/) : [''];
   const last_name = rest.join(' ').trim();
-
-  // Optional mobile_code support (e.g., +20); strip non-digits as API expects numeric
   const mobile_code_raw = client.mobile_code || client.country_code || '';
   const mobile_code = String(mobile_code_raw || '').replace(/[^0-9]/g,'');
 
-  // Build JSON payload per HelloLeads POST (URL auth)
   const body = {
     list_key: listKey,
     first_name,
