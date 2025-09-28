@@ -321,6 +321,7 @@
       }
     } catch (e) {
       console.warn("Chat error:", e);
+      try { if (window.QiqToast?.error) window.QiqToast.error('تعذر الوصول لخدمة الدردشة الآن. سيتم استخدام ردود سريعة لحين عودة الاتصال.'); } catch {}
       // Fallback: conversational response only (no auto-search)
       const userMessage = messages[messages.length - 1]?.content || "";
       let reply = "أحتاج تفاصيل أكثر عشان أساعدك بشكل دقيق. ما نوع الحل المطلوب وكم مستخدم؟";
@@ -541,10 +542,28 @@
     } catch (error) {
       console.error('Chat error:', error);
       thinking.textContent = "عذراً، حدث خطأ. حاول مرة أخرى أو أعد صياغة سؤالك.";
+      try { if (window.QiqToast?.error) window.QiqToast.error('حدث خطأ أثناء الإرسال. حاول مرة أخرى.'); } catch {}
     } finally {
       sendBtn && (sendBtn.disabled = false);
     }
   });
+
+  // Fallback bindings: تأكيد الإرسال عند الضغط على Enter أو زر الإرسال
+  // في بعض البيئات قد لا يعمل submit الافتراضي بسبب تداخل سكربتات أخرى.
+  if (input) {
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' && !ev.shiftKey) {
+        ev.preventDefault();
+        try { form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); } catch {}
+      }
+    });
+  }
+  if (sendBtn) {
+    sendBtn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      try { form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); } catch {}
+    });
+  }
 
   /* ---- لو عندك زر مستقل للبحث عن المنتجات (اختياري) اربطه هنا ----
      مثال: زر id="qiq-search-btn" يقرأ من input ويعرض النتائج فقط

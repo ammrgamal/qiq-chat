@@ -3,6 +3,32 @@
     {
       "action": "quotation_save",
       "userEmail": "user@demo.local",
+      "userToken": "qiq_eyJpZCI6MTIzNDUsImVtYWlsIjoidXNlckBkZW1vLmxvY2FsIiwiY29tcGFueSI6IkRlbW8gQ29tcGFueSIsImV4cCI6MTc1OTEyNzc0ODY4OH0=",
+      "quotationId": "QT-2025-001",
+      "details": {
+        "clientName": "",
+        "total": 1234,
+        "currency": "USD"
+      },
+      "timestamp": "2025-09-28T06:35:48.697Z",
+      "id": "1759041348697-z7i8"
+    },
+    {
+      "action": "quotation_save",
+      "userEmail": "user@demo.local",
+      "userToken": "qiq_eyJpZCI6MTIzNDUsImVtYWlsIjoidXNlckBkZW1vLmxvY2FsIiwiY29tcGFueSI6IkRlbW8gQ29tcGFueSIsImV4cCI6MTc1OTEyNzUyNjEyMn0=",
+      "quotationId": "QT-2025-001",
+      "details": {
+        "clientName": "",
+        "total": 1234,
+        "currency": "USD"
+      },
+      "timestamp": "2025-09-28T06:32:06.130Z",
+      "id": "1759041126130-lk7m"
+    },
+    {
+      "action": "quotation_save",
+      "userEmail": "user@demo.local",
       "userToken": "qiq_eyJpZCI6MTIzNDUsImVtYWlsIjoidXNlckBkZW1vLmxvY2FsIiwiY29tcGFueSI6IkRlbW8gQ29tcGFueSIsImV4cCI6MTc1OTEyNTQyMTg2MX0=",
       "quotationId": "QT-2025-001",
       "details": {
