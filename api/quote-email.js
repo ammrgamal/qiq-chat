@@ -371,12 +371,13 @@ async function readAdminPdfPrefs(){
     const j = JSON.parse(txt);
     const pdf = j?.pdf || {};
     return {
-      includeItemImages: pdf.includeItemImages ?? (process.env.NODE_ENV==='production'),
-      includePartnerLogos: pdf.includePartnerLogos ?? (process.env.NODE_ENV==='production'),
+      // Prefer images/logos on by default for professional quotes; env/config may override
+      includeItemImages: pdf.includeItemImages ?? true,
+      includePartnerLogos: pdf.includePartnerLogos ?? true,
       includeProServices: pdf.includeProServices !== false // default true
     };
   }catch{
-    return { includeItemImages: process.env.NODE_ENV==='production', includePartnerLogos: process.env.NODE_ENV==='production', includeProServices: true };
+    return { includeItemImages: true, includePartnerLogos: true, includeProServices: true };
   }
 }
 

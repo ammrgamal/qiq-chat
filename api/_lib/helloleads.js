@@ -13,7 +13,7 @@ function readHelloLeadsEnv(){
   const listName = process.env.HELLOLEADS_LIST_NAME || process.env.HELLO_LEADS_LIST_NAME || '';
   const endpoint = process.env.HELLOLEADS_ENDPOINT
     || process.env.HELLO_LEADS_ENDPOINT
-    || 'https://app.helloleads.io/index.php/api/leads/add';
+    || 'https://app.helloleads.io/index.php/api/leads/add/';
   return { apiKey, listKey, listName, endpoint };
 }
 
@@ -50,20 +50,23 @@ export async function createLead({ client={}, project={}, items=[], number='', d
     lines.length ? 'Items:\n'+lines.join('\n') : ''
   ].filter(Boolean).join('\n');
 
-  const payload = {
-    apiKey,
-    listKey,
-    listName,
+  // HelloLeads expects at least: apikey, listkey, name, email, mobile
+  // We'll include extended metadata as additional fields (typically ignored if unknown)
+  const minimal = {
+    apikey: apiKey,
+    listkey: listKey,
     name: client.contact || client.name || '',
     email: client.email || '',
-    phone: client.phone || '',
+    mobile: client.mobile || client.phone || client.tel || ''
+  };
+  const extended = {
     company: client.name || '',
+    listName,
+    source,
+    notes,
     projectName: project.name || '',
     requesterRole: project.requester_role || '',
     expectedClosingDate: project.expected_closing_date || '',
-    source,
-    notes,
-    // Enhanced visitor tracking fields
     quotationId: number,
     quotationDate: date,
     quotationTotal: quotation.total || 0,
@@ -82,12 +85,94 @@ export async function createLead({ client={}, project={}, items=[], number='', d
     utmTerm: visitor.utm?.utm_term || '',
     utmContent: visitor.utm?.utm_content || ''
   };
+  const payload = { ...minimal, ...extended };
 
   try{
-    const r = await fetchWithRetry(endpoint, { method:'POST', headers:{ 'content-type':'application/json' }, body: JSON.stringify(payload) }, { retries: 1 });
-    const text = await r.text();
-    const ok = r.status >= 200 && r.status < 300;
-    return { ok, provider:'HelloLeads', status:r.status, response:text };
+    // Strategy: JSON first; if 404/400/415, try form-encoded; also try URL variants
+    const attempts = [];
+    const endpoints = (()=>{
+      const e = (endpoint||'').trim();
+      const forms = new Set();
+      if (e) forms.add(e);
+      if (e.endsWith('/')) forms.add(e.slice(0,-1)); else forms.add(e + '/');
+      // Add format hints
+      for (const base of Array.from(forms)){
+        if (!base.includes('?')){
+          forms.add(base + '?format=json');
+        }
+      }
+      return Array.from(forms);
+    })();
+
+    const encForm = (obj)=>{
+      const usp = new URLSearchParams();
+      for (const [k,v] of Object.entries(obj)){
+        // Only append defined, non-object scalars; put extended metadata into notes (already consolidated)
+        if (v === undefined || v === null) continue;
+        if (typeof v === 'object') continue;
+        usp.append(k, String(v));
+      }
+      return usp.toString();
+    };
+
+    const tryOnce = async (url, useJson)=>{
+      if (useJson){
+        return fetchWithRetry(url, {
+          method:'POST',
+          headers:{ 'content-type':'application/json', 'accept':'application/json,text/plain,*/*' },
+          body: JSON.stringify({ ...minimal, // ensure minimum fields
+            // Keep extended mostly in notes to avoid unknown field rejections in some setups
+            notes
+          })
+        }, { retries: 0 });
+      }
+      const body = encForm({ ...minimal, notes });
+      return fetchWithRetry(url, {
+        method:'POST',
+        headers:{ 'content-type':'application/x-www-form-urlencoded', 'accept':'application/json,text/plain,*/*' },
+        body
+      }, { retries: 0 });
+    };
+
+    let lastText = '';
+    let lastStatus = 0;
+    for (const url of endpoints){
+      // 1) JSON
+      try{
+        const r1 = await tryOnce(url, true);
+        const t1 = await r1.text();
+        attempts.push({ url, mode:'json', status:r1.status, body:t1.slice(0,200) });
+        if (r1.status >= 200 && r1.status < 300){
+          return { ok:true, provider:'HelloLeads', status:r1.status, response:t1 };
+        }
+        lastText = t1; lastStatus = r1.status;
+        // If 404/400/415 then try form-encoded
+        if ([400,404,415].includes(r1.status)){
+          const r2 = await tryOnce(url, false);
+          const t2 = await r2.text();
+          attempts.push({ url, mode:'form', status:r2.status, body:t2.slice(0,200) });
+          if (r2.status >= 200 && r2.status < 300){
+            return { ok:true, provider:'HelloLeads', status:r2.status, response:t2 };
+          }
+          lastText = t2; lastStatus = r2.status;
+        }
+      }catch(e){
+        attempts.push({ url, mode:'json', error:String(e?.message||e) });
+        // Try form as fallback even if JSON request threw
+        try{
+          const r2 = await tryOnce(url, false);
+          const t2 = await r2.text();
+          attempts.push({ url, mode:'form', status:r2.status, body:t2.slice(0,200) });
+          if (r2.status >= 200 && r2.status < 300){
+            return { ok:true, provider:'HelloLeads', status:r2.status, response:t2 };
+          }
+          lastText = t2; lastStatus = r2.status;
+        }catch(e2){
+          attempts.push({ url, mode:'form', error:String(e2?.message||e2) });
+        }
+      }
+    }
+    return { ok:false, provider:'HelloLeads', status:lastStatus, response:lastText, attempts };
   }catch(e){
     return { ok:false, provider:'HelloLeads', error: String(e?.message||e) };
   }
