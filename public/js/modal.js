@@ -61,11 +61,11 @@
                   el.addEventListener('click', function(ev){
                     try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
                     console.log('Wizard action triggered:', pair[1]);
-                    if (pair[1]==='download') return window.parent.QiqWizardHandle?.('download');
-                    if (pair[1]==='send') return window.parent.QiqWizardHandle?.('send');
-                    if (pair[1]==='custom') return window.parent.QiqWizardHandle?.('custom');
+                    if (pair[1]==='download') { if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('download'); return; }
+                    if (pair[1]==='send') { if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('send'); return; }
+                    if (pair[1]==='custom') { if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('custom'); return; }
                     if (pair[1]==='back1') return window.parent.QiqModal?.setHtml?.('');
-                    if (pair[1]==='back0') return window.parent.QiqWizardHandle?.('back-to-step1');
+                    if (pair[1]==='back0') { if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('back-to-step1'); return; }
                   });
                 });
 
