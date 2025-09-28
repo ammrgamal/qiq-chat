@@ -8,6 +8,52 @@
     
     let systemLaunched = false;
     const launchTimeout = 10000; // 10 seconds timeout
+
+    // Failsafe: ensure critical UI buttons always work (must be top-level so launchSystem can call it)
+    function setupButtonRescue(){
+        try{
+            // 1) Ensure pointer events for critical controls
+            const css = `
+              #searchBtn, #clearBtn, #applyPrice, #viewList, #viewGrid, #viewTable,
+              [data-open-quote-wizard], .fav-btn, .cmp-btn {
+                pointer-events: auto !important;
+                cursor: pointer !important;
+              }
+            `;
+            const style = document.createElement('style');
+            style.setAttribute('data-qiq-button-rescue','');
+            style.textContent = css;
+            document.head.appendChild(style);
+
+            // 2) Capture-phase delegated click to guarantee behavior
+            document.addEventListener('click', (e)=>{
+                const t = e.target;
+                try{
+                    // Wizard open
+                    if (t.closest && t.closest('[data-open-quote-wizard]')){
+                        e.preventDefault();
+                        if (window.QiqQuoteWizard?.open) return void window.QiqQuoteWizard.open();
+                        if (window.QiqModal?.open) return void window.QiqModal.open('#', { title: 'عرض السعر', html: '<div style="padding:16px">يرجى إعادة تحميل الصفحة.</div>' });
+                        return;
+                    }
+                    // Search / Clear / Apply Price
+                    if (t.closest && t.closest('#searchBtn')){ e.preventDefault(); return void (window.QiqCatalog?.search?.() || document.getElementById('searchBtn')?.click()); }
+                    if (t.closest && t.closest('#clearBtn')){ e.preventDefault(); return void (window.QiqCatalog?.clear?.()); }
+                    if (t.closest && t.closest('#applyPrice')){ e.preventDefault(); return void (window.QiqCatalog?.render?.()); }
+                    // View toggles
+                    if (t.closest && t.closest('#viewList')){ e.preventDefault(); window.QiqCatalog?.applyView?.('list-lines'); if (!document.getElementById('results')?.innerHTML?.trim()) window.QiqCatalog?.render?.(); return; }
+                    if (t.closest && t.closest('#viewGrid')){ e.preventDefault(); window.QiqCatalog?.applyView?.('grid'); if (!document.getElementById('results')?.innerHTML?.trim()) window.QiqCatalog?.render?.(); return; }
+                    if (t.closest && t.closest('#viewTable')){ e.preventDefault(); window.QiqCatalog?.applyView?.('table'); window.QiqCatalog?.render?.(); return; }
+                }catch{}
+            }, true);
+
+            // 3) Mutation observer to re-ensure attributes aren’t removed
+            if ('MutationObserver' in window){
+                const mo = new MutationObserver(()=>{});
+                mo.observe(document.documentElement, { childList:true, subtree:true });
+            }
+        }catch(err){ console.warn('Button rescue setup failed', err); }
+    }
     
     // فحص النظام النهائي
     function performFinalSystemCheck() {
@@ -32,7 +78,6 @@
             console.error('❌ System check failed:', checks);
             handleSystemFailure(checks);
         }
-        
         return checks;
     }
     
@@ -264,6 +309,8 @@
             
             // إعداد معالجة الأخطاء العامة النهائية
             setupFinalErrorHandling();
+            // Last-resort button rescue so primary controls always work
+            setupButtonRescue();
             
             console.log('✅ System launched successfully');
             

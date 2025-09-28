@@ -576,7 +576,28 @@
     }
   }
 
-  function openWizard(e){ if (e) e.preventDefault(); render(1); }
+  function openWizard(e){ 
+    if (e) e.preventDefault();
+    // If modal not ready yet, wait briefly
+    let tries = 0;
+    const max = 30; // ~1.5s
+    const tick = () => {
+      tries++;
+      if (window.QiqModal && typeof window.QiqModal.open === 'function') {
+        try { return render(1); } catch { /* fallthrough */ }
+      }
+      if (tries < max) return setTimeout(tick, 50);
+      // Fallback: simple inline dialog to unblock user
+      try{
+        const div = document.createElement('div');
+        div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:99999';
+        div.innerHTML = '<div style="background:#fff;padding:16px;border-radius:12px;max-width:640px;width:92vw;max-height:86vh;overflow:auto">جاري فتح المعالج… يرجى إعادة تحميل الصفحة.<br/><br/><button id="wiz-close-fb" class="btn">إغلاق</button></div>';
+        document.body.appendChild(div);
+        div.querySelector('#wiz-close-fb')?.addEventListener('click', ()=> div.remove());
+      }catch{}
+    };
+    tick();
+  }
 
   // Expose as global to bind from buttons
   window.QiqQuoteWizard = { open: openWizard };
