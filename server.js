@@ -101,6 +101,10 @@ route('post', '/api/hello-leads', 'hello-leads.js');
 route('post', '/api/quote-email', 'quote-email.js');
 // Bundles alignment (Algolia-constrained)
 route('post', '/api/bundles/align', 'bundles-align.js');
+// Media/spec enrichment via Gemini
+route('post', '/api/media/enrich', 'media-enrich.js');
+// V0 UI generator bridge
+route('post', '/api/v0/ui', 'v0-ui.js');
 // BOQ parse endpoint (upload-less; accepts base64 or text rows)
 route('post', '/api/boq/parse', 'boq-parse.js');
 // Admin config endpoints
@@ -137,8 +141,12 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
   const hasAlgolia = Boolean(process.env.ALGOLIA_APP_ID && process.env.ALGOLIA_API_KEY);
   const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
-  const hasGemini = Boolean(process.env.Gemini_API || process.env.GEMINI_API || process.env.GOOGLE_API_KEY);
+  const hasGemini = Boolean(
+    process.env.Gemini_API || process.env.GEMINI_API || process.env.GOOGLE_API_KEY ||
+    process.env.GOOGLE_IMAGE_SPECS_API || process.env.Google_Image_Specs_API
+  );
   const hasResend = Boolean(process.env.RESEND_API_KEY);
+  const hasV0 = Boolean(process.env.V0_API_KEY);
   const emailFrom = process.env.EMAIL_FROM || null;
   const hasHelloLeads = Boolean(
     (process.env.HELLOLEADS_API_KEY || process.env.HELLO_LEADS_API_KEY || process.env.Heallo_Leads_API_Key_Token)
@@ -156,7 +164,8 @@ app.get('/health', (req, res) => {
       hasAlgolia,
       hasOpenAI,
       hasGemini,
-      hasResend,
+  hasResend,
+  hasV0,
       emailFrom,
       hasHelloLeads,
       algoliaIndex: process.env.ALGOLIA_INDEX || null

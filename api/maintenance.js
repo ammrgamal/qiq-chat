@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 try { dotenv.config(); } catch {}
 
 import { sendEmail } from './_lib/email.js';
+import { createLead } from './_lib/helloleads.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -68,7 +69,10 @@ export default async function handler(req, res) {
         </div>
       </div>`;
 
-    const r = await sendEmail({ to, subject: title, html });
+  // Fire-and-forget lead to HelloLeads (context only)
+  try { createLead({ client, project, items, number: meta.number, date: meta.date, source: 'qiq-maintenance' }).catch(()=>{}); } catch {}
+
+  const r = await sendEmail({ to, subject: title, html });
     if (!r.ok) {
       return res.status(500).json({ ok: false, error: 'Email failed', provider: r.provider, disabled: r.disabled });
     }

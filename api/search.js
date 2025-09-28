@@ -40,7 +40,9 @@ export default async function handler(req, res) {
       sku:   h.sku || h.SKU || h.pn || h.mpn || h['Part Number'] || h.product_code || h.objectID || '',
       pn:    h.pn || h.mpn || h['Part Number'] || h.sku || h.SKU || h.product_code || h.objectID || '',
       link:  h.link || h.product_url || h.url || h.permalink || '',
-      brand: h.brand || h.manufacturer || h.vendor || h.company || ''
+      brand: h.brand || h.manufacturer || h.vendor || h.company || '',
+      availability: h.availability ?? h.stock_status ?? h.in_stock ?? '',
+      spec_sheet: h.spec_sheet || h.specsheet || h.datasheet || h['Spec URL'] || h['Datasheet'] || ''
     }));
 
     return res.status(200).json({

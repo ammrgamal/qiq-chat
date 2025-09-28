@@ -1,9 +1,9 @@
 # Project Index — qiq-chat
-Generated: 2025-09-26T17:38:05.387Z
+Generated: 2025-09-28T05:37:40.915Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
 - Total size: 1.0 MB
-- Files: 98
+- Files: 100
 - Directories: 20
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
@@ -48,12 +48,14 @@ This file is auto-generated. Share it with ChatGPT for context.
 - api/compare.js
 - api/hello-leads.js
 - api/maintenance.js
+- api/media-enrich.js
 - api/pdf-ai.js
 - api/quote-email.js
 - api/quote.js
 - api/search-health.js
 - api/search.js
 - api/special-quote.js
+- api/v0-ui.js
 
 ## Tree (truncated)
 
@@ -63,7 +65,7 @@ qiq-chat/
 │   ├── algoliaMapper.spec.ts (525 B)
 │   └── pdfTotals.spec.ts (1.3 KB)
 ├── .storage/
-│   ├── activity.json (19.9 KB)
+│   ├── activity.json (21.2 KB)
 │   └── quotations.json (672 B)
 ├── ai/
 │   └── ai-instructions.txt (3.5 KB)
@@ -103,13 +105,15 @@ qiq-chat/
 │   ├── chat.js (9.7 KB)
 │   ├── compare.js (2.8 KB)
 │   ├── hello-leads.js (855 B)
-│   ├── maintenance.js (3.9 KB)
+│   ├── maintenance.js (4.1 KB)
+│   ├── media-enrich.js (3.0 KB)
 │   ├── pdf-ai.js (14.4 KB)
-│   ├── quote-email.js (46.5 KB)
+│   ├── quote-email.js (47.8 KB)
 │   ├── quote.js (741 B)
 │   ├── search-health.js (1.2 KB)
-│   ├── search.js (2.7 KB)
-│   └── special-quote.js (4.0 KB)
+│   ├── search.js (2.8 KB)
+│   ├── special-quote.js (4.2 KB)
+│   └── v0-ui.js (2.6 KB)
 ├── docs/
 │   ├── algolia_index_reference.md (2.7 KB)
 │   ├── COPILOT_INSTRUCTIONS.md (3.7 KB)
@@ -130,7 +134,7 @@ qiq-chat/
 │   │   ├── pdf-admin.js (16.6 KB)
 │   │   ├── pdf-arabic-fonts.js (1.8 KB)
 │   │   ├── performance.js (5.6 KB)
-│   │   ├── products-search-enhanced.js (23.7 KB)
+│   │   ├── products-search-enhanced.js (25.7 KB)
 │   │   ├── products-search.js (6.7 KB)
 │   │   ├── quote-actions.js (41.7 KB)
 │   │   ├── quote-form.js (3.0 KB)
@@ -146,7 +150,7 @@ qiq-chat/
 │   ├── admin.html (13.4 KB)
 │   ├── index.html (9.3 KB)
 │   ├── logo.png (15.7 KB)
-│   ├── products-list.html (21.5 KB)
+│   ├── products-list.html (26.9 KB)
 │   ├── project-instructions.md (4.1 KB)
 │   └── quote.html (21.7 KB)
 ├── scripts/
@@ -174,7 +178,7 @@ qiq-chat/
 ├── package.json (922 B)
 ├── PROJECT_INDEX.md (12.6 KB)
 ├── quote.html (12.8 KB)
-├── server.js (6.6 KB)
+├── server.js (6.9 KB)
 └── test-flow.html (6.0 KB)
 ```
 

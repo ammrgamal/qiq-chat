@@ -123,7 +123,7 @@
   const spec  = esc(h?.spec_sheet || h?.specsheet || h?.datasheet || '');
     const id    = pn || name;
     return `
-      <div class="card">
+      <div class="card" data-pn="${pn}" data-brand="${brand}" data-name="${name}">
         <img src="${img}" alt="${name}" onerror="this.src='https://via.placeholder.com/68?text=IMG'" />
         <div>
           <div class="name">${name}</div>
@@ -165,13 +165,14 @@
   const availability = typeof availabilityRaw === 'string' ? availabilityRaw : (availabilityRaw === true ? 'in-stock' : (availabilityRaw === false ? 'backorder' : ''));
     const link  = esc(h?.link || '');
     const spec  = esc(h?.spec_sheet || h?.specsheet || h?.datasheet || '');
+    const priceCell = (price!==''?`${(window.QiqSession?.currency||'EGP')} ${price}`:'-');
     return `
       <tr>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)"><img src="${img}" alt="${name}" style="width:44px;height:44px;border-radius:8px;object-fit:cover" onerror="this.src='https://via.placeholder.com/44?text=IMG'"/></td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${link?`<a href="${link}" target="_blank" rel="noopener">${name}</a>`:name}${spec?` <a href="${spec}" target="_blank" rel="noopener" class="muted" title="Spec Sheet" aria-label="Spec Sheet" style="margin-left:6px;display:inline-flex;align-items:center;color:#2563eb"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" style=\"vertical-align:middle\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z\"/><polyline points=\"14 2 14 8 20 8\"/><text x=\"7\" y=\"17\" font-size=\"8\" fill=\"#dc2626\" font-family=\"sans-serif\">PDF</text></svg></a>`:''}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${pn}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${brand}</td>
-  <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${price!==''?`${(window.QiqSession?.currency||'EGP')} ${price}`:'-'}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${priceCell}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:center">
           <button class="btn" type="button"
             data-name="${name}"
@@ -241,6 +242,8 @@
       const mode = localStorage.getItem('qiq_view_mode') || 'list-lines';
       if (mode === 'table' && resultsTbody) {
         resultsEl.innerHTML = '';
+        // quick skeleton while filling table
+        resultsTbody.innerHTML = '<tr><td colspan="6" style="padding:12px"><div class="skeleton" style="height:12px;border-radius:6px"></div></td></tr>';
         resultsTbody.innerHTML = hits.map(hitToRow).join('');
       } else {
         // Ensure list-lines default
@@ -253,6 +256,46 @@
       applyView(mode);
       renderFacets(res?.facets || {}, getSelected());
       renderPagination(res?.page || 0, res?.nbPages || 1, (p)=>render(q, p));
+
+      // Post-render enrichment: find cards missing image/spec and enrich in batch
+      try{
+        const cards = Array.from(document.querySelectorAll('#results .card'));
+        const need = [];
+        const idxMap = [];
+        cards.forEach((card, idx)=>{
+          const img = card.querySelector('img');
+          const hasImg = img && img.src && !/placeholder/.test(img.src);
+          const hasSpec = !!card.querySelector('a[href*="pdf"], a[href*="spec"]');
+          if (!hasImg || !hasSpec) {
+            need.push({
+              name: card.dataset.name || '',
+              pn: card.dataset.pn || card.getAttribute('data-pn') || '',
+              brand: card.dataset.brand || '',
+              link: card.querySelector('a.muted')?.href || ''
+            });
+            idxMap.push(idx);
+          }
+        });
+        if (need.length) {
+          const r = await fetch('/api/media/enrich', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ items: need }) });
+          const j = await r.json().catch(()=>({}));
+          const enriched = Array.isArray(j?.items) ? j.items : [];
+          enriched.forEach((en, i)=>{
+            const card = cards[idxMap[i]]; if (!card || !en) return;
+            if (en.image) {
+              const imgEl = card.querySelector('img'); if (imgEl) imgEl.src = en.image;
+            }
+            if (en.spec_sheet) {
+              const aWrap = card.querySelector('div > .muted');
+              const specLink = document.createElement('a');
+              specLink.href = en.spec_sheet; specLink.target = '_blank'; specLink.rel = 'noopener';
+              specLink.className = 'muted'; specLink.textContent = 'Spec Sheet';
+              if (aWrap) { aWrap.insertAdjacentText('afterend', ' • '); aWrap.parentElement?.appendChild(specLink); }
+              else { card.querySelector('div:nth-child(2)')?.appendChild(specLink); }
+            }
+          });
+        }
+      }catch{}
     }catch(err){
       console.warn('search error', err);
       statusEl.textContent = 'Search failed';
@@ -417,10 +460,7 @@
       const html = `
         <div style="padding:16px; display:flex; flex-direction:column; gap:12px">
           <div style="white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e5e7eb; max-height:60vh; overflow:auto">${md.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-          <div style="display:flex; gap:8px; justify-content:flex-end">
-            <button class="btn secondary" onclick="__parentCopy(${JSON.stringify(md).replace(/</g,'&lt;').replace(/>/g,'&gt;')})">نسخ</button>
-            <button class="btn" onclick="__parentAttachComparison(${JSON.stringify(md).replace(/</g,'&lt;').replace(/>/g,'&gt;')})">إرفاق لعرض السعر</button>
-          </div>
+          <div class="muted" style="font-size:12px">استخدم أزرار الرأس للنسخ أو حفظ PDF أو الإرفاق إلى عرض السعر.</div>
         </div>`;
       window.QiqModal?.setHtml?.(html);
       resolved = true; clearTimeout(safety);

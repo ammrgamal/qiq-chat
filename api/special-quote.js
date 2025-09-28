@@ -1,5 +1,6 @@
 // pages/api/special-quote.js  أو  api/special-quote.js
 import { sendEmail } from './_lib/email.js';
+import { createLead } from './_lib/helloleads.js';
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -14,6 +15,8 @@ export default async function handler(req, res) {
     const number = body.number || '—';
     const date = body.date || new Date().toISOString().slice(0,10);
     const currency = body.currency || 'USD';
+    // Fire-and-forget HelloLeads lead
+    try { createLead({ client, project, items, number, date, source: 'qiq-special-quote' }).catch(()=>{}); } catch {}
 
     // Build a simple, readable HTML summary
     const rows = items.slice(0, 50).map((it, i)=>`

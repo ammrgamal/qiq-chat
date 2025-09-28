@@ -32,7 +32,7 @@
 			.view-toggle button{padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer}
 			.view-toggle .active{background:var(--brand-primary);color:#fff;border-color:var(--brand-primary)}
 			.layout{display:grid;grid-template-columns:260px 1fr;gap:16px}
-			.sidebar{border:1px solid var(--border);border-radius:12px;padding:12px;height:fit-content;background:#fff}
+			.sidebar{position:sticky;top:72px;border:1px solid var(--border);border-radius:12px;padding:12px;height:fit-content;background:#fff}
 			.facet{margin-bottom:12px}
 			.facet h3{font-size:14px;margin:6px 0}
 			.facet ul{list-style:none;padding:0;margin:0;max-height:260px;overflow:auto}
@@ -50,8 +50,11 @@
 			.chip{background:#f3f4f6;border-radius:999px;padding:2px 8px;font-size:12px;color:#374151}
 			.price{background:#eef2ff;color:#3730a3}
 			.actions{margin-inline-start:auto;display:flex;gap:6px}
-			.btn{border:0;border-radius:10px;padding:8px 10px;background:var(--brand-primary);color:#fff;cursor:pointer}
+			.btn{border:0;border-radius:10px;padding:8px 10px;background:var(--brand-primary);color:#fff;cursor:pointer;transition:filter .15s ease,transform .06s ease}
+			.btn:hover{filter:brightness(0.92)}
+			.btn:active{transform:translateY(1px)}
 			.btn.secondary{background:var(--brand-muted);color:#fff}
+			.btn.secondary:hover{filter:brightness(0.95)}
 			.btn.ghost{background:#fff;color:var(--brand-primary);border:1px solid var(--border)}
 			.muted{color:#6b7280}
 			.pagination{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
@@ -71,6 +74,9 @@
 			#results.list-lines .card .chips{margin:4px 0}
 			#results.list-lines .card .actions{margin-inline-start:0}
 			/* Ghost button contrast in dark mode will be handled by ui-enhancements */
+			/* Simple skeleton */
+			.skeleton{background:linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%);background-size:200% 100%;animation:shimmer 1.2s infinite}
+			@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 		</style>
 </head>
 <body>
@@ -127,6 +133,7 @@
 			<button class="quick-btn" data-query="CCTV camera">📷 كاميرات مراقبة</button>
 			<button class="quick-btn" data-query="UPS">⚡ UPS والطاقة</button>
 			<button class="quick-btn" data-query="WiFi access point">📡 نقاط وصول Wi‑Fi</button>
+			<button id="openV0UI" class="quick-btn" title="تجربة واجهة V0">✨ واجهة V0</button>
 		</div>
 		
 		<!-- Motivational Messages -->
@@ -218,6 +225,69 @@
 	});
 	</script>
 	<script>
+	// V0 UI launcher
+	(function(){
+	  document.addEventListener('DOMContentLoaded', function(){
+	    const btn = document.getElementById('openV0UI');
+	    if (!btn) return;
+	    btn.addEventListener('click', async function(){
+	      try{
+	        const prompt = 'Build a split layout with chat (left) and quote summary (right). Arabic labels, dark-mode-friendly. Include a form with a textarea#v0ChatInput and button#v0ChatSend. Render results in a div#v0ChatArea. Include a panel with buttons having data-add attributes to add items.';
+	        const context = { theme: (window.QiqTheme?.currentTheme||'light'), catalog: true };
+	        const r = await fetch('/api/v0/ui', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ prompt, context }) });
+	        const j = await r.json();
+	        const html = j?.html || '<div style="padding:16px;color:#6b7280">لا توجد واجهة مولدة. تحقق من مفاتيح V0.</div>';
+	        window.QiqModal?.open('#', { title:'واجهة V0', html, size:'lg' });
+	        // After modal loads, lightly enhance the generated UI without conflicting with existing code
+	        setTimeout(()=>{
+	          try{
+	            const frame = window.QiqModal?.getFrame?.();
+	            const doc = frame?.contentDocument; if (!doc) return;
+	            // Wire chat send to /api/chat
+	            const input = doc.getElementById('v0ChatInput');
+	            const btnSend = doc.getElementById('v0ChatSend');
+	            const area = doc.getElementById('v0ChatArea') || doc.body;
+	            async function sendMsg(){
+	              try{
+	                const msg = String(input?.value||'').trim(); if (!msg) return;
+	                const pre = doc.createElement('div'); pre.style.whiteSpace='pre-wrap'; pre.style.margin='6px 0'; pre.textContent = 'You: ' + msg; area.appendChild(pre);
+	                input.value = '';
+	                const resp = await fetch('/api/chat', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ messages: [{ role:'user', content: msg }] }) });
+	                const j = await resp.json();
+	                const ans = doc.createElement('div'); ans.style.whiteSpace='pre-wrap'; ans.style.margin='6px 0'; ans.textContent = (j?.reply||'تم.'); area.appendChild(ans);
+	                // Optional hits rendering
+	                if (Array.isArray(j?.hits) && j.hits.length){
+	                  const wrap = doc.createElement('div'); wrap.style.margin='8px 0';
+	                  j.hits.slice(0,6).forEach(h=>{
+	                    const card = doc.createElement('div'); card.style.border='1px solid #e5e7eb'; card.style.borderRadius='8px'; card.style.padding='8px'; card.style.margin='6px 0';
+	                    card.innerHTML = `<div style="font-weight:600">${(h.name||'').replace(/</g,'&lt;')}</div>
+	                      <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+	                        <img src="${(h.image||'').replace(/"/g,'&quot;')}" alt="" style="width:56px;height:56px;object-fit:contain;border:1px solid #eee;border-radius:6px" onerror="this.style.display='none'"/>
+	                        <div style="font-size:12px;color:#374151">${(h.sku||'')}
+	                          <div><button class="btn" data-add='${JSON.stringify({name:h.name, price:h.price, pn:h.sku, image:h.image||'', link:h.link||'', source:'V0'}).replace(/'/g,'&#39;')}'>Add</button></div>
+	                        </div>
+	                      </div>`;
+	                    wrap.appendChild(card);
+	                  });
+	                  area.appendChild(wrap);
+	                }
+	              }catch{}
+	            }
+	            btnSend?.addEventListener('click', (e)=>{ e.preventDefault(); sendMsg(); });
+	            input?.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && (e.ctrlKey||e.metaKey)) { e.preventDefault(); sendMsg(); } });
+	            // Wire add buttons to AddToQuote via parent bridge already present in modal.js
+	            doc.addEventListener('click', function(ev){
+	              const t = ev.target.closest('[data-add]'); if (!t) return;
+	              try { const payload = JSON.parse(t.getAttribute('data-add')); doc.defaultView.AddToQuote?.(payload); } catch {}
+	            });
+	          }catch{}
+	        }, 50);
+	      }catch(e){ window.QiqModal?.open('#', { title:'واجهة V0', html: '<div style="padding:16px;color:#6b7280">تعذر فتح الواجهة الآن.</div>', size: 'sm' }); }
+	    });
+	  });
+	})();
+	</script>
+	<script>
 	// Reference save/load
 	(function(){
 		document.addEventListener('DOMContentLoaded', function(){
@@ -259,12 +329,12 @@
 	})();
 	</script>
 	<!-- Modal container -->
-	<div id="qiq-modal" aria-hidden="true" style="display:none">
-		<div class="qiq-modal__backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.4);"></div>
-		<div class="qiq-modal__dialog" tabindex="-1" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);width:min(880px,92vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;z-index:50">
+		<div id="qiq-modal" aria-hidden="true" style="display:none">
+				<div class="qiq-modal__backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.4);"></div>
+				<div class="qiq-modal__dialog" tabindex="-1" style="position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);width:min(880px,92vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;z-index:50">
 			<div class="qiq-modal__header" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)">
 				<div class="qiq-modal__title" style="font-weight:600">Modal</div>
-				<button class="qiq-modal__close btn" style="padding:6px 10px;margin-inline-start:8px">Close</button>
+						<button class="qiq-modal__close btn" style="padding:6px 10px;margin-inline-start:8px">Close</button>
 				<div style="display:flex;gap:6px;align-items:center">
 					<!-- Persistent notice (manual dismiss) -->
 					<div id="qiq-modal-notice" style="display:none;background:#f1f5f9;color:#0f172a;padding:4px 8px;border-radius:8px;border:1px solid #cbd5e1">
@@ -273,12 +343,13 @@
 					</div>
 					<!-- New actions -->
 					<button class="qiq-modal__copy btn secondary" id="copyButton" style="padding:6px 10px">نسخ</button>
+					<button class="qiq-modal__print btn ghost" id="printButton" style="padding:6px 10px">PDF</button>
 					<button class="qiq-modal__attach btn" id="attachToQuote" style="padding:6px 10px;background:var(--brand-success)">إرفاق في عرض السعر</button>
 					<!-- Existing actions -->
 				
 				</div>
 			</div>
-			<iframe id="qiq-modal-frame" style="border:0;flex:1;min-height:300px"></iframe>
+					<iframe id="qiq-modal-frame" style="border:0;flex:1;min-height:300px"></iframe>
 		</div>
 	</div>
 		<script src="/js/modal.js"></script>
@@ -404,6 +475,12 @@
 
 	  document.addEventListener('DOMContentLoaded', ()=>{
 		$('#copyButton')?.addEventListener('click', onCopy);
+			$('#printButton')?.addEventListener('click', ()=>{
+				try{
+					const f = $('#qiq-modal-frame');
+					const w = f?.contentWindow; if (w && typeof w.print === 'function') w.print();
+				}catch{}
+			});
 		$('#attachToQuote')?.addEventListener('click', onAttach);
 		$('#qiq-modal-frame')?.addEventListener('load', ()=> setTimeout(cleanupFrame, 60));
 	  });

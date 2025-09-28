@@ -4,9 +4,11 @@
 // Returns { ok, pdfBase64, csvBase64 } (pdfBase64 only for download action)
 
 import { sendEmail } from './_lib/email.js';
+import { createLead } from './_lib/helloleads.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { enrichItems as enrichMediaItems } from './media-enrich.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -868,11 +870,30 @@ export default async function handler(req, res){
     const body = req.body || {};
     const action = (body.action||'').toLowerCase();
     const payload = body;
+    // Non-blocking: create HelloLeads lead if keys exist
+    try { createLead({ client: payload.client, project: payload.project, items: payload.items, number: payload.number, date: payload.date, source: 'qiq-quote-email' }).catch(()=>{}); } catch {}
 
   // Phase 1: Authoritative conversion (USD base) then enrich items and build solution description
   const currency = payload.currency || CURRENCY_FALLBACK;
   const convertedItems = await convertItemsToCurrency(payload.items||[], currency);
-  const enrichedItems = await enrichItemsWithAI(convertedItems);
+  // Preflight: attempt media/spec enrichment for items missing image/spec_sheet (non-blocking)
+  let convertedWithMedia = convertedItems;
+  try {
+    const minimal = convertedItems.map(it => ({ name: it.name, pn: it.pn || it.sku, brand: it.brand, link: it.link || it.spec_sheet, image: it.image, spec_sheet: it.spec_sheet }));
+    const needs = minimal.some(m => !m.image || !m.spec_sheet);
+    if (needs) {
+      const r = await enrichMediaItems(minimal);
+      if (r && Array.isArray(r.items) && r.items.length === minimal.length) {
+        convertedWithMedia = convertedItems.map((it, i) => {
+          const patch = r.items[i] || {};
+          const image = it.image || patch.image;
+          const spec_sheet = it.spec_sheet || patch.spec_sheet;
+          return { ...it, ...(image ? { image } : {}), ...(spec_sheet ? { spec_sheet } : {}) };
+        });
+      }
+    }
+  } catch {}
+  const enrichedItems = await enrichItemsWithAI(convertedWithMedia);
     const solutionText = await buildSolutionDescription({ client: payload.client, project: payload.project, items: enrichedItems, currency });
     let cards = buildPresentationCards(solutionText);
     // Optionally get Gamma cards. If env prefers Gamma, replace when available.
