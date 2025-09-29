@@ -147,6 +147,27 @@
                   });
                 });
 
+                // Last-resort fallbacks: capture events early for specific controls
+                if (!document.__qiqWizardFallbackBound){
+                  document.__qiqWizardFallbackBound = true;
+                  document.addEventListener('pointerdown', function(ev){
+                    try{
+                      var n2 = ev.target && ev.target.closest && ev.target.closest('#wiz-next2');
+                      if (n2 && window.parent && typeof window.parent.QiqWizardNext2==='function'){
+                        ev.preventDefault(); ev.stopPropagation();
+                        return window.parent.QiqWizardNext2();
+                      }
+                      var del = ev.target && ev.target.closest && ev.target.closest('.wiz-del');
+                      if (del && window.parent && typeof window.parent.QiqWizardDelAt==='function'){
+                        ev.preventDefault(); ev.stopPropagation();
+                        var tr = del.closest('tr');
+                        var idx = tr ? Number(tr.getAttribute('data-idx')||'-1') : -1;
+                        if (idx>=0) return window.parent.QiqWizardDelAt(idx);
+                      }
+                    }catch{}
+                  }, true);
+                }
+
               }catch(e){
                 console.error('Wire wizard error:', e);
               }

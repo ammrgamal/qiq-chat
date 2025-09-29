@@ -417,6 +417,7 @@
   }
 
   function render(step){
+    try { window.__qiqWizardStep = step; } catch {}
     const items = getItems();
     const saved = loadClient();
     const html1 = buildClientForm(saved);
@@ -782,6 +783,21 @@
   // Expose action handler for iframe bridge
   window.QiqWizardHandle = handle;
   window.QiqWizardBack = ()=> render(1);
+  // Expose helpers for modal bridge fallbacks
+  window.QiqWizardRenderStep = function(n){ try { render(Number(n)||1); } catch {} };
+  window.QiqWizardNext2 = function(){ try { render(3); } catch {} };
+  window.QiqWizardDelAt = function(idx){
+    try{
+      idx = Number(idx);
+      if (!(idx>=0)) return;
+      const arr = getItems();
+      if (idx < arr.length){
+        arr.splice(idx,1);
+        localStorage.setItem(BOQ_KEY, JSON.stringify(arr));
+      }
+      render(2);
+    }catch{}
+  };
 
   // Attach default listeners if buttons exist
   document.addEventListener('click', function(ev){
