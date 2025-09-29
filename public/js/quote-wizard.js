@@ -590,14 +590,17 @@
             const gr = doc?.getElementById('wiz-grand'); if (gr) gr.textContent = t.grand.toFixed(2);
           });
           body.addEventListener('click', (ev)=>{
-            const btn = ev.target.closest('.wiz-del'); if (!btn) return;
-            const tr = btn.closest('tr'); if (!tr) return;
-            const idx = Number(tr.getAttribute('data-idx')||'-1'); if (idx<0) return;
-            const arr = getItems();
-            arr.splice(idx,1);
-            localStorage.setItem(BOQ_KEY, JSON.stringify(arr));
-            // re-render step 2
-            render(2);
+            try{
+              const tgt = ev.target;
+              const btn = tgt && tgt.closest ? tgt.closest('.wiz-del') : null; if (!btn) return;
+              const tr = btn.closest('tr'); if (!tr) return;
+              const idx = Number(tr.getAttribute('data-idx')||'-1'); if (idx<0) return;
+              const arr = getItems();
+              arr.splice(idx,1);
+              localStorage.setItem(BOQ_KEY, JSON.stringify(arr));
+              // re-render step 2
+              render(2);
+            }catch{}
           });
         }
       }catch{}
@@ -614,6 +617,21 @@
             if (n2){ ev.preventDefault(); ev.stopPropagation(); return void render(3); }
             const bk = ev.target && ev.target.closest && ev.target.closest('#wiz-back');
             if (bk){ ev.preventDefault(); ev.stopPropagation(); return void render(step === 3 ? 2 : 1); }
+            // Delegated delete handler (capture): handles clicks on .wiz-del reliably
+            const delBtn = ev.target && ev.target.closest && ev.target.closest('.wiz-del');
+            if (delBtn){
+              ev.preventDefault(); ev.stopPropagation();
+              try{
+                const tr = delBtn.closest('tr');
+                const idx = Number(tr?.getAttribute('data-idx')||'-1');
+                if (idx>=0){
+                  const arr = getItems();
+                  arr.splice(idx,1);
+                  localStorage.setItem(BOQ_KEY, JSON.stringify(arr));
+                  return void render(2);
+                }
+              }catch{}
+            }
           }catch{}
         }, true);
         // Even earlier: capture pointerdown to beat any other click stoppers
@@ -623,6 +641,21 @@
             if (n2){ ev.preventDefault(); ev.stopPropagation(); return void render(3); }
             const bk = ev.target && ev.target.closest && ev.target.closest('#wiz-back');
             if (bk){ ev.preventDefault(); ev.stopPropagation(); return void render(step === 3 ? 2 : 1); }
+            // Pointerdown delegate for delete as a pre-emptive fallback
+            const delBtn = ev.target && ev.target.closest && ev.target.closest('.wiz-del');
+            if (delBtn){
+              ev.preventDefault(); ev.stopPropagation();
+              try{
+                const tr = delBtn.closest('tr');
+                const idx = Number(tr?.getAttribute('data-idx')||'-1');
+                if (idx>=0){
+                  const arr = getItems();
+                  arr.splice(idx,1);
+                  localStorage.setItem(BOQ_KEY, JSON.stringify(arr));
+                  return void render(2);
+                }
+              }catch{}
+            }
           }catch{}
         }, true);
       }catch{}
