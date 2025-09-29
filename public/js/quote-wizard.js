@@ -26,13 +26,21 @@
     return `
       <form id="wizard-form" style="display:grid;gap:10px;grid-template-columns:1fr 1fr">
         <label style="grid-column:1/-1">الاسم الكامل<span style="color:#dc2626"> *</span>
-          <input id="wiz-name" name="name" type="text" value="${esc(saved?.name||'')}" required 
-                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
+          <div class="field-wrap">
+            <input id="wiz-name" name="name" type="text" value="${esc(saved?.name||'')}" required 
+                   style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
+            <span id="wiz-name-icon" class="field-icon neutral" aria-hidden="true">•</span>
+          </div>
+          <div id="wiz-name-msg" class="field-msg hint" aria-live="polite">أدخل الاسم الكامل</div>
         </label>
         
         <label>البريد الإلكتروني<span style="color:#dc2626"> *</span>
-          <input id="wiz-email" name="email" type="email" value="${esc(saved?.email||'')}" required 
-                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
+          <div class="field-wrap">
+            <input id="wiz-email" name="email" type="email" value="${esc(saved?.email||'')}" required 
+                   style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
+            <span id="wiz-email-icon" class="field-icon neutral" aria-hidden="true">•</span>
+          </div>
+          <div id="wiz-email-msg" class="field-msg hint" aria-live="polite">سوف نرسل العرض إلى هذا البريد</div>
         </label>
         
         <label>اسم الشركة (اختياري)
@@ -57,9 +65,13 @@
         </label>
         
         <label>اسم المشروع<span style="color:#dc2626"> *</span>
-          <input id="wiz-project-name" name="projectName" type="text" value="${esc(saved?.projectName||'')}" required 
-                 placeholder="مثال: مشروع حماية الأجهزة - قسم المبيعات" 
-                 style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
+          <div class="field-wrap">
+            <input id="wiz-project-name" name="projectName" type="text" value="${esc(saved?.projectName||'')}" required 
+                   placeholder="مثال: مشروع حماية الأجهزة - قسم المبيعات" 
+                   style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
+            <span id="wiz-project-name-icon" class="field-icon neutral" aria-hidden="true">•</span>
+          </div>
+          <div id="wiz-project-name-msg" class="field-msg hint" aria-live="polite">سيظهر اسم المشروع في ملف العرض</div>
         </label>
         
         <label>الموقع / الجهة (اختياري)
@@ -72,6 +84,9 @@
           <textarea id="wiz-notes" name="notes" rows="3" 
                     style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px;resize:vertical">${esc(saved?.notes||'')}</textarea>
         </label>
+        <div class="wiz-actions" style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+          <button class="btn" id="wiz-next" type="submit">التالي</button>
+        </div>
       </form>`;
   }
 
@@ -378,8 +393,18 @@
         .wiz-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px}
         .btn{border:0;border-radius:10px;padding:8px 12px;background:#1e3a8a;color:#fff;cursor:pointer}
         .btn.secondary{background:#6b7280}
+        /* Validation helpers */
+        .field-error{border-color:#ef4444 !important; outline: none}
+        .field-msg{font-size:12px;margin-top:4px;color:#6b7280}
+        .field-msg.error{color:#ef4444}
+        .field-msg.hint{color:#6b7280}
+        .field-wrap{position:relative}
+        .field-icon{position:absolute; inset-inline-end:10px; top:calc(50% + 2px); transform:translateY(-50%); font-size:14px; color:#9ca3af}
+        .field-icon.ok{color:#10b981}
+        .field-icon.error{color:#ef4444}
+        .field-icon.neutral{color:#9ca3af}
       </style>`;
-    const inner = step===1 ? html1+`<div class="wiz-actions"><button class="btn" id="wiz-next">التالي</button></div>`
+    const inner = step===1 ? html1
                            : html2+`<div class="wiz-actions">
             <button class="btn secondary" id="wiz-back" data-wizard-action="back">رجوع</button>
             <button class="btn" id="wiz-download" data-wizard-action="download">Download PDF</button>
@@ -404,10 +429,21 @@
       // Enhanced element detection
       console.log('🔍 Looking for wizard elements in frame...');
   const next = q('wiz-next');
-      const back = q('wiz-back');
+  const back = q('wiz-back');
       const dl   = q('wiz-download');
       const send = q('wiz-send');
       const cust = q('wiz-custom');
+  const form = q('wizard-form');
+
+      // Inline validation helpers
+      const hints = {
+        'wiz-name': 'أدخل الاسم الكامل',
+        'wiz-email': 'سوف نرسل العرض إلى هذا البريد',
+        'wiz-project-name': 'سيظهر اسم المشروع في ملف العرض'
+      };
+      const setIcon = (id, state)=>{ try{ const ic = q(id+'-icon'); if (!ic) return; ic.classList.remove('ok','error','neutral'); ic.classList.add(state||'neutral'); ic.textContent = state==='ok'?'✓':(state==='error'?'!':'•'); }catch{} };
+      const clearErr = (id)=>{ try{ const inp = q(id); if (inp) inp.classList.remove('field-error'); const m = q(id+'-msg'); if (m){ m.textContent=hints[id]||''; m.classList.remove('error'); m.classList.add('hint'); } setIcon(id,'neutral'); }catch{} };
+      const setErr = (id, msg)=>{ try{ const inp = q(id); if (inp) inp.classList.add('field-error'); const m = q(id+'-msg'); if (m){ m.textContent = msg || ''; m.classList.add('error'); m.classList.remove('hint'); } setIcon(id,'error'); }catch{} };
       
       console.log('🎯 Found elements:', { 
         next: !!next, 
@@ -431,13 +467,12 @@
         el.addEventListener(type, fn); 
       };
       
-  // Enhanced Next button handler with better form validation
-      on(next, 'click', (e)=>{ 
+      // Form-first approach: submit event handles Next
+      on(form, 'submit', (e)=>{
         e.preventDefault();
         e.stopPropagation();
-        
-        console.log('Next button clicked - starting validation');
-        
+        // Clear previous errors
+        ['wiz-name','wiz-email','wiz-project-name'].forEach(clearErr);
         const name = doc.getElementById('wiz-name')?.value.trim();
         const email= doc.getElementById('wiz-email')?.value.trim();
         const projectName = doc.getElementById('wiz-project-name')?.value.trim();
@@ -445,46 +480,40 @@
         const notes = doc.getElementById('wiz-notes')?.value.trim();
         const projectSite = doc.getElementById('wiz-project-site')?.value.trim();
         const title = doc.getElementById('wiz-title')?.value.trim();
-        
-        console.log('Form data:', { name, email, projectName, company });
-        
-        // Validation with better error messages
-        if (!name || name.length < 2) { 
-          window.parent.QiqToast?.error?.('يرجى إدخال الاسم الكامل (حرفين على الأقل)'); 
-          doc.getElementById('wiz-name')?.focus();
-          return; 
-        }
-        
-        if (!email || !email.includes('@')) { 
-          window.parent.QiqToast?.error?.('يرجى إدخال بريد إلكتروني صحيح'); 
-          doc.getElementById('wiz-email')?.focus();
-          return; 
-        }
-        
-        if (!projectName || projectName.length < 3) { 
-          window.parent.QiqToast?.error?.('يرجى إدخال اسم المشروع (3 أحرف على الأقل)'); 
-          doc.getElementById('wiz-project-name')?.focus();
-          return; 
-        }
-        
         const currency = doc.getElementById('wiz-currency')?.value || 'EGP';
-        
-        // Save data and proceed
+  if (!name || name.length < 2){ setErr('wiz-name','الاسم الكامل مطلوب (حرفان على الأقل).'); window.parent.QiqToast?.error?.('يرجى إدخال الاسم الكامل (حرفين على الأقل)'); doc.getElementById('wiz-name')?.focus(); return; } else { setIcon('wiz-name','ok'); }
+  const emailOk = !!email && /.+@.+\..+/.test(email);
+  if (!emailOk){ setErr('wiz-email','يرجى إدخال بريد إلكتروني صحيح.'); window.parent.QiqToast?.error?.('يرجى إدخال بريد إلكتروني صحيح'); doc.getElementById('wiz-email')?.focus(); return; } else { setIcon('wiz-email','ok'); }
+  if (!projectName || projectName.length < 3){ setErr('wiz-project-name','اسم المشروع مطلوب (3 أحرف على الأقل).'); window.parent.QiqToast?.error?.('يرجى إدخال اسم المشروع (3 أحرف على الأقل)'); doc.getElementById('wiz-project-name')?.focus(); return; } else { setIcon('wiz-project-name','ok'); }
         const clientData = { name, email, company, notes, projectName, projectSite, currency, title };
-        
-        try {
+        try{
           window.parent.localStorage.setItem(STATE_KEY, JSON.stringify(clientData));
-          console.log('Client data saved successfully');
           window.parent.QiqToast?.success?.('تم حفظ البيانات بنجاح');
-          
-          // Small delay then proceed to step 2
-          setTimeout(() => {
-            render(2);
-          }, 300);
-          
-        } catch (error) {
-          console.error('Error saving client data:', error);
-          window.parent.QiqToast?.error?.('خطأ في حفظ البيانات');
+          render(2);
+        }catch(err){ console.error(err); window.parent.QiqToast?.error?.('خطأ في حفظ البيانات'); }
+      });
+      
+      // Click fallback on Next to trigger form submission in case some scripts stop click bubbles
+      on(next, 'click', (e)=>{ try { e.preventDefault(); e.stopPropagation(); form?.requestSubmit?.(); form?.submit?.(); } catch {} });
+      // Keyboard fallback: Space/Enter activates submit
+      on(next, 'keydown', (e)=>{ if (e.key==='Enter' || e.key===' '){ e.preventDefault(); try{ form?.requestSubmit?.(); }catch{} } });
+
+      // Live validation: clear error when user fixes input
+      ;['wiz-name','wiz-email','wiz-project-name'].forEach((id)=>{
+        const el = q(id); if (!el) return;
+        if (!el.__live){
+          el.__live = true;
+          el.addEventListener('input', ()=>{ 
+            const v = String(el.value||'').trim();
+            if (id==='wiz-email') { if (/.+@.+\..+/.test(v)) { clearErr(id); setIcon(id,'ok'); } else if (!v) { clearErr(id); } else { setErr(id,'يرجى إدخال بريد إلكتروني صحيح.'); } }
+            else {
+              const min = id==='wiz-name'?2:3;
+              if (v.length >= min) { clearErr(id); setIcon(id,'ok'); }
+              else if (!v) { clearErr(id); }
+              else { setErr(id, id==='wiz-name' ? 'الاسم الكامل مطلوب (حرفان على الأقل).' : 'اسم المشروع مطلوب (3 أحرف على الأقل).'); }
+            }
+          });
+          el.addEventListener('blur', ()=>{ if (!String(el.value||'').trim()) clearErr(id); });
         }
       });
       on(back, 'click', (e)=>{ e.preventDefault(); render(1); });
