@@ -480,12 +480,24 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
   // Intro page (branding)
   let __logoBuf = null;
   const headerH = 80;
-  doc.rect(doc.page.margins.left, doc.page.margins.top, doc.page.width - doc.page.margins.left - doc.page.margins.right, headerH).fill(BRAND_BG).stroke(BRAND_BG);
-    doc.fillColor(BRAND_PRIMARY).font(BOLD).fontSize(22).text(ARS(`Official Quotation`), { align: 'left' });
-    doc.moveDown(0.2).font(REG).fillColor('#111827').fontSize(12).text(ARS('Smart IT Procurement powered by QuickITQuote.com'));
-    doc.moveDown(0.8).font(REG).fillColor('#374151').text(ARS(`Quote: ${ensureString(number)}    Date: ${ensureString(date)}    Currency: ${ensureString(currency)}`));
+  // Header band
+  doc.rect(
+    doc.page.margins.left,
+    doc.page.margins.top,
+    doc.page.width - doc.page.margins.left - doc.page.margins.right,
+    headerH
+  ).fill(BRAND_BG).stroke(BRAND_BG);
+  // Heading text inside header band
+  doc.save();
+  doc.fillColor(BRAND_PRIMARY).font(BOLD).fontSize(22)
+    .text(ARS(`Official Quotation`), doc.page.margins.left, doc.page.margins.top + 12, { align: 'left' });
+  doc.font(REG).fillColor('#111827').fontSize(12)
+    .text(ARS('Smart IT Procurement powered by QuickITQuote.com'), doc.page.margins.left, doc.y + 2, { align: 'left' });
+  doc.font(REG).fillColor('#374151')
+    .text(ARS(`Quote: ${ensureString(number)}    Date: ${ensureString(date)}    Currency: ${ensureString(currency)}`), doc.page.margins.left, doc.y + 6);
+  doc.restore();
 
-    // Try draw logo if available
+    // Try draw logo if available (top-right inside header band)
     try{
       const logoPath = path.join(__dirname, '../public/logo.png');
       const logo = await tryLoadLocal(logoPath);
@@ -496,8 +508,8 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       }
     }catch{}
 
-  // Client / Project blocks (more space below header/logo)
-  doc.moveDown(1.2);
+  // Client / Project blocks — start below the header band to avoid overlap with logo/text
+  doc.y = doc.page.margins.top + headerH + 12;
     const startX = doc.x, startY = doc.y;
     const boxW = (doc.page.width - doc.page.margins.left - doc.page.margins.right - 12) / 2;
     const lineH = 14;
