@@ -449,7 +449,7 @@
     const inner = step===1 ? html1
                            : step===2 ? html2+`<div class="wiz-actions">
             <button class="btn secondary" id="wiz-back" data-wizard-action="back">رجوع</button>
-            <button class="btn" id="wiz-next2" type="button">التالي</button>
+            <button class="btn" id="wiz-next2" type="button" data-wizard-action="next2" aria-label="التالي" role="button">التالي</button>
           </div>`
                            : html3+`<div class="wiz-actions">
             <button class="btn secondary" id="wiz-back" data-wizard-action="back">رجوع</button>
@@ -607,6 +607,9 @@
 
   // Step 2 Next (explicit)
   on(next2, 'click', (e)=>{ e.preventDefault(); e.stopPropagation(); try{ render(3); }catch{} });
+  // Step 2 Next fallbacks: pointerup and keyboard
+  on(next2, 'pointerup', (e)=>{ e.preventDefault(); e.stopPropagation(); try{ render(3); }catch{} });
+  on(next2, 'keydown', (e)=>{ if (e.key==='Enter' || e.key===' '){ e.preventDefault(); e.stopPropagation(); try{ render(3); }catch{} } });
 
       // Extra safety: delegated clicks for Next (step 2) and Back
       try{
@@ -656,6 +659,13 @@
                 }
               }catch{}
             }
+          }catch{}
+        }, true);
+        // Pointerup capture as an additional safety net
+        doc.addEventListener('pointerup', (ev)=>{
+          try{
+            const n2 = ev.target && ev.target.closest && ev.target.closest('#wiz-next2');
+            if (n2){ ev.preventDefault(); ev.stopPropagation(); return void render(3); }
           }catch{}
         }, true);
       }catch{}

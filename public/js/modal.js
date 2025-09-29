@@ -76,25 +76,28 @@
                 // Also bind any elements with data-wizard-action attribute
                 var actionEls = Array.from(document.querySelectorAll('[data-wizard-action]'));
                 actionEls.forEach(function(el){
-                  if (!el || el.__bound) return;
-                  el.__bound = true;
-                  el.addEventListener('click', function(ev){
-                    try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
-                    var action = (el.getAttribute('data-wizard-action')||'').toLowerCase();
-                    console.log('Wizard action (data-attr):', action);
-                    if (!action) return;
-                    if (action==='download' || action==='send' || action==='custom'){
-                      if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle(action);
-                        }
-                        // Back/step actions: normally leave to quote-wizard iframe listeners.
-                        // However, provide a SAFE FALLBACK to step 1 if those listeners fail for any reason.
-                        if (action==='back' || action==='back1' || action==='step1' || action==='back-step1'){
-                          try{
-                            if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('back-to-step1');
-                            if (window.parent && typeof window.parent.QiqWizardBack==='function') return window.parent.QiqWizardBack();
-                          }catch{}
-                          return;
-                        }
+                    if (!el || el.__bound) return;
+                    el.__bound = true;
+                    el.addEventListener('click', function(ev){
+                      var action = (el.getAttribute('data-wizard-action')||'').toLowerCase();
+                      console.log('Wizard action (data-attr):', action);
+                      if (!action) return; // do not cancel unknowns
+                      // Explicitly proxied actions → intercept and route to parent
+                      if (action==='download' || action==='send' || action==='custom'){
+                        try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
+                        if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle(action);
+                        return;
+                      }
+                      // Back/step fallback only → intercept and route to step1 if needed
+                      if (action==='back' || action==='back1' || action==='step1' || action==='back-step1'){
+                        try{ ev.preventDefault(); ev.stopPropagation(); }catch{}
+                        try{
+                          if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('back-to-step1');
+                          if (window.parent && typeof window.parent.QiqWizardBack==='function') return window.parent.QiqWizardBack();
+                        }catch{}
+                        return;
+                      }
+                      // For any other action (e.g., 'next2'), do not intercept; let wizard handlers run.
                   });
                 });
 
