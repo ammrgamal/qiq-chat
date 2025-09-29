@@ -1,9 +1,9 @@
 # Project Index — qiq-chat
-Generated: 2025-09-28T20:05:10.522Z
+Generated: 2025-09-29T06:27:11.447Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
 - Total size: 1.8 MB
-- Files: 146
+- Files: 147
 - Directories: 21
 - Max depth: 6
 - Excluded dirs: node_modules, .git, .next, dist, build, out, .vercel, .cache, coverage, .vscode, .idea, tmp, temp, .turbo, .husky, logs
@@ -75,7 +75,7 @@ qiq-chat/
 │   ├── algoliaMapper.spec.ts (525 B)
 │   └── pdfTotals.spec.ts (1.3 KB)
 ├── .storage/
-│   ├── activity.json (27.3 KB)
+│   ├── activity.json (28.6 KB)
 │   └── quotations.json (720 B)
 ├── ai/
 │   └── ai-instructions.txt (3.5 KB)
@@ -131,7 +131,7 @@ qiq-chat/
 │   ├── search.js (2.8 KB)
 │   ├── special-quote.js (4.2 KB)
 │   ├── v0-design.js (10.9 KB)
-│   ├── v0-ui.js (2.9 KB)
+│   ├── v0-ui.js (6.2 KB)
 │   ├── visitor-tracking-enhanced.js (9.4 KB)
 │   └── visitor-tracking.js (2.5 KB)
 ├── docs/
@@ -215,13 +215,14 @@ qiq-chat/
 │   ├── smoke.ps1 (4.9 KB)
 │   ├── test-hello-leads.mjs (1.1 KB)
 │   ├── test-pdf-ai.mjs (1.2 KB)
-│   └── test-quote-email.mjs (2.2 KB)
+│   ├── test-quote-email.mjs (2.2 KB)
+│   └── test-v0.mjs (1.2 KB)
 ├── src/
 │   └── search/
 │       ├── algoliaSettings.ts (791 B)
 │       ├── applySettings.ts (756 B)
 │       └── indexSchema.ts (1.5 KB)
-├── .env (1.4 KB)
+├── .env (1.7 KB)
 ├── .gitignore (71 B)
 ├── demo-table.html (5.8 KB)
 ├── DEPLOY_GUIDE.md (5.6 KB)

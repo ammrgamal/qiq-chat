@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   const rawEndpoint = process.env.V0_API_ENDPOINT || process.env.V0_ENDPOINT || process.env.v0_API_Base_Main_Endpoint || '';
   const baseUrl = process.env.v0_API_Base_URL || process.env.V0_API_BASE_URL || '';
   const endpoint = rawEndpoint || (baseUrl ? (baseUrl.replace(/\/$/, '') + '/v1/chat/completions') : '');
-    const { prompt = '', context = {} } = req.body || {};
+    const { prompt = '', context = {}, messages } = req.body || {};
     if (!apiKey || !endpoint) {
       // Provide a simple fallback HTML snippet to preview the idea without calling V0
       const html = `
@@ -32,23 +32,73 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, provider: 'fallback', html });
     }
 
-    // Call the configured V0 endpoint
+  // Call the configured V0 endpoint using OpenAI-compatible chat payload
     try {
+      const system = `You generate a single self-contained HTML snippet for an admin/catalog UI component. Requirements:\n- Return ONLY HTML markup (no surrounding JSON).\n- Prefer semantic tags and utility classes.\n- Support Arabic labels (rtl-friendly) when present.\n- Avoid external scripts or network calls.\n- Keep it concise and responsive.`;
+      const user = prompt ? `${prompt}\n\nContext JSON:\n${JSON.stringify(context).slice(0, 8000)}` : (messages?.[messages.length-1]?.content || 'Generate a minimal placeholder <div>Ready</div>.');
+      const finalMessages = Array.isArray(messages) && messages.length
+        ? messages
+        : [
+            { role: 'system', content: system },
+            { role: 'user', content: user }
+          ];
+      const body = {
+        model: process.env.V0_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        temperature: Number(process.env.V0_TEMPERATURE || 0.2),
+        messages: finalMessages
+      };
+      const controller = new AbortController();
+      const timeoutMs = Number(process.env.V0_TIMEOUT_MS || 4000);
+      const t = setTimeout(() => controller.abort(), timeoutMs);
       const r = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'authorization': `Bearer ${apiKey}` },
-        body: JSON.stringify({ prompt, context })
+        headers: {
+          'content-type': 'application/json',
+          'accept': 'application/json',
+          'authorization': `Bearer ${apiKey}`,
+          'x-api-key': apiKey
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal
       });
+      clearTimeout(t);
       if (!r.ok) {
         const text = await r.text().catch(()=> '');
+        if (r.status === 401 || r.status === 403) {
+          const html = `
+            <div style="font-family:system-ui,Segoe UI;line-height:1.5;padding:12px">
+              <div style="display:flex;align-items:center;gap:8px;color:#ef4444">
+                <span style="font-size:18px">🔒</span>
+                <span>V0 Unauthorized (HTTP ${r.status}). Showing local preview.</span>
+              </div>
+              <div style="margin-top:10px;border:1px dashed #d1d5db;border-radius:8px;padding:12px;background:#fafafa">
+                <div id="helloV0" dir="rtl" style="padding:10px;border-radius:6px;background:#111;color:#fff">مرحبا — V0 Preview</div>
+                <p style="color:#6b7280;margin:10px 0 0">Check V0_API_KEY and workspace access. When fixed, live HTML will appear.</p>
+              </div>
+            </div>`;
+          return res.status(200).json({ ok:true, provider:'v0-unauthorized', html, error: text || `HTTP ${r.status}` });
+        }
         return res.status(r.status).json({ ok:false, provider:'v0', error: text || `HTTP ${r.status}` });
       }
       const data = await r.json().catch(()=>null);
-      // Support either HTML string or structured response
-      const html = typeof data === 'string' ? data : (data?.html || data?.content || '');
+      // V0 mirrors OpenAI chat response shape
+      const content = data?.choices?.[0]?.message?.content || data?.html || data?.content || '';
+      const html = typeof content === 'string' ? content : (Array.isArray(content) ? content.map(c=>c?.text||'').join('\n') : '');
       return res.status(200).json({ ok:true, provider:'v0', html, raw:data });
     } catch (e) {
-      return res.status(500).json({ ok:false, provider:'v0', error: String(e?.message||e) });
+      // Offline or timed-out: return a helpful fallback so UI remains usable
+      const html = `
+        <div style="font-family:system-ui,Segoe UI;line-height:1.5;padding:12px">
+          <div style="display:flex;align-items:center;gap:8px;color:#6b7280">
+            <span style="font-size:18px">⚠️</span>
+            <span>V0 request failed or timed out (${(e && e.name)==='AbortError' ? 'timeout' : 'error'}). Showing local preview.</span>
+          </div>
+          <div style="margin-top:10px;border:1px dashed #d1d5db;border-radius:8px;padding:12px;background:#fafafa">
+            <div id="helloV0" dir="rtl" style="padding:10px;border-radius:6px;background:#111;color:#fff">مرحبا — V0 Preview</div>
+            <p style="color:#6b7280;margin:10px 0 0">You can still test the modal wiring. When connectivity is available, live V0 HTML will appear here.</p>
+          </div>
+        </div>`;
+      return res.status(200).json({ ok:true, provider:'fallback-offline', html, error: String(e?.message||e) });
     }
   } catch (e) {
     return res.status(500).json({ error: e?.message || 'v0 error' });
