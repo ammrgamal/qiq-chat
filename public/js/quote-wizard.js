@@ -29,7 +29,7 @@
           <div class="field-wrap">
             <input id="wiz-name" name="name" type="text" value="${esc(saved?.name||'')}" required 
                    style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
-            <span id="wiz-name-icon" class="field-icon neutral" aria-hidden="true">•</span>
+            <span id="wiz-name-icon" class="field-icon neutral" aria-hidden="true">⚪</span>
           </div>
           <div id="wiz-name-msg" class="field-msg hint" aria-live="polite">أدخل الاسم الكامل</div>
         </label>
@@ -38,7 +38,7 @@
           <div class="field-wrap">
             <input id="wiz-email" name="email" type="email" value="${esc(saved?.email||'')}" required 
                    style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
-            <span id="wiz-email-icon" class="field-icon neutral" aria-hidden="true">•</span>
+            <span id="wiz-email-icon" class="field-icon neutral" aria-hidden="true">⚪</span>
           </div>
           <div id="wiz-email-msg" class="field-msg hint" aria-live="polite">سوف نرسل العرض إلى هذا البريد</div>
         </label>
@@ -69,7 +69,7 @@
             <input id="wiz-project-name" name="projectName" type="text" value="${esc(saved?.projectName||'')}" required 
                    placeholder="مثال: مشروع حماية الأجهزة - قسم المبيعات" 
                    style="width:100%;padding:8px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px">
-            <span id="wiz-project-name-icon" class="field-icon neutral" aria-hidden="true">•</span>
+            <span id="wiz-project-name-icon" class="field-icon neutral" aria-hidden="true">⚪</span>
           </div>
           <div id="wiz-project-name-msg" class="field-msg hint" aria-live="polite">سيظهر اسم المشروع في ملف العرض</div>
         </label>
@@ -441,7 +441,7 @@
         'wiz-email': 'سوف نرسل العرض إلى هذا البريد',
         'wiz-project-name': 'سيظهر اسم المشروع في ملف العرض'
       };
-      const setIcon = (id, state)=>{ try{ const ic = q(id+'-icon'); if (!ic) return; ic.classList.remove('ok','error','neutral'); ic.classList.add(state||'neutral'); ic.textContent = state==='ok'?'✓':(state==='error'?'!':'•'); }catch{} };
+  const setIcon = (id, state)=>{ try{ const ic = q(id+'-icon'); if (!ic) return; ic.classList.remove('ok','error','neutral'); ic.classList.add(state||'neutral'); ic.textContent = state==='ok'?'✅':(state==='error'?'❗':'⚪'); }catch{} };
       const clearErr = (id)=>{ try{ const inp = q(id); if (inp) inp.classList.remove('field-error'); const m = q(id+'-msg'); if (m){ m.textContent=hints[id]||''; m.classList.remove('error'); m.classList.add('hint'); } setIcon(id,'neutral'); }catch{} };
       const setErr = (id, msg)=>{ try{ const inp = q(id); if (inp) inp.classList.add('field-error'); const m = q(id+'-msg'); if (m){ m.textContent = msg || ''; m.classList.add('error'); m.classList.remove('hint'); } setIcon(id,'error'); }catch{} };
       

@@ -227,11 +227,27 @@
       }, 2500);
       frame.onload = ()=> clearTimeout(t);
     }
+    // Ensure correct classes/styles so dialog is visible (some themes default to opacity:0)
+    try {
+      // Make sure container has the base class so global CSS applies
+      if (!modal.classList.contains('qiq-modal')) modal.classList.add('qiq-modal');
+      // Preferred class used by styles.css to animate/show
+      modal.classList.add('active');
+      // Keep legacy class for any older CSS
+      modal.classList.add('is-open');
+      // Force display and stacking above any overlays
+      modal.style.display = 'flex';
+      modal.style.zIndex = '9999';
+      // Make sure dialog isn't hidden by default CSS
+      dialog.style.opacity = '1';
+      dialog.style.transform = 'translate(-50%, -50%) scale(1)';
+      dialog.style.pointerEvents = 'auto';
+    } catch {}
     modal.setAttribute('aria-hidden','false');
-    modal.style.display = 'block';
     lockScroll();
     centerDialog();
-    setTimeout(()=> modal.classList.add('is-open'), 10);
+    // Leave a tiny tick for any CSS transitions to kick in
+    setTimeout(()=> { try{ modal.classList.add('active'); }catch{} }, 10);
     dialog.focus();
     // Wire header buttons and compact styling
     if (btnOpenTab){
@@ -243,11 +259,15 @@
   }
 
   function close(){
+    // Remove visibility classes and reset inline tweaks
     modal.classList.remove('is-open');
+    modal.classList.remove('active');
     setTimeout(()=>{
       frame.src = 'about:blank';
       frame.removeAttribute('srcdoc');
       modal.style.display = 'none';
+      modal.style.zIndex = '';
+      try { dialog.style.opacity = ''; dialog.style.pointerEvents = ''; } catch {}
       modal.setAttribute('aria-hidden','true');
       unlockScroll();
       if (lastFocus && typeof lastFocus.focus === 'function') {

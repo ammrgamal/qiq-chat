@@ -77,7 +77,7 @@ async function fetchImageBuffer(url){
       const m = url.match(/^data:(.*?);base64,(.*)$/);
       if (m){ try { return Buffer.from(m[2], 'base64'); } catch { return null; } }
     }
-    const r = await fetch(url, { headers: { 'accept': 'image/png,image/jpeg;q=0.9,image/*;q=0.8,*/*;q=0.5' } });
+  const r = await fetch(url, { headers: { 'accept': 'image/png,image/jpeg;q=0.9,image/*;q=0.8,*/*;q=0.5' } });
     if (!r.ok) return null;
     const type = r.headers.get('content-type') || '';
     const ab = await r.arrayBuffer();
@@ -105,9 +105,28 @@ async function fetchImageBuffer(url){
         const b2 = Buffer.from(ab2);
         if (/image\/(png|jpeg|jpg)/i.test(t2)) return b2;
       }
+      // Final fallback: try images.weserv.nl proxy to convert to PNG (no deps)
+      try{
+        const proxied = `https://images.weserv.nl/?url=${encodeURIComponent(url)}&output=png`;
+        const r3 = await fetch(proxied, { headers: { 'accept': 'image/png,image/jpeg,*/*' } });
+        if (r3.ok){
+          const ab3 = await r3.arrayBuffer();
+          const b3 = Buffer.from(ab3);
+          return b3;
+        }
+      }catch{}
       return null;
     }
     // Unknown type: best effort
+    // Attempt proxy conversion when content-type isn't PNG/JPEG
+    try{
+      const proxied = `https://images.weserv.nl/?url=${encodeURIComponent(url)}&output=png`;
+      const r4 = await fetch(proxied, { headers: { 'accept': 'image/png,image/jpeg,*/*' } });
+      if (r4.ok){
+        const ab4 = await r4.arrayBuffer();
+        return Buffer.from(ab4);
+      }
+    }catch{}
     return buf;
   } catch { return null; }
 }
@@ -703,15 +722,17 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
         const imgUrl = extractImageUrl(it);
         imgBuf = imgBuffers.get(imgUrl) || null;
       }
-      const linkUrl = resolveSpecLink(it);
-      const descPlain = desc.replace(/\*\*(.+?)\*\*/g,'$1');
-      const widthLeft = imgBuf ? (colDescW - 50) : colDescW;
-      const widthTop = colDescW;
-      const textHLeft = doc.heightOfString(descPlain, { width: widthLeft });
-      const textHTop = doc.heightOfString(descPlain, { width: widthTop });
-      const useStackTop = !!imgBuf && (textHLeft > 60 && (textHTop + 46 < textHLeft + 20));
-      const descTextHeight = useStackTop ? textHTop : textHLeft;
-      const linkSpace = linkUrl ? 16 : 0;
+  const linkUrl = resolveSpecLink(it);
+  const descPlain = desc.replace(/\*\*(.+?)\*\*/g,'$1');
+  const widthLeft = imgBuf ? (colDescW - 50) : colDescW;
+  const widthTop = colDescW;
+  const textHLeft = doc.heightOfString(descPlain, { width: widthLeft });
+  const textHTop = doc.heightOfString(descPlain, { width: widthTop });
+  // Prefer stacking image on top if description is long to keep link clearly separated
+  const useStackTop = !!imgBuf && (textHLeft > 54 && (textHTop + 50 < textHLeft + 16));
+  const descTextHeight = useStackTop ? textHTop : textHLeft;
+  // Reserve space for the link line below the description when present
+  const linkSpace = linkUrl ? 16 : 0;
       const padding = 6;
       const imgBlockH = imgBuf ? 46 + (useStackTop ? 4 : 0) : 0;
       let rowH = Math.max(22, descTextHeight + linkSpace + padding, imgBlockH + (useStackTop ? descTextHeight + linkSpace + padding : 0));
@@ -735,17 +756,21 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
         renderFormattedText(desc, cx+4, y+4, widthTop, true);
       }
       if (linkUrl){
+        // Place on its own line under the description with subtle spacing
         const usedWidth = (imgBuf && !useStackTop) ? widthLeft : widthTop;
         const usedX = (imgBuf && !useStackTop) ? (cx+54) : (cx+4);
         const dH = doc.heightOfString(descPlain, { width: usedWidth });
-        let ly = (imgBuf && useStackTop ? textStartY : (y+4)) + dH + 8;
+        let ly = (imgBuf && useStackTop ? textStartY : (y+4)) + dH + 6;
         if (ly > y + rowH - 14) ly = y + rowH - 14;
         const iconSize = 6;
+        // Draw small square icon and clickable label
+        doc.save();
         doc.fillColor(BRAND_PRIMARY).rect(usedX, ly+3, iconSize, iconSize).fill();
         const labelTxt = 'Spec sheet';
         doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(labelTxt, usedX + iconSize + 4, ly, { width: usedWidth - (iconSize+6), align:'left', underline: true });
         const wlab = doc.widthOfString(labelTxt) + iconSize + 6;
         try{ doc.link(usedX, ly, wlab, 12, linkUrl); }catch{}
+        doc.restore();
         doc.fillColor('#111827');
       }
       doc.restore();
@@ -907,21 +932,33 @@ function buildSummaryHtml(payload, action){
   const rows = items.slice(0,50).map((it,i)=>{
     const descHtml = formatBoldHtml(it.description||it.name||'-');
     const link = it.spec_sheet || it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '';
-    const linkHtml = link ? `<div><a href="${escapeHtml(link)}" style="color:${escapeHtml(BRAND_PRIMARY)};text-decoration:underline">Spec sheet</a></div>` : '';
+    const linkHtml = link ? `<a href="${escapeHtml(link)}" style="color:${escapeHtml(BRAND_PRIMARY)};text-decoration:underline">Spec sheet</a>` : '';
     return `
     <tr>
       <td style="padding:6px;border-bottom:1px solid #eee">${i+1}</td>
-      <td style="padding:6px;border-bottom:1px solid #eee">${descHtml}${linkHtml}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee">${descHtml}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee">${linkHtml||''}</td>
       <td style="padding:6px;border-bottom:1px solid #eee">${escapeHtml(it.pn||'')}</td>
       <td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${Number(it.qty||1)}</td>
       <td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${Number(it.unit_price||it.unit||it.price||0)}</td>
     </tr>`;
   }).join('');
   const titleMap = { download:'Download PDF', send:'Send by Email', custom:'Get Custom Quote' };
+  const { subtotal, grand } = computeTotals(items);
+  const customGreeting = `
+    <div style="margin:14px 0;padding:12px;border:1px solid #E5E7EB;border-radius:8px;background:#F9FAFB">
+      <div style="margin-bottom:6px">Dear ${escapeHtml(payload?.client?.name||'Customer')},</div>
+      <div style="margin:6px 0">I hope you are doing well. I'm reaching out on behalf of <strong>QuickITQuote</strong>, Egypt’s first AI-powered B2B quotation platform. We combine AI with verified catalogs to deliver proposals with exceptional speed, transparency, and consistency.</div>
+      <div style="margin:6px 0">We see a great opportunity to collaborate on <strong>${escapeHtml(payload?.project?.name||'your project')}</strong>. We prepared a concise proposal outlining scope, timeline, budget, and deliverables.</div>
+      <div style="margin:8px 0;padding:8px 10px;background:#F3F4F6;border:1px solid #E5E7EB;border-radius:6px">Proposal Total Amount: ${escapeHtml(payload?.currency||CURRENCY_FALLBACK)} ${grand.toFixed(2)}</div>
+      <div style="margin:6px 0">We’re committed to delivering a tailored solution to your needs. We’d love to receive your feedback and discuss next steps. Please let us know your availability and preferred communication method.</div>
+      <div style="margin:6px 0">Thank you for considering this opportunity.<br/>Best regards,<br/>QuickITQuote Team</div>
+    </div>`;
   return `
     <div style="font-family:Segoe UI,Arial">
       <h3 style="margin:0 0 8px">${titleMap[action]||'Quote Action'} — ${escapeHtml(payload.number||'')}</h3>
   <div style="margin-bottom:8px;color:#374151">Date: ${escapeHtml(payload.date||'')} • Currency: ${escapeHtml(payload.currency||CURRENCY_FALLBACK)}</div>
+      ${customGreeting}
       <div style="display:flex;gap:16px;margin-bottom:12px">
         <div>
           <div style="font-weight:600">Client</div>
@@ -938,6 +975,7 @@ function buildSummaryHtml(payload, action){
         <thead><tr>
           <th style="text-align:right;border-bottom:1px solid #ddd;padding:6px">#</th>
           <th style="text-align:right;border-bottom:1px solid #ddd;padding:6px">Description</th>
+          <th style="text-align:right;border-bottom:1px solid #ddd;padding:6px">Spec</th>
           <th style="text-align:right;border-bottom:1px solid #ddd;padding:6px">MPN</th>
           <th style="text-align:right;border-bottom:1px solid #ddd;padding:6px">Qty</th>
           <th style="text-align:right;border-bottom:1px solid #ddd;padding:6px">Unit</th>
