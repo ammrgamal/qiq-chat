@@ -459,7 +459,7 @@ async function readAdminPdfPrefs(){
   }
 }
 
-async function buildPdfBuffer({ number, date, currency, client, project, items, solutionText, cards }){
+async function buildPdfBuffer({ number, date, currency, client, project, items, solutionText, cards, minimal = false }){
   // Lazy import to avoid hard dependency during build steps
   const { default: PDFDocument } = await import('pdfkit');
   const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: `Quotation ${ensureString(number)} - ${ensureString(project?.name||'')}` }});
@@ -554,8 +554,8 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       doc.moveDown(0.1).font(REG).fillColor('#111827').fontSize(11).text(ARS(body || solutionText), { align:'left' });
     }
 
-    // Prepare page numbering; the intro page is page 1
-    let __pageNum = 1;
+  // Prepare page numbering; the intro page is page 1
+  let __pageNum = 1;
     const drawFooter = () => {
       try{
         if (__pageNum < 2) return; // only from page 2+
@@ -576,10 +576,11 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       }catch{}
     };
 
-  // Client letter page (visual/branding) — page 2
-    __pageNum = 2;
-    doc.addPage();
-    try{
+  // Client letter page (visual/branding) — page 2 (skip in minimal mode)
+    if (!minimal){
+      __pageNum = 2;
+      doc.addPage();
+      try{
       const totalsTmp = computeTotals(items);
       const systemsTmp = gatherSystems({ client, project }, items);
       const brandsTmp = gatherBrands(items);
@@ -616,13 +617,15 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       doc.moveDown(0.6);
       doc.text(ARS('Thank you for considering this opportunity.')); doc.moveDown(0.2);
       doc.text(ARS('Best regards,')); doc.text(ARS('QuickITQuote Team'));
-    }catch{}
+      }catch{}
+    }
 
-    // Installation scope page — page 3
-    drawFooter();
-    __pageNum++;
-    doc.addPage();
-    try{
+    // Installation scope page — page 3 (skip in minimal mode)
+    if (!minimal){
+      drawFooter();
+      __pageNum++;
+      doc.addPage();
+      try{
       const scopeText = await buildInstallationScope({ client, project, items });
       doc.font(BOLD).fillColor(BRAND_PRIMARY).fontSize(14).text('Installation & Commissioning Scope', { align:'left' });
       doc.moveDown(0.4);
@@ -649,12 +652,18 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
         if (/^\s*[-*]\s+/.test(ln)) { writeBullet(ln); continue; }
         writePara(ln);
       }
-    }catch{}
+      }catch{}
+    }
 
-    // Next page (items table)
-    drawFooter();
-    __pageNum++;
-    doc.addPage();
+    // Next page (items table) — becomes page 2 in minimal mode
+    if (!minimal){
+      drawFooter();
+      __pageNum++;
+      doc.addPage();
+    } else {
+      __pageNum = 2;
+      doc.addPage();
+    }
 
   // Items table grid (dedicated columns for image and spec link)
     // Total printable width on A4 with 50pt margins is ~495pt. Keep sum exactly 495.
@@ -731,10 +740,27 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       doc.text(ARS(tail), first ? x1 : undefined, first ? y1 : undefined, { width, align: alignLeft ? 'left' : 'right', continued: false });
     }
 
+    // Helper: clamp text to fit a target height by binary searching length
+    function clampTextToHeight(text, width, maxHeight){
+      const raw = String(text==null?'':text);
+      if (!raw) return '';
+      let lo = 0, hi = raw.length, best = raw;
+      while (lo <= hi){
+        const mid = (lo + hi) >> 1;
+        const s = raw.slice(0, mid);
+        const h = doc.heightOfString(s, { width });
+        if (h <= maxHeight){ best = s; lo = mid + 1; }
+        else { hi = mid - 1; }
+      }
+      if (best.length < raw.length) return best.replace(/[\s\.,;:-]+$/,'') + '…';
+      return best;
+    }
+
     function drawRow(i, it){
       const qty = Number(it.qty||1); const unit = Number(it.unit_price||it.unit||it.price||0); const line = unit*qty;
-      const desc = ensureString(it.description_en || it.description || it.description_enriched || it.name || '-');
-      const pn = ensureString(it.pn||'');
+      const descFull = ensureString(it.description_en || it.description || it.description_enriched || it.name || '-');
+      const desc = descFull.replace(/\*\*(.+?)\*\*/g,'$1'); // plain inside table
+      let pn = ensureString(it.pn||'');
       const linkUrl = resolveSpecLink(it);
 
       // Buffers
@@ -745,10 +771,13 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       }
 
       // Heights per cell
-      const colDescW = cols.find(c=>c.key==='desc').w - 8;
-      const txtH = doc.heightOfString(desc.replace(/\*\*(.+?)\*\*/g,'$1'), { width: colDescW });
-      const imgH = imgBuf ? 34 : 0; // we render image at up to 34px height
-      const rowH = Math.max(22, txtH + 8, imgH + 8);
+  const colDescW = cols.find(c=>c.key==='desc').w - 8;
+  const maxTxtH = 46; // ~4 lines at 11px line height
+  const descClamped = clampTextToHeight(desc, colDescW, maxTxtH);
+  const txtH = doc.heightOfString(descClamped, { width: colDescW });
+  const imgMax = 28; // compact image height
+  const imgH = imgBuf ? imgMax : 0;
+  const rowH = Math.max(22, txtH + 8, imgH + 8);
 
       // New page when needed
       if (y + rowH > maxY){ drawFooter(); __pageNum++; doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; drawHeader(); }
@@ -758,13 +787,16 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       doc.font(REG).fontSize(10).fillColor('#111827');
       // #
       doc.text(String(i+1), cx+4, y+4, { width: cols[0].w-8, align:'right' }); cx += cols[0].w;
-      // Img
-      if (imgBuf){ try { doc.image(imgBuf, cx+4, y+4, { fit: [cols[1].w-8, 34], align:'center', valign:'center' }); } catch {} }
+  // Img
+  if (imgBuf){ try { doc.image(imgBuf, cx+4, y+4, { fit: [cols[1].w-8, imgMax], align:'center', valign:'center' }); } catch {} }
       cx += cols[1].w;
-      // Description (text only, bold parser supported)
-      renderFormattedText(desc, cx+4, y+4, cols[2].w-8, true); cx += cols[2].w;
+  // Description (plain, clamped)
+  doc.font(REG).fontSize(10).fillColor('#111827');
+  doc.text(descClamped, cx+4, y+4, { width: cols[2].w-8, align:'left' });
+  cx += cols[2].w;
       // MPN
-      doc.text(ARS(pn), cx+4, y+4, { width: cols[3].w-8, align:'left' }); cx += cols[3].w;
+  if (pn.length > 14) pn = pn.slice(0, 13) + '…';
+  doc.text(ARS(pn), cx+4, y+4, { width: cols[3].w-8, align:'left' }); cx += cols[3].w;
       // Spec link (standalone cell)
       if (linkUrl){
         const labelTxt = 'Spec';
@@ -839,8 +871,8 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     ];
     let cty = doc.y + 4; for (const l of ctLines){ doc.text(l, ctX, cty, { width: ctW }); cty = doc.y + 2; }
 
-    // Presentation cards page(s)
-    if (Array.isArray(cards) && cards.length){
+  // Presentation cards page(s) (skip in minimal mode)
+  if (!minimal && Array.isArray(cards) && cards.length){
   drawFooter();
   __pageNum++;
   doc.addPage();
@@ -880,10 +912,11 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       cards.slice(0,4).forEach(drawCard);
     }
 
-    // Closing page
-  drawFooter();
-  __pageNum++;
-  doc.addPage();
+    // Closing page (skip in minimal mode)
+    if (!minimal){
+      drawFooter();
+      __pageNum++;
+      doc.addPage();
     doc.font(BOLD).fillColor(BRAND_PRIMARY).fontSize(14).text('About QuickITQuote');
     // Optional Algolia stats (brands with >=1000 items and total items)
     try{
@@ -923,6 +956,7 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
         }
       }
     }catch{}
+    }
 
   drawFooter();
   doc.end();
@@ -1188,7 +1222,8 @@ export default async function handler(req, res){
     // Build CSV and PDF
     const csv = buildCsv(enrichedItems);
     const csvB64 = b64(csv);
-    const pdfBuf = await buildPdfBuffer({ ...payload, currency, items: enrichedItems, solutionText, cards });
+  const minimal = (action === 'download');
+  const pdfBuf = await buildPdfBuffer({ ...payload, currency, items: enrichedItems, solutionText, cards, minimal });
     const pdfB64 = pdfBuf.toString('base64');
 
     const baseName = sanitizeName(`${payload.number||'quotation'}${payload?.project?.name ? ' - ' + sanitizeName(payload.project.name) : ''}`) || 'quotation';
