@@ -51,12 +51,12 @@
             // Enhanced wizard action handlers
             function wireWizard(){
               try{
+                // Only wire explicit actions we want to proxy from iframe to parent.
+                // Do NOT hijack wizard back/next here; quote-wizard.js handles them inside the iframe.
                 var ids = [
                   ['wiz-download','download'],
                   ['wiz-send','send'],
-                  ['wiz-custom','custom'],
-                  ['wiz-back','back1'],
-                  ['wiz-back-step1','back0']
+                  ['wiz-custom','custom']
                 ];
                 ids.forEach(function(pair){
                   var el = document.getElementById(pair[0]);
@@ -68,8 +68,8 @@
                     if (pair[1]==='download') { if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('download'); return; }
                     if (pair[1]==='send') { if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('send'); return; }
                     if (pair[1]==='custom') { if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('custom'); return; }
-                    if (pair[1]==='back1') return window.parent.QiqModal?.setHtml?.('');
-                    if (pair[1]==='back0') { if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('back-to-step1'); return; }
+                    // Back actions are handled by quote-wizard.js inside iframe. Do not intercept.
+                    return;
                   });
                 });
 
@@ -85,11 +85,16 @@
                     if (!action) return;
                     if (action==='download' || action==='send' || action==='custom'){
                       if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle(action);
-                    } else if (action==='back' || action==='back1'){
-                      return window.parent.QiqModal?.setHtml?.('');
-                    } else if (action==='back0' || action==='step1'){
-                      if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('back-to-step1');
-                    }
+                        }
+                        // Back/step actions: normally leave to quote-wizard iframe listeners.
+                        // However, provide a SAFE FALLBACK to step 1 if those listeners fail for any reason.
+                        if (action==='back' || action==='back1' || action==='step1' || action==='back-step1'){
+                          try{
+                            if (window.parent && typeof window.parent.QiqWizardHandle==='function') return window.parent.QiqWizardHandle('back-to-step1');
+                            if (window.parent && typeof window.parent.QiqWizardBack==='function') return window.parent.QiqWizardBack();
+                          }catch{}
+                          return;
+                        }
                   });
                 });
 

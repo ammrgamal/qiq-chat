@@ -506,12 +506,12 @@
         return false;
       }
       
-      // Helper to avoid double binding
+      // Helper: allow re-binding every time (some scripts replace nodes). We attach fresh listeners.
       const on = (el, type, fn)=>{ 
         if (!el) return; 
-        if (el.__bound) return; 
-        el.__bound = true; 
-        el.addEventListener(type, fn); 
+        try { el.replaceWith(el.cloneNode(true)); } catch {}
+        const node = doc.getElementById(el.id) || el; // try to get the new node by id
+        node.addEventListener(type, fn, { capture: true });
       };
       
       // Form-first approach: submit event handles Next
@@ -602,19 +602,29 @@
         }
       }catch{}
 
-      on(next2, 'click', (e)=>{ e.preventDefault(); render(3); });
+  // Step 2 Next (explicit)
+  on(next2, 'click', (e)=>{ e.preventDefault(); e.stopPropagation(); try{ render(3); }catch{} });
 
       // Extra safety: delegated clicks for Next (step 2) and Back
       try{
-        if (!doc.__wizDelegated){
-          doc.__wizDelegated = true;
-          doc.addEventListener('click', (ev)=>{
+        // Always add a capture-phase delegated handler; multiple adds are fine in capture
+        doc.addEventListener('click', (ev)=>{
+          try{
             const n2 = ev.target && ev.target.closest && ev.target.closest('#wiz-next2');
-            if (n2){ ev.preventDefault(); ev.stopPropagation(); try{ render(3); }catch{} return; }
+            if (n2){ ev.preventDefault(); ev.stopPropagation(); return void render(3); }
             const bk = ev.target && ev.target.closest && ev.target.closest('#wiz-back');
-            if (bk){ ev.preventDefault(); ev.stopPropagation(); try{ render(step === 3 ? 2 : 1); }catch{} return; }
-          }, true);
-        }
+            if (bk){ ev.preventDefault(); ev.stopPropagation(); return void render(step === 3 ? 2 : 1); }
+          }catch{}
+        }, true);
+        // Even earlier: capture pointerdown to beat any other click stoppers
+        doc.addEventListener('pointerdown', (ev)=>{
+          try{
+            const n2 = ev.target && ev.target.closest && ev.target.closest('#wiz-next2');
+            if (n2){ ev.preventDefault(); ev.stopPropagation(); return void render(3); }
+            const bk = ev.target && ev.target.closest && ev.target.closest('#wiz-back');
+            if (bk){ ev.preventDefault(); ev.stopPropagation(); return void render(step === 3 ? 2 : 1); }
+          }catch{}
+        }, true);
       }catch{}
 
       // Bind any [data-wizard-action] inside the iframe too (safety)
