@@ -198,6 +198,26 @@
 			],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "copilot: smoke qiq-chat 3039",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"./scripts/smoke.ps1",
+				"-Port",
+				"3039"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc",
+				"$eslint-stylish"
+			],
+			"group": "build"
 		}
 	]
 }

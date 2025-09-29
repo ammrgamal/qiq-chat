@@ -41,10 +41,16 @@ class InterfaceFixes {
                 
                 if (text.includes('add') || text.includes('إضافة') || classes.includes('add')) {
                     button.classList.add('btn-primary');
-                    this.enhanceAddButton(button);
+                    // لا تقم بتغيير سلوك الإضافة للعرض إذا كان النظام الأساسي موجودًا
+                    if (!(window.QiqFavorites || window.QiqComparison || window.AddToQuote)){
+                        this.enhanceAddButton(button);
+                    }
                 } else if (text.includes('compare') || text.includes('مقارنة')) {
                     button.classList.add('btn-secondary');
-                    this.enhanceCompareButton(button);
+                    // لا تقم بتغيير سلوك المقارنة إذا كان النظام الأساسي موجودًا
+                    if (!(window.QiqFavorites || window.QiqComparison)){
+                        this.enhanceCompareButton(button);
+                    }
                 } else if (text.includes('search') || text.includes('بحث')) {
                     button.classList.add('btn-primary');
                 } else if (text.includes('filter') || text.includes('فلتر')) {

@@ -8,6 +8,10 @@
   const titleEl = modal.querySelector('.qiq-modal__title');
   const btnOpenTab = modal.querySelector('.qiq-modal__open-tab');
   // const btnPrint = modal.querySelector('.qiq-modal__print');
+  // Header action buttons (copy/print/attach) – shown only for specific contexts (e.g., comparison)
+  const headerCopyBtn = document.getElementById('copyButton');
+  const headerPrintBtn = document.getElementById('printButton');
+  const headerAttachBtn = document.getElementById('attachToQuote');
 
   let lastFocus = null;
   function lockScroll(){
@@ -256,6 +260,18 @@
       btnOpenTab.style.minWidth = '100px';
     }
     // print control removed
+
+    // Header action buttons visibility based on context
+    try {
+      // Default: hide actions to avoid interference with wizard and other content
+      const want = opts && (opts.headerActions === true || opts.headerActions === 'compare');
+      if (headerCopyBtn) headerCopyBtn.style.display = want ? '' : 'none';
+      if (headerPrintBtn) headerPrintBtn.style.display = want ? '' : 'none';
+      if (headerAttachBtn) headerAttachBtn.style.display = want ? '' : 'none';
+      // Tag modal with context for potential consumers
+      if (want) modal.dataset.modalContext = typeof opts.headerActions === 'string' ? opts.headerActions : 'custom';
+      else delete modal.dataset.modalContext;
+    } catch {}
   }
 
   function close(){

@@ -1,5 +1,5 @@
 (function(){
-  // Quote Wizard: inline modal with 2 steps
+  // Quote Wizard: inline modal with 3 steps (1: client, 2: review items, 3: summary/actions)
   const STATE_KEY = 'qiq_wizard_client_v1';
   const BOQ_KEY   = 'qiq_staged_items';
 
@@ -198,6 +198,46 @@
     return renderTable(items, cur, grouping);
   }
 
+  function renderReviewStep(items){
+    if (!items || !items.length) return '<div class="muted">لا توجد عناصر مضافة.</div>';
+    const rows = items.map((it, idx)=>{
+      const name = esc(it.name || it.description || '-');
+      const pn = esc(it.pn || it.sku || '');
+      const qty = Number(it.qty||1);
+      const unit = Number(it.price||it.unit||it.unit_price||0);
+      const total = qty*unit;
+      return `<tr data-idx="${idx}">
+        <td style="padding:6px;border-bottom:1px solid #eee">${idx+1}</td>
+        <td style="padding:6px;border-bottom:1px solid #eee">${name}${pn?` <span class=muted>(${pn})</span>`:''}</td>
+        <td style="padding:6px;border-bottom:1px solid #eee;text-align:right"><input type="number" min="1" step="1" value="${qty}" style="width:72px;padding:4px;border:1px solid #e5e7eb;border-radius:6px" class="wiz-qty"/></td>
+        <td style="padding:6px;border-bottom:1px solid #eee;text-align:right">${unit.toFixed(2)}</td>
+        <td style="padding:6px;border-bottom:1px solid #eee;text-align:right" class="wiz-line">${total.toFixed(2)}</td>
+        <td style="padding:6px;border-bottom:1px solid #eee;text-align:center"><button class="btn danger wiz-del" type="button">حذف</button></td>
+      </tr>`;
+    }).join('');
+    const t = totals(items);
+    return `<div class="table-wrap" style="overflow:auto">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">#</th>
+          <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">الوصف</th>
+          <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">الكمية</th>
+          <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">سعر الوحدة</th>
+          <th style="text-align:right;padding:6px;border-bottom:1px solid #ddd">الإجمالي</th>
+          <th style="text-align:center;padding:6px;border-bottom:1px solid #ddd">إزالة</th>
+        </tr></thead>
+        <tbody id="wiz-review-body">${rows}</tbody>
+      </table>
+      <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+        <div style="color:#6b7280">العملة: <strong id="wiz-currency-view"></strong></div>
+        <div style="text-align:left">
+          <div>Subtotal: <strong id="wiz-subtotal">${t.subtotal.toFixed(2)}</strong></div>
+          <div>Grand Total: <strong id="wiz-grand">${t.grand.toFixed(2)}</strong></div>
+        </div>
+      </div>
+    </div>`;
+  }
+
   function loadClient(){ try{ return JSON.parse(localStorage.getItem(STATE_KEY)||'null')||{}; }catch{ return {}; } }
   function saveClient(data){ try{ localStorage.setItem(STATE_KEY, JSON.stringify(data)); }catch{} }
 
@@ -380,11 +420,13 @@
     const items = getItems();
     const saved = loadClient();
     const html1 = buildClientForm(saved);
-    let html2 = '<div class="muted">جارٍ تجهيز العناصر…</div>';
+    let html2 = renderReviewStep(items);
+    let html3 = '<div class="muted">جارٍ تجهيز العناصر…</div>';
     const steps = `
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <div class="chip ${step===1?'active':''}">1) بيانات العميل</div>
-        <div class="chip ${step===2?'active':''}">2) عرض السعر</div>
+        <div class="chip ${step===2?'active':''}">2) مراجعة العناصر</div>
+        <div class="chip ${step===3?'active':''}">3) عرض السعر</div>
       </div>`;
     const css = `
       <style>
@@ -405,7 +447,11 @@
         .field-icon.neutral{color:#9ca3af}
       </style>`;
     const inner = step===1 ? html1
-                           : html2+`<div class="wiz-actions">
+                           : step===2 ? html2+`<div class="wiz-actions">
+            <button class="btn secondary" id="wiz-back" data-wizard-action="back">رجوع</button>
+            <button class="btn" id="wiz-next2" type="button">التالي</button>
+          </div>`
+                           : html3+`<div class="wiz-actions">
             <button class="btn secondary" id="wiz-back" data-wizard-action="back">رجوع</button>
             <button class="btn" id="wiz-download" data-wizard-action="download">Download PDF</button>
             <button class="btn" id="wiz-send" data-wizard-action="send">Send by Email</button>
@@ -414,7 +460,7 @@
     const panel = css + steps + inner;
 
     try{
-  if (window.QiqModal){ QiqModal.open('#', { title:'\u0637\u0644\u0628 \u0639\u0631\u0636 \u0633\u0639\u0631', html: panel, size: 'md' }); }
+  if (window.QiqModal){ QiqModal.open('#', { title:'\u0637\u0644\u0628 \u0639\u0631\u0636 \u0633\u0639\u0631', html: panel, size: 'md', headerActions: false }); }
       else alert('Wizard requires modal.js');
     }catch{}
 
@@ -430,10 +476,11 @@
       console.log('🔍 Looking for wizard elements in frame...');
   const next = q('wiz-next');
   const back = q('wiz-back');
-      const dl   = q('wiz-download');
+    const dl   = q('wiz-download');
       const send = q('wiz-send');
       const cust = q('wiz-custom');
   const form = q('wizard-form');
+    const next2 = q('wiz-next2');
 
       // Inline validation helpers
       const hints = {
@@ -516,10 +563,46 @@
           el.addEventListener('blur', ()=>{ if (!String(el.value||'').trim()) clearErr(id); });
         }
       });
-      on(back, 'click', (e)=>{ e.preventDefault(); render(1); });
+  on(back, 'click', (e)=>{ e.preventDefault(); e.stopPropagation(); try{ render(step === 3 ? 2 : 1); }catch{} });
       on(dl,   'click', (e)=>{ e.preventDefault(); handle('download'); });
       on(send, 'click', (e)=>{ e.preventDefault(); handle('send'); });
       on(cust, 'click', (e)=>{ e.preventDefault(); handle('custom'); });
+
+      // Step 2 interactions: qty change and delete
+      try{
+        const body = q('wiz-review-body');
+        if (body && !body.__bound){
+          body.__bound = true;
+          body.addEventListener('input', (ev)=>{
+            const tr = ev.target.closest('tr'); if (!tr) return;
+            if (!ev.target.classList.contains('wiz-qty')) return;
+            const idx = Number(tr.getAttribute('data-idx')||'-1'); if (idx<0) return;
+            const arr = getItems();
+            const qty = Math.max(1, parseInt(ev.target.value||'1',10));
+            arr[idx].qty = qty;
+            localStorage.setItem(BOQ_KEY, JSON.stringify(arr));
+            // update line and totals
+            const unit = Number(arr[idx].price||arr[idx].unit||arr[idx].unit_price||0);
+            tr.querySelector('.wiz-line').textContent = (unit*qty).toFixed(2);
+            const t = totals(arr);
+            const doc = window.QiqModal?.getFrame?.()?.contentDocument;
+            const sub = doc?.getElementById('wiz-subtotal'); if (sub) sub.textContent = t.subtotal.toFixed(2);
+            const gr = doc?.getElementById('wiz-grand'); if (gr) gr.textContent = t.grand.toFixed(2);
+          });
+          body.addEventListener('click', (ev)=>{
+            const btn = ev.target.closest('.wiz-del'); if (!btn) return;
+            const tr = btn.closest('tr'); if (!tr) return;
+            const idx = Number(tr.getAttribute('data-idx')||'-1'); if (idx<0) return;
+            const arr = getItems();
+            arr.splice(idx,1);
+            localStorage.setItem(BOQ_KEY, JSON.stringify(arr));
+            // re-render step 2
+            render(2);
+          });
+        }
+      }catch{}
+
+      on(next2, 'click', (e)=>{ e.preventDefault(); render(3); });
 
       // Bind any [data-wizard-action] inside the iframe too (safety)
       try{
@@ -536,7 +619,7 @@
       }catch{}
   // removed duplicate back button
       try{ const cur = (window.parent.localStorage.getItem(STATE_KEY) && JSON.parse(window.parent.localStorage.getItem(STATE_KEY))?.currency) || 'EGP'; const el = doc.getElementById('wiz-currency-view'); if (el) el.textContent = cur; }catch{}
-      // If step 2, replace placeholder with grouped table asynchronously
+  // If step 3, replace placeholder with grouped table asynchronously
       if (!next && dl && send && cust){
         try{
           const itemsNow = getItems();

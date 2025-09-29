@@ -454,7 +454,7 @@
       }
       // build minimal payload
       const products = items.map(p=>({ name: p.name, pn: p.sku, brand: p.manufacturer, price: Number(p.price||0) }));
-      window.QiqModal?.open('#', { title:'المقارنة (جارية...)', html: '<div style="padding:16px;color:#374151">جاري التحليل…</div>' });
+  window.QiqModal?.open('#', { title:'المقارنة (جارية...)', html: '<div style="padding:16px;color:#374151">جاري التحليل…</div>', headerActions: 'compare' });
       let resolved = false;
       const timeoutHtml = `
         <div style="padding:16px; display:flex; flex-direction:column; gap:12px">
@@ -481,7 +481,7 @@
           <div style="white-space:pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e5e7eb; max-height:60vh; overflow:auto">${md.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
           <div class="muted" style="font-size:12px">استخدم أزرار الرأس للنسخ أو حفظ PDF أو الإرفاق إلى عرض السعر.</div>
         </div>`;
-      window.QiqModal?.setHtml?.(html);
+  window.QiqModal?.setHtml?.(html);
       resolved = true; clearTimeout(safety);
       // Handle Retry via location hash inside iframe timeout content
       const frame = window.QiqModal?.getFrame?.();

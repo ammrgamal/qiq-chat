@@ -64,6 +64,7 @@ export default async function handler(req, res) {
       clearTimeout(t);
       if (!r.ok) {
         const text = await r.text().catch(()=> '');
+        // Always provide a friendly preview instead of failing hard, so UI stays interactive
         if (r.status === 401 || r.status === 403) {
           const html = `
             <div style="font-family:system-ui,Segoe UI;line-height:1.5;padding:12px">
@@ -78,7 +79,18 @@ export default async function handler(req, res) {
             </div>`;
           return res.status(200).json({ ok:true, provider:'v0-unauthorized', html, error: text || `HTTP ${r.status}` });
         }
-        return res.status(r.status).json({ ok:false, provider:'v0', error: text || `HTTP ${r.status}` });
+        const html = `
+          <div style="font-family:system-ui,Segoe UI;line-height:1.5;padding:12px">
+            <div style="display:flex;align-items:center;gap:8px;color:#6b7280">
+              <span style="font-size:18px">⚠️</span>
+              <span>V0 API responded with ${r.status}. Showing local preview.</span>
+            </div>
+            <div style="margin-top:10px;border:1px dashed #d1d5db;border-radius:8px;padding:12px;background:#fafafa">
+              <div id="helloV0" dir="rtl" style="padding:10px;border-radius:6px;background:#111;color:#fff">مرحبا — V0 Preview</div>
+              <p style="color:#6b7280;margin:10px 0 0">${(text||'').slice(0,200)}</p>
+            </div>
+          </div>`;
+        return res.status(200).json({ ok:true, provider:'v0-error', html, error: text || `HTTP ${r.status}` });
       }
       const data = await r.json().catch(()=>null);
       // V0 mirrors OpenAI chat response shape

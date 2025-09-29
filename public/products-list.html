@@ -305,7 +305,7 @@
 							html = '<div style="padding:16px;color:#6b7280">لا توجد واجهة مولدة. تحقق من مفاتيح V0.</div>';
 						}
 					}
-	        window.QiqModal?.open('#', { title:'واجهة V0', html, size:'lg' });
+		window.QiqModal?.open('#', { title:'واجهة V0', html, size:'lg', headerActions: false });
 	        // After modal loads, lightly enhance the generated UI without conflicting with existing code
 	        setTimeout(()=>{
 	          try{

@@ -23,7 +23,8 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 success: true,
                 component: generateFallbackComponent(prompt, type),
-                source: 'fallback'
+                source: 'fallback',
+                message: 'V0 غير مُهيأ — استخدم V0_API_KEY و V0_API_ENDPOINT أو V0_API_BASE_URL'
             });
         }
 
