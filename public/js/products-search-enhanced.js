@@ -200,36 +200,12 @@
   }
 
   function wireCardActions(){
-    // favorites
+    // Initialize active states only; actual click logic handled by delegated listener below
     document.querySelectorAll('.fav-btn').forEach(btn=>{
-      const id = btn.dataset.id;
-      if (window.QiqFavorites?.isFavorite && window.QiqFavorites.isFavorite(id)) btn.classList.add('active');
-      btn.onclick = ()=>{
-        try{
-          const product = { id: btn.dataset.id, name: btn.dataset.name, price: btn.dataset.price, image: btn.dataset.image, sku: btn.dataset.pn, manufacturer: btn.dataset.brand };
-          const added = window.QiqFavorites?.toggle(product);
-          if (added) { window.QiqToast?.success?.('تمت الإضافة إلى المفضلة', 2000); btn.classList.add('active'); }
-          else { window.QiqToast?.info?.('تمت الإزالة من المفضلة', 2000); btn.classList.remove('active'); }
-        }catch{}
-      };
+      try{ const id = btn.dataset.id; if (window.QiqFavorites?.isFavorite?.(id)) btn.classList.add('active'); }catch{}
     });
-    // comparison
     document.querySelectorAll('.cmp-btn').forEach(btn=>{
-      const id = btn.dataset.id;
-      if (window.QiqComparison?.isInComparison && window.QiqComparison.isInComparison(id)) btn.classList.add('active');
-      btn.onclick = ()=>{
-        try{
-          const product = { id: btn.dataset.id, name: btn.dataset.name, price: btn.dataset.price, image: btn.dataset.image, sku: btn.dataset.pn, manufacturer: btn.dataset.brand };
-          if (window.QiqComparison?.isInComparison(product.id)){
-            window.QiqComparison.remove(product.id);
-            btn.classList.remove('active');
-            window.QiqToast?.info?.('تمت الإزالة من المقارنة', 2000);
-          } else {
-            try { window.QiqComparison.add(product); btn.classList.add('active'); window.QiqToast?.success?.('تمت الإضافة إلى المقارنة', 2000); }
-            catch(err){ window.QiqToast?.warning?.(err?.message || 'تعذر الإضافة للمقارنة', 2000); }
-          }
-        }catch{}
-      };
+      try{ const id = btn.dataset.id; if (window.QiqComparison?.isInComparison?.(id)) btn.classList.add('active'); }catch{}
     });
   }
 

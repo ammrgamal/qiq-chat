@@ -99,7 +99,12 @@
                 var nextButtons = candidates.filter(function(btn){
                   try{
                     var txt = (btn.textContent||'').trim();
-                    return btn.id === 'wiz-next' || /^(التالي|next)$/i.test(txt) || /التالي|next/i.test(txt);
+                    // Do not hijack step-2 button; it is handled by quote-wizard.js
+                    if (btn.id === 'wiz-next2') return false;
+                    // Exclude compare/favorite buttons and others with icons only
+                    if (btn.classList.contains('cmp-btn') || btn.classList.contains('fav-btn')) return false;
+                    // Target explicit wizard next or generic text-based buttons
+                    return btn.id === 'wiz-next' || /^(التالي|next)$/i.test(txt) || (/التالي|next/i.test(txt) && txt.length <= 10);
                   }catch{return false;}
                 });
                 nextButtons.forEach(function(btn) {
