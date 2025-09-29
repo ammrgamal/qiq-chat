@@ -183,8 +183,9 @@ function resolveSpecLink(it){
       return 'https://pub-02eff5b467804c8ebe56285681eba9a0.r2.dev/specs/Commscope/706144-p360-co11192-external.pdf';
     }
   }catch{}
+  // Prefer Algolia 'spec_sheet' (or 'specs sheet') as primary source; only fallback to other fields when absent
   return ensureString(
-    it?.spec_sheet || it?.link || it?.datasheet || it?.Spec || it?.['Specs Link'] || it?.['Data Sheet'] || it?.DataSheet || ''
+    it?.spec_sheet || it?.['specs sheet'] || it?.specs_sheet || it?.datasheet || it?.Spec || it?.['Specs Link'] || it?.['Data Sheet'] || it?.DataSheet || it?.link || ''
   );
 }
 
@@ -799,7 +800,7 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
   doc.text(ARS(pn), cx+4, y+4, { width: cols[3].w-8, align:'left' }); cx += cols[3].w;
       // Spec link (standalone cell)
       if (linkUrl){
-        const labelTxt = 'Spec';
+        const labelTxt = 'Spec sheet';
         doc.save();
         doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(labelTxt, cx+4, y+6, { width: cols[4].w-8, align:'left', underline: true });
         const lw = Math.min(cols[4].w-8, doc.widthOfString(labelTxt));
@@ -832,13 +833,17 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       doc.save();
       doc.rect(x, y, tableW, rowHps).fill(BRAND_BG);
       doc.fillColor('#0f172a').font(BOLD).fontSize(10);
-      doc.text('#', cxps+4, y+4, { width: cols[0].w-8, align:'right' }); cxps += cols[0].w;
+      // Column layout: use Description area (spanning Img+Desc+MPN+Spec) for the label, then Qty/Unit/Total
+      // # column blank
+      cxps += cols[0].w;
       const labelPs = 'Optional – Professional Services (Installation & Commissioning)';
-      doc.text(ARS(labelPs), cxps+4, y+4, { width: cols[1].w-8, align:'left' }); cxps += cols[1].w;
-      doc.text('', cxps+4, y+4, { width: cols[2].w-8, align:'left' }); cxps += cols[2].w;
-      doc.text('1', cxps+4, y+4, { width: cols[3].w-8, align:'right' }); cxps += cols[3].w;
-      doc.text(psValue.toFixed(2), cxps+4, y+4, { width: cols[4].w-8, align:'right' }); cxps += cols[4].w;
-      doc.text(psValue.toFixed(2), cxps+4, y+4, { width: cols[5].w-8, align:'right' });
+      const spanW = cols[1].w + cols[2].w + cols[3].w + cols[4].w; // Img + Desc + MPN + Spec
+      doc.text(ARS(labelPs), cxps+4, y+4, { width: spanW-8, align:'left' });
+      cxps += spanW;
+      // Qty, Unit, Total
+      doc.text('1', cxps+4, y+4, { width: cols[5].w-8, align:'right' }); cxps += cols[5].w;
+      doc.text(psValue.toFixed(2), cxps+4, y+4, { width: cols[6].w-8, align:'right' }); cxps += cols[6].w;
+      doc.text(psValue.toFixed(2), cxps+4, y+4, { width: cols[7].w-8, align:'right' });
       doc.restore();
       doc.moveTo(x, y+rowHps).lineTo(x+tableW, y+rowHps).stroke('#dbeafe');
       y += rowHps;
@@ -932,6 +937,17 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       }
     }catch{}
     doc.moveDown(0.4).font(REG).fillColor('#111827').fontSize(11).text(ARS('QuickITQuote is Egypt’s first AI-powered B2B IT Quotation Platform. We combine AI with curated catalogs to deliver: accurate BOQs, AI-assisted alternatives, verified solutions, real-time pricing, and local availability. Our service accelerates procurement, reduces risk, and improves budget predictability across sectors (Healthcare, Finance, Education, Government).'));
+    // Why QuickITQuote? subsection
+    doc.moveDown(0.6).font(BOLD).fillColor('#111827').fontSize(12).text(ARS('Why QuickITQuote?'));
+    doc.font(REG).fillColor('#111827').fontSize(10);
+    const whyLines = [
+      '• Faster proposals: minutes instead of days',
+      '• Verified catalogs and alternatives',
+      '• Transparent pricing in USD/EGP',
+      '• Local availability and support',
+      '• Executive-ready PDF exports and email summaries'
+    ];
+    let wy = doc.y + 4; for (const l of whyLines){ doc.text(ARS(l), doc.page.margins.left, wy, { width: doc.page.width - doc.page.margins.left - doc.page.margins.right }); wy = doc.y + 2; }
     doc.moveDown(0.6).font(BOLD).fillColor('#111827').text('Contact');
     doc.font(REG).fillColor('#374151').text('https://quickitquote.com  •  sales@quickitquote.com');
     // Partner logos row if enabled
@@ -967,7 +983,7 @@ function buildSummaryHtml(payload, action){
   const items = payload.items||[];
   const rows = items.slice(0,50).map((it,i)=>{
     const descHtml = formatBoldHtml(it.description||it.name||'-');
-    const link = it.spec_sheet || it.link || it.datasheet || it['Spec'] || it['Specs Link'] || it['Data Sheet'] || it['DataSheet'] || '';
+    const link = resolveSpecLink(it);
     const linkHtml = link ? `<a href="${escapeHtml(link)}" style="color:${escapeHtml(BRAND_PRIMARY)};text-decoration:underline">Spec sheet</a>` : '';
     return `
     <tr>
@@ -1222,7 +1238,8 @@ export default async function handler(req, res){
     // Build CSV and PDF
     const csv = buildCsv(enrichedItems);
     const csvB64 = b64(csv);
-  const minimal = (action === 'download');
+  // Restore full PDF sections for all actions (no minimal mode by default)
+  const minimal = false;
   const pdfBuf = await buildPdfBuffer({ ...payload, currency, items: enrichedItems, solutionText, cards, minimal });
     const pdfB64 = pdfBuf.toString('base64');
 
