@@ -1,5 +1,5 @@
 # Project Index — qiq-chat
-Generated: 2025-09-29T09:27:25.137Z
+Generated: 2025-09-29T10:00:13.022Z
 
 - Root: C:\GitHub\qiq-chat\qiq-chat
 - Total size: 1.8 MB
@@ -75,7 +75,7 @@ qiq-chat/
 │   ├── algoliaMapper.spec.ts (525 B)
 │   └── pdfTotals.spec.ts (1.3 KB)
 ├── .storage/
-│   ├── activity.json (29.4 KB)
+│   ├── activity.json (31.2 KB)
 │   └── quotations.json (720 B)
 ├── ai/
 │   └── ai-instructions.txt (3.5 KB)
@@ -146,13 +146,13 @@ qiq-chat/
 │   ├── css/
 │   │   ├── enhanced-catalog.css (11.0 KB)
 │   │   ├── professional-design.css (15.2 KB)
-│   │   └── styles.css (15.8 KB)
+│   │   └── styles.css (16.2 KB)
 │   ├── fonts/
 │   │   └── README.txt (361 B)
 │   ├── js/
 │   │   ├── account.js (22.9 KB)
 │   │   ├── admin-quotes.js (11.3 KB)
-│   │   ├── admin.js (25.5 KB)
+│   │   ├── admin.js (29.5 KB)
 │   │   ├── advanced-analytics.js (20.3 KB)
 │   │   ├── advanced-form-validator.js (18.5 KB)
 │   │   ├── advanced-state-manager.js (16.0 KB)
@@ -175,14 +175,14 @@ qiq-chat/
 │   │   ├── performance.js (5.6 KB)
 │   │   ├── product-data-enhancer.js (22.5 KB)
 │   │   ├── product-image-handler.js (16.8 KB)
-│   │   ├── products-search-enhanced.js (32.3 KB)
+│   │   ├── products-search-enhanced.js (32.4 KB)
 │   │   ├── products-search.js (6.9 KB)
 │   │   ├── products-ui-enhanced.js (22.1 KB)
 │   │   ├── quote-actions.js (42.7 KB)
 │   │   ├── quote-badge.js (1.6 KB)
 │   │   ├── quote-form.js (3.0 KB)
 │   │   ├── quote-wizard-debug.js (7.9 KB)
-│   │   ├── quote-wizard.js (39.2 KB)
+│   │   ├── quote-wizard.js (39.8 KB)
 │   │   ├── quote.js (82.8 KB)
 │   │   ├── security.js (7.6 KB)
 │   │   ├── smart-boq-recommender.js (26.4 KB)
@@ -192,12 +192,12 @@ qiq-chat/
 │   │   ├── toast.js (4.3 KB)
 │   │   ├── ui-chat.js (32.3 KB)
 │   │   ├── ui-enhancements.js (25.0 KB)
-│   │   ├── user-features.js (12.4 KB)
+│   │   ├── user-features.js (12.7 KB)
 │   │   ├── visitor-tracker.js (10.1 KB)
 │   │   └── visitor-tracking-client.js (12.0 KB)
 │   ├── account.html (2.2 KB)
 │   ├── admin-quotes.html (4.2 KB)
-│   ├── admin.html (13.4 KB)
+│   ├── admin.html (14.8 KB)
 │   ├── index.html (11.2 KB)
 │   ├── logo.png (15.7 KB)
 │   ├── products-list.html (32.7 KB)

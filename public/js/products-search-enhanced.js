@@ -147,7 +147,7 @@
           ${spec ? ` • <a href="${spec}" target="_blank" rel="noopener" class="muted">Spec Sheet</a>` : ''}
         </div>
         <div class="actions">
-          <button class="btn" type="button"
+          <button class="btn" type="button" data-add-to-quote="1"
             data-name="${name}"
             data-price="${price!==''?price:''}"
             data-pn="${pn}"
@@ -185,7 +185,7 @@
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${brand}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${priceCell}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:center">
-          <button class="btn" type="button"
+          <button class="btn" type="button" data-add-to-quote="1"
             data-name="${name}"
             data-price="${price!==''?price:''}"
             data-pn="${pn}"
@@ -327,16 +327,16 @@
     }
   });
 
-  // Add to quote toast (delegate)
+  // Add to quote toast (strict to Add button only)
   resultsEl?.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button.btn');
+    const btn = e.target.closest('button.btn[data-add-to-quote="1"]');
     if (btn && btn.dataset && btn.dataset.name) {
       setTimeout(()=>{ try { window.QiqToast?.success?.('تمت الإضافة إلى عرض السعر', 2000); } catch {} }, 0);
     }
   });
   // Delegate for table view as well
   resultsTableWrap?.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button.btn');
+    const btn = e.target.closest('button.btn[data-add-to-quote="1"]');
     if (btn && btn.dataset && btn.dataset.name) {
       setTimeout(()=>{ try { window.QiqToast?.success?.('تمت الإضافة إلى عرض السعر', 2000); } catch {} }, 0);
     }

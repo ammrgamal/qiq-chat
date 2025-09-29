@@ -162,6 +162,19 @@
 .qiq-card small{color:#6b7280;font-size:12px;margin-top:4px;display:block}
 
 /* ===== Product Cards ===== */
+
+/* Improve sidebar facet contrast (labels/text on white background) */
+.sidebar, .facet, .facet h3, .facet label, .facet li, .facet ul, #facet-brands, #facet-categories, #facet-extras {
+  color: #111827;
+  background: #fff;
+}
+.facet label { color: #111827; }
+.facet li { color: #111827; }
+.facet input[type="checkbox"] + label,
+.facet input[type="checkbox"] ~ span {
+  color: #111827;
+}
+
 .card {
   background: #fff;
   border: 1px solid #e5e7eb;

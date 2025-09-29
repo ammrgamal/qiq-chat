@@ -136,11 +136,100 @@
       case 'activity':
         loadActivity();
         break;
+      case 'v0check':
+        loadV0Check();
+        break;
     }
   }
 
   function showLoginModal() {
     loginModal.style.display = 'flex';
+  }
+
+  // --- V0 Check ---
+  async function loadV0Check(){
+    // Wire retry button once
+    try{
+      const retry = document.getElementById('v0-retry');
+      if (retry && !retry._wired){ retry._wired = true; retry.addEventListener('click', ()=> loadV0Check()); }
+    }catch{}
+
+    const statusChip = document.getElementById('v0-ready-chip');
+    const statusDetails = document.getElementById('v0-ready-details');
+    const envChips = document.getElementById('v0-env-chips');
+    const envNotes = document.getElementById('v0-env-notes');
+    const sampleBox = document.getElementById('v0-sample-result');
+    const preview = document.getElementById('v0-preview');
+
+    function setChip(ok, text){
+      if (!statusChip) return;
+      statusChip.textContent = text || (ok ? 'جاهز' : 'مش جاهز');
+      statusChip.classList.remove('status-active','status-inactive');
+      statusChip.classList.add(ok ? 'status-active' : 'status-inactive');
+    }
+
+    setChip(false, 'جارِ الفحص…');
+    if (statusDetails) statusDetails.textContent = '';
+    if (envChips) envChips.innerHTML = '';
+    if (envNotes) envNotes.textContent = '';
+    if (sampleBox) sampleBox.textContent = '—';
+    if (preview) preview.srcdoc = '<div style="font-family:system-ui;padding:12px;color:#6b7280">—</div>';
+
+    // 1) Read /health to infer key availability
+    let hasV0 = false, hasOpenAI=false, hasGemini=false, hasResend=false;
+    try{
+      const h = await fetch('/health').then(r=>r.json());
+      const env = h?.env || {};
+      hasV0 = !!env.hasV0;
+      hasOpenAI = !!env.hasOpenAI;
+      hasGemini = !!env.hasGemini;
+      hasResend = !!env.hasResend;
+      if (envChips){
+        envChips.innerHTML = [
+          chip('V0', hasV0),
+          chip('OpenAI', hasOpenAI),
+          chip('Gemini', hasGemini),
+          chip('Resend', hasResend)
+        ].join(' ');
+      }
+      if (envNotes){ envNotes.textContent = `AUTO_APPROVE: ${h?.env?.autoApprove ? 'ON' : 'OFF'} • Index: ${h?.env?.algoliaIndex || '-'}`; }
+    }catch(e){
+      if (statusDetails) statusDetails.textContent = 'تعذر قراءة /health';
+    }
+
+    // 2) Perform a sample call to /api/v0/ui (non-blocking timeout)
+    let ok=false, provider='', errorMsg='', html='';
+    try{
+      const controller = new AbortController();
+      const to = setTimeout(()=> controller.abort(), 5000);
+      const r = await fetch('/api/v0/ui', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ messages:[{ role:'user', content:'Generate a minimal placeholder <div>V0 Ready</div>.'}] }), signal: controller.signal });
+      clearTimeout(to);
+      const data = await r.json().catch(()=>({}));
+      ok = !!data?.ok;
+      provider = data?.provider || (r.ok ? 'v0' : 'error');
+      html = data?.html || '';
+      errorMsg = data?.error || (!r.ok ? `HTTP ${r.status}` : '');
+      if (sampleBox){ sampleBox.textContent = ok ? `OK — ${provider}` : `Error — ${provider}`; }
+      if (preview){ preview.srcdoc = html || `<div style="font-family:system-ui;padding:12px">${errorMsg || 'لا توجد معاينة'}</div>`; }
+    }catch(e){
+      errorMsg = (e && e.name)==='AbortError' ? 'Timeout' : String(e?.message||e);
+      if (sampleBox) sampleBox.textContent = `Error — ${errorMsg}`;
+    }
+
+    // 3) Decide readiness
+    const ready = hasV0 && ok;
+    setChip(ready, ready ? 'جاهز' : 'مش جاهز');
+    if (statusDetails){
+      statusDetails.textContent = ready
+        ? `Provider: ${provider}`
+        : (errorMsg ? `سبب: ${errorMsg}` : (hasV0 ? 'تحقق من الاستجابة' : 'مفاتيح/إعدادات V0 غير مكتملة'));
+    }
+  }
+
+  function chip(name, ok){
+    const bg = ok ? '#dcfce7' : '#fee2e2';
+    const fg = ok ? '#166534' : '#991b1b';
+    return `<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:${bg};color:${fg};font-size:12px">${name}: ${ok?'OK':'—'}</span>`;
   }
 
   function hideLoginModal() {

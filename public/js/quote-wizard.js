@@ -604,6 +604,19 @@
 
       on(next2, 'click', (e)=>{ e.preventDefault(); render(3); });
 
+      // Extra safety: delegated clicks for Next (step 2) and Back
+      try{
+        if (!doc.__wizDelegated){
+          doc.__wizDelegated = true;
+          doc.addEventListener('click', (ev)=>{
+            const n2 = ev.target && ev.target.closest && ev.target.closest('#wiz-next2');
+            if (n2){ ev.preventDefault(); ev.stopPropagation(); try{ render(3); }catch{} return; }
+            const bk = ev.target && ev.target.closest && ev.target.closest('#wiz-back');
+            if (bk){ ev.preventDefault(); ev.stopPropagation(); try{ render(step === 3 ? 2 : 1); }catch{} return; }
+          }, true);
+        }
+      }catch{}
+
       // Bind any [data-wizard-action] inside the iframe too (safety)
       try{
         const acts = Array.from(doc.querySelectorAll('[data-wizard-action]'));

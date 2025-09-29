@@ -43,6 +43,7 @@
   <a href="/admin-quotes.html" style="color:#93c5fd">نسخة العروض المنفصلة ↗</a>
   <a href="#activity" class="tab-link">النشاط</a>
   <a href="#config" class="tab-link">الإعدادات الذكية</a>
+        <a href="#v0check" class="tab-link">فحص V0</a>
         <div style="margin-inline-start: auto;">
           <span id="admin-user">Admin User</span>
           <button id="btn-logout" class="btn-admin">خروج</button>
@@ -178,6 +179,33 @@
       </table>
     </div>
   </main>
+
+  <!-- V0 Check Tab -->
+  <div id="v0check" class="tab-content">
+    <h2>فحص V0</h2>
+    <div class="qiq-card" style="display:grid;gap:12px">
+      <div id="v0-status-line" style="display:flex;align-items:center;gap:8px">
+        <span id="v0-ready-chip" class="status-chip">جارِ الفحص…</span>
+        <span id="v0-ready-details" class="muted" style="font-size:12px"></span>
+        <button id="v0-retry" class="btn-admin" style="margin-inline-start:auto">إعادة الفحص</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="qiq-card">
+          <h4 style="margin-top:0">مفاتيح وبيئة التشغيل</h4>
+          <div id="v0-env-chips" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+          <div id="v0-env-notes" class="muted" style="margin-top:8px"></div>
+        </div>
+        <div class="qiq-card">
+          <h4 style="margin-top:0">طلب عيّنة</h4>
+          <div id="v0-sample-result" class="muted">—</div>
+        </div>
+      </div>
+      <div class="qiq-card">
+        <h4 style="margin-top:0">معاينة مخرجات V0</h4>
+        <iframe id="v0-preview" sandbox="allow-same-origin" style="width:100%;height:320px;border:1px solid #e5e7eb;border-radius:8px;background:#fff"></iframe>
+      </div>
+    </div>
+  </div>
 
   <!-- Config Tab -->
   <div id="config" class="tab-content">

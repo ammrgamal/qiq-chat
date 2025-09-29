@@ -57,6 +57,11 @@ class FavoritesManager {
     return this.favorites.some(fav => fav.id === productId);
   }
 
+  // Alias for compatibility with existing UI scripts
+  isInFavorites(productId) {
+    return this.isFavorite(productId);
+  }
+
   getAll() {
     return [...this.favorites];
   }
@@ -137,6 +142,11 @@ class ProductComparison {
 
   getAll() {
     return [...this.compareList];
+  }
+
+  // Alias for compatibility with UI helpers expecting getProducts()
+  getProducts() {
+    return this.getAll();
   }
 
   clear() {
