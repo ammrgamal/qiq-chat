@@ -656,14 +656,17 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
     __pageNum++;
     doc.addPage();
 
-  // Items table grid (clean implementation)
+  // Items table grid (dedicated columns for image and spec link)
+    // Total printable width on A4 with 50pt margins is ~495pt. Keep sum exactly 495.
     const cols = [
-      { key:'#', label:'#', w:24 },
+      { key:'#',    label:'#',           w:16 },
+      { key:'img',  label:'Img',         w:36 },
       { key:'desc', label:'Description', w:230 },
-      { key:'pn', label:'MPN', w:80 },
-      { key:'qty', label:'Qty', w:45 },
-      { key:'unit', label:'Unit', w:60 },
-      { key:'total', label:'Total', w:70 }
+      { key:'pn',   label:'MPN',         w:50 },
+      { key:'spec', label:'Spec',        w:54 },
+      { key:'qty',  label:'Qty',         w:28 },
+      { key:'unit', label:'Unit',        w:40 },
+      { key:'total',label:'Total',       w:41 }
     ];
     let x = doc.x; let y = doc.y + 4;
     const tableW = cols.reduce((a,c)=>a+c.w,0);
@@ -673,7 +676,11 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       doc.save();
       doc.rect(x, y, tableW, 20).fill('#f3f4f6');
       let cx = x;
-      cols.forEach(c=>{ doc.fillColor('#111827').font(BOLD).fontSize(10).text(ARS(c.label), cx+4, y+6, { width:c.w-8, align: c.key==='desc'?'left':'right' }); cx += c.w; });
+      cols.forEach(c=>{
+        const align = (c.key==='desc' || c.key==='pn' || c.key==='spec') ? 'left' : 'right';
+        doc.fillColor('#111827').font(BOLD).fontSize(10).text(ARS(c.label), cx+4, y+6, { width:c.w-8, align });
+        cx += c.w;
+      });
       doc.restore();
       y += 20;
       doc.moveTo(x, y).lineTo(x+tableW, y).stroke('#e5e7eb');
@@ -728,69 +735,52 @@ async function buildPdfBuffer({ number, date, currency, client, project, items, 
       const qty = Number(it.qty||1); const unit = Number(it.unit_price||it.unit||it.price||0); const line = unit*qty;
       const desc = ensureString(it.description_en || it.description || it.description_enriched || it.name || '-');
       const pn = ensureString(it.pn||'');
-      const colDescW = cols[1].w - 8;
+      const linkUrl = resolveSpecLink(it);
+
+      // Buffers
       let imgBuf = null;
       if (includeImages){
         const imgUrl = extractImageUrl(it);
         imgBuf = imgBuffers.get(imgUrl) || null;
       }
-  const linkUrl = resolveSpecLink(it);
-  const descPlain = desc.replace(/\*\*(.+?)\*\*/g,'$1');
-  const widthLeft = imgBuf ? (colDescW - 50) : colDescW;
-  const widthTop = colDescW;
-  const textHLeft = doc.heightOfString(descPlain, { width: widthLeft });
-  const textHTop = doc.heightOfString(descPlain, { width: widthTop });
-  // Prefer stacking image on top if description is long to keep link clearly separated
-  const useStackTop = !!imgBuf && (textHLeft > 54 && (textHTop + 50 < textHLeft + 16));
-  const descTextHeight = useStackTop ? textHTop : textHLeft;
-  // Reserve space for the link line below the description when present
-  const linkSpace = linkUrl ? 16 : 0;
-      const padding = 6;
-      const imgBlockH = imgBuf ? 46 + (useStackTop ? 4 : 0) : 0;
-      let rowH = Math.max(22, descTextHeight + linkSpace + padding, imgBlockH + (useStackTop ? descTextHeight + linkSpace + padding : 0));
+
+      // Heights per cell
+      const colDescW = cols.find(c=>c.key==='desc').w - 8;
+      const txtH = doc.heightOfString(desc.replace(/\*\*(.+?)\*\*/g,'$1'), { width: colDescW });
+      const imgH = imgBuf ? 34 : 0; // we render image at up to 34px height
+      const rowH = Math.max(22, txtH + 8, imgH + 8);
+
+      // New page when needed
       if (y + rowH > maxY){ drawFooter(); __pageNum++; doc.addPage(); x = doc.page.margins.left; y = doc.page.margins.top; drawHeader(); }
+
+      // Draw cells
       let cx = x;
       doc.font(REG).fontSize(10).fillColor('#111827');
+      // #
       doc.text(String(i+1), cx+4, y+4, { width: cols[0].w-8, align:'right' }); cx += cols[0].w;
-      doc.save();
-      doc.rect(cx+4, y+2, colDescW, rowH-4).clip();
-      let textStartY = y + 4;
-      if (imgBuf){
-        if (useStackTop){
-          try{ doc.image(imgBuf, cx+4, y+4, { fit: [Math.min(colDescW, 120), 46] }); }catch{}
-          textStartY += 50;
-          renderFormattedText(desc, cx+4, textStartY, widthTop, true);
-        } else {
-          try{ doc.image(imgBuf, cx+4, y+4, { fit: [46,46] }); }catch{}
-          renderFormattedText(desc, cx+54, y+4, widthLeft, true);
-        }
-      } else {
-        renderFormattedText(desc, cx+4, y+4, widthTop, true);
-      }
+      // Img
+      if (imgBuf){ try { doc.image(imgBuf, cx+4, y+4, { fit: [cols[1].w-8, 34], align:'center', valign:'center' }); } catch {} }
+      cx += cols[1].w;
+      // Description (text only, bold parser supported)
+      renderFormattedText(desc, cx+4, y+4, cols[2].w-8, true); cx += cols[2].w;
+      // MPN
+      doc.text(ARS(pn), cx+4, y+4, { width: cols[3].w-8, align:'left' }); cx += cols[3].w;
+      // Spec link (standalone cell)
       if (linkUrl){
-        // Place on its own line under the description with subtle spacing
-        const usedWidth = (imgBuf && !useStackTop) ? widthLeft : widthTop;
-        const usedX = (imgBuf && !useStackTop) ? (cx+54) : (cx+4);
-        const dH = doc.heightOfString(descPlain, { width: usedWidth });
-        let ly = (imgBuf && useStackTop ? textStartY : (y+4)) + dH + 6;
-        if (ly > y + rowH - 14) ly = y + rowH - 14;
-        const iconSize = 6;
-        // Draw small square icon and clickable label
+        const labelTxt = 'Spec';
         doc.save();
-        doc.fillColor(BRAND_PRIMARY).rect(usedX, ly+3, iconSize, iconSize).fill();
-        const labelTxt = 'Spec sheet';
-        doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(labelTxt, usedX + iconSize + 4, ly, { width: usedWidth - (iconSize+6), align:'left', underline: true });
-        const wlab = doc.widthOfString(labelTxt) + iconSize + 6;
-        try{ doc.link(usedX, ly, wlab, 12, linkUrl); }catch{}
+        doc.fillColor(BRAND_PRIMARY).font(REG).fontSize(9).text(labelTxt, cx+4, y+6, { width: cols[4].w-8, align:'left', underline: true });
+        const lw = Math.min(cols[4].w-8, doc.widthOfString(labelTxt));
+        try { doc.link(cx+4, y+6, lw, 12, linkUrl); } catch {}
         doc.restore();
         doc.fillColor('#111827');
       }
-      doc.restore();
-      cx += cols[1].w;
-      doc.text(ARS(pn), cx+4, y+4, { width: cols[2].w-8, align:'left' }); cx += cols[2].w;
-      doc.text(String(qty), cx+4, y+4, { width: cols[3].w-8, align:'right' }); cx += cols[3].w;
-      doc.text(unit.toFixed(2), cx+4, y+4, { width: cols[4].w-8, align:'right' }); cx += cols[4].w;
-      doc.text(line.toFixed(2), cx+4, y+4, { width: cols[5].w-8, align:'right' });
+      cx += cols[4].w;
+      // Qty, Unit, Total
+      doc.text(String(qty), cx+4, y+4, { width: cols[5].w-8, align:'right' }); cx += cols[5].w;
+      doc.text(unit.toFixed(2), cx+4, y+4, { width: cols[6].w-8, align:'right' }); cx += cols[6].w;
+      doc.text(line.toFixed(2), cx+4, y+4, { width: cols[7].w-8, align:'right' });
+      // Row divider
       doc.moveTo(x, y+rowH).lineTo(x+tableW, y+rowH).stroke('#f1f5f9');
       y += rowH;
     }
