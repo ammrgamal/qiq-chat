@@ -6,7 +6,9 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "enrich": "node rules-engine.js",
+    "test": "node test-enrichment.js",
+    "test:syntax": "node --check rules-engine.js && node --check test-enrichment.js"
   },
   "keywords": [
     "rules-engine",
