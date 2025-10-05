@@ -12,6 +12,8 @@ The Rules Engine is a standalone service module within the qiq-chat project that
 - Lead time estimates
 - Relevant keywords and metadata
 
+> 📋 **New to Rules Engine?** Check out the [Launch Checklist](./LAUNCH_CHECKLIST.md) for a comprehensive deployment guide.
+
 ## 🏗️ Architecture
 
 ```
