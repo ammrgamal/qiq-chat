@@ -1,4 +1,4 @@
-# Rules Engine Integration Guide
+# Rules Engine & AI Enrichment Integration Guide
 
 This guide shows how to integrate the Rules Engine module with the main qiq-chat application.
 
@@ -10,6 +10,17 @@ The Rules Engine can be integrated in multiple ways:
 2. **API Endpoint** (Recommended for microservices)
 3. **CLI Execution** (For scheduled batch jobs)
 4. **Vercel Serverless Function** (For cloud deployment)
+
+## 🚀 New: AI Enrichment Module
+
+The enrichment module automatically enhances product data with:
+- Marketing descriptions (short & long)
+- Technical specifications
+- Key features & FAQs
+- Professional services scope
+- Upsell & bundle suggestions
+- Product images (via Google Custom Search)
+- Customer value statements
 
 ---
 
@@ -599,6 +610,249 @@ describe('Rules Engine Integration', () => {
 
 ---
 
+## AI Enrichment Integration
+
+### Using the Enrichment API
+
+The `/api/rules-engine/enrich` endpoint provides comprehensive product enrichment.
+
+#### Basic Usage
+
+```javascript
+// Client-side: Enrich a product
+async function enrichProduct(productData) {
+  const response = await fetch('/api/rules-engine/enrich', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      product: {
+        ProductName: 'Cisco Catalyst 2960',
+        PartNumber: 'WS-C2960-24TT-L',
+        Manufacturer: 'Cisco',
+        Category: 'Networking',
+        price: 1500
+      },
+      syncToAlgolia: true // Optional: sync to Algolia after enrichment
+    })
+  });
+  
+  const result = await response.json();
+  
+  if (result.ok && result.enriched) {
+    console.log('Product enriched:', result.product);
+    console.log('Confidence:', result.confidence);
+    console.log('Requires review:', result.requiresReview);
+  }
+}
+```
+
+#### Check by Part Number
+
+```javascript
+// Enrich by part number (fetches from DB first)
+async function enrichByPartNumber(partNumber) {
+  const response = await fetch('/api/rules-engine/enrich', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partNumber })
+  });
+  
+  const result = await response.json();
+  
+  if (result.alreadyProcessed) {
+    console.log('Already enriched:', result.product);
+  } else if (result.enriched) {
+    console.log('Newly enriched:', result.product);
+  }
+}
+```
+
+### Direct Module Usage
+
+```javascript
+import enrichmentService from './rules-engine/src/enrichmentService.js';
+
+// Enrich a single product
+const result = await enrichmentService.enrichProduct({
+  ProductName: 'Dell PowerEdge R740',
+  PartNumber: 'R740-001',
+  Manufacturer: 'Dell',
+  Category: 'Servers'
+});
+
+console.log('Enriched data:', result.enrichedData);
+console.log('Confidence:', result.confidence);
+console.log('Fields enriched:', result.fieldsEnriched);
+
+// Batch enrich multiple products
+const products = [...]; // Array of product objects
+const batchResult = await enrichmentService.enrichProducts(products);
+
+console.log(`Enriched: ${batchResult.enriched}`);
+console.log(`Requires review: ${batchResult.requiresReview}`);
+console.log(`Failed: ${batchResult.failed}`);
+```
+
+---
+
+## Algolia Sync Integration
+
+### Sync Enriched Products to Algolia
+
+```bash
+# Incremental sync (last 24 hours)
+cd rules-engine
+npm run algolia:sync
+
+# Full sync (all products)
+npm run algolia:sync:full
+
+# Apply index settings
+npm run algolia:settings
+```
+
+### Programmatic Sync
+
+```javascript
+import algoliaSync from './rules-engine/src/algoliaSync.js';
+
+// Full sync
+const result = await algoliaSync.syncProducts({ fullSync: true });
+console.log(`Synced ${result.synced} products`);
+
+// Incremental sync (since last sync time)
+const lastSync = '2024-01-01T00:00:00Z';
+const result = await algoliaSync.syncProducts({ 
+  fullSync: false,
+  lastSyncTime: lastSync 
+});
+
+// Apply Algolia index settings
+await algoliaSync.initialize();
+await algoliaSync.applyIndexSettings();
+```
+
+### Scheduled Sync (Cron)
+
+Create a cron job to sync regularly:
+
+```bash
+# Add to crontab (crontab -e)
+# Sync every 6 hours
+0 */6 * * * cd /path/to/qiq-chat/rules-engine && npm run algolia:sync >> logs/sync.log 2>&1
+```
+
+### Vercel Cron Job
+
+Create `vercel.json`:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/algolia-sync",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
+```
+
+Create `api/cron/algolia-sync.js`:
+
+```javascript
+import algoliaSync from '../../rules-engine/src/algoliaSync.js';
+
+export default async function handler(req, res) {
+  // Verify cron secret
+  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const result = await algoliaSync.syncProducts({ fullSync: false });
+    return res.status(200).json({
+      ok: true,
+      synced: result.synced,
+      failed: result.failed
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      error: error.message
+    });
+  }
+}
+```
+
+---
+
+## Chat Integration Flow
+
+### Example: Product Query with Auto-Enrichment
+
+```javascript
+// In your chat handler (e.g., api/chat.js)
+
+async function handleProductQuery(query) {
+  // 1. Search for products
+  const products = await searchProducts(query);
+  
+  // 2. Check enrichment status for each product
+  for (const product of products) {
+    if (!product.AIProcessed) {
+      // Queue for enrichment
+      fetch('/api/rules-engine/enrich', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          partNumber: product.PartNumber,
+          syncToAlgolia: true 
+        })
+      }).catch(err => console.error('Enrichment failed:', err));
+    }
+  }
+  
+  // 3. Return products (enriched or not)
+  return products;
+}
+```
+
+### Example: Add to Quote with Enrichment Check
+
+```javascript
+async function addProductToQuote(partNumber) {
+  // Check if product is enriched
+  const response = await fetch('/api/rules-engine/enrich', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ partNumber })
+  });
+  
+  const result = await response.json();
+  
+  if (result.ok) {
+    // Add to quote with enriched data
+    await addToQuote({
+      partNumber,
+      name: result.product.name,
+      description: result.product.shortDescription,
+      image: result.product.image,
+      features: result.product.keyFeatures,
+      confidence: result.confidence
+    });
+    
+    // Show notification
+    if (result.alreadyProcessed) {
+      showNotification('Product added with AI-enhanced data', 'success');
+    } else if (result.enriched) {
+      showNotification('Product enriched and added to quote', 'success');
+    }
+  }
+}
+```
+
+---
+
 ## Summary
 
 The Rules Engine can be integrated in multiple ways depending on your needs:
@@ -607,5 +861,11 @@ The Rules Engine can be integrated in multiple ways depending on your needs:
 - **API endpoint**: Best for microservices, easier scaling
 - **CLI batch**: Best for scheduled jobs, bulk processing
 - **Serverless**: Best for cloud deployment, auto-scaling
+
+**New Enrichment Features:**
+- **AI Enrichment**: Automatic product data enhancement with 90% confidence threshold
+- **Algolia Sync**: Periodic sync of enriched data to Algolia search index
+- **Image Search**: Automatic product image discovery via Google Custom Search
+- **Logging**: Comprehensive logging to `logs/rules-engine.log` for audit and cost tracking
 
 Choose the method that best fits your architecture and use case.

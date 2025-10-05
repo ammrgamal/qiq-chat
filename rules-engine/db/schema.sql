@@ -65,7 +65,22 @@ CREATE TABLE dbo.Rules_Item (
     ModifiedDate DATETIME NOT NULL DEFAULT GETDATE(),
     CreatedBy NVARCHAR(100) NULL,
     IsActive BIT NOT NULL DEFAULT 1,
-    Notes NVARCHAR(MAX) NULL
+    Notes NVARCHAR(MAX) NULL,
+    -- AI Enrichment Fields
+    AIProcessed BIT NOT NULL DEFAULT 0,
+    AIProcessedDate DATETIME NULL,
+    ShortDescription NVARCHAR(500) NULL,
+    LongDescription NVARCHAR(MAX) NULL,
+    TechnicalSpecs NVARCHAR(MAX) NULL,      -- JSON format
+    KeyFeatures NVARCHAR(MAX) NULL,         -- JSON array
+    FAQ NVARCHAR(MAX) NULL,                 -- JSON array
+    Prerequisites NVARCHAR(MAX) NULL,       -- JSON array
+    ProfessionalServices NVARCHAR(MAX) NULL, -- JSON object
+    ProductImage NVARCHAR(500) NULL,        -- Image URL
+    UpsellSuggestions NVARCHAR(MAX) NULL,   -- JSON array
+    BundleSuggestions NVARCHAR(MAX) NULL,   -- JSON array
+    CustomerValue NVARCHAR(MAX) NULL,       -- Value proposition text
+    EnrichmentConfidence DECIMAL(5, 2) NULL -- Confidence in enrichment (0-100)
 );
 GO
 
@@ -73,6 +88,8 @@ CREATE INDEX IX_Rules_Item_PartNumber ON dbo.Rules_Item(PartNumber);
 CREATE INDEX IX_Rules_Item_Category ON dbo.Rules_Item(Category);
 CREATE INDEX IX_Rules_Item_AutoApprove ON dbo.Rules_Item(AutoApprove);
 CREATE INDEX IX_Rules_Item_IsActive ON dbo.Rules_Item(IsActive);
+CREATE INDEX IX_Rules_Item_AIProcessed ON dbo.Rules_Item(AIProcessed);
+CREATE INDEX IX_Rules_Item_AIProcessedDate ON dbo.Rules_Item(AIProcessedDate DESC);
 GO
 
 -- ========================================

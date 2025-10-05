@@ -294,6 +294,105 @@ Return ONLY valid JSON, no markdown or extra text.`;
 
     return results;
   }
+
+  /**
+   * Generate comprehensive product enrichment data
+   * @param {string} prompt - Enrichment prompt
+   * @param {Object} product - Product object
+   * @returns {Promise<Object>} Enrichment data
+   */
+  async generateEnrichment(prompt, product) {
+    const startTime = Date.now();
+    
+    try {
+      // Try Gemini first (cheaper for longer content generation)
+      if (this.hasGemini) {
+        try {
+          const result = await this.callGemini(prompt);
+          const processingTime = Date.now() - startTime;
+          logger.debug(`Gemini enrichment completed in ${processingTime}ms`);
+          return result;
+        } catch (error) {
+          logger.warn('Gemini enrichment failed, falling back to OpenAI', error);
+        }
+      }
+
+      // Try OpenAI
+      if (this.hasOpenAI) {
+        const result = await this.callOpenAI(prompt);
+        const processingTime = Date.now() - startTime;
+        logger.debug(`OpenAI enrichment completed in ${processingTime}ms`);
+        return result;
+      }
+
+      // Fallback: return minimal enrichment
+      logger.warn('No AI provider available for enrichment, using fallback');
+      return this.fallbackEnrichment(product);
+    } catch (error) {
+      logger.error('AI enrichment failed', error);
+      return this.fallbackEnrichment(product);
+    }
+  }
+
+  /**
+   * Fallback enrichment when AI is unavailable
+   * @param {Object} product - Product object
+   * @returns {Object} Basic enrichment data
+   */
+  fallbackEnrichment(product) {
+    const name = product.ProductName || product.name || 'Product';
+    const manufacturer = product.Manufacturer || product.manufacturer || '';
+    const category = product.Category || product.category || '';
+    
+    return {
+      shortDescription: `${manufacturer} ${name} - ${category} solution for enterprise needs.`,
+      longDescription: `The ${manufacturer} ${name} is a professional-grade ${category} product designed for business environments. This product delivers reliable performance and comprehensive features to meet enterprise requirements.`,
+      technicalSpecs: {
+        'Category': category,
+        'Manufacturer': manufacturer,
+        'Type': 'Enterprise Grade'
+      },
+      keyFeatures: [
+        'Enterprise-grade reliability',
+        'Professional support available',
+        'Industry-standard compatibility',
+        'Scalable solution'
+      ],
+      faq: [
+        {
+          question: 'What is included with this product?',
+          answer: 'Please contact our sales team for detailed information about included components and services.'
+        },
+        {
+          question: 'What is the warranty period?',
+          answer: 'Warranty terms vary by manufacturer. Please check with our sales team for specific warranty details.'
+        }
+      ],
+      prerequisites: [
+        'Compatible infrastructure required',
+        'Professional installation recommended'
+      ],
+      professionalServices: {
+        scope: 'Installation and configuration',
+        description: 'Professional installation and configuration services available upon request',
+        estimatedHours: 4,
+        recommendedTier: 'Standard'
+      },
+      upsellSuggestions: [
+        'Extended warranty coverage',
+        'Professional installation service',
+        'Premium technical support'
+      ],
+      bundleSuggestions: [
+        'Compatible accessories',
+        'Backup and recovery solutions',
+        'Monitoring and management tools'
+      ],
+      customerValue: `Choose ${manufacturer} ${name} for reliable enterprise-grade performance backed by professional support and comprehensive features.`,
+      provider: 'fallback',
+      status: 'Partial'
+    };
+  }
 }
 
 // Export singleton instance
