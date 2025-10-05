@@ -5,3 +5,8 @@ package-lock.json
 dist/
 build/
 *.log
+
+# Rules Engine module
+rules-engine/node_modules/
+rules-engine/package-lock.json
+rules-engine/.env
