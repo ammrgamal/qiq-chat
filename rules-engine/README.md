@@ -4,20 +4,29 @@
 
 ## 📋 Overview
 
-The Rules Engine is a standalone service module within the qiq-chat project that provides intelligent product classification and automatic approval capabilities using AI (OpenAI GPT or Google Gemini). It analyzes IT products and determines:
+The Rules Engine is a standalone service module within the qiq-chat project that provides intelligent product classification, automatic approval capabilities, and comprehensive product enrichment using AI (OpenAI GPT or Google Gemini). It analyzes IT products and:
 
+**Classification & Approval:**
 - Product category and subcategory
 - Classification type (Standard, Custom, Special Order)
 - Auto-approval eligibility based on rules
 - Lead time estimates
 - Relevant keywords and metadata
 
+**Product Enrichment (NEW):**
+- AI-generated marketing descriptions and technical specifications
+- Product images from Google Custom Search
+- Upsell recommendations and bundle suggestions
+- FAQ entries and prerequisites
+- Automated sync to Algolia search index
+
 ## 🏗️ Architecture
 
 ```
 rules-engine/
 ├── db/
-│   └── schema.sql              # SQL Server database schema
+│   ├── schema.sql              # SQL Server database schema
+│   └── enrichment-schema.sql   # Product enrichment extension
 ├── config/
 │   └── dbConfig.json           # Database configuration
 ├── src/
@@ -26,10 +35,14 @@ rules-engine/
 │   ├── dbService.js            # Database operations
 │   ├── rulesEngine.js          # Core rules processing
 │   ├── autoApproval.js         # Auto-approval logic
+│   ├── productEnrichment.js    # Product enrichment service
 │   └── logger.js               # Logging utility
+├── scripts/
+│   └── algolia-sync.js         # Algolia sync script
 ├── .gitignore
 ├── package.json
-└── README.md
+├── README.md
+└── ENRICHMENT.md               # Enrichment module documentation
 ```
 
 ## 🚀 Quick Start
@@ -375,13 +388,49 @@ Modify `src/aiService.js` → `buildClassificationPrompt()` to customize how pro
 
 This module is part of the QuickITQuote (qiq-chat) project and inherits its license.
 
+## 🌟 Product Enrichment Module
+
+The Rules Engine now includes a comprehensive **Product Enrichment Module** that automatically enhances product data using AI and Google APIs. This module:
+
+- **Generates Marketing Content**: AI-powered descriptions, features, and value statements
+- **Creates Technical Specs**: Structured specification tables
+- **Fetches Product Images**: Google Custom Search for high-quality product photos
+- **Provides Intelligence**: Upsell recommendations, bundle suggestions, and rules
+- **Syncs to Algolia**: Automated sync of enriched data for optimized search
+
+### Quick Access
+
+- **Documentation**: See [ENRICHMENT.md](./ENRICHMENT.md) for complete guide
+- **API Endpoint**: `POST /api/rules-engine/enrich`
+- **Algolia Sync**: `node scripts/algolia-sync.js`
+- **Field Mapping**: See [docs/mapping-reference.md](../docs/mapping-reference.md)
+
+### Example Usage
+
+```javascript
+// API call to enrich a product
+const response = await fetch('/api/rules-engine/enrich', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ partNumber: 'WS-C2960-24TT-L' })
+});
+
+const result = await response.json();
+console.log(`Enriched with ${result.data.confidence}% confidence`);
+```
+
+See **[ENRICHMENT.md](./ENRICHMENT.md)** for detailed documentation.
+
+---
+
 ## 🆘 Support
 
 For issues or questions:
 1. Check the troubleshooting section above
 2. Review the database logs in `AI_Log` table
 3. Enable debug mode for detailed logging
-4. Consult the main qiq-chat project documentation
+4. Consult [ENRICHMENT.md](./ENRICHMENT.md) for enrichment features
+5. Consult the main qiq-chat project documentation
 
 ---
 

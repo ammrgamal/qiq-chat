@@ -100,6 +100,8 @@ route('post', '/api/pdf-ai', 'pdf-ai.js');
 route('post', '/api/hello-leads', 'hello-leads.js');
 route('post', '/api/v0-chat', 'v0-chat.js');
 route('get', '/api/algolia-config', 'algolia-config.js');
+// Rules Engine endpoints
+route('post', '/api/rules-engine/enrich', 'rules-engine/enrich.js');
 // BOQ parse endpoint (upload-less; accepts base64 or text rows)
 route('post', '/api/boq/parse', 'boq-parse.js');
 // Admin config endpoints
