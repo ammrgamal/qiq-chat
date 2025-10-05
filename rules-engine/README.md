@@ -1,35 +1,59 @@
-# Rules Engine Module
+# Rules Engine & AI Enrichment Module
 
-> AI-powered product classification and auto-approval system for QuickITQuote (qiq-chat)
+> AI-powered product classification, auto-approval, and comprehensive product data enrichment for QuickITQuote (qiq-chat)
 
 ## 📋 Overview
 
-The Rules Engine is a standalone service module within the qiq-chat project that provides intelligent product classification and automatic approval capabilities using AI (OpenAI GPT or Google Gemini). It analyzes IT products and determines:
+The Rules Engine is a standalone service module within the qiq-chat project that provides:
 
+### 🎯 Product Classification
 - Product category and subcategory
 - Classification type (Standard, Custom, Special Order)
 - Auto-approval eligibility based on rules
 - Lead time estimates
 - Relevant keywords and metadata
 
+### ✨ AI Enrichment (NEW)
+- Marketing-ready product descriptions (short & long)
+- Technical specifications tables
+- Key features and benefits
+- FAQ and prerequisite notes
+- Professional services recommendations
+- Product images (via Google Custom Search)
+- Upsell & bundle suggestions
+- Customer value statements
+
+### 🔄 Algolia Integration
+- Automatic sync of enriched data to Algolia
+- Optimized search index with confidence scoring
+- Periodic batch updates
+
 ## 🏗️ Architecture
 
 ```
 rules-engine/
 ├── db/
-│   └── schema.sql              # SQL Server database schema
+│   └── schema.sql              # SQL Server database schema (with enrichment fields)
 ├── config/
 │   └── dbConfig.json           # Database configuration
 ├── src/
 │   ├── index.js                # Main entry point
-│   ├── aiService.js            # AI integration (OpenAI/Gemini)
+│   ├── aiService.js            # AI integration (OpenAI/Gemini + enrichment)
+│   ├── enrichmentService.js    # Product enrichment orchestrator (NEW)
+│   ├── algoliaSync.js          # Algolia sync service (NEW)
 │   ├── dbService.js            # Database operations
 │   ├── rulesEngine.js          # Core rules processing
 │   ├── autoApproval.js         # Auto-approval logic
-│   └── logger.js               # Logging utility
+│   └── logger.js               # Logging utility (with file logging)
+├── examples/
+│   └── enrich-demo.js          # Enrichment demo script
+├── logs/
+│   └── rules-engine.log        # Enrichment and processing logs
 ├── .gitignore
 ├── package.json
-└── README.md
+├── README.md
+├── ENRICHMENT.md               # Enrichment module documentation (NEW)
+└── INTEGRATION.md              # Integration guide
 ```
 
 ## 🚀 Quick Start
@@ -87,23 +111,26 @@ GO
 Create or update `.env` file in the **root qiq-chat directory** (not in rules-engine):
 
 ```bash
-# OpenAI Configuration (optional)
+# AI Providers (at least one required)
 OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxx
 OPENAI_MODEL=gpt-4o-mini
-
-# Google Gemini Configuration (optional)
 GOOGLE_API_KEY=xxxxxxxxxxxxxxxxxxxx
 GEMINI_MODEL=gemini-1.5-flash
 
-# Google Search (optional, for enhanced product research)
+# Image Search (optional, for enrichment)
 GOOGLE_CX_ID=xxxxxxxxxxxxxxxxxxxx
+
+# Algolia (for sync)
+ALGOLIA_APP_ID=your_app_id
+ALGOLIA_ADMIN_API_KEY=your_admin_api_key
+ALGOLIA_INDEX_NAME=quickitquote_products
 ```
 
 **Note**: The Rules Engine uses `dotenv` to read from the parent directory's `.env` file automatically.
 
 ### Usage
 
-#### Run with Sample Data
+#### Run Classification with Sample Data
 
 Process 20 sample products (default):
 
@@ -117,6 +144,16 @@ Process a custom number of products:
 node src/index.js 10    # Process 10 sample products
 node src/index.js 50    # Process 50 sample products (repeats from sample list)
 ```
+
+#### Run Enrichment Demo (NEW)
+
+Test the AI enrichment on sample products:
+
+```bash
+npm run demo:enrich
+```
+
+This will enrich 3 sample products and display detailed results including descriptions, specs, features, and confidence scores.
 
 #### Use as a Module
 

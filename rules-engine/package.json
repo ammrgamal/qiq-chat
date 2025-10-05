@@ -6,6 +6,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
+    "demo:enrich": "node examples/enrich-demo.js",
     "algolia:sync": "node src/algoliaSync.js",
     "algolia:sync:full": "node src/algoliaSync.js --full",
     "algolia:settings": "node src/algoliaSync.js --apply-settings",
