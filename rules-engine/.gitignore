@@ -2,4 +2,5 @@ node_modules/
 .env
 .vscode/
 *.log
+!logs/.gitkeep
 .DS_Store
