@@ -10,3 +10,5 @@ build/
 rules-engine/node_modules/
 rules-engine/package-lock.json
 rules-engine/.env
+rules-engine/logs/
+rules-engine/config/dbConfig.json

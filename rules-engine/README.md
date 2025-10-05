@@ -17,20 +17,48 @@ The Rules Engine is a standalone service module within the qiq-chat project that
 ```
 rules-engine/
 ├── db/
-│   └── schema.sql              # SQL Server database schema
+│   ├── schema.sql              # SQL Server database schema
+│   └── add-enrichment-fields.sql  # Migration for AI enrichment fields
 ├── config/
 │   └── dbConfig.json           # Database configuration
 ├── src/
-│   ├── index.js                # Main entry point
+│   ├── index.js                # Main entry point (classification)
 │   ├── aiService.js            # AI integration (OpenAI/Gemini)
 │   ├── dbService.js            # Database operations
 │   ├── rulesEngine.js          # Core rules processing
 │   ├── autoApproval.js         # Auto-approval logic
 │   └── logger.js               # Logging utility
+├── utils/
+│   ├── sql-helper.js           # SQL operations for enrichment
+│   ├── ai-helper.js            # OpenAI enrichment helper
+│   └── google-helper.js        # Google image search helper
+├── logs/                       # Processing logs (auto-created)
+├── rules-engine.js             # 🆕 Main AI enrichment engine
+├── algolia-sync.js             # 🆕 Algolia synchronization
+├── ENRICHMENT_README.md        # 🆕 Enrichment documentation
 ├── .gitignore
 ├── package.json
 └── README.md
 ```
+
+## 🆕 New: Product Enrichment & Algolia Sync
+
+The rules engine now includes a **complete AI-powered product enrichment system**:
+
+- **AI Enrichment** (`rules-engine.js`): Automatically generates descriptions, features, FAQs, and more using OpenAI
+- **Image Search** (`utils/google-helper.js`): Finds product images with white backgrounds via Google Custom Search
+- **Algolia Sync** (`algolia-sync.js`): Syncs enriched products to Algolia for search
+
+**Quick Start:**
+```bash
+# Enrich 20 products with AI
+npm run enrich
+
+# Sync to Algolia
+npm run sync
+```
+
+**📚 See [ENRICHMENT_README.md](ENRICHMENT_README.md) for complete documentation**
 
 ## 🚀 Quick Start
 
