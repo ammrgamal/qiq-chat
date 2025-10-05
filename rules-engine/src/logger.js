@@ -1,9 +1,48 @@
 // logger.js - Simple colorful logging utility for Rules Engine
 import chalk from 'chalk';
+import { appendFileSync, existsSync, mkdirSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 class Logger {
   constructor(context = 'RulesEngine') {
     this.context = context;
+    this.logFilePath = join(__dirname, '../logs/rules-engine.log');
+    this.enableFileLogging = true;
+    
+    // Ensure logs directory exists
+    const logsDir = dirname(this.logFilePath);
+    if (!existsSync(logsDir)) {
+      mkdirSync(logsDir, { recursive: true });
+    }
+  }
+
+  /**
+   * Write to log file
+   * @param {string} level - Log level
+   * @param {string} message - Message to log
+   * @param {any} data - Optional data
+   */
+  writeToFile(level, message, data = null) {
+    if (!this.enableFileLogging) return;
+    
+    try {
+      const logEntry = {
+        timestamp: this.getTimestamp(),
+        level,
+        context: this.context,
+        message,
+        data: data ? (typeof data === 'string' ? data : JSON.stringify(data)) : undefined
+      };
+      
+      appendFileSync(this.logFilePath, JSON.stringify(logEntry) + '\n');
+    } catch (error) {
+      // Don't throw if file logging fails
+      console.error('Failed to write to log file:', error.message);
+    }
   }
 
   /**
@@ -26,6 +65,7 @@ class Logger {
       chalk.white(message),
       data ? chalk.gray(JSON.stringify(data, null, 2)) : ''
     );
+    this.writeToFile('INFO', message, data);
   }
 
   /**
@@ -41,6 +81,7 @@ class Logger {
       chalk.white(message),
       data ? chalk.gray(JSON.stringify(data, null, 2)) : ''
     );
+    this.writeToFile('SUCCESS', message, data);
   }
 
   /**
@@ -56,6 +97,7 @@ class Logger {
       chalk.yellow(message),
       data ? chalk.gray(JSON.stringify(data, null, 2)) : ''
     );
+    this.writeToFile('WARN', message, data);
   }
 
   /**
@@ -80,6 +122,7 @@ class Logger {
         console.log(chalk.gray(JSON.stringify(error, null, 2)));
       }
     }
+    this.writeToFile('ERROR', message, error);
   }
 
   /**
