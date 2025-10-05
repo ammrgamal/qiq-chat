@@ -2,6 +2,7 @@
 import dotenv from 'dotenv';
 import logger from './logger.js';
 import aiService from './aiService.js';
+import arabicNLP from './arabicNLP.js';
 
 // Load environment variables
 dotenv.config({ path: '../.env' });
@@ -65,6 +66,9 @@ class EnrichmentService {
         }
       }
 
+      // Generate Arabic synonyms for product
+      const synonymsResult = await this.generateArabicSynonyms(product, enrichmentData);
+
       // Calculate enrichment confidence
       const confidence = this.calculateEnrichmentConfidence(enrichmentData, productImage);
 
@@ -83,7 +87,10 @@ class EnrichmentService {
         CustomerValue: enrichmentData.customerValue || null,
         EnrichmentConfidence: confidence,
         AIProcessed: confidence >= 90, // Auto-approve if confidence >= 90%
-        AIProcessedDate: new Date().toISOString()
+        AIProcessedDate: new Date().toISOString(),
+        // Arabic synonyms (CustomMemo07 = English, CustomMemo08 = Arabic)
+        CustomMemo07: synonymsResult.english.length > 0 ? JSON.stringify(synonymsResult.english) : null,
+        CustomMemo08: synonymsResult.arabic.length > 0 ? JSON.stringify(synonymsResult.arabic) : null
       };
 
       const processingTime = Date.now() - startTime;
@@ -301,6 +308,37 @@ Return ONLY valid JSON with all fields. Be specific to the product category and 
     // Calculate percentage
     const confidence = Math.round((score / totalChecks) * 100);
     return Math.min(100, Math.max(0, confidence));
+  }
+
+  /**
+   * Generate Arabic synonyms for product name and key terms
+   * @param {Object} product - Product object
+   * @param {Object} enrichmentData - Enrichment data from AI
+   * @returns {Promise<Object>} Synonyms object
+   */
+  async generateArabicSynonyms(product, enrichmentData) {
+    try {
+      const productName = product.ProductName || product.name || '';
+      const manufacturer = product.Manufacturer || product.manufacturer || '';
+      const category = product.Category || product.category || '';
+      
+      // Combine key terms
+      const keyTerms = [
+        productName,
+        manufacturer,
+        category
+      ].filter(Boolean).join(' ');
+      
+      // Generate synonyms
+      const synonyms = await arabicNLP.generateSynonyms(keyTerms, 'product');
+      
+      logger.debug(`Generated synonyms for ${productName}: ${synonyms.merged.length} terms`);
+      
+      return synonyms;
+    } catch (error) {
+      logger.warn('Failed to generate Arabic synonyms', error);
+      return { arabic: [], english: [], merged: [] };
+    }
   }
 
   /**

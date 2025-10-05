@@ -1,5 +1,7 @@
 // Clean Algolia search endpoint (ESM)
 import algoliasearch from 'algoliasearch';
+import arabicNLP from '../rules-engine/src/arabicNLP.js';
+import aiLearningLog from '../rules-engine/src/aiLearningLog.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -19,6 +21,14 @@ export default async function handler(req, res) {
       return res.status(200).json({ hits: [], facets: {}, nbHits: 0, page: 0, nbPages: 0, warning: 'Algolia credentials not set' });
     }
 
+    // Preprocess Arabic query
+    let searchQuery = q;
+    let preprocessed = null;
+    if (arabicNLP.containsArabic(q)) {
+      preprocessed = await arabicNLP.preprocessQuery(q);
+      searchQuery = preprocessed.processed; // Use translated/normalized version
+    }
+
     const client = algoliasearch(appId, apiKey);
     const index = client.initIndex(indexName);
 
@@ -31,7 +41,25 @@ export default async function handler(req, res) {
     if (Array.isArray(facetFilters) && facetFilters.length) opts.facetFilters = facetFilters;
     if (Array.isArray(numericFilters) && numericFilters.length) opts.numericFilters = numericFilters;
 
-    const result = await index.search(q, opts);
+    const result = await index.search(searchQuery, opts);
+    
+    // Log failed Arabic queries for self-learning
+    if (preprocessed && (!result?.hits || result.hits.length === 0)) {
+      try {
+        await aiLearningLog.logFailedQuery({
+          query: q,
+          searchResults: result?.hits || [],
+          context: { 
+            preprocessed: preprocessed,
+            source: 'search_api',
+            facetFilters,
+            numericFilters
+          }
+        });
+      } catch (logError) {
+        console.warn('Failed to log learning data:', logError.message);
+      }
+    }
 
     const normalized = (result?.hits || []).map(h => ({
       name: h.name || h.title || h.Description || h.product_name || '',

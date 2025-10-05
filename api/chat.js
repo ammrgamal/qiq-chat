@@ -3,6 +3,8 @@ import algoliasearch from "algoliasearch";
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import arabicNLP from '../rules-engine/src/arabicNLP.js';
+import aiLearningLog from '../rules-engine/src/aiLearningLog.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,10 +20,37 @@ async function searchAlgolia({ query, hitsPerPage = 5 }) {
   const apiKey = process.env.ALGOLIA_API_KEY; // Search API Key (public/search)
   const index = process.env.ALGOLIA_INDEX || "woocommerce_products";
   if (!appId || !apiKey) return [];
+  
+  // Preprocess Arabic query
+  let searchQuery = query;
+  let preprocessed = null;
+  if (arabicNLP.containsArabic(query)) {
+    preprocessed = await arabicNLP.preprocessQuery(query);
+    searchQuery = preprocessed.processed; // Use translated/normalized version
+  }
+  
   const client = algoliasearch(appId, apiKey);
   const idx = client.initIndex(index);
-  const res = await idx.search(query, { hitsPerPage: Math.min(50, hitsPerPage) });
-  return (res?.hits || []).map((h) => ({
+  const res = await idx.search(searchQuery, { hitsPerPage: Math.min(50, hitsPerPage) });
+  const hits = res?.hits || [];
+  
+  // Log failed Arabic queries for self-learning
+  if (preprocessed && hits.length === 0) {
+    try {
+      await aiLearningLog.logFailedQuery({
+        query: query,
+        searchResults: hits,
+        context: { 
+          preprocessed: preprocessed,
+          source: 'chat_api'
+        }
+      });
+    } catch (logError) {
+      console.warn('Failed to log learning data:', logError.message);
+    }
+  }
+  
+  return hits.map((h) => ({
     name: h.name || h.title || h.Description || "",
     price: h.price ?? h.Price ?? h["List Price"] ?? "",
     image: h.image || h["Image URL"] || h.thumbnail || "",

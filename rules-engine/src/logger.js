@@ -181,6 +181,20 @@ class Logger {
     console.log(chalk.bold.cyan(`  ${text}`));
     this.separator('=');
   }
+
+  /**
+   * Log a numbered step
+   * @param {number} number - Step number
+   * @param {string} text - Step description
+   */
+  step(number, text) {
+    console.log(
+      chalk.blue(`[${this.getTimestamp()}]`),
+      chalk.cyan(`[${this.context}]`),
+      chalk.bold.yellow(`Step ${number}:`),
+      chalk.white(text)
+    );
+  }
 }
 
 // Export singleton instance

@@ -206,6 +206,15 @@ class AlgoliaSyncService {
         record.value_statement = product.CustomerValue;
       }
 
+      // Merge Arabic and English synonyms for search
+      // CustomMemo07 = English synonyms, CustomMemo08 = Arabic synonyms
+      const englishSynonyms = this.parseJSON(product.CustomMemo07) || [];
+      const arabicSynonyms = this.parseJSON(product.CustomMemo08) || [];
+      
+      if (englishSynonyms.length > 0 || arabicSynonyms.length > 0) {
+        record.search_synonyms = [...englishSynonyms, ...arabicSynonyms];
+      }
+
       // Apply size guard
       const recordSize = JSON.stringify(record).length;
       if (recordSize > this.maxRecordSize) {
@@ -395,6 +404,7 @@ class AlgoliaSyncService {
         'name',
         'brand',
         'category',
+        'search_synonyms',
         'tags',
         'ShortDescription',
         'ExtendedDescription',
