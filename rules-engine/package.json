@@ -1,0 +1,14 @@
+{
+  "name": "qiq-rules-engine",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Rules Engine with Algolia Sync Module",
+  "main": "src/index.js",
+  "scripts": {
+    "sync": "node sync/algoliaSync.js",
+    "start": "node src/index.js"
+  },
+  "keywords": ["rules-engine", "algolia", "sync"],
+  "author": "Ammr Gamal",
+  "license": "ISC"
+}
