@@ -1,35 +1,101 @@
-# Rules Engine Module
+# 🤖 Rules Engine & AI Enrichment Module
 
-> AI-powered product classification and auto-approval system for QuickITQuote (qiq-chat)
+> AI-powered product enrichment, classification, and auto-approval system for QuickITQuote (qiq-chat)
 
 ## 📋 Overview
 
-The Rules Engine is a standalone service module within the qiq-chat project that provides intelligent product classification and automatic approval capabilities using AI (OpenAI GPT or Google Gemini). It analyzes IT products and determines:
+The Rules Engine is a standalone service module within the qiq-chat project that provides intelligent product enrichment and classification capabilities using AI (OpenAI GPT or Google Gemini). It analyzes IT products and:
 
-- Product category and subcategory
+### Core Capabilities
+
+**Product Enrichment:**
+- Generates short and long product descriptions
+- Creates feature lists and specification tables
+- Develops FAQs and prerequisites
+- Suggests professional services scope
+- Provides upsell and bundle recommendations
+- Creates marketing value propositions
+
+**Classification & Rules:**
+- Product category and subcategory classification
 - Classification type (Standard, Custom, Special Order)
 - Auto-approval eligibility based on rules
 - Lead time estimates
-- Relevant keywords and metadata
+- Product and category-level rules
+
+**Image Management:**
+- Searches for product images using Google Custom Search
+- Analyzes background color (prefers ≥78% white background)
+- Fallback to manufacturer default images
+
+**Search Integration:**
+- Syncs enriched data to Algolia for optimized search
+- Maintains read-only mirror of QuoteWerks data
+- Supports faceted search and filtering
 
 ## 🏗️ Architecture
 
 ```
 rules-engine/
-├── db/
-│   └── schema.sql              # SQL Server database schema
+├── README.md                    # This file
+├── .env.example                 # Environment variables template
+├── mapping-reference.md         # Field mapping documentation
+├── copilot-instructions.md      # AI generation instructions
+├── rules-engine.js              # Main enrichment entry point
+├── algolia-sync.js              # Algolia synchronization script
+├── schema.sql                   # Product enrichment schema
+│
 ├── config/
-│   └── dbConfig.json           # Database configuration
-├── src/
-│   ├── index.js                # Main entry point
-│   ├── aiService.js            # AI integration (OpenAI/Gemini)
-│   ├── dbService.js            # Database operations
-│   ├── rulesEngine.js          # Core rules processing
-│   ├── autoApproval.js         # Auto-approval logic
-│   └── logger.js               # Logging utility
-├── .gitignore
-├── package.json
-└── README.md
+│   └── dbConfig.json            # Database configuration
+│
+├── db/
+│   └── schema.sql               # Original classification schema
+│
+├── src/                         # Classification module (original)
+│   ├── index.js                 # Classification entry point
+│   ├── aiService.js             # AI integration (OpenAI/Gemini)
+│   ├── dbService.js             # Database operations
+│   ├── rulesEngine.js           # Core rules processing
+│   ├── autoApproval.js          # Auto-approval logic
+│   └── logger.js                # Logging utility
+│
+├── utils/                       # Enrichment utilities (new)
+│   ├── ai-helper.js             # OpenAI enrichment helpers
+│   ├── google-helper.js         # Google image search helpers
+│   └── sql-helper.js            # SQL connection and updates
+│
+├── logs/
+│   ├── rules-engine.log         # Enrichment logs
+│   └── sync.log                 # Algolia sync logs
+│
+└── package.json
+```
+
+## 🔄 Enrichment Workflow
+
+### Product Enrichment Process
+
+1. **Detection**: Identifies unprocessed products (AIProcessed = 0)
+2. **AI Enrichment**: Generates comprehensive product data using OpenAI
+3. **Image Search**: Finds suitable product images via Google Custom Search
+4. **Database Update**: Stores enriched data in QuoteWerks Products table
+5. **Logging**: Records processing details and confidence scores
+6. **Algolia Sync**: Mirrors enriched data to Algolia search index
+
+### Integration Flow
+
+```mermaid
+graph LR
+A[Chat Query] --> B{Product Exists?}
+B -->|Yes| C{AIProcessed?}
+C -->|Yes| D[Return Enriched Data]
+C -->|No| E[Queue for Enrichment]
+E --> F[AI Processing]
+F --> G[Update SQL]
+G --> H[Sync to Algolia]
+H --> D
+B -->|No| I[Create Product]
+I --> E
 ```
 
 ## 🚀 Quick Start
@@ -103,19 +169,41 @@ GOOGLE_CX_ID=xxxxxxxxxxxxxxxxxxxx
 
 ### Usage
 
-#### Run with Sample Data
+#### Product Enrichment (New)
 
-Process 20 sample products (default):
+Process unprocessed products for AI enrichment:
 
 ```bash
-npm start
+# Process 20 products (default)
+node rules-engine.js
+
+# Process custom number
+node rules-engine.js 50    # Process 50 products
 ```
 
-Process a custom number of products:
+#### Algolia Sync
+
+Sync enriched products to Algolia:
 
 ```bash
+# Sync all processed products
+node algolia-sync.js
+
+# Configure Algolia index settings first time
+node algolia-sync.js --configure
+```
+
+#### Classification Only (Original)
+
+Run classification without enrichment:
+
+```bash
+# Process with sample data
+npm start
+
+# Process custom number
 node src/index.js 10    # Process 10 sample products
-node src/index.js 50    # Process 50 sample products (repeats from sample list)
+node src/index.js 50    # Process 50 sample products
 ```
 
 #### Use as a Module
