@@ -8,7 +8,9 @@
     "start": "node src/index.js",
     "enrich": "node src/index.js --enrich",
     "sync": "node src/index.js --sync",
-    "batch": "node src/index.js --batch"
+    "batch": "node src/index.js --batch",
+    "verify": "node verify-setup.js",
+    "stats": "node src/index.js --stats"
   },
   "keywords": [
     "enrichment",
