@@ -3,6 +3,7 @@ import logger from './logger.js';
 import dbService from './dbService.js';
 import aiService from './aiService.js';
 import autoApproval from './autoApproval.js';
+import arabicNLP from './arabicNLP.js';
 import cliProgress from 'cli-progress';
 
 class RulesEngine {
@@ -46,6 +47,15 @@ class RulesEngine {
   async processProduct(product) {
     try {
       const startTime = Date.now();
+
+      // Arabic NLP preprocessing: normalize and translate if needed
+      const productName = product.name || product.ProductName || '';
+      if (arabicNLP.containsArabic(productName)) {
+        logger.debug(`Detected Arabic in product name: ${productName}`);
+        const preprocessed = await arabicNLP.preprocessQuery(productName);
+        product.preprocessedName = preprocessed.processed;
+        product.originalArabicName = preprocessed.original;
+      }
 
       // Classify product using AI
       const classification = await aiService.classifyProduct(product);

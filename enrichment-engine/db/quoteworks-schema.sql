@@ -18,8 +18,8 @@
 -- CustomMemo04: FAQs - Frequently asked questions
 -- CustomMemo05: Why Buy / Value - Marketing value proposition
 -- CustomMemo06: Prerequisites - Required items or conditions
--- CustomMemo07: Related / Bundles - Recommended related products
--- CustomMemo08: Product Rule Engine - Product-specific logic rules
+-- CustomMemo07: English Synonyms - English search terms (JSON array)
+-- CustomMemo08: Arabic Synonyms - Arabic search terms (JSON array)
 -- CustomMemo09: Category Rule Engine - Category-level rules
 -- CustomMemo10: AI Learning Feedback - Self-learning feedback data
 
@@ -134,6 +134,40 @@ CREATE INDEX IX_Enrichment_Batch_StartTime ON dbo.Enrichment_Batch(StartTime DES
 CREATE INDEX IX_Enrichment_Batch_Status ON dbo.Enrichment_Batch(Status);
 GO
 
+-- ========================================
+-- AI Learning Log Table (Self-Learning)
+-- ========================================
+IF OBJECT_ID('dbo.AI_Learning_Log', 'U') IS NOT NULL DROP TABLE dbo.AI_Learning_Log;
+GO
+
+CREATE TABLE dbo.AI_Learning_Log (
+    LogID INT IDENTITY(1,1) PRIMARY KEY,
+    QueryText NVARCHAR(500) NOT NULL,
+    NormalizedQuery NVARCHAR(500) NULL,
+    IsArabic BIT NOT NULL DEFAULT 0,
+    UserId NVARCHAR(100) NULL,
+    SessionId NVARCHAR(100) NULL,
+    Context NVARCHAR(MAX) NULL,              -- JSON context data
+    SearchResultsCount INT NULL,
+    AISuggestion NVARCHAR(MAX) NULL,         -- JSON AI suggestion
+    Confidence DECIMAL(5,2) NULL,            -- 0-100
+    Status NVARCHAR(50) NULL,                -- 'PendingReview', 'AutoApproved', 'Approved', 'Rejected'
+    ApprovedDate DATETIME NULL,
+    ApprovedBy NVARCHAR(100) NULL,
+    RejectedDate DATETIME NULL,
+    RejectedBy NVARCHAR(100) NULL,
+    RejectionReason NVARCHAR(MAX) NULL,
+    LogDate DATETIME NOT NULL DEFAULT GETDATE()
+);
+GO
+
+CREATE INDEX IX_AI_Learning_Log_QueryText ON dbo.AI_Learning_Log(QueryText);
+CREATE INDEX IX_AI_Learning_Log_Status ON dbo.AI_Learning_Log(Status);
+CREATE INDEX IX_AI_Learning_Log_IsArabic ON dbo.AI_Learning_Log(IsArabic);
+CREATE INDEX IX_AI_Learning_Log_LogDate ON dbo.AI_Learning_Log(LogDate DESC);
+CREATE INDEX IX_AI_Learning_Log_Confidence ON dbo.AI_Learning_Log(Confidence DESC);
+GO
+
 PRINT 'QuoteWerks enrichment schema created successfully!';
-PRINT 'Tables created: Enrichment_Log, Enrichment_Batch';
+PRINT 'Tables created: Enrichment_Log, Enrichment_Batch, AI_Learning_Log';
 GO
