@@ -5,3 +5,6 @@ package-lock.json
 dist/
 build/
 *.log
+
+# Rules Engine - Sensitive Configuration Files
+rules-engine/config/dbConfig.json
