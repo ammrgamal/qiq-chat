@@ -16,20 +16,36 @@ The Rules Engine is a standalone service module within the qiq-chat project that
 
 ```
 rules-engine/
-├── db/
-│   └── schema.sql              # SQL Server database schema
+├── README.md                    # This file - main documentation
+├── .env.example                 # Environment template (OpenAI, Google, Algolia)
+├── mapping-reference.md         # Field mappings: QuoteWerks ↔ Algolia
+├── copilot-instructions.md      # Copilot prompt for code generation
+├── rules-engine.js              # Main code: SQL ↔ OpenAI ↔ Google ↔ Logs
+├── algolia-sync.js              # Sync processed data to Algolia
+├── schema.sql                   # Database schema (Products extensions)
+│
+├── logs/
+│   ├── rules-engine.log         # Processing logs
+│   └── sync.log                 # Algolia sync logs
+│
+├── utils/
+│   ├── ai-helper.js             # OpenAI content generation
+│   ├── google-helper.js         # Google Custom Search for images
+│   └── sql-helper.js            # SQL Server operations
+│
 ├── config/
-│   └── dbConfig.json           # Database configuration
-├── src/
-│   ├── index.js                # Main entry point
-│   ├── aiService.js            # AI integration (OpenAI/Gemini)
-│   ├── dbService.js            # Database operations
-│   ├── rulesEngine.js          # Core rules processing
-│   ├── autoApproval.js         # Auto-approval logic
-│   └── logger.js               # Logging utility
-├── .gitignore
-├── package.json
-└── README.md
+│   └── dbConfig.json            # Database configuration
+│
+├── db/
+│   └── schema.sql               # Complete SQL schema (original)
+│
+└── src/                         # Legacy source files (preserved)
+    ├── index.js                 # Original entry point
+    ├── aiService.js             # Original AI service
+    ├── dbService.js             # Original database service
+    ├── rulesEngine.js           # Original rules engine
+    ├── autoApproval.js          # Auto-approval logic
+    └── logger.js                # Logging utility
 ```
 
 ## 🚀 Quick Start
@@ -44,12 +60,62 @@ rules-engine/
 
 ### Installation
 
+There are two ways to use the Rules Engine:
+
+#### Option 1: New Simplified Structure (Recommended for new users)
+Uses the new `rules-engine.js` main file with `utils/` helpers.
+
 ```bash
 # Navigate to the rules-engine directory
 cd qiq-chat/rules-engine
 
 # Install dependencies
 npm install
+```
+
+### Configuration
+
+#### 1. Database Setup
+
+Edit `config/dbConfig.json` with your SQL Server credentials:
+
+```json
+{
+  "user": "your_username",
+  "password": "your_password",
+  "server": "localhost",
+  "database": "QuoteWerksDB",
+  "options": {
+    "encrypt": false,
+    "trustServerCertificate": true
+  }
+}
+```
+
+Then run the schema script to create required tables:
+
+Run the new Copilot-friendly workflow:
+
+```bash
+# Step 1: Process products with AI (test mode - 20 products)
+node rules-engine.js
+
+# Step 2: Sync processed products to Algolia
+node algolia-sync.js
+```
+
+To process all products, edit `rules-engine.js` and change:
+```javascript
+const TEST_LIMIT = 20; // Change to null
+```
+
+#### Option 2: Legacy Structure
+Uses the original `src/` modular structure.
+
+```bash
+cd qiq-chat/rules-engine
+npm install
+node src/index.js
 ```
 
 ### Configuration
@@ -97,6 +163,11 @@ GEMINI_MODEL=gemini-1.5-flash
 
 # Google Search (optional, for enhanced product research)
 GOOGLE_CX_ID=xxxxxxxxxxxxxxxxxxxx
+
+# Algolia Configuration (for syncing processed data)
+ALGOLIA_APP_ID=xxxxxxxxxxxxxxxxxxxx
+ALGOLIA_API_KEY=xxxxxxxxxxxxxxxxxxxx
+ALGOLIA_INDEX_NAME=woocommerce_products
 ```
 
 **Note**: The Rules Engine uses `dotenv` to read from the parent directory's `.env` file automatically.
