@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "currency": "EGP",
+  "tiers": [
+    {
+      "id": "starter",
+      "name": "Starter",
+      "monthly": 500,
+      "features": ["Basic listing", "Standard search visibility", "Email support"],
+      "upgradeTriggers": { "quotesPerMonth": 150, "apiCallsPerDay": 500 }
+    },
+    {
+      "id": "pro",
+      "name": "Pro",
+      "monthly": 1200,
+      "features": ["Priority listing", "Enhanced analytics", "WhatsApp bot access", "AI enrichment premium"],
+      "upgradeTriggers": { "quotesPerMonth": 600, "apiCallsPerDay": 2000 }
+    },
+    {
+      "id": "enterprise",
+      "name": "Enterprise",
+      "monthly": 2000,
+      "features": ["Category dominance slot", "Dedicated success manager", "Custom SLA", "Data export"],
+      "upgradeTriggers": { "quotesPerMonth": 2000, "apiCallsPerDay": 8000 }
+    }
+  ],
+  "usageMetrics": {
+    "quotesPerMonth": {
+      "description": "Confirmed quotes originating from supplier catalog entries",
+      "sampleWindowDays": 30
+    },
+    "apiCallsPerDay": {
+      "description": "Count of authenticated supplier API calls (search, sync, quote create)",
+      "sampleWindowDays": 1
+    }
+  },
+  "rollout": {
+    "phase": 1,
+    "notes": "Initial static pricing; will adapt post-market feedback."
+  }
+}

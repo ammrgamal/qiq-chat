@@ -9,8 +9,21 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { fileURLToPath, pathToFileURL } from 'url';
+import { seedAdmins } from './api/admin/seed-admins.js';
 
 try { dotenv.config(); } catch {}
+// Dynamic guarded local secrets load (runtime only, not bundled)
+if (!process.env.DISABLE_LOCAL_SECRETS) {
+  (async () => {
+    try {
+      const mod = await import(path.join(process.cwd(), 'secrets.local.js')).catch(()=>null);
+      if (mod && typeof mod.loadLocalSecrets === 'function') {
+        const applied = mod.loadLocalSecrets();
+        if (applied) console.log(`[local.secrets] applied ${applied} vars`);
+      }
+    } catch (e) { /* silent */ }
+  })();
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -164,6 +177,19 @@ app.get('/health', (req, res) => {
     }
   });
 });
+
+// Seed admin users if AUTO_ADMIN_EMAILS set
+(async () => { try { await seedAdmins(console); } catch(e){ console.warn('Admin seed failed', e); } })();
+
+// Optional dev middleware: if DEV_AUTO_ADMIN=1 and header x-dev-admin, treat as admin-session
+if (/^(1|true|yes)$/i.test(String(process.env.DEV_AUTO_ADMIN || ''))){
+  app.use((req,res,next)=>{
+    if (req.headers['x-dev-admin']){
+      req.headers.authorization = 'Bearer admin-session';
+    }
+    next();
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`qiq-chat dev server running at http://localhost:${PORT}`);

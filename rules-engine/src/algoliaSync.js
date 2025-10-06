@@ -1,8 +1,14 @@
 // algoliaSync.js - Sync enriched product data to Algolia
+// NOTE: To force awaiting the enrichment pipeline (so features/specs/value_statement/use_cases
+// are guaranteed present before indexing), set environment variable ENRICHMENT_AWAIT=1
+// before running a full sync. Otherwise enrichment may be opportunistic / partial.
 import algoliasearch from 'algoliasearch';
 import dotenv from 'dotenv';
 import logger from './logger.js';
 import dbService from './dbService.js';
+import { promises as fs } from 'fs';
+import path from 'path';
+import enrichmentPipeline from './enrichmentPipeline.js';
 
 // Load environment variables
 dotenv.config({ path: '../.env' });
@@ -46,14 +52,25 @@ class AlgoliaSyncService {
     const {
       fullSync = false,
       batchSize = 1000,
-      lastSyncTime = null
+      lastSyncTime = null,
+      purgeMissing = false
     } = options;
 
     try {
       await this.initialize();
 
       // Get products to sync
-      const products = await this.getProductsForSync(fullSync, lastSyncTime);
+      let effectiveLastSync = lastSyncTime;
+      const stateFile = path.join(process.cwd(), 'rules-engine', '.algolia-sync-state.json');
+      if (!fullSync && !effectiveLastSync){
+        try {
+          const raw = await fs.readFile(stateFile,'utf8');
+          const st = JSON.parse(raw);
+          if (st && st.lastSyncTime) effectiveLastSync = st.lastSyncTime;
+        } catch {}
+      }
+
+      const products = await this.getProductsForSync(fullSync, effectiveLastSync);
       
       if (products.length === 0) {
         logger.info('No products to sync');
@@ -67,11 +84,39 @@ class AlgoliaSyncService {
 
       logger.info(`Syncing ${products.length} products to Algolia...`);
 
-      // Transform products to Algolia format
-      const algoliaRecords = products.map(p => this.transformToAlgolia(p)).filter(r => r !== null);
+    // Transform products to Algolia format (async for enrichment ordering)
+    const transformed = await Promise.all(products.map(p => this.transformToAlgolia(p)));
+    const algoliaRecords = transformed.filter(r => r !== null);
 
       // Batch upload to Algolia
       const results = await this.batchUpload(algoliaRecords, batchSize);
+
+      // Purge missing objects (mirror) if requested or for full sync + flag
+      if ((purgeMissing || fullSync) && algoliaRecords.length > 0){
+        try {
+          const dbIds = new Set(algoliaRecords.map(r=>r.objectID));
+          const indexIds = await this.collectAllObjectIDs();
+            const toDelete = indexIds.filter(id => !dbIds.has(id));
+          if (toDelete.length){
+            logger.warn(`Purging ${toDelete.length} objects no longer in DB (mirror mode)`);
+            // Chunk deletes to avoid large payloads
+            const chunkSize = 800;
+            for (let i=0;i<toDelete.length;i+=chunkSize){
+              const chunk = toDelete.slice(i,i+chunkSize);
+              await this.index.deleteObjects(chunk);
+            }
+          } else {
+            logger.info('Mirror purge: no stale objects found');
+          }
+        } catch(e){ logger.error('Mirror purge failed', e); }
+      }
+
+      // Persist last sync time
+      try {
+        const nowIso = new Date().toISOString();
+        await fs.writeFile(stateFile, JSON.stringify({ lastSyncTime: nowIso }, null, 2));
+        logger.info(`Saved sync state (${nowIso})`);
+      } catch(e){ logger.warn('Failed to write sync state file', e); }
 
       logger.success(`Sync complete: ${results.synced} synced, ${results.failed} failed`);
 
@@ -81,6 +126,16 @@ class AlgoliaSyncService {
       logger.error('Algolia sync failed', error);
       throw error;
     }
+  }
+
+  async collectAllObjectIDs(){
+    const ids = [];
+    try {
+      await this.index.browseObjects({ batch: batch => {
+        for (const obj of batch){ if (obj && obj.objectID) ids.push(obj.objectID); }
+      }});
+    } catch(e){ logger.warn('Failed to browse objects for purge', e); }
+    return ids;
   }
 
   /**
@@ -134,9 +189,9 @@ class AlgoliaSyncService {
    * @param {Object} product - Product from SQL
    * @returns {Object|null} Algolia record or null if invalid
    */
-  transformToAlgolia(product) {
+  async transformToAlgolia(product) {
     try {
-      // Build base record
+      // Build base record (raw fields first)
       const record = {
         // Core identifiers
         objectID: this.generateObjectID(product),
@@ -162,9 +217,9 @@ class AlgoliaSyncService {
         spec_sheet: '',
         link: '',
         
-        // Descriptions
-        ShortDescription: this.truncateString(product.ShortDescription, 500) || '',
-        ExtendedDescription: this.truncateString(product.LongDescription, 4000) || '',
+  // Descriptions (truncate after enrichment prep if needed)
+  ShortDescription: product.ShortDescription || '',
+  ExtendedDescription: product.LongDescription || '',
         
         // Metadata
         tags: this.parseKeywords(product.Keywords),
@@ -178,42 +233,181 @@ class AlgoliaSyncService {
         classification_type: product.Classification || 'Standard',
         classification_confidence: product.Confidence || 0,
         enrichment_confidence: product.EnrichmentConfidence || 0,
-        lead_time_days: product.LeadTimeDays || 7
+        lead_time_days: product.LeadTimeDays || 7,
+        ai_version: product.AIVersion || null,
+        lifecycle_stage: 'active',
+        enrichment_version: null
       };
 
-      // Add enrichment fields if available
+      // ------------------------------------------------------------------
+      // Step 1: Attach structured enrichment fields from DB JSON columns
+      // (do this BEFORE any derived calculations so they are included)
+      // ------------------------------------------------------------------
       if (product.TechnicalSpecs) {
-        record.specs = this.parseJSON(product.TechnicalSpecs);
+        record.specs = this.parseJSON(product.TechnicalSpecs) || undefined;
       }
-      
       if (product.KeyFeatures) {
         record.features = this.limitArray(this.parseJSON(product.KeyFeatures), this.maxArrayItems);
       }
-      
       if (product.FAQ) {
         record.faq = this.limitArray(this.parseJSON(product.FAQ), 10);
       }
-      
       if (product.UpsellSuggestions) {
         record.upsells = this.limitArray(this.parseJSON(product.UpsellSuggestions), this.maxArrayItems);
       }
-      
       if (product.BundleSuggestions) {
         record.bundles = this.limitArray(this.parseJSON(product.BundleSuggestions), this.maxArrayItems);
       }
-      
       if (product.CustomerValue) {
         record.value_statement = product.CustomerValue;
       }
 
-      // Merge Arabic and English synonyms for search
-      // CustomMemo07 = English synonyms, CustomMemo08 = Arabic synonyms
+      // Merge Arabic and English synonyms for search early
       const englishSynonyms = this.parseJSON(product.CustomMemo07) || [];
       const arabicSynonyms = this.parseJSON(product.CustomMemo08) || [];
-      
       if (englishSynonyms.length > 0 || arabicSynonyms.length > 0) {
         record.search_synonyms = [...englishSynonyms, ...arabicSynonyms];
       }
+
+      // ------------------------------------------------------------------
+      // Step 2: Optionally run enrichment pipeline (await if env flag set)
+      // ------------------------------------------------------------------
+      let enrichmentResult = null;
+      const shouldAwait = process.env.ENRICHMENT_AWAIT === '1';
+      try {
+        if (enrichmentPipeline && shouldAwait) {
+          enrichmentResult = await enrichmentPipeline.enrich({
+            name: record.name,
+            ProductName: record.name,
+            manufacturer: record.brand,
+            description: record.ExtendedDescription || record.ShortDescription || ''
+          });
+        }
+      } catch (e) { logger.warn('Enrichment pipeline failed (non-fatal)', e); }
+
+      if (enrichmentResult?.enriched) {
+        record.enrichment_version = enrichmentPipeline.version || 1;
+        // Merge features/specs
+        if (enrichmentResult.features && Array.isArray(enrichmentResult.features)) {
+          const existing = new Set(record.features || []);
+            for (const f of enrichmentResult.features) { if (f && !existing.has(f)) existing.add(f); }
+          record.features = Array.from(existing).slice(0, this.maxArrayItems);
+        }
+        if (enrichmentResult.specs && typeof enrichmentResult.specs === 'object') {
+          record.specs = { ...(record.specs||{}), ...enrichmentResult.specs };
+        }
+        if (enrichmentResult.value_statement && !record.value_statement) {
+          record.value_statement = enrichmentResult.value_statement;
+        }
+        if (enrichmentResult.short_benefit_bullets) {
+          record.benefit_bullets = enrichmentResult.short_benefit_bullets;
+        }
+        if (enrichmentResult.use_cases) {
+          record.use_cases = enrichmentResult.use_cases;
+        }
+        if (enrichmentResult.compliance_tags) {
+          record.compliance_tags = enrichmentResult.compliance_tags;
+        }
+        if (typeof enrichmentResult.risk_score === 'number') {
+          record.risk_score = enrichmentResult.risk_score;
+        }
+      }
+
+      // ------------------------------------------------------------------
+      // Step 3: Apply truncation AFTER enrichment merge
+      // ------------------------------------------------------------------
+      if (record.ExtendedDescription && record.ExtendedDescription.length > 1500) {
+        record.ExtendedDescription = record.ExtendedDescription.slice(0,1497) + '...';
+      }
+      if (record.ShortDescription && record.ShortDescription.length > 300) {
+        record.ShortDescription = record.ShortDescription.slice(0,297) + '...';
+      }
+
+      // ------------------------------------------------------------------
+      // Step 4: Derived fields (price range, search blob, marketing, specs)
+      // ------------------------------------------------------------------
+      // Derive price range bucket for faceting
+      const priceVal = record.price || 0;
+      let priceRange = '0-99';
+      if (priceVal >= 100 && priceVal < 500) priceRange = '100-499';
+      else if (priceVal >= 500 && priceVal < 1000) priceRange = '500-999';
+      else if (priceVal >= 1000 && priceVal < 2500) priceRange = '1000-2499';
+      else if (priceVal >= 2500 && priceVal < 5000) priceRange = '2500-4999';
+      else if (priceVal >= 5000 && priceVal < 10000) priceRange = '5000-9999';
+      else if (priceVal >= 10000 && priceVal < 25000) priceRange = '10000-24999';
+      else if (priceVal >= 25000 && priceVal < 50000) priceRange = '25000-49999';
+      else if (priceVal >= 50000) priceRange = '50000+';
+      record.price_range = priceRange;
+
+      // Composite searchable field for boosting (include value_statement & use_cases)
+      record.search_blob = [
+        record.name,
+        record.brand,
+        record.category,
+        record.subcategory,
+        (record.tags||[]).join(' '),
+        (record.features||[]).join(' '),
+        record.value_statement,
+        (record.use_cases||[]).join(' ')
+      ].filter(Boolean).join(' | ');
+
+      // Normalized specs (simple flatten / rename)
+      if (record.specs) {
+        const ns = {};
+        try {
+          for (const [k,v] of Object.entries(record.specs)){
+            const key = k.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+            if (!key) continue;
+            ns[key] = v;
+          }
+          record.normalized_specs = ns;
+        } catch {}
+      }
+
+      // Marketing blurb combining short + value statement (post enrichment)
+      if (!record.marketing_blurb){
+        const vs = record.value_statement || '';
+        const sd = record.ShortDescription || '';
+        const combined = (vs && sd) ? `${sd} — ${vs}` : (sd || vs);
+        if (combined) record.marketing_blurb = combined.slice(0, 400);
+      }
+
+      // Data quality score heuristic (recalculated after enrichment)
+      const qParts = [];
+      const addQ = (cond, weight) => { if (cond) qParts.push(weight); };
+      addQ(!!record.ShortDescription, 10);
+      addQ(!!record.ExtendedDescription, 10);
+      addQ(Array.isArray(record.features) && record.features.length>0, 10);
+      addQ(record.specs && Object.keys(record.specs).length>0, 15);
+      addQ(Array.isArray(record.faq) && record.faq.length>=2, 5);
+      addQ(Array.isArray(record.use_cases) && record.use_cases.length>0, 10);
+      addQ(!!record.value_statement, 10);
+      addQ(Array.isArray(record.search_synonyms) && record.search_synonyms.length>0, 10);
+      addQ(Array.isArray(record.compliance_tags) && record.compliance_tags.length>0, 10);
+      addQ(typeof record.warranty_months === 'number', 10);
+      const rawScore = qParts.reduce((a,b)=>a+b,0);
+      record.data_quality_score = rawScore;
+      record.data_quality_bucket = rawScore >=70 ? 'high' : rawScore >=40 ? 'medium' : 'low';
+
+      // Risk bucket derived from risk_score or heuristic fallback
+      if (typeof record.risk_score === 'number') {
+        record.risk_bucket = record.risk_score >=60 ? 'elevated' : record.risk_score >=40 ? 'moderate' : 'low';
+      } else {
+        // Lightweight heuristic if enrichment not awaited
+        const lname = record.name.toLowerCase();
+        const heuristicRisk = /server|storage/.test(lname) ? 65 : /switch|router/.test(lname) ? 40 : 20;
+        record.risk_score = heuristicRisk;
+        record.risk_bucket = heuristicRisk >=60 ? 'elevated' : heuristicRisk >=40 ? 'moderate' : 'low';
+      }
+
+      // Boost terms (subset of tags + key features) after enrichment
+      const boost = [];
+      (record.tags||[]).slice(0,5).forEach(t=>boost.push(t));
+      (record.features||[]).slice(0,5).forEach(f=>{
+        const tok = (f||'').split(/\s+/)[0];
+        if (tok && !boost.includes(tok)) boost.push(tok);
+      });
+      if (boost.length) record.boost_terms = boost;
 
       // Apply size guard
       const recordSize = JSON.stringify(record).length;
@@ -404,11 +598,16 @@ class AlgoliaSyncService {
         'name',
         'brand',
         'category',
+        'subcategory',
         'search_synonyms',
         'tags',
         'ShortDescription',
         'ExtendedDescription',
-        'features'
+        'features',
+        'marketing_blurb',
+        'use_cases',
+        'boost_terms',
+        'search_blob'
       ],
       attributesForFaceting: [
         'brand',
@@ -419,13 +618,20 @@ class AlgoliaSyncService {
         'auto_approve',
         'classification_type',
         'Discontinued',
-        'tags'
+        'tags',
+        'price_range',
+        'ai_version',
+        'data_quality_bucket',
+        'risk_bucket',
+        'lifecycle_stage',
+        'enrichment_version'
       ],
       customRanking: [
         'desc(availability_weight)',
         'desc(enrichment_confidence)',
         'asc(price)',
         'desc(classification_confidence)',
+        'desc(lead_time_days)',
         'asc(name)'
       ],
       attributesToSnippet: [

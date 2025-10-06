@@ -10,12 +10,21 @@ class AIService {
     this.openaiKey = process.env.OPENAI_API_KEY;
     this.googleKey = process.env.GOOGLE_API_KEY || process.env.Gemini_API;
     this.googleCxId = process.env.GOOGLE_CX_ID;
+    this.offlineMode = process.env.OFFLINE_MODE === '1';
+    // circuit breaker state
+    this.failures = { openai: 0, gemini: 0 };
+    this.disabledUntil = { openai: 0, gemini: 0 };
+    this.failureThreshold = 3; // consecutive auth/type failures before temporary disable
+    this.cooldownMs = 1000 * 60 * 5; // 5 minutes
     
     // Check which AI providers are available
-    this.hasOpenAI = !!this.openaiKey;
-    this.hasGemini = !!this.googleKey;
+  this.hasOpenAI = !!this.openaiKey && this._validOpenAIKey(this.openaiKey);
+  this.hasGemini = !!this.googleKey && this._validGeminiKey(this.googleKey);
     
-    if (!this.hasOpenAI && !this.hasGemini) {
+    if (this.offlineMode) {
+      logger.warn('AIService started in OFFLINE_MODE: forcing fallback classification/enrichment.');
+    }
+    if (!this.hasOpenAI && !this.hasGemini && !this.offlineMode) {
       logger.warn('No AI API keys configured. AI features will use fallback mode.');
     } else {
       const providers = [];
@@ -23,6 +32,70 @@ class AIService {
       if (this.hasGemini) providers.push('Gemini');
       logger.info(`AI providers available: ${providers.join(', ')}`);
     }
+    // Simple in-memory & file-backed cache
+    this.cache = new Map();
+    this.cacheFile = new URL('../.ai-cache.json', import.meta.url).pathname;
+    this.cacheLoaded = false;
+    this.aiVersion = process.env.AI_VERSION || 'v1.0.0';
+    this.maxCacheEntries = 2000;
+    this.cacheTTLms = 1000 * 60 * 60 * 24 * 7; // 7 days
+    this._loadCache();
+    process.once('exit', ()=>{ try{ this._persistCache(); }catch{} });
+  }
+
+  // --- Cache Helpers ---
+  _signature(product){
+    try {
+      const base = `${product.partNumber||product.PartNumber||''}|${product.name||product.ProductName||''}|${product.manufacturer||product.Manufacturer||''}|${product.price||0}`;
+      // Simple hash
+      let hash = 0; for (let i=0;i<base.length;i++){ hash = ((hash<<5)-hash) + base.charCodeAt(i); hash |=0; }
+      return hash.toString(36);
+    } catch { return 'na'; }
+  }
+  _loadCache(){
+    if (this.cacheLoaded) return; // idempotent
+    try {
+      if (this.cacheFile && logger) {
+        const fs = require('fs');
+        if (fs.existsSync(this.cacheFile)) {
+          const raw = fs.readFileSync(this.cacheFile,'utf8');
+          const data = JSON.parse(raw);
+            const now = Date.now();
+            for (const [k,v] of Object.entries(data)){
+              if (v && v.timestamp && (now - v.timestamp) < this.cacheTTLms){
+                this.cache.set(k, v.payload);
+              }
+            }
+            logger.info(`AI cache loaded: ${this.cache.size} entries`);
+        }
+      }
+    } catch (e){ logger.warn('Failed to load AI cache', e); }
+    this.cacheLoaded = true;
+  }
+  _persistCache(){
+    try {
+      if (!this.cacheFile) return;
+      const fs = require('fs');
+      const obj = {};
+      const now = Date.now();
+      let kept = 0;
+      for (const [k,v] of this.cache.entries()){
+        obj[k] = { timestamp: now, payload: v };
+        kept++;
+        if (kept > this.maxCacheEntries) break; // simple cap
+      }
+      fs.writeFileSync(this.cacheFile, JSON.stringify(obj,null,2));
+    } catch (e){ logger.warn('Failed to persist AI cache', e); }
+  }
+  _getCache(key){ return this.cache.get(key); }
+  _setCache(key,val){
+    try {
+      if (this.cache.size >= this.maxCacheEntries){
+        // crude eviction: delete first key
+        const first = this.cache.keys().next().value; if (first) this.cache.delete(first);
+      }
+      this.cache.set(key, val);
+    } catch {}
   }
 
   /**
@@ -32,44 +105,48 @@ class AIService {
    */
   async classifyProduct(product) {
     const startTime = Date.now();
-    
+    const prompt = this.buildClassificationPrompt(product);
+    const sig = this._signature(product);
+    const cacheKey = `CLS|${this.aiVersion}|${sig}`;
     try {
-      const prompt = this.buildClassificationPrompt(product);
-      
-      // Try Gemini first if available (cheaper and faster for classification)
-      if (this.hasGemini) {
+      const cached = this._getCache(cacheKey);
+      if (cached){
+        logger.debug(`Cache hit for product ${product.partNumber || product.name}`);
+        return { ...cached, provider: cached.provider || cached.providerUsed || 'cache', cached: true };
+      }
+      // Early offline mode (explicit) or no keys
+      if (this.offlineMode || (!this.hasOpenAI && !this.hasGemini)) {
+        const fb = this.fallbackClassification(product);
+        this._setCache(cacheKey, fb);
+        return fb;
+      }
+      // Prefer Gemini
+      if (this.hasGemini && !this._providerDisabled('gemini')) {
         try {
           const result = await this.callGemini(prompt);
           const processingTime = Date.now() - startTime;
-          logger.debug(`Gemini classification completed in ${processingTime}ms`);
-          return {
-            ...result,
-            provider: 'gemini',
-            processingTimeMs: processingTime
-          };
-        } catch (error) {
-          logger.warn('Gemini failed, falling back to OpenAI', error);
-        }
+          const final = { ...result, provider: 'gemini', processingTimeMs: processingTime };
+          this._setCache(cacheKey, final);
+          this._resetFailures('gemini');
+          return final;
+        } catch (e) { this._recordFailure('gemini', e); logger.warn('Gemini failed, will try OpenAI', e.message); }
       }
-
-      // Try OpenAI if available
-      if (this.hasOpenAI) {
+      if (this.hasOpenAI && !this._providerDisabled('openai')) {
         const result = await this.callOpenAI(prompt);
         const processingTime = Date.now() - startTime;
-        logger.debug(`OpenAI classification completed in ${processingTime}ms`);
-        return {
-          ...result,
-          provider: 'openai',
-          processingTimeMs: processingTime
-        };
+        const final = { ...result, provider: 'openai', processingTimeMs: processingTime };
+        this._setCache(cacheKey, final);
+        this._resetFailures('openai');
+        return final;
       }
-
-      // Fallback: rule-based classification
-      logger.warn('No AI provider available, using fallback classification');
-      return this.fallbackClassification(product);
+      const fb = this.fallbackClassification(product);
+      this._setCache(cacheKey, fb);
+      return fb;
     } catch (error) {
       logger.error('AI classification failed', error);
-      return this.fallbackClassification(product);
+      const fb = this.fallbackClassification(product);
+      try { this._setCache(cacheKey, fb); } catch {}
+      return fb;
     }
   }
 
@@ -305,23 +382,29 @@ Return ONLY valid JSON, no markdown or extra text.`;
     const startTime = Date.now();
     
     try {
+      if (this.offlineMode) {
+        return this.fallbackEnrichment(product);
+      }
       // Try Gemini first (cheaper for longer content generation)
-      if (this.hasGemini) {
+      if (this.hasGemini && !this._providerDisabled('gemini')) {
         try {
           const result = await this.callGemini(prompt);
           const processingTime = Date.now() - startTime;
           logger.debug(`Gemini enrichment completed in ${processingTime}ms`);
+          this._resetFailures('gemini');
           return result;
         } catch (error) {
+          this._recordFailure('gemini', error);
           logger.warn('Gemini enrichment failed, falling back to OpenAI', error);
         }
       }
 
       // Try OpenAI
-      if (this.hasOpenAI) {
+      if (this.hasOpenAI && !this._providerDisabled('openai')) {
         const result = await this.callOpenAI(prompt);
         const processingTime = Date.now() - startTime;
         logger.debug(`OpenAI enrichment completed in ${processingTime}ms`);
+        this._resetFailures('openai');
         return result;
       }
 
@@ -333,6 +416,28 @@ Return ONLY valid JSON, no markdown or extra text.`;
       return this.fallbackEnrichment(product);
     }
   }
+
+  // --- Key Validators ---
+  _validOpenAIKey(key){
+    return /^sk-[a-zA-Z0-9]{20,}$/.test(key.trim());
+  }
+  _validGeminiKey(key){
+    return /^AIza[0-9A-Za-z_\-]{10,}$/.test(key.trim());
+  }
+
+  // --- Circuit Breaker Helpers ---
+  _recordFailure(provider, err){
+    const isAuth = /401|403|unauth|invalid|key/i.test(err?.message||'');
+    if (isAuth){
+      this.failures[provider] = (this.failures[provider]||0) + 1;
+      if (this.failures[provider] >= this.failureThreshold){
+        this.disabledUntil[provider] = Date.now() + this.cooldownMs;
+        logger.warn(`${provider} temporarily disabled for ${this.cooldownMs/60000}m after repeated auth failures.`);
+      }
+    }
+  }
+  _resetFailures(provider){ this.failures[provider] = 0; }
+  _providerDisabled(provider){ return Date.now() < (this.disabledUntil[provider]||0); }
 
   /**
    * Fallback enrichment when AI is unavailable

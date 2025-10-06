@@ -9,6 +9,7 @@ import cliProgress from 'cli-progress';
 class RulesEngine {
   constructor() {
     this.isInitialized = false;
+    this.aiVersion = process.env.AI_VERSION || 'v1.0.0';
   }
 
   /**
@@ -23,13 +24,29 @@ class RulesEngine {
 
     try {
       logger.banner('Rules Engine Initialization');
-      
-      // Connect to database
-      await dbService.connect();
-      
-      // Load categories
-      const categories = await dbService.getCategories();
-      logger.success(`Loaded ${categories.length} product categories`);
+      const skipDb = process.env.SKIP_DB === '1';
+      if (skipDb){
+        this.isInitialized = true;
+        logger.warn('SKIP_DB=1 -> initialization without any DB load/connect');
+        logger.success('Rules engine initialized (offline)');
+        return; // hard short-circuit before any dbService usage
+      }
+      {
+        // Connect to database (optional fallback)
+        try {
+          await dbService.connect();
+          if (!process.env.ALLOW_NO_DB){
+            const categories = await dbService.getCategories();
+            logger.success(`Loaded ${categories.length} product categories`);
+          }
+        } catch (e) {
+          if (process.env.ALLOW_NO_DB === '1') {
+            logger.warn('DB connection failed but ALLOW_NO_DB=1 set -> continuing in memory-only mode');
+          } else {
+            throw e;
+          }
+        }
+      }
       
       this.isInitialized = true;
       logger.success('Rules engine initialized successfully');
@@ -47,6 +64,34 @@ class RulesEngine {
   async processProduct(product) {
     try {
       const startTime = Date.now();
+      // Attempt skip: fetch existing rule by part number
+      let existingRule = null;
+      const partNumber = product.partNumber || product.PartNumber;
+  const dbEnabled = !(process.env.SKIP_DB==='1' || process.env.ALLOW_NO_DB==='1');
+      if (dbEnabled && partNumber){
+        try { existingRule = await dbService.getProductRule(partNumber); } catch {}
+      }
+      const stableSig = JSON.stringify({
+        n: product.name || product.ProductName || '',
+        m: product.manufacturer || product.Manufacturer || '',
+        p: product.price || 0
+      });
+      const now = Date.now();
+      const sevenDaysMs = 1000*60*60*24*7;
+      if (existingRule && existingRule.AIGenerated && existingRule.Confidence && existingRule.ModifiedDate){
+        const modTime = new Date(existingRule.ModifiedDate).getTime();
+        const sameName = (existingRule.ProductName||'') === (product.name||product.ProductName||'');
+        // If we have AIVersion column and matches, stronger skip
+        const sameVersion = existingRule.AIVersion ? existingRule.AIVersion === this.aiVersion : false;
+        if (sameName && (now - modTime) < sevenDaysMs && (existingRule.Confidence >= 50)){
+          if (sameVersion){
+            logger.debug(`Skip processing (unchanged + same aiVersion) for ${partNumber}`);
+            return { success:true, skipped:true, ruleId: existingRule.RuleID, product, classification: { category: existingRule.Category, subCategory: existingRule.SubCategory, classification: existingRule.Classification }, approval: { approved: !!existingRule.AutoApprove, reason: 'Cached aiVersion' }, processingTime: 0 };
+          } else {
+            logger.info(`Reprocess due to aiVersion change (${existingRule.AIVersion||'none'} -> ${this.aiVersion}) for ${partNumber}`);
+          }
+        }
+      }
 
       // Arabic NLP preprocessing: normalize and translate if needed
       const productName = product.name || product.ProductName || '';
@@ -80,23 +125,33 @@ class RulesEngine {
           : null,
         aiGenerated: true,
         confidence: classification.confidence,
-        notes: `AI: ${classification.reasoning || 'N/A'} | Approval: ${approval.reason}`
+  notes: `AI(${this.aiVersion}): ${classification.reasoning || 'N/A'} | Approval: ${approval.reason}${existingRule && existingRule.AIVersion && existingRule.AIVersion !== this.aiVersion ? ' | Reprocessed(aiVersion bump)' : ''}`,
+        aiVersion: this.aiVersion
       };
 
-      const ruleId = await dbService.saveProductRule(ruleData);
+      let ruleId = null;
+      if (dbEnabled){
+        try {
+          ruleId = await dbService.saveProductRule(ruleData);
+        } catch(e){ logger.warn('saveProductRule failed (continuing in memory mode)', e.message); }
+      }
 
       // Log to AI_Log table
       const processingTime = Date.now() - startTime;
-      await dbService.logAIProcess({
-        inputText: JSON.stringify(product),
-        outputText: JSON.stringify({ classification, approval }),
-        aiProvider: classification.provider,
-        model: classification.model,
-        tokensUsed: classification.tokensUsed || 0,
-        processingTimeMs: processingTime,
-        status: 'Success',
-        metadata: { ruleId, approved: approval.approved }
-      });
+      if (dbEnabled){
+        try {
+          await dbService.logAIProcess({
+            inputText: JSON.stringify(product),
+              outputText: JSON.stringify({ classification, approval }),
+              aiProvider: classification.provider,
+              model: classification.model,
+              tokensUsed: classification.tokensUsed || 0,
+              processingTimeMs: processingTime,
+              status: 'Success',
+              metadata: { ruleId, approved: approval.approved, aiVersion: this.aiVersion }
+          });
+        } catch(e){ logger.warn('logAIProcess failed (continuing)', e.message); }
+      }
 
       return {
         success: true,
@@ -110,14 +165,17 @@ class RulesEngine {
       logger.error(`Failed to process product: ${product.name}`, error);
       
       // Log error to database
-      try {
-        await dbService.logAIProcess({
-          inputText: JSON.stringify(product),
-          status: 'Error',
-          errorMessage: error.message
-        });
-      } catch (logError) {
-        logger.error('Failed to log error', logError);
+      const dbEnabled = !(process.env.SKIP_DB==='1' || process.env.ALLOW_NO_DB==='1');
+      if (dbEnabled){
+        try {
+          await dbService.logAIProcess({
+            inputText: JSON.stringify(product),
+            status: 'Error',
+            errorMessage: error.message
+          });
+        } catch (logError) {
+          logger.error('Failed to log error', logError);
+        }
       }
 
       return {

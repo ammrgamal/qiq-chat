@@ -50,6 +50,7 @@ export async function getUsers(req, res) {
     const usersData = usersArr.map((user) => ({
       id: user.email,
       email: user.email,
+      role: user.role || (user.email === 'admin' ? 'admin' : 'user'),
       company: user.company || '',
       phone: user.phone || '',
       createdAt: user.createdAt || new Date().toISOString(),

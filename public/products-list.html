@@ -111,6 +111,66 @@
 			<input id="q" type="search" placeholder="ابحث بالاسم / PN / SKU" />
 			<button id="searchBtn" class="btn">بحث</button>
 			<button id="clearBtn" class="btn secondary">مسح</button>
+				<button id="helpToggle" class="btn ghost" style="border:1px solid var(--border)">؟</button>
+		</div>
+
+		<!-- Help / Guidance Panel -->
+		<div id="catalog-help" style="display:none;border:1px solid var(--border);border-radius:14px;padding:16px;background:#fff;line-height:1.6;margin:-4px 0 18px 0">
+			<h2 style="margin:0 0 10px;font-size:18px">🧠 إرشادات البحث و التصفية / Search & Filter Tips</h2>
+			<div style="display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+				<div>
+					<h3 style="margin:0 0 6px;font-size:14px;color:#1e3a8a">البحث الذكي</h3>
+					<ul style="margin:0;padding-inline-start:18px;font-size:13px">
+						<li>اكتب جزء من الإسم أو الــ Part Number مباشرة.</li>
+						<li>يمكن الدمج: (Cisco 48 PoE switch)</li>
+						<li>البحث يشمل الكلمات المفتاحية المولدة (AI Keywords + features + synonyms).</li>
+						<li>تم دمج قيمة المنتج (Value Statement) و حالات الاستخدام (Use Cases) في البحث الآن.</li>
+					</ul>
+				</div>
+				<div>
+					<h3 style="margin:0 0 6px;font-size:14px;color:#1e3a8a">الفلاتر / Facets</h3>
+					<ul style="margin:0;padding-inline-start:18px;font-size:13px">
+						<li>الشركة (Brand) + الفئة + التصنيف (Standard / Special).</li>
+						<li>المدى السعري السريع أو نطاق مخصص.</li>
+						<li>فلتر السعر الجديد (Price Range Buckets) يظهر بدقة.</li>
+						<li>فلتر النسخة (AI Version) مفيد عند ترقية النماذج.</li>
+						<li>Enrichment Version: متابعة تطور إثراء البيانات.</li>
+						<li>Data Quality Bucket: (High / Medium / Low) لتقييم جاهزية المنتج.</li>
+						<li>Risk Bucket: (Low / Moderate / Elevated) يظهر مستوى المخاطر أو التعقيد.</li>
+						<li>Lifecycle: مرحلة دورة حياة المنتج (مستقبلاً عند التفعيل).</li>
+						<li>خانة “به صورة” لنتائج غنية فقط.</li>
+					</ul>
+				</div>
+				<div>
+					<h3 style="margin:0 0 6px;font-size:14px;color:#1e3a8a">مقارنة و مفضلة</h3>
+					<ul style="margin:0;padding-inline-start:18px;font-size:13px">
+						<li>أضف منتجات للقائمة ثم انتقل للمقارنة ⚖️.</li>
+						<li>المفضلة ❤️ تُحفظ في المتصفح (Local Storage).</li>
+						<li>استخدم العرض الجدولي للفرز السريع.</li>
+					</ul>
+				</div>
+				<div>
+					<h3 style="margin:0 0 6px;font-size:14px;color:#1e3a8a">English Quick Tips</h3>
+					<ul style="margin:0;padding-inline-start:18px;font-size:13px">
+						<li>Combine tokens: brand + spec + function.</li>
+						<li>Filters stack (AND logic) – clear to broaden.</li>
+						<li>Price buckets help fast scoping: 1000-2499, 5000-9999...</li>
+						<li>AI Version facet: verify consistency after reclassification.</li>
+						<li>Use Quality & Risk buckets to prioritize review vs. ready items.</li>
+						<li>Enable full enrichment sync via ENRICHMENT_AWAIT=1 before running a full reindex.</li>
+					</ul>
+				</div>
+				<div>
+					<h3 style="margin:0 0 6px;font-size:14px;color:#1e3a8a">Legend / شرح الشارات</h3>
+					<ul style="margin:0;padding-inline-start:18px;font-size:13px">
+						<li><strong>Q:high/medium/low</strong> = جودة البيانات.</li>
+						<li><strong>R:l/m/e</strong> = Low / Moderate / Elevated risk.</li>
+						<li>قد لا تظهر الشارات لبعض المنتجات القديمة حتى إعادة المعالجة.</li>
+					</ul>
+				</div>
+			</div>
+			<hr style="margin:18px 0;border:none;border-top:1px dashed #ddd" />
+			<p style="margin:0;font-size:12px;color:#555">✨ يتم تحديث البيانات المدعومة بالذكاء الاصطناعي تدريجياً – في حال ظهور نتيجة ناقصة اضغط تحديث الصفحة أو أعد المحاولة لاحقاً.</p>
 		</div>
 		
 		<!-- Chat-like Quick Action Buttons (refined) -->
@@ -208,6 +268,17 @@
 	  // Language toggle
 	  const langBtn = document.getElementById('langToggleCatalog');
 	  langBtn?.addEventListener('click', ()=>{ try{ window.QiqI18n?.toggle?.(); }catch{} });
+
+	  // Help toggle
+	  const helpBtn = document.getElementById('helpToggle');
+	  const helpPanel = document.getElementById('catalog-help');
+	  if (helpBtn && helpPanel){
+	    helpBtn.addEventListener('click', ()=>{
+	      const visible = helpPanel.style.display !== 'none';
+	      helpPanel.style.display = visible ? 'none' : 'block';
+	      helpBtn.classList.toggle('active', !visible);
+	    });
+	  }
 	});
 	</script>
 	<!-- Modal container -->

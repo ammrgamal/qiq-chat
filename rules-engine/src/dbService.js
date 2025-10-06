@@ -12,6 +12,7 @@ class DatabaseService {
   constructor() {
     this.pool = null;
     this.config = null;
+    this.hasAiVersionColumn = null; // tri-state: null=unknown, boolean after detection
   }
 
   /**
@@ -23,6 +24,13 @@ class DatabaseService {
       const configPath = join(__dirname, '../config/dbConfig.json');
       const configData = await readFile(configPath, 'utf8');
       this.config = JSON.parse(configData);
+      // Environment overrides (if provided)
+      if (process.env.SQL_SERVER) {
+        this.config.server = process.env.SQL_SERVER;
+      }
+      if (process.env.SQL_DB) {
+        this.config.database = process.env.SQL_DB;
+      }
       logger.info('Database configuration loaded');
       return this.config;
     } catch (error) {
@@ -43,6 +51,12 @@ class DatabaseService {
 
       this.pool = await sql.connect(this.config);
       logger.success('Connected to SQL Server database');
+      // Detect presence of AIVersion column once per connection lifecycle
+      try {
+        const detection = await this.pool.request().query("SELECT 1 AS hasCol FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Rules_Item' AND COLUMN_NAME='AIVersion'");
+        this.hasAiVersionColumn = detection.recordset.length > 0;
+        logger.info(`AIVersion column detected: ${this.hasAiVersionColumn}`);
+      } catch (e) { logger.warn('Failed to detect AIVersion column (will assume absent)', e); this.hasAiVersionColumn = false; }
     } catch (error) {
       logger.error('Database connection failed', error);
       throw error;
@@ -165,6 +179,7 @@ class DatabaseService {
               Confidence = @confidence,
               ModifiedDate = GETDATE(),
               Notes = @notes
+              ${' '+(this.hasAiVersionColumn ? ', AIVersion = @aiVersion' : '')}
           WHERE RuleID = @ruleId
         `;
 
@@ -181,7 +196,8 @@ class DatabaseService {
           keywords: ruleData.keywords || null,
           aiGenerated: ruleData.aiGenerated ? 1 : 0,
           confidence: ruleData.confidence || null,
-          notes: ruleData.notes || null
+          notes: ruleData.notes || null,
+          aiVersion: ruleData.aiVersion || null
         });
 
         logger.debug(`Updated rule for: ${ruleData.productName}`);
@@ -191,11 +207,11 @@ class DatabaseService {
         const insertQuery = `
           INSERT INTO dbo.Rules_Item 
           (ProductName, PartNumber, Manufacturer, Category, SubCategory, Classification, AutoApprove, 
-           MinPrice, MaxPrice, LeadTimeDays, Keywords, AIGenerated, Confidence, Notes, CreatedBy)
+           MinPrice, MaxPrice, LeadTimeDays, Keywords, AIGenerated, Confidence, Notes, CreatedBy${this.hasAiVersionColumn ? ', AIVersion' : ''})
           OUTPUT INSERTED.RuleID
           VALUES 
           (@productName, @partNumber, @manufacturer, @category, @subCategory, @classification, @autoApprove,
-           @minPrice, @maxPrice, @leadTimeDays, @keywords, @aiGenerated, @confidence, @notes, @createdBy)
+           @minPrice, @maxPrice, @leadTimeDays, @keywords, @aiGenerated, @confidence, @notes, @createdBy${this.hasAiVersionColumn ? ', @aiVersion' : ''})
         `;
 
         const result = await this.query(insertQuery, {
@@ -213,7 +229,8 @@ class DatabaseService {
           aiGenerated: ruleData.aiGenerated ? 1 : 0,
           confidence: ruleData.confidence || null,
           notes: ruleData.notes || null,
-          createdBy: 'RulesEngine'
+          createdBy: 'RulesEngine',
+          aiVersion: ruleData.aiVersion || null
         });
 
         const ruleId = result.recordset[0].RuleID;

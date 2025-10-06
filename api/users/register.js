@@ -1,4 +1,6 @@
 // /api/users/register.js
+import { userStorage } from '../storage/quotations.js';
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
@@ -35,18 +37,34 @@ export default async function handler(req, res) {
     // 3. Generate JWT token
     // For now, we'll just simulate success
 
-    console.log("New user registration:", { company, email, phone });
+    const adminList = (process.env.AUTO_ADMIN_EMAILS || '')
+      .split(/[,;\s]+/)
+      .map(e=>e.trim().toLowerCase())
+      .filter(Boolean);
 
-    // Simulate success response
-    const userData = {
-      id: Date.now(),
-      company,
-      email,
-      phone: phone || '',
-      created: new Date().toISOString()
-    };
-
-    // TODO: Generate real JWT token
+    let existing = await userStorage.getByEmail(email);
+    if (!existing){
+      existing = {
+        id: Date.now(),
+        email,
+        company,
+        phone: phone || '',
+        createdAt: new Date().toISOString(),
+        lastActive: new Date().toISOString()
+      };
+    } else {
+      existing.company = company;
+      existing.phone = phone || '';
+    }
+    if (adminList.includes(email.toLowerCase())){
+      existing.role = 'admin';
+      existing.verified = true;
+      existing.systemSeeded = existing.systemSeeded || false;
+    } else {
+      existing.role = existing.role || 'user';
+    }
+    await userStorage.save(existing);
+    const userData = existing;
     const token = generateSimpleToken(userData);
 
     // Fire-and-forget: send verification email if SENDGRID configured

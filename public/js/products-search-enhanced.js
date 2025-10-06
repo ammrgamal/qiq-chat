@@ -24,37 +24,63 @@
 
   function getParam(name){ try{ return new URL(window.location.href).searchParams.get(name) || ''; }catch{ return ''; } }
 
+  const extraFacetsState = { ai_versions: [], enrichment_versions: [], quality: [], risk: [], lifecycle: [] };
+
+  function renderExtraFacet(id, title, data, selectedArr, key){
+    const containerId = `facet-${id}`;
+    let wrap = document.getElementById(containerId);
+    if (!wrap){
+      const sidebar = document.querySelector('.sidebar');
+      if (!sidebar) return;
+      wrap = document.createElement('div');
+      wrap.className = 'facet';
+      wrap.id = containerId;
+      wrap.innerHTML = `<h3>${title}</h3><ul></ul>`;
+      sidebar.appendChild(wrap);
+    }
+    const ul = wrap.querySelector('ul');
+    const entries = Object.entries(data||{}).sort((a,b)=>b[1]-a[1]).slice(0, 20);
+    ul.innerHTML = entries.map(([val,count])=>{
+      const safe = esc(val);
+      const idc = `${id}_${safe.replace(/[^a-z0-9]/gi,'')}`;
+      const checked = selectedArr.includes(val)?'checked':'',
+      return `<li><input id="${idc}" data-facet-group="${key}" type="checkbox" value="${safe}" ${checked}/> <label for="${idc}">${safe} <span class="muted">(${count})</span></label></li>`;
+    }).join('') || '<li class="muted">لا توجد قيم</li>';
+    ul.querySelectorAll('input[type="checkbox"]').forEach(cb=> cb.addEventListener('change', ()=> render((input?.value||'').trim(), 0)));
+  }
+
   function getSelected(){
     const brands = Array.from(document.querySelectorAll('#facet-brands input[type="checkbox"]:checked')).map(i=>i.value);
     const categories = Array.from(document.querySelectorAll('#facet-categories input[type="checkbox"]:checked')).map(i=>i.value);
+    const ai_versions = Array.from(document.querySelectorAll('#facet-ai-version input[type="checkbox"]:checked')).map(i=>i.value);
+    const enrichment_versions = Array.from(document.querySelectorAll('#facet-enrichment-version input[type="checkbox"]:checked')).map(i=>i.value);
+    const quality = Array.from(document.querySelectorAll('#facet-quality input[type="checkbox"]:checked')).map(i=>i.value);
+    const risk = Array.from(document.querySelectorAll('#facet-risk input[type="checkbox"]:checked')).map(i=>i.value);
+    const lifecycle = Array.from(document.querySelectorAll('#facet-lifecycle input[type="checkbox"]:checked')).map(i=>i.value);
     const priceMin = priceMinEl?.value || '';
     const priceMax = priceMaxEl?.value || '';
-    const flags = {
-      hasImage: !!hasImageEl?.checked,
-      inStock: !!inStockEl?.checked
-    };
-    // quick price (if any active button has data-price-*)
+    const flags = { hasImage: !!hasImageEl?.checked, inStock: !!inStockEl?.checked };
+    // quick price logic stays
     const activeQuick = quickPrice?.querySelector('.quick-btn.active');
+    const base = { brands, categories, priceMin, priceMax, flags, ai_versions, enrichment_versions, quality, risk, lifecycle };
     if (activeQuick) {
       const qpMin = activeQuick.getAttribute('data-price-min') || '';
       const qpMax = activeQuick.getAttribute('data-price-max') || '';
-      return { brands, categories, priceMin: qpMin || priceMin, priceMax: qpMax || priceMax, flags };
+      return { ...base, priceMin: qpMin || priceMin, priceMax: qpMax || priceMax };
     }
-    return { brands, categories, priceMin, priceMax, flags };
+    return base;
   }
 
   function buildFacetFilters(sel){
     const ff = [];
     if (sel.brands.length) ff.push(sel.brands.map(b=>`brand:${b}`));
-    if (sel.categories.length) ff.push(sel.categories.map(c=>`categories:${c}`));
+    if (sel.categories.length) ff.push(sel.categories.map(c=>`category:${c}`));
+    if (sel.ai_versions?.length) ff.push(sel.ai_versions.map(v=>`ai_version:${v}`));
+    if (sel.enrichment_versions?.length) ff.push(sel.enrichment_versions.map(v=>`enrichment_version:${v}`));
+    if (sel.quality?.length) ff.push(sel.quality.map(v=>`data_quality_bucket:${v}`));
+    if (sel.risk?.length) ff.push(sel.risk.map(v=>`risk_bucket:${v}`));
+    if (sel.lifecycle?.length) ff.push(sel.lifecycle.map(v=>`lifecycle_stage:${v}`));
     return ff;
-  }
-
-  function buildNumericFilters(sel){
-    const nf = [];
-    if (sel.priceMin !== '' && !isNaN(Number(sel.priceMin))) nf.push(`price>=${Number(sel.priceMin)}`);
-    if (sel.priceMax !== '' && !isNaN(Number(sel.priceMax))) nf.push(`price<=${Number(sel.priceMax)}`);
-    return nf;
   }
 
   async function apiSearch(query, { page=0, hitsPerPage=24 }={}){
@@ -92,6 +118,14 @@
       // Re-wire change events to re-run search
       brandsList?.querySelectorAll('input[type="checkbox"]').forEach(cb=> cb.addEventListener('change', ()=> render((input?.value||'').trim(), 0)));
       catsList?.querySelectorAll('input[type="checkbox"]').forEach(cb=> cb.addEventListener('change', ()=> render((input?.value||'').trim(), 0)));
+      try{
+        // existing brand/category logic remains above
+        renderExtraFacet('ai-version', 'AI Version', facets.ai_version, selected.ai_versions || [], 'ai_versions');
+        renderExtraFacet('enrichment-version', 'Enrichment Ver', facets.enrichment_version, selected.enrichment_versions || [], 'enrichment_versions');
+        renderExtraFacet('quality', 'Data Quality', facets.data_quality_bucket, selected.quality || [], 'quality');
+        renderExtraFacet('risk', 'Risk Bucket', facets.risk_bucket, selected.risk || [], 'risk');
+        renderExtraFacet('lifecycle', 'Lifecycle', facets.lifecycle_stage, selected.lifecycle || [], 'lifecycle');
+      }catch{}
     }catch{}
   }
 
@@ -119,6 +153,8 @@
     const brand = esc(h?.brand || h?.manufacturer || '');
     const link  = esc(h?.link || '');
     const id    = pn || name;
+    const dq = h?.data_quality_bucket ? `<span class="chip" style="background:${h.data_quality_bucket==='high'?'#d1fae5':h.data_quality_bucket==='medium'?'#fef3c7':'#fee2e2'}">Q:${h.data_quality_bucket}</span>`:'',
+    rk = h?.risk_bucket ? `<span class="chip" style="background:${h.risk_bucket==='elevated'?'#fee2e2':h.risk_bucket==='moderate'?'#fef3c7':'#e0f2fe'}">R:${h.risk_bucket[0]}</span>`:'';
     return `
       <div class="card">
         <img src="${img}" alt="${name}" onerror="this.src='https://via.placeholder.com/68?text=IMG'" />
@@ -128,6 +164,7 @@
             ${pn? `<span class="chip">PN: ${pn}</span>`:''}
             ${brand? `<span class="chip">${brand}</span>`:''}
             ${price!==''? `<span class="chip price">USD ${price}</span>`:''}
+            ${dq}${rk}
           </div>
           ${link ? `<a href="${link}" target="_blank" rel="noopener" class="muted">Product page</a>` : ''}
         </div>
@@ -155,10 +192,12 @@
     const img   = esc(h?.image || 'https://via.placeholder.com/68?text=IMG');
     const brand = esc(h?.brand || h?.manufacturer || '');
     const link  = esc(h?.link || '');
+    const dq = h?.data_quality_bucket ? `<span class=\"chip\" style=\"background:${h.data_quality_bucket==='high'?'#d1fae5':h.data_quality_bucket==='medium'?'#fef3c7':'#fee2e2'}\">Q:${h.data_quality_bucket}</span>`:'',
+    rk = h?.risk_bucket ? `<span class=\"chip\" style=\"background:${h.risk_bucket==='elevated'?'#fee2e2':h.risk_bucket==='moderate'?'#fef3c7':'#e0f2fe'}\">R:${h.risk_bucket[0]}</span>`:'';
     return `
       <tr>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)"><img src="${img}" alt="${name}" style="width:44px;height:44px;border-radius:8px;object-fit:cover" onerror="this.src='https://via.placeholder.com/44?text=IMG'"/></td>
-        <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${link?`<a href="${link}" target="_blank" rel="noopener">${name}</a>`:name}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${link?`<a href="${link}" target="_blank" rel="noopener">${name}</a>`:name}<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">${dq}${rk}</div></td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${pn}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${brand}</td>
         <td style="padding:8px 10px;border-bottom:1px solid var(--border)">${price!==''?`USD ${price}`:'-'}</td>

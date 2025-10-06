@@ -1,8 +1,8 @@
 {
   "user": "YOUR_SQL_USER",
   "password": "YOUR_SQL_PASSWORD",
-  "server": "localhost",
-  "database": "QuoteWerksDB",
+  "server": "AMRLEGION\\SQLEXPRESS",
+  "database": "QuoteWerks",
   "options": {
     "encrypt": false,
     "trustServerCertificate": true,

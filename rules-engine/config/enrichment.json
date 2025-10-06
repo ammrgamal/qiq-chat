@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "enabled": true,
+  "stages": {
+    "stage1_extract": true,
+    "stage2_marketing": true,
+    "stage3_compliance": true,
+    "stage4_embeddings": false
+  },
+  "limits": {
+    "maxExtendedDescription": 1500,
+    "maxFeatures": 10,
+    "maxFaq": 4
+  },
+  "quality": {
+    "weights": {
+      "shortDescription": 10,
+      "extendedDescription": 10,
+      "features": 10,
+      "specs": 15,
+      "faq": 5,
+      "useCases": 10,
+      "valueStatement": 10,
+      "arabic": 10,
+      "compliance": 10,
+      "warranty": 10
+    }
+  }
+}

@@ -10,6 +10,18 @@ import rulesEngine from './rulesEngine.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '../../.env') });
+// Dynamic guarded secrets loader
+if (!process.env.DISABLE_LOCAL_SECRETS) {
+  (async () => {
+    try {
+      const mod = await import('../../secrets.local.js').catch(()=>null);
+      if (mod && typeof mod.loadLocalSecrets === 'function') {
+        const appliedLocal = mod.loadLocalSecrets();
+        if (appliedLocal) logger.info(`Local secrets applied: ${appliedLocal}`);
+      }
+    } catch {/* silent */}
+  })();
+}
 
 /**
  * Generate sample test products
