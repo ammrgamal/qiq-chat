@@ -4,8 +4,9 @@ import arabicNLP from '../rules-engine/src/arabicNLP.js';
 import aiLearningLog from '../rules-engine/src/aiLearningLog.js';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+  // Support POST (JSON body) and GET (?q=)
+  if (req.method !== 'POST' && req.method !== 'GET') {
+    res.setHeader('Allow', 'POST, GET');
     return res.status(405).json({ error: 'Method not allowed' });
   }
   const started = Date.now();
@@ -14,16 +15,36 @@ export default async function handler(req, res) {
     return res.status(200).json({ tookMs: took, ...obj });
   };
   try {
-    const { query, hitsPerPage, page, facetFilters, numericFilters, index: indexOverride, debug } = req.body || {};
-    const q = (query ?? '').toString();
+    // Defensive body parsing (in case express.json failed upstream or body empty)
+    let body = {};
+    if (req.method === 'POST') {
+      if (typeof req.body === 'object' && req.body !== null) body = req.body; else body = {};
+    } else if (req.method === 'GET') {
+      body = {
+        query: req.query.q || req.query.query,
+        hitsPerPage: req.query.hitsPerPage,
+        page: req.query.page,
+        facetFilters: req.query.facetFilters ? JSON.parse(req.query.facetFilters) : undefined,
+        numericFilters: req.query.numericFilters ? JSON.parse(req.query.numericFilters) : undefined,
+        index: req.query.index,
+        debug: req.query.debug
+      };
+    }
 
-    const appId = process.env.ALGOLIA_APP_ID;
-    const apiKey = process.env.ALGOLIA_API_KEY; // Search or Admin key both OK for querying
-    const defaultIndex = process.env.ALGOLIA_INDEX || 'woocommerce_products';
+    const { query, hitsPerPage, page, facetFilters, numericFilters, index: indexOverride, debug } = body;
+    const q = (query ?? '').toString().trim();
+
+  const appId = process.env.ALGOLIA_APP_ID;
+  const apiKey = process.env.ALGOLIA_API_KEY || process.env.ALGOLIA_ADMIN_API_KEY || process.env.ALGOLIA_SEARCH_KEY; // Try multiple envs
+  const defaultIndex = process.env.ALGOLIA_INDEX || process.env.ALGOLIA_INDEX_NAME || 'woocommerce_products';
     const indexName = (indexOverride && typeof indexOverride === 'string' && indexOverride.trim()) ? indexOverride.trim() : defaultIndex;
 
     if (!appId || !apiKey) {
       return respond({ hits: [], facets: {}, nbHits: 0, page: 0, nbPages: 0, warning: 'Algolia credentials not set' });
+    }
+
+    if (debug || process.env.SEARCH_DEBUG === '1') {
+      console.log('[search.debug] incoming', { q, page, hitsPerPage, facetFilters, numericFilters, indexName, method: req.method });
     }
 
     // Preprocess Arabic query
@@ -48,10 +69,13 @@ export default async function handler(req, res) {
 
     let result;
     try {
-      result = await index.search(searchQuery, opts);
+      result = await index.search(searchQuery || '', opts);
     } catch (inner) {
       // If Algolia throws (e.g., index missing), fallback gracefully
       console.warn('Algolia primary search failed, returning empty set:', inner.message);
+      if (debug || process.env.SEARCH_DEBUG === '1') {
+        console.warn('[search.debug] error stack', inner.stack);
+      }
       return respond({
         hits: [],
         facets: {},
@@ -91,13 +115,17 @@ export default async function handler(req, res) {
       brand: h.brand || h.manufacturer || h.vendor || h.company || ''
     }));
 
-    return respond({
+    const payload = {
       hits: normalized,
       facets: result?.facets || {},
       nbHits: result?.nbHits || 0,
       page: result?.page || 0,
       nbPages: result?.nbPages || 0
-    });
+    };
+    if (debug || process.env.SEARCH_DEBUG === '1') {
+      payload.debugInfo = { rawHits: result?.hits?.length, took: result?.processingTimeMS };
+    }
+    return respond(payload);
   } catch (e) {
     console.error('Algolia search error (outer):', e);
     // Always return 200 with structured empty result to avoid frontend hard failures
