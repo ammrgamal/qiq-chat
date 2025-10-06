@@ -40,9 +40,6 @@ if (!process.__GLOBAL_ERROR_HOOKS_ATTACHED__) {
     console.error('[global] UncaughtException', err);
   });
 }
-    if (file === 'search.js') {
-      console.log('[load] search handler wired at', routePath);
-    }
 const AUTO_APPROVE = /^(1|true|yes)$/i.test(String(process.env.AUTO_APPROVE || ''));
 // Allow override via CLI arg: node server.js 3005
 const argPort = Number(process.argv[2]);
@@ -117,6 +114,12 @@ function route(method, routePath, relFile) {
   app[method](routePath, async (req, res) => {
     try {
       const handler = await loadHandler(relFile);
+      if (relFile === 'search.js') {
+        console.log('[load] search handler wired (method)', method.toUpperCase(), routePath);
+      }
+      if (relFile === 'search-debug.js') {
+        console.log('[load] search-debug handler wired', routePath);
+      }
       return handler(req, res);
     } catch (e) {
       console.error('Handler error for', routePath, e);
@@ -139,7 +142,9 @@ function route(method, routePath, relFile) {
 }
 
 // APIs
+// Search endpoint supports POST & GET
 route('post', '/api/search', 'search.js');
+route('get',  '/api/search', 'search.js');
 route('get',  '/api/search/health', 'search-health.js');
 route('post', '/api/chat', 'chat.js');
 route('post', '/api/special-quote', 'special-quote.js');
