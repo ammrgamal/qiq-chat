@@ -120,7 +120,23 @@ function route(method, routePath, relFile) {
       if (relFile === 'search-debug.js') {
         console.log('[load] search-debug handler wired', routePath);
       }
-      return handler(req, res);
+      // Ensure async errors are trapped here even if handler forgets internal try/catch
+      const maybePromise = handler(req, res);
+      if (maybePromise && typeof maybePromise.then === 'function') {
+        maybePromise.catch(e => {
+          if (relFile === 'search.js') {
+            global.__LAST_SEARCH_ERROR = { ts: Date.now(), message: e.message, stack: e.stack };
+            console.error('[search.async-error]', e);
+            if (!res.headersSent) {
+              return res.status(200).json({ hits: [], facets: {}, nbHits: 0, page: 0, nbPages: 0, error: 'Async search failure', detail: process.env.SEARCH_DEBUG==='1'? e.message : undefined });
+            }
+          } else {
+            console.error('[route.async-error]', routePath, e);
+            if (!res.headersSent) res.status(500).json({ error: 'Server async error' });
+          }
+        });
+      }
+      return maybePromise;
     } catch (e) {
       console.error('Handler error for', routePath, e);
       // Special graceful fallback for search endpoint to prevent frontend hard failure
