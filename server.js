@@ -29,6 +29,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Global process-level safety nets (idempotent)
+if (!process.__GLOBAL_ERROR_HOOKS_ATTACHED__) {
+  process.__GLOBAL_ERROR_HOOKS_ATTACHED__ = true;
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('[global] UnhandledRejection', { reason, promise });
+  });
+  process.on('uncaughtException', (err) => {
+    console.error('[global] UncaughtException', err);
+  });
+}
+    if (file === 'search.js') {
+      console.log('[load] search handler wired at', routePath);
+    }
 const AUTO_APPROVE = /^(1|true|yes)$/i.test(String(process.env.AUTO_APPROVE || ''));
 // Allow override via CLI arg: node server.js 3005
 const argPort = Number(process.argv[2]);
@@ -106,6 +120,19 @@ function route(method, routePath, relFile) {
       return handler(req, res);
     } catch (e) {
       console.error('Handler error for', routePath, e);
+      // Special graceful fallback for search endpoint to prevent frontend hard failure
+      if (routePath === '/api/search') {
+        const debug = process.env.SEARCH_DEBUG === '1';
+        return res.status(200).json({
+          hits: [],
+            facets: {},
+            nbHits: 0,
+            page: 0,
+            nbPages: 0,
+            error: 'Search handler failure',
+            detail: debug ? (e?.stack || e?.message) : undefined
+        });
+      }
       res.status(500).json({ error: 'Server error' });
     }
   });
