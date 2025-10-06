@@ -88,7 +88,7 @@
         };
         window.QiqToast = API;
       })();
-      return toast;
+      return window.QiqToast; // ensure defined object returned (not undefined variable)
     },
 
     remove(toast) {

@@ -83,14 +83,25 @@
     return ff;
   }
 
+  // Build numeric filters array for Algolia style (price ranges)
+  function buildNumericFilters(sel){
+    const nf = [];
+    const min = sel.priceMin !== '' ? Number(sel.priceMin) : null;
+    const max = sel.priceMax !== '' ? Number(sel.priceMax) : null;
+    if (min !== null && !isNaN(min)) nf.push(`price>=${min}`);
+    if (max !== null && !isNaN(max)) nf.push(`price<=${max}`);
+    return nf;
+  }
+
   async function apiSearch(query, { page=0, hitsPerPage=24 }={}){
     const sel = getSelected();
+    const numericFilters = buildNumericFilters(sel);
     const body = {
       query,
       page,
       hitsPerPage,
       facetFilters: buildFacetFilters(sel),
-      numericFilters: buildNumericFilters(sel),
+      numericFilters,
       filters: sel.flags?.hasImage ? 'image:*' : undefined
     };
     // Optional: we could pass custom filters; backend may ignore unknown keys
