@@ -105,10 +105,17 @@
       filters: sel.flags?.hasImage ? 'image:*' : undefined
     };
     // Optional: we could pass custom filters; backend may ignore unknown keys
-    const r = await fetch('/api/search', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
-    let json = {};
-    try { json = await r.json(); } catch { json = { hits: [], nbHits:0, facets:{}, error: 'Invalid JSON' }; }
-    return json;
+    let r;
+    try {
+      r = await fetch('/api/search', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+    } catch (netErr) {
+      return { hits: [], nbHits:0, facets:{}, error: 'Network error', detail: netErr.message };
+    }
+    if (!r.ok) {
+      // Non-200 but backend should normally return 200; try parse anyway
+      try { return await r.json(); } catch { return { hits: [], nbHits:0, facets:{}, error: 'Search backend HTTP '+r.status }; }
+    }
+    try { return await r.json(); } catch { return { hits: [], nbHits:0, facets:{}, error: 'Invalid JSON' }; }
   }
 
   // Render facets (brands/categories)
