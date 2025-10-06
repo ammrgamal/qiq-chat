@@ -43,7 +43,7 @@
     ul.innerHTML = entries.map(([val,count])=>{
       const safe = esc(val);
       const idc = `${id}_${safe.replace(/[^a-z0-9]/gi,'')}`;
-      const checked = selectedArr.includes(val)?'checked':'',
+      const checked = selectedArr.includes(val)?'checked':''; // removed stray comma causing syntax issue
       return `<li><input id="${idc}" data-facet-group="${key}" type="checkbox" value="${safe}" ${checked}/> <label for="${idc}">${safe} <span class="muted">(${count})</span></label></li>`;
     }).join('') || '<li class="muted">لا توجد قيم</li>';
     ul.querySelectorAll('input[type="checkbox"]').forEach(cb=> cb.addEventListener('change', ()=> render((input?.value||'').trim(), 0)));
@@ -250,11 +250,20 @@
 
   async function render(q, page=0){
     resultsEl.innerHTML = '';
-    statusEl.textContent = q ? `Searching for "${q}"...` : 'Loading top products...';
+    if (!statusEl){
+      // Create a status element dynamically if missing
+      const se = document.createElement('div');
+      se.id = 'status';
+      se.style.cssText = 'margin:8px 0;color:#555;font-size:14px';
+      resultsEl.parentNode?.insertBefore(se, resultsEl);
+      window.__catalogStatus = se;
+    }
+    const st = statusEl || window.__catalogStatus;
+    if (st) st.textContent = q ? `Searching for "${q}"...` : 'Loading top products...';
     try{
       const res = await apiSearch(q, { page, hitsPerPage: 24 });
       const hits = Array.isArray(res?.hits) ? res.hits : [];
-      statusEl.textContent = `${res?.nbHits || hits.length} result(s) • via backend`;
+  if (st) st.textContent = `${res?.nbHits || hits.length} result(s) • via backend`;
 
       if (q !== lastQuery) {
         try {
@@ -282,7 +291,7 @@
       renderPagination(res?.page || 0, res?.nbPages || 1, (p)=>render(q, p));
     }catch(err){
       console.warn('search error', err);
-      statusEl.textContent = 'Search failed';
+  if (st) st.textContent = 'Search failed';
       try { window.QiqToast?.error?.('تعذر تنفيذ البحث الآن', 2000); } catch {}
     }
   }
