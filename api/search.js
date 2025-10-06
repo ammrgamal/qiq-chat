@@ -1,7 +1,24 @@
 // Clean Algolia search endpoint (ESM)
 import algoliasearch from 'algoliasearch';
-import arabicNLP from '../rules-engine/src/arabicNLP.js';
-import aiLearningLog from '../rules-engine/src/aiLearningLog.js';
+// Dynamic (lazy) modules so that a transient build/ESM resolution issue doesn't crash route load
+let arabicNLP = null;
+let aiLearningLog = null;
+async function ensureDeps(){
+  try {
+    if (!arabicNLP) {
+      arabicNLP = (await import('../rules-engine/src/arabicNLP.js')).default;
+    }
+  } catch (e) {
+    if (process.env.SEARCH_DEBUG==='1') console.warn('[search.deps] arabicNLP load failed', e.message);
+  }
+  try {
+    if (!aiLearningLog) {
+      aiLearningLog = (await import('../rules-engine/src/aiLearningLog.js')).default;
+    }
+  } catch (e) {
+    if (process.env.SEARCH_DEBUG==='1') console.warn('[search.deps] aiLearningLog load failed', e.message);
+  }
+}
 
 export default async function handler(req, res) {
   // Support POST (JSON body) and GET (?q=)
@@ -50,9 +67,14 @@ export default async function handler(req, res) {
     // Preprocess Arabic query
     let searchQuery = q;
     let preprocessed = null;
-    if (arabicNLP.containsArabic(q)) {
-      preprocessed = await arabicNLP.preprocessQuery(q);
-      searchQuery = preprocessed.processed; // Use translated/normalized version
+    await ensureDeps();
+    if (arabicNLP && arabicNLP.containsArabic && arabicNLP.containsArabic(q)) {
+      try {
+        preprocessed = await arabicNLP.preprocessQuery(q);
+        searchQuery = preprocessed.processed; // Use translated/normalized version
+      } catch (prepErr) {
+        if (process.env.SEARCH_DEBUG==='1') console.warn('[search.preprocess] failed', prepErr.message);
+      }
     }
 
     const client = algoliasearch(appId, apiKey);
@@ -88,7 +110,7 @@ export default async function handler(req, res) {
     }
     
     // Log failed Arabic queries for self-learning
-    if (preprocessed && (!result?.hits || result.hits.length === 0)) {
+    if (preprocessed && (!result?.hits || result.hits.length === 0) && aiLearningLog?.logFailedQuery) {
       try {
         await aiLearningLog.logFailedQuery({
           query: q,
@@ -101,7 +123,7 @@ export default async function handler(req, res) {
           }
         });
       } catch (logError) {
-        console.warn('Failed to log learning data:', logError.message);
+        if (process.env.SEARCH_DEBUG==='1') console.warn('Failed to log learning data:', logError.message);
       }
     }
 
