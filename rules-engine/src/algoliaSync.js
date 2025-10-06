@@ -17,7 +17,13 @@ class AlgoliaSyncService {
   constructor() {
     this.algoliaAppId = process.env.ALGOLIA_APP_ID;
     this.algoliaApiKey = process.env.ALGOLIA_ADMIN_API_KEY;
-    this.indexName = process.env.ALGOLIA_INDEX_NAME || 'quickitquote_products';
+    // Unified index resolution: prefer legacy ALGOLIA_INDEX then ALGOLIA_INDEX_NAME then default
+    const idxA = process.env.ALGOLIA_INDEX?.trim();
+    const idxB = process.env.ALGOLIA_INDEX_NAME?.trim();
+    this.indexName = idxA || idxB || 'woocommerce_products';
+    if (idxA && idxB && idxA !== idxB) {
+      logger.warn(`[AlgoliaSync] Detected mismatch between ALGOLIA_INDEX (${idxA}) and ALGOLIA_INDEX_NAME (${idxB}). Using '${this.indexName}'. Consider removing one var to avoid confusion.`);
+    }
     this.client = null;
     this.index = null;
     this.maxRecordSize = 10000; // 10KB max
@@ -34,9 +40,9 @@ class AlgoliaSyncService {
     }
 
     try {
-      this.client = algoliasearch(this.algoliaAppId, this.algoliaApiKey);
-      this.index = this.client.initIndex(this.indexName);
-      logger.success(`Algolia client initialized for index: ${this.indexName}`);
+  this.client = algoliasearch(this.algoliaAppId, this.algoliaApiKey);
+  this.index = this.client.initIndex(this.indexName);
+  logger.success(`Algolia client initialized for index: ${this.indexName}`);
     } catch (error) {
       logger.error('Failed to initialize Algolia client', error);
       throw error;

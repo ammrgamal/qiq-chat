@@ -114,6 +114,7 @@ route('post', '/api/hello-leads', 'hello-leads.js');
 route('post', '/api/v0-chat', 'v0-chat.js');
 route('get', '/api/enrichment/summary', 'enrichment-summary.js');
 route('get', '/api/algolia-config', 'algolia-config.js');
+route('get', '/api/algolia-health', 'algolia-health.js');
 // BOQ parse endpoint (upload-less; accepts base64 or text rows)
 route('post', '/api/boq/parse', 'boq-parse.js');
 // Admin config endpoints

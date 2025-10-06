@@ -21,6 +21,9 @@ class AlgoliaIntegration {
             
             if (health.env?.hasAlgolia) {
                 await this.initAlgolia();
+                // After initializing, fetch algolia health for diagnostics
+                this.injectBannerContainer();
+                this.checkAlgoliaHealth();
             } else {
                 this.showAlgoliaNotConfigured();
                 // Load sample products for demo
@@ -35,6 +38,47 @@ class AlgoliaIntegration {
             console.error('Algolia initialization error:', error);
             await this.loadSampleProducts();
         }
+    }
+
+    injectBannerContainer(){
+        if (!document.getElementById('algolia-banner')){
+            const div = document.createElement('div');
+            div.id = 'algolia-banner';
+            div.className = 'mb-4';
+            document.querySelector('#catalog-root')?.prepend(div);
+        }
+    }
+
+    async checkAlgoliaHealth(){
+        try {
+            const res = await fetch('/api/algolia-health');
+            const json = await res.json();
+            if (!json.ok){
+                this.showBanner(`⚠️ فحص الفهرس: ${json.reason || json.error || 'تعذر الاتصال بـ Algolia'}`, 'warn');
+                return;
+            }
+            if (json.mismatch){
+                this.showBanner(`⚠️ اختلاف في إعدادات الفهرس: (ALGOLIA_INDEX='${json.envIndex}' / ALGOLIA_INDEX_NAME='${json.envIndexName}') — يتم استخدام '${json.index}' فعلياً.`, 'warn');
+            } else if (json.nbHits === 0){
+                this.showBanner('ℹ️ الفهرس الحالي لا يحتوي سجلات. قم بتشغيل مزامنة Algolia أو تحقق من شروط AIProcessed.', 'info');
+            } else {
+                // Optional success banner (commented to avoid noise)
+                // this.showBanner(`✅ فهرس Algolia جاهز (${json.nbHits} منتج)`, 'ok');
+            }
+        } catch(e){
+            this.showBanner('⚠️ تعذر فحص صحة Algolia حالياً', 'warn');
+        }
+    }
+
+    showBanner(message, level){
+        const el = document.getElementById('algolia-banner');
+        if (!el) return;
+        const base = 'text-sm px-3 py-2 rounded border';
+        let cls = 'bg-qiq-dark border-qiq-gold/40 text-qiq-gold';
+        if (level === 'warn') cls = 'bg-yellow-900/40 border-yellow-500/50 text-yellow-300';
+        if (level === 'info') cls = 'bg-blue-900/30 border-blue-400/40 text-blue-200';
+        if (level === 'ok') cls = 'bg-emerald-900/30 border-emerald-500/40 text-emerald-200';
+        el.innerHTML = `<div class="${base} ${cls}">${message}</div>`;
     }
     
     async initAlgolia() {
