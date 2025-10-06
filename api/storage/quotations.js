@@ -82,9 +82,24 @@ export const quotationStorage = {
     // Check if exists and update, otherwise add
     const existingIndex = all.findIndex(q => q.id === id);
     if (existingIndex >= 0) {
-      all[existingIndex] = { ...all[existingIndex], ...newQuotation };
+      const prev = all[existingIndex];
+      // Preserve and append history if payload changed
+      let history = Array.isArray(prev.history) ? prev.history : [];
+      const payloadChanged = JSON.stringify(prev.payload||null) !== JSON.stringify(newQuotation.payload||null);
+      if (payloadChanged) {
+        history.unshift({
+          ts: new Date().toISOString(),
+            payload: prev.payload,
+            status: prev.status,
+            total: prev.total,
+            revision: prev.revision || 1
+        });
+        // Trim history size (keep last 20 revisions)
+        if (history.length > 20) history.length = 20;
+      }
+      all[existingIndex] = { ...prev, ...newQuotation, history, revision: (prev.revision||1) + (payloadChanged ? 1 : 0) };
     } else {
-      all.unshift(newQuotation);
+      all.unshift({ ...newQuotation, revision: 1, history: [] });
     }
 
     const success = await writeJSONFile(QUOTATIONS_FILE, { quotations: all });
@@ -94,6 +109,16 @@ export const quotationStorage = {
   async getById(id) {
     const all = await this.getAll();
     return all.find(q => q.id === id);
+  },
+
+  async replace(updated) {
+    if (!updated || !updated.id) return null;
+    const all = await this.getAll();
+    const idx = all.findIndex(q => q.id === updated.id);
+    if (idx === -1) return null;
+    all[idx] = { ...updated, lastModified: new Date().toISOString() };
+    const success = await writeJSONFile(QUOTATIONS_FILE, { quotations: all });
+    return success ? all[idx] : null;
   },
 
   async deleteById(id) {

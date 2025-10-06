@@ -112,6 +112,7 @@ route('post', '/api/maintenance', 'maintenance.js');
 route('post', '/api/pdf-ai', 'pdf-ai.js');
 route('post', '/api/hello-leads', 'hello-leads.js');
 route('post', '/api/v0-chat', 'v0-chat.js');
+route('get', '/api/enrichment/summary', 'enrichment-summary.js');
 route('get', '/api/algolia-config', 'algolia-config.js');
 // BOQ parse endpoint (upload-less; accepts base64 or text rows)
 route('post', '/api/boq/parse', 'boq-parse.js');
@@ -137,6 +138,9 @@ route('get',  '/api/users/me', 'users/me.js');
 route('post', '/api/users/logout', 'users/logout.js');
 route('get',  '/api/users/quotations', 'users/quotations.js');
 route('post', '/api/users/quotations', 'users/quotations.js');
+route('get',  '/api/users/quotation/:id', 'users/quotation-detail.js');
+route('patch','/api/users/quotation/:id', 'users/quotation-detail.js');
+route('post', '/api/users/quotation/:id/clone', 'users/quotation-clone.js');
 route('post', '/api/users/send-verification', 'users/send-verification.js');
 route('get',  '/api/users/verify', 'users/verify.js');
 

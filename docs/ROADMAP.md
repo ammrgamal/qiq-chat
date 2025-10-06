@@ -77,4 +77,4 @@ Phase | KPI Focus | Target Gate
 4 | Ecosystem breadth | ≥5 third-party integrations
 
 ---
-*Maintain monthly; align with structure.md strategic metrics.*
+*Maintain monthly; align with structure.md strategic metrics and subscription planning in `INSTRUCTION.md`.*

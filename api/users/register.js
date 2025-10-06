@@ -1,5 +1,6 @@
 // /api/users/register.js
 import { userStorage } from '../storage/quotations.js';
+import { validateBusinessEmail } from '../../_lib/email-validation.js';
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
@@ -87,35 +88,6 @@ export default async function handler(req, res) {
     console.error(e);
     return res.status(500).json({ ok: false, error: "Failed to create account" });
   }
-}
-
-// Email validation function
-function validateBusinessEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  
-  if (!emailRegex.test(email)) {
-    return { valid: false, message: "صيغة البريد الإلكتروني غير صحيحة" };
-  }
-
-  // List of blocked personal email domains
-  const blockedDomains = [
-    'gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com', 
-    'yahoo.co.uk', 'yahoo.co.jp', 'yahoo.de', 'yahoo.fr',
-    'aol.com', 'mail.com', 'ymail.com', 'googlemail.com',
-    'live.com', 'msn.com', 'icloud.com', 'me.com',
-    'protonmail.com', 'tutanota.com'
-  ];
-
-  const domain = email.toLowerCase().split('@')[1];
-  
-  if (blockedDomains.includes(domain)) {
-    return { 
-      valid: false, 
-      message: "يرجى استخدام بريد إلكتروني للعمل/الشركة وليس بريد شخصي مثل Gmail أو Hotmail" 
-    };
-  }
-
-  return { valid: true };
 }
 
 // Simple token generation (replace with proper JWT in production)

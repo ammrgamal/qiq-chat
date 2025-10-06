@@ -14,6 +14,7 @@ const patterns = [
 ];
 
 const findings = [];
+const wantJson = process.argv.includes('--json');
 function walk(dir){
   for (const entry of fs.readdirSync(dir)){
     const full = path.join(dir, entry);
@@ -36,12 +37,20 @@ function walk(dir){
 walk(root);
 
 if (!findings.length){
-  console.log('No potential secrets detected.');
+  if (wantJson) {
+    console.log(JSON.stringify({ ok:true, findings: [] }, null, 2));
+  } else {
+    console.log('No potential secrets detected.');
+  }
   process.exit(0);
 }
-console.log('Potential secret pattern hits:');
-for (const f of findings){
-  console.log(`- ${f.file} :: ${f.type} (${f.count})`);
+
+if (wantJson) {
+  console.log(JSON.stringify({ ok:false, findings }, null, 2));
+} else {
+  console.log('Potential secret pattern hits:');
+  for (const f of findings){
+    console.log(`- ${f.file} :: ${f.type} (${f.count})`);
+  }
 }
-// Non-zero exit for CI gating
 process.exit(1);

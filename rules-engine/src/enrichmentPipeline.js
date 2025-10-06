@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import aiService from './aiService.js';
 import logger from './logger.js';
+import { productHash } from './utils/hash.js';
 
 const CONFIG_PATH = path.join(process.cwd(), 'rules-engine', 'config', 'enrichment.json');
 function loadConfig(){
@@ -19,23 +20,27 @@ export class EnrichmentPipeline {
   }
 
   async enrich(product){
-    if (!this.config.enabled) return { enriched:false };
-    const accum = { input: product, stages: {}, meta: {} };
+    const started = Date.now();
+    if (!this.config.enabled) return { enriched:false, disabled:true };
+    const accum = { input: product, stages: {}, meta: {}, warnings: [], errors: [] };
+    const stageTimings = {};
+    const runStage = async (name, fn, ...args) => {
+      const t0 = Date.now();
+      try { accum.stages[name] = await fn.apply(this, args); }
+      catch(e){ accum.errors.push(`${name}:${e.message}`); logger.warn(`[enrich] stage ${name} failed`, e); }
+      stageTimings[name] = Date.now()-t0;
+    };
 
-    if (this.config.stages.stage1_extract){
-      accum.stages.stage1 = await this.stage1_extract(product);
-    }
-    if (this.config.stages.stage2_marketing){
-      accum.stages.stage2 = await this.stage2_marketing(product, accum.stages.stage1);
-    }
-    if (this.config.stages.stage3_compliance){
-      accum.stages.stage3 = await this.stage3_compliance(product, accum.stages.stage1);
-    }
-    if (this.config.stages.stage4_embeddings){
-      accum.stages.stage4 = await this.stage4_embeddings(product, accum.stages.stage2);
-    }
+    if (this.config.stages.stage1_extract){ await runStage('stage1', this.stage1_extract, product); }
+    if (this.config.stages.stage2_marketing){ await runStage('stage2', this.stage2_marketing, product, accum.stages.stage1); }
+    if (this.config.stages.stage3_compliance){ await runStage('stage3', this.stage3_compliance, product, accum.stages.stage1); }
+    if (this.config.stages.stage4_embeddings){ await runStage('stage4', this.stage4_embeddings, product, accum.stages.stage2); }
 
-    return this.assemble(accum);
+    const assembled = this.assemble(accum);
+    const hash = productHash(product);
+    const durationMs = Date.now()-started;
+    if (!assembled.features || (assembled.features||[]).length===0){ accum.warnings.push('no_features_extracted'); }
+    return { ...assembled, enriched:true, version: process.env.ENRICH_VERSION || String(this.version), hash, warnings: accum.warnings, errors: accum.errors, timings: stageTimings, durationMs };
   }
 
   async stage1_extract(product){
@@ -83,8 +88,27 @@ export class EnrichmentPipeline {
   }
 
   assemble(accum){
-    const out = { ...accum.stages.stage1, ...accum.stages.stage2, ...accum.stages.stage3, ...accum.stages.stage4 };
-    return { enriched:true, ...out };
+    const out = { ...(accum.stages.stage1||{}), ...(accum.stages.stage2||{}), ...(accum.stages.stage3||{}), ...(accum.stages.stage4||{}) };
+    return out;
+  }
+
+  // Re-run only selected stages; existingResult is previously enriched object
+  async reEnrichPartial(product, existingResult, stages){
+    const started = Date.now();
+    const out = { ...(existingResult||{}) };
+    const wanted = new Set(stages);
+    const stageTimings = {};
+    const run = async (key, fn, ...args) => {
+      const t0 = Date.now();
+      try { out[key] = await fn.apply(this, args); } catch(e){ (out.errors = out.errors||[]).push(`${key}:${e.message}`); }
+      stageTimings[key] = Date.now()-t0;
+    };
+    if (wanted.has('stage1')) await run('stage1', this.stage1_extract, product);
+    if (wanted.has('stage2')) await run('stage2', this.stage2_marketing, product, out.stage1||existingResult?.stage1);
+    if (wanted.has('stage3')) await run('stage3', this.stage3_compliance, product, out.stage1||existingResult?.stage1);
+    if (wanted.has('stage4')) await run('stage4', this.stage4_embeddings, product, out.stage2||existingResult?.stage2);
+    const assembled = { ...(out.stage1||existingResult?.stage1||{}), ...(out.stage2||existingResult?.stage2||{}), ...(out.stage3||existingResult?.stage3||{}), ...(out.stage4||existingResult?.stage4||{}) };
+    return { ...existingResult, ...assembled, partial:true, stagesUpdated:[...wanted], durationMs: Date.now()-started, timings: { ...(existingResult?.timings||{}), ...stageTimings } };
   }
 }
 

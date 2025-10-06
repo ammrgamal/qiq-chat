@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Pre-commit secret scan hook
+node scripts/scan-secrets.mjs --json > /tmp/scan-secrets.json
+status=$?
+if [ $status -ne 0 ]; then
+  echo "\n[SECRET SCAN FAILED] Potential secret patterns detected. Review /tmp/scan-secrets.json"
+  cat /tmp/scan-secrets.json
+  echo "Commit aborted. If false positive, adjust patterns in scripts/scan-secrets.mjs."
+  exit 1
+fi
+exit 0

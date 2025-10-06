@@ -1,6 +1,6 @@
 # 📁 QIQ Chat – Project Knowledge Base
 
-> Technical implementation details now live in `docs/ARCHITECTURE.md` (see also: `docs/ENRICHMENT.md`, `docs/ROADMAP.md`, `docs/SECURITY.md`). This document focuses on vision, strategy, monetization, and high-level roadmap.
+> Technical implementation details now live in `docs/ARCHITECTURE.md` (see also: `docs/ENRICHMENT.md`, `docs/ROADMAP.md`, `docs/SECURITY.md`, `INSTRUCTION.md`). This document focuses on vision, strategy, monetization, and high-level roadmap.
 
 ---
 

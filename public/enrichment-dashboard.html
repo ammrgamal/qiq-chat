@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Enrichment Dashboard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <style>
+    body { font-family: system-ui, Arial; margin: 20px; background:#f8f9fb; }
+    h1 { margin-top:0; }
+    .cards{ display:flex; gap:12px; flex-wrap:wrap; }
+    .card{ background:#fff; padding:14px 16px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); min-width:160px; }
+    table{ border-collapse:collapse; width:100%; margin-top:20px; background:#fff; }
+    th,td{ padding:6px 8px; border:1px solid #e3e5e8; font-size:13px; }
+    th{ background:#f0f2f5; text-align:left; }
+    code{ background:#eef; padding:2px 4px; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <h1>Enrichment Summary</h1>
+  <div id="meta"></div>
+  <div class="cards" id="cards"></div>
+  <table id="logsTbl" style="display:none">
+    <thead><tr><th>ID</th><th>Status</th><th>Item</th><th>Version</th><th>Dur (ms)</th><th>Error</th><th>Created</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <script>
+    async function load(){
+      const r = await fetch('/api/enrichment/summary');
+      const j = await r.json();
+      const meta = document.getElementById('meta');
+      if (!j.ok){ meta.textContent = 'Failed: '+j.error; return; }
+      meta.innerHTML = '<b>Mode:</b> '+j.mode + (j.note? ' • '+j.note: '');
+      const cards = document.getElementById('cards');
+      cards.innerHTML = Object.entries(j.totals||{}).map(([k,v])=>`<div class="card"><div style="font-size:12px;color:#667">${k}</div><div style="font-size:24px;font-weight:600">${v}</div></div>`).join('');
+      const tbl = document.getElementById('logsTbl');
+      const tb = tbl.querySelector('tbody');
+      (j.recent||[]).forEach(l=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${l.id||l.LogID||''}</td><td>${l.status||l.Status}</td><td>${l.item_id||l.ItemID||''}</td><td>${l.ai_version||l.AIVersion||''}</td><td>${l.duration_ms||l.DurationMs||''}</td><td>${(l.error||l.Error||'').slice(0,60)}</td><td>${l.created_at||l.CreatedAt||''}</td>`;
+        tb.appendChild(tr);
+      });
+      if ((j.recent||[]).length) tbl.style.display='table';
+    }
+    load();
+  </script>
+</body>
+</html>
