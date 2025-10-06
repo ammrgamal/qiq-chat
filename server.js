@@ -45,6 +45,17 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
+// Graceful JSON parse error handler (prevents generic 500 and returns structured message)
+app.use((err, req, res, next) => {
+  if (err && err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Invalid JSON body', detail: process.env.SEARCH_DEBUG === '1' ? err.message : undefined });
+  }
+  if (err instanceof SyntaxError && 'body' in err) {
+    return res.status(400).json({ error: 'Invalid JSON syntax', detail: process.env.SEARCH_DEBUG === '1' ? err.message : undefined });
+  }
+  next(err);
+});
+
 // Static site
 app.use(express.static(path.join(__dirname, 'public')));
 
