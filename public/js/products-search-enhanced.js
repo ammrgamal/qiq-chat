@@ -106,8 +106,9 @@
     };
     // Optional: we could pass custom filters; backend may ignore unknown keys
     const r = await fetch('/api/search', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
-    if (!r.ok) throw new Error('HTTP '+r.status);
-    return r.json();
+    let json = {};
+    try { json = await r.json(); } catch { json = { hits: [], nbHits:0, facets:{}, error: 'Invalid JSON' }; }
+    return json;
   }
 
   // Render facets (brands/categories)
@@ -273,6 +274,10 @@
     if (st) st.textContent = q ? `Searching for "${q}"...` : 'Loading top products...';
     try{
       const res = await apiSearch(q, { page, hitsPerPage: 24 });
+      if (res.error){
+        console.warn('search backend reported error:', res.error);
+        try { window.QiqToast?.warning?.('تعذر الحصول على نتائج حالياً', 2500); } catch {}
+      }
       const hits = Array.isArray(res?.hits) ? res.hits : [];
   if (st) st.textContent = `${res?.nbHits || hits.length} result(s) • via backend`;
 

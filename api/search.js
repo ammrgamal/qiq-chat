@@ -8,8 +8,13 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
+  const started = Date.now();
+  const respond = (obj) => {
+    const took = Date.now() - started;
+    return res.status(200).json({ tookMs: took, ...obj });
+  };
   try {
-    const { query, hitsPerPage, page, facetFilters, numericFilters, index: indexOverride } = req.body || {};
+    const { query, hitsPerPage, page, facetFilters, numericFilters, index: indexOverride, debug } = req.body || {};
     const q = (query ?? '').toString();
 
     const appId = process.env.ALGOLIA_APP_ID;
@@ -18,7 +23,7 @@ export default async function handler(req, res) {
     const indexName = (indexOverride && typeof indexOverride === 'string' && indexOverride.trim()) ? indexOverride.trim() : defaultIndex;
 
     if (!appId || !apiKey) {
-      return res.status(200).json({ hits: [], facets: {}, nbHits: 0, page: 0, nbPages: 0, warning: 'Algolia credentials not set' });
+      return respond({ hits: [], facets: {}, nbHits: 0, page: 0, nbPages: 0, warning: 'Algolia credentials not set' });
     }
 
     // Preprocess Arabic query
@@ -41,7 +46,22 @@ export default async function handler(req, res) {
     if (Array.isArray(facetFilters) && facetFilters.length) opts.facetFilters = facetFilters;
     if (Array.isArray(numericFilters) && numericFilters.length) opts.numericFilters = numericFilters;
 
-    const result = await index.search(searchQuery, opts);
+    let result;
+    try {
+      result = await index.search(searchQuery, opts);
+    } catch (inner) {
+      // If Algolia throws (e.g., index missing), fallback gracefully
+      console.warn('Algolia primary search failed, returning empty set:', inner.message);
+      return respond({
+        hits: [],
+        facets: {},
+        nbHits: 0,
+        page: Number(page)||0,
+        nbPages: 0,
+        error: 'Search backend unavailable',
+        detail: debug ? inner.message : undefined
+      });
+    }
     
     // Log failed Arabic queries for self-learning
     if (preprocessed && (!result?.hits || result.hits.length === 0)) {
@@ -71,7 +91,7 @@ export default async function handler(req, res) {
       brand: h.brand || h.manufacturer || h.vendor || h.company || ''
     }));
 
-    return res.status(200).json({
+    return respond({
       hits: normalized,
       facets: result?.facets || {},
       nbHits: result?.nbHits || 0,
@@ -79,8 +99,16 @@ export default async function handler(req, res) {
       nbPages: result?.nbPages || 0
     });
   } catch (e) {
-    console.error('Algolia search error:', e);
-    const status = Number(e?.status) || 500;
-    return res.status(status).json({ error: e?.message || 'Search failed' });
+    console.error('Algolia search error (outer):', e);
+    // Always return 200 with structured empty result to avoid frontend hard failures
+    return respond({
+      hits: [],
+      facets: {},
+      nbHits: 0,
+      page: 0,
+      nbPages: 0,
+      error: 'Search failed',
+      detail: process.env.SEARCH_DEBUG === '1' ? (e?.stack || e?.message) : undefined
+    });
   }
 }
