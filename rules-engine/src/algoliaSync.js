@@ -16,7 +16,7 @@ dotenv.config({ path: '../.env' });
 class AlgoliaSyncService {
   constructor() {
     this.algoliaAppId = process.env.ALGOLIA_APP_ID;
-    this.algoliaApiKey = process.env.ALGOLIA_ADMIN_API_KEY;
+  this.algoliaApiKey = process.env.ALGOLIA_ADMIN_API_KEY || process.env.ALGOLIA_API_KEY; // fallback to generic key if only that exists
     // Unified index resolution: prefer legacy ALGOLIA_INDEX then ALGOLIA_INDEX_NAME then default
     const idxA = process.env.ALGOLIA_INDEX?.trim();
     const idxB = process.env.ALGOLIA_INDEX_NAME?.trim();
@@ -36,7 +36,7 @@ class AlgoliaSyncService {
    */
   async initialize() {
     if (!this.algoliaAppId || !this.algoliaApiKey) {
-      throw new Error('Algolia credentials not configured. Set ALGOLIA_APP_ID and ALGOLIA_ADMIN_API_KEY in .env');
+      throw new Error('Algolia credentials not configured. Required: ALGOLIA_APP_ID + (ALGOLIA_ADMIN_API_KEY or ALGOLIA_API_KEY)');
     }
 
     try {

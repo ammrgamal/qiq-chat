@@ -12,7 +12,10 @@ export default async function handler(req, res){
   }
   const t0 = Date.now();
   const appId = process.env.ALGOLIA_APP_ID;
-  const searchKey = process.env.ALGOLIA_SEARCH_KEY || process.env.ALGOLIA_PUBLIC_API_KEY || process.env.ALGOLIA_API_KEY; // fallback to generic key if only that is present
+  const rawSearchKey = process.env.ALGOLIA_SEARCH_KEY || process.env.ALGOLIA_PUBLIC_API_KEY;
+  const adminKey = process.env.ALGOLIA_ADMIN_API_KEY || process.env.ALGOLIA_API_KEY;
+  const allowEmergency = /^(1|true|yes)$/i.test(String(process.env.ALLOW_ADMIN_KEY_AS_SEARCH || ''));
+  const searchKey = rawSearchKey || (allowEmergency ? adminKey : null);
   const idxA = process.env.ALGOLIA_INDEX?.trim();
   const idxB = process.env.ALGOLIA_INDEX_NAME?.trim();
   const resolved = idxA || idxB || 'woocommerce_products';
@@ -22,9 +25,11 @@ export default async function handler(req, res){
     return res.status(200).json({
       ok: false,
       configured: false,
-      reason: 'Missing ALGOLIA_APP_ID or search key',
+      reason: !appId ? 'Missing ALGOLIA_APP_ID' : 'Missing search key (ALGOLIA_SEARCH_KEY / ALGOLIA_PUBLIC_API_KEY)',
       index: resolved,
       mismatch,
+      hasAdminKey: Boolean(adminKey),
+      emergencyAllowed: allowEmergency,
       tookMs: Date.now()-t0
     });
   }
@@ -43,6 +48,8 @@ export default async function handler(req, res){
       mismatch,
       nbHits: searchRes.nbHits || 0,
       processingTimeMS: searchRes.processingTimeMS || null,
+      hasAdminKey: Boolean(adminKey),
+      usedEmergencyFallback: Boolean(!rawSearchKey && allowEmergency && adminKey),
       tookMs: Date.now()-t0
     });
   } catch (e){
@@ -52,6 +59,7 @@ export default async function handler(req, res){
       index: resolved,
       mismatch,
       error: e.message,
+      hasAdminKey: Boolean(adminKey),
       tookMs: Date.now()-t0
     });
   }
