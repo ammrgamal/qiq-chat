@@ -165,6 +165,7 @@ route('get',  '/api/search/health', 'search-health.js');
 route('post', '/api/chat', 'chat.js');
 route('post', '/api/special-quote', 'special-quote.js');
 route('post', '/api/quote', 'quote.js');
+route('get',  '/api/algolia/mirror-check', 'algolia-mirror-check.js');
 route('post', '/api/agent', 'agent.js');
 route('post', '/api/compare', 'compare.js');
 route('post', '/api/maintenance', 'maintenance.js');

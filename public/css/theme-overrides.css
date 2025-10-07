@@ -1,0 +1,52 @@
+/* Theme Overrides: default light (white) mode, improved dark mode contrast, unified font */
+
+/* Base font stack (Inter first if available) */
+html, body, .qiq, .topbar, .topbar-inner, .brand, .qiq-btn, .btn, input, button, select, textarea {
+  font-family: Inter, system-ui, "Segoe UI", Arial, sans-serif;
+}
+
+/* Light mode is default: ensure body background white-ish */
+body {
+  background: #f8fafc;
+  color: #111827;
+}
+
+/* Topbar refinement to match catalog look */
+.topbar, .qiq-topbar { background:#ffffff; color:#1e3a8a; }
+.topbar a, .qiq-topbar a { color:#1e3a8a; }
+
+/* Buttons unify subtle radius and weight */
+.btn, .qiq-btn, .qiq-send { font-weight:500; border-radius:10px; }
+
+/* Dark mode container class (applied via JS toggle). We lighten text significantly */
+.dark-mode body, body.dark-mode, .qiq.dark-mode {
+  background:#0f172a !important; /* slate-900 */
+  color:#f1f5f9 !important;      /* slate-100 */
+}
+.dark-mode .qiq-window { background:#0f1b33 !important; }
+.dark-mode .qiq-bubble { background:#1e293b; border-color:#334155; color:#f1f5f9; }
+.dark-mode .qiq-msg.user .qiq-bubble { background:#2563eb; border-color:#2563eb; color:#fff; }
+.dark-mode .qiq-form { background:#1e293b; border-top-color:#334155; }
+.dark-mode .qiq-input { background:#0f172a; border-color:#334155; color:#f1f5f9; }
+.dark-mode .qiq-btn, .dark-mode .qiq-send { background:#334155; color:#f1f5f9; }
+.dark-mode .qiq-btn.qiq-primary { background:#0ea5e9; color:#fff; }
+.dark-mode a { color:#93c5fd; }
+.dark-mode .topbar, .dark-mode .qiq-topbar { background:#1e293b; color:#f1f5f9; }
+.dark-mode .topbar a { color:#f1f5f9; }
+.dark-mode .btn.ghost { background:#1e293b; border:1px solid #334155; color:#f1f5f9; }
+.dark-mode .btn.ghost:hover { background:#334155; }
+
+/* Catalog alignment: card & chips (if embedded inside chat modals) */
+.dark-mode .card { background:#1e293b; border-color:#334155; }
+.dark-mode .card .chip { background:#334155; border-color:#475569; color:#e2e8f0; }
+
+/* Transition for smooth theme change */
+body, .qiq, .topbar, .qiq-window, .qiq-bubble, .qiq-form, .qiq-input, .qiq-btn, .btn { transition: background .3s, color .3s, border-color .3s; }
+
+/* Menu / navigation text weight & spacing for professional look */
+.topbar-inner .brand, .topbar-inner .btn.ghost { letter-spacing: .3px; }
+
+/* Ensure Inter font is loaded if available via local; advise adding link to CDN if not present */
+@supports (font-variation-settings: normal) {
+  :root { font-family: Inter, system-ui, "Segoe UI", Arial, sans-serif; }
+}
