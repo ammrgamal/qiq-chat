@@ -1,12 +1,12 @@
 # Enrichment SQL / Hybrid Layer
 
-هذه الوثيقة توضح آلية **الطبقة الهجينة** بين SQL Server و SQLite لعمليات Enrichment.
+هذه الوثيقة توضّح طبقة التخزين والتنفيذ الهجينة بين SQL Server و SQLite بعد الانتقال إلى نموذج `sections.*` الهيكلي.
 
 ## الأهداف
-- تشغيل محلي سريع بدون إعداد خادم.
-- Idempotency (تخطي العناصر المعالجة سابقاً) عبر hash + version.
-- تسجيل أداء كل عنصر.
-- دعم إعادة المعالجة عند رفع الإصدار `ENRICH_VERSION`.
+- تشغيل محلي سريع (SQLite) + إمكانية التوسّع (MSSQL).
+- Idempotency عبر (hash + ENRICH_VERSION).
+- تسجيل أداء كل عنصر وزمن المراحل.
+- دعم إعادة المعالجة الجزئية (Partial Stage Re-Enrichment).
 
 ## الجداول (SQLite)
 ```
@@ -17,75 +17,84 @@ enrich_logs(id, item_id, status, ai_version, duration_ms, created_at, error)
 ## المتغيرات البيئية
 | متغير | وظيفة | قيمة افتراضية |
 |-------|-------|---------------|
-| ENRICH_SQLITE_PATH | مسار ملف قاعدة بيانات SQLite | rules-engine/.enrich.db |
-| ENRICH_VERSION | وسم الإصدار الحالي | v1.0.0 |
-| ENRICH_BATCH_SIZE | حجم الدفعة | 50 |
-| ENRICH_MAX_CONCURRENCY | أقصى عدد مهام متوازية | 3 |
-| ENRICH_DRY_RUN | تشغيل بدون كتابة | 0 |
-| ENRICH_WEBHOOK_URL | يستقبل ملخص الدفعة POST | (فارغ) |
-| ENRICH_STORAGE_MODE | فرض sqlite أو mssql | (تلقائي) |
+| ENRICH_SQLITE_PATH | مسار ملف SQLite | rules-engine/.enrich.db |
+| ENRICH_VERSION | إصدار الإنريتش الحالي | v1.0.0 |
+| ENRICH_BATCH_SIZE | حجم الدُفعة | 50 |
+| ENRICH_MAX_CONCURRENCY | حد التوازي | 3 |
+| ENRICH_DRY_RUN | تشغيل دون حفظ | 0 |
+| ENRICH_WEBHOOK_URL | Webhook ملخص | (فارغ) |
+| ENRICH_STORAGE_MODE | فرض sqlite/mssql | (تلقائي) |
 
-## التدفق المبسط
-1. تحميل عناصر (حاليًا عينات – لاحقًا من SQL Server).
-2. حساب hash للمدخل (partNumber + name + manufacturer + desc).
-3. إذا وُجد نفس hash + نفس الإصدار → skip.
-4. تشغيل المراحل (stage1..4) وتسجيل زمن كل مرحلة.
-5. حفظ الناتج + سجل حدث.
+## التدفق المبسّط
+1. تحميل العناصر (أو seed fallback عند فشل الجدول المصدر).
+2. حساب hash = checksum(name+part+manufacturer+desc).
+3. البحث عن hash + الإصدار؛ إذا موجود → skip.
+4. تنفيذ المراحل (1..4) مع تجميع timings.
+5. حفظ enriched_json (يحوي الجذر + sections) و تسجيل log.
 
 ### طبقة التخزين الموحّدة (storageAdapter)
-- تختار تلقائياً SQLite (إن وُجدت الحزمة) أو MSSQL (إذا فُرضت أو لم تتوفر SQLite).
-- دوال رئيسية: `getByHash`, `saveItem`, `log`.
-- تم تنفيذ دعم MSSQL: إنشاء جدولين تلقائياً `EnrichedItems` و `EnrichLogs` عند الحاجة.
-- الحقول في MSSQL:
+- اختيار تلقائي: SQLite أولاً، وإلا MSSQL إذا تم تهيئته أو فُرض.
+- دوال: `getByHash`, `saveItem`, `log`.
+- MSSQL ينشئ: `EnrichedItems`, `EnrichLogs` عند الحاجة.
   - EnrichedItems(ItemID, PartNumber, Manufacturer, RawJson, EnrichedJson, AIVersion, EnrichHash, UpdatedAt)
   - EnrichLogs(LogID, ItemID, Status, AIVersion, DurationMs, CreatedAt, Error)
 
 ### التوازي (Concurrency Pool)
-- تنفيذ مهام متوازية حسب `ENRICH_MAX_CONCURRENCY`.
-- يحافظ على طباعة نتائج كل عنصر بخط مستقل.
+- احترام `ENRICH_MAX_CONCURRENCY`.
+- طباعة سطر حالة لكل عنصر (part, status, ms).
 
 ### استهداف عناصر محددة
-- `--items=PN1,PN2` لمعالجة عناصر فقط.
-- يحترم BATCH بعد التصفية.
+- `--items=PN1,PN2` بعدد محدود.
+- يطبّق مرشح BATCH بعد التصفية.
 
-### إعادة معالجة مرحلة محددة (Partial Stage Re-Enrichment)
-- مفعّلة الآن عبر `--stage=stage2` أو قائمة مثل: `--stage=stage2,stage3`.
-- تعيد فقط المراحل المطلوبة وتدمجها في الناتج السابق دون فقد بقية الحقول.
+### إعادة معالجة مرحلة محددة
+- `--stage=stage2` أو `--stage=stage2,stage3` لتحديث أقسام محددة ودمج الناتج مع السابق.
+- يبقى hash نفسه ما لم تتغير مدخلات الهوية.
 
 ### Webhook
-- إذا تم ضبط `ENRICH_WEBHOOK_URL` يرسل الملخص + النتائج بعد انتهاء الدُفعة.
-- فشل الويب هوك لا يوقف العملية.
+- إرسال ملخص JSON بعد انتهاء الدُفعة (إذا تم ضبط المتغير).
+- فشل الطلب لا يوقف التنفيذ.
 
-### جودة (Quality Score)
-- يتم حساب `quality_score` (0-100) وفق: عدد الميزات، طول value_statement، وجود compliance_tags، عدم وجود errors.
+### Quality Score
+- حالي: حساب بسيط (عدد features، وجود value_statement، compliance_tags، عدم errors) — سيتم تحسينه.
 
-
-## شكل الناتج (enrichmentPipeline.enrich)
+## شكل الناتج (enrichmentPipeline.enrich) — نموذج Sections
 ```jsonc
 {
   "enriched": true,
-  "version": "v1.1.0",
-  "hash": "ab12cd34",
-  "features": ["Network traffic management"],
-  "value_statement": "High quality solution.",
-  "compliance_tags": ["Security"],
-  "risk_score": 40,
-  "warnings": ["no_features_extracted"],
+  "version": "v1.0.0",
+  "hash": "18e11f1c",
+  "sections": {
+    "identity": { "features": ["Fiber patch panel"], "keywords": ["fiber"], "short_description": "CommScope fiber patch panel 24-port" },
+    "specs": { "manufacturer": "CommScope", "baseName": "CommScope Fiber Patch Panel 24 Port" },
+    "marketing": { "value_statement": "Reliable structured cabling component.", "short_benefit_bullets": ["High-density"], "use_cases": ["General"] },
+    "compliance": { "compliance_tags": ["Datacenter"], "risk_score": 40 },
+    "embeddings": { "embedding_ref": null }
+  },
+  "quality_score": 72,
+  "warnings": [],
   "errors": [],
-  "timings": {"stage1": 12, "stage2": 205},
-  "durationMs": 230
+  "timings": { "stage1": 2, "stage2": 0, "stage3": 0 },
+  "durationMs": 6
 }
 ```
+
+ملاحظات:
+- الحقول الجذرية (enriched, version, hash, timings...) تبقى مسطّحة ليسهل الفرز.
+- أي مرحلة جديدة تضاف تحت `sections.<stageName>`.
 
 ## تشغيل سكربت الدُفعات
 ```
 node rules-engine/scripts/run-enrichment.mjs --items=SW-24,SRV-1U
 node rules-engine/scripts/run-enrichment.mjs --help
 ```
-مع تعيين المتغيرات حسب الحاجة قبل التشغيل.
+أو سكربت العلامة التجارية: `node rules-engine/scripts/run-enrichment-db.mjs --brand=CommScope` (يعتمد على وجود الجدول المصدر وإلا يستخدم seed).
 
 ## ملاحظات مستقبلية
-- تحسين معادلة quality_score لتشمل: use_cases diversity, FAQ richness, timing efficiency.
-- استرجاع ملخص MSSQL متقدم (إحصاءات زمن متوسط لكل مرحلة).
-- دعم Webhook تقدّم (progress streaming) أثناء التنفيذ.
-- دعم إعادة معالجة حسب تغيير AIVersion السابق فقط.
+- تحسين معادلة quality_score (diversity, length weighting, penalties).
+- إحصاءات تجميع MSSQL (AVG timings لكل مرحلة).
+- Webhook تدرجي (progress streaming).
+- إعادة معالجة مشروطة بتغيّر `ai_version` فقط.
+
+---
+تم التحديث ليتوافق مع نموذج الأقسام (أكتوبر 2025).

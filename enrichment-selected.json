@@ -1,0 +1,30 @@
+{
+  "total": 20,
+  "enriched": 20,
+  "skipped": 0,
+  "failed": 0,
+  "version": "v1.0.0",
+  "durationMs": 347,
+  "selected": [
+    "CSC-OPT-1001",
+    "CSC-OPT-1002",
+    "CSC-OPT-1003",
+    "CSC-OPT-1004",
+    "CSC-OPT-1005",
+    "CSC-OPT-1006",
+    "CSC-OPT-1007",
+    "CSC-OPT-1008",
+    "CSC-OPT-1009",
+    "CSC-OPT-1010",
+    "KAS-SFT-2001",
+    "KAS-SFT-2002",
+    "KAS-SFT-2003",
+    "KAS-SFT-2004",
+    "KAS-SFT-2005",
+    "KAS-SFT-2006",
+    "KAS-SFT-2007",
+    "KAS-SFT-2008",
+    "KAS-SFT-2009",
+    "KAS-SFT-2010"
+  ]
+}

@@ -14,15 +14,23 @@
     "express-rate-limit": "^7.4.0",
     "xlsx": "^0.18.5",
     "joi": "^17.12.0",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "mssql": "^10.0.1"
   },
   "scripts": {
     "start": "node server.js",
     "apply:algolia-settings": "ts-node src/search/applySettings.ts",
     "test": "npm run test:search",
     "algolia:diagnose": "node scripts/algolia-diagnose.mjs",
-  "test:search": "jest __tests__/algoliaMapper.spec.ts __tests__/emailValidation.spec.ts -u",
-    "enrich:run": "node rules-engine/scripts/run-enrichment.mjs"
+    "test:search": "jest __tests__/algoliaMapper.spec.ts __tests__/emailValidation.spec.ts -u",
+    "enrich:run": "node rules-engine/scripts/run-enrichment.mjs",
+    "backup": "node scripts/backup-db.mjs",
+    "enrich:sample": "node scripts/enrich-sample.mjs",
+    "preenrich:sample": "node scripts/preenrich-sample.mjs",
+    "enrich:brands": "node rules-engine/scripts/run-enrichment-db.mjs",
+    "test:sql": "node scripts/test-sql-connection.mjs",
+    "sync:algolia:enriched": "node scripts/sync-enriched-sqlite-algolia.mjs",
+    "print:enriched": "node scripts/print-enriched.mjs --limit=1 --pretty=2"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",

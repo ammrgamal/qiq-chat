@@ -1,6 +1,9 @@
 node_modules/
 package-lock.json
 .env
+.env
+backups/
+*.bak
 .DS_Store
 dist/
 build/
