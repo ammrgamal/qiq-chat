@@ -1,0 +1,133 @@
+{
+  "generatedAt": "2025-10-09T08:35:56.041Z",
+  "summary": {
+    "total_listed": 25,
+    "avg_quality": 68,
+    "high": 6,
+    "medium": 13,
+    "low": 6,
+    "avg_features": "0.40"
+  },
+  "sample": [
+    {
+      "part": "AIO-SEC-MON",
+      "name": "Security Monitoring Platform",
+      "manu": "InsightOps",
+      "q": 75,
+      "bucket": "medium",
+      "feats": 0,
+      "syns": 0,
+      "tags": 1,
+      "bundles": 1,
+      "bullets": 0
+    },
+    {
+      "part": "MON-NMS",
+      "name": "Network Monitoring Suite",
+      "manu": "InsightOps",
+      "q": 40,
+      "bucket": "low",
+      "feats": 0,
+      "syns": 0,
+      "tags": 0,
+      "bundles": 0,
+      "bullets": 0
+    },
+    {
+      "part": "BCK-SW-ENT",
+      "name": "Enterprise Backup Software",
+      "manu": "SafeStore",
+      "q": 40,
+      "bucket": "low",
+      "feats": 0,
+      "syns": 0,
+      "tags": 0,
+      "bundles": 0,
+      "bullets": 0
+    },
+    {
+      "part": "BCK-APPL",
+      "name": "Backup Appliance 24TB",
+      "manu": "SafeStore",
+      "q": 40,
+      "bucket": "low",
+      "feats": 0,
+      "syns": 0,
+      "tags": 0,
+      "bundles": 0,
+      "bullets": 0
+    },
+    {
+      "part": "LIC-FW-ADV",
+      "name": "Firewall Advanced Features License",
+      "manu": "SecureEdge",
+      "q": 75,
+      "bucket": "medium",
+      "feats": 0,
+      "syns": 0,
+      "tags": 2,
+      "bundles": 1,
+      "bullets": 0
+    },
+    {
+      "part": "LIC-SW-MGMT",
+      "name": "Switch Management License",
+      "manu": "NetPro",
+      "q": 90,
+      "bucket": "high",
+      "feats": 1,
+      "syns": 0,
+      "tags": 2,
+      "bundles": 1,
+      "bullets": 1
+    },
+    {
+      "part": "ROUT-CORE",
+      "name": "Core Router Modular",
+      "manu": "RouteMax",
+      "q": 65,
+      "bucket": "medium",
+      "feats": 1,
+      "syns": 0,
+      "tags": 0,
+      "bundles": 0,
+      "bullets": 1
+    },
+    {
+      "part": "ROUT-EDGE",
+      "name": "Edge Router 10G",
+      "manu": "RouteMax",
+      "q": 65,
+      "bucket": "medium",
+      "feats": 1,
+      "syns": 0,
+      "tags": 0,
+      "bundles": 0,
+      "bullets": 1
+    },
+    {
+      "part": "WIFI-AP6-OUT",
+      "name": "Outdoor WiFi 6 Access Point",
+      "manu": "AirLink",
+      "q": 40,
+      "bucket": "low",
+      "feats": 0,
+      "syns": 0,
+      "tags": 0,
+      "bundles": 0,
+      "bullets": 0
+    },
+    {
+      "part": "WIFI-AP6",
+      "name": "WiFi 6 Access Point",
+      "manu": "AirLink",
+      "q": 40,
+      "bucket": "low",
+      "feats": 0,
+      "syns": 0,
+      "tags": 0,
+      "bundles": 0,
+      "bullets": 0
+    }
+  ]
+}

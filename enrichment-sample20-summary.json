@@ -1,0 +1,131 @@
+{
+  "summary": {
+    "total": 20,
+    "enriched": 20,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 112
+  },
+  "results": [
+    {
+      "partNumber": "SW-24G",
+      "status": "enriched",
+      "q": 90,
+      "bucket": "high"
+    },
+    {
+      "partNumber": "SW-48G",
+      "status": "enriched",
+      "q": 90,
+      "bucket": "high"
+    },
+    {
+      "partNumber": "FW-UTM1",
+      "status": "enriched",
+      "q": 75,
+      "bucket": "medium"
+    },
+    {
+      "partNumber": "FW-POE2",
+      "status": "enriched",
+      "q": 75,
+      "bucket": "medium"
+    },
+    {
+      "partNumber": "SRV-1U-G1",
+      "status": "enriched",
+      "q": 100,
+      "bucket": "high"
+    },
+    {
+      "partNumber": "SRV-2U-G2",
+      "status": "enriched",
+      "q": 100,
+      "bucket": "high"
+    },
+    {
+      "partNumber": "NAS-8B",
+      "status": "enriched",
+      "q": 65,
+      "bucket": "medium"
+    },
+    {
+      "partNumber": "NAS-12B",
+      "status": "enriched",
+      "q": 65,
+      "bucket": "medium"
+    },
+    {
+      "partNumber": "SEC-AGENT",
+      "status": "enriched",
+      "q": 75,
+      "bucket": "medium"
+    },
+    {
+      "partNumber": "SEC-AGENT-3Y",
+      "status": "enriched",
+      "q": 75,
+      "bucket": "medium"
+    },
+    {
+      "partNumber": "WIFI-AP6",
+      "status": "enriched",
+      "q": 40,
+      "bucket": "low"
+    },
+    {
+      "partNumber": "WIFI-AP6-OUT",
+      "status": "enriched",
+      "q": 40,
+      "bucket": "low"
+    },
+    {
+      "partNumber": "ROUT-EDGE",
+      "status": "enriched",
+      "q": 65,
+      "bucket": "medium"
+    },
+    {
+      "partNumber": "ROUT-CORE",
+      "status": "enriched",
+      "q": 65,
+      "bucket": "medium"
+    },
+    {
+      "partNumber": "LIC-SW-MGMT",
+      "status": "enriched",
+      "q": 90,
+      "bucket": "high"
+    },
+    {
+      "partNumber": "LIC-FW-ADV",
+      "status": "enriched",
+      "q": 75,
+      "bucket": "medium"
+    },
+    {
+      "partNumber": "BCK-APPL",
+      "status": "enriched",
+      "q": 40,
+      "bucket": "low"
+    },
+    {
+      "partNumber": "BCK-SW-ENT",
+      "status": "enriched",
+      "q": 40,
+      "bucket": "low"
+    },
+    {
+      "partNumber": "MON-NMS",
+      "status": "enriched",
+      "q": 40,
+      "bucket": "low"
+    },
+    {
+      "partNumber": "AIO-SEC-MON",
+      "status": "enriched",
+      "q": 75,
+      "bucket": "medium"
+    }
+  ]
+}
