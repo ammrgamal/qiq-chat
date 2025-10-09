@@ -22,10 +22,15 @@ IMPORTANT: لا تضع القيم الفعلية للمفاتيح داخل ال�
 | SQL_PASSWORD | SQL auth password | Mark for rotation policy |
 | BACKUP_DIR | Folder to write DB backups | Ensure write permissions |
 | BACKUP_KEEP_COUNT | How many backup files to retain | e.g. 7 |
+| BACKUP_COMPRESS | If set (1/true) compress .bak to .gz | Reduces storage cost |
+| BACKUP_RETENTION_DAYS | Delete backups older than N days (if KEEP_COUNT not set) | One of keep-count OR retention-days |
+| BACKUP_WEBHOOK_URL | POST JSON after successful backup | For monitoring/chatops |
+| BACKUP_DRY_RUN | Skip actual DB backup for pipeline testing | Do not use in prod |
 | AI_OPENAI_API_KEY | (Future) AI generation key | Optional offline mode supported |
 | AI_TRANSLATE_PROVIDER | Which translation provider (openai/none) | Default none |
 | ALGOLIA_INDEX_NAME | Legacy alt variable (mapped) | Prefer ALGOLIA_INDEX |
 | ENRICHMENT_AWAIT | If `1` pipeline awaited during sync | Adds latency but deterministic |
+| ARABIC_QUERY_EXPANSION | If `1` enable synonym expansion optionalWords | Requires arabicNLP module |
 
 ## Rotation Guidelines
 - Admin / Write keys: rotate كل 90 يوم أو فور الشك في تسريب.

@@ -2,9 +2,10 @@
 import fs from 'fs';
 import path from 'path';
 import aiService from './aiService.js';
-import logger from './logger.js';
+import logger from './logger.js'; // remains same path; underlying implementation now in TS
 import { productHash } from './utils/hash.js';
 import { generateArabicSynonyms } from './utils/arabicSynonyms.js';
+import rulesEngine from './rulesEngine.js';
 
 const CONFIG_PATH = path.join(process.cwd(), 'rules-engine', 'config', 'enrichment.json');
 function loadConfig(){
@@ -39,6 +40,13 @@ export class EnrichmentPipeline {
     if (this.config.stages.stage4_embeddings){ await runStage('stage4', this.stage4_embeddings, product, accum.stages.stage2); }
 
     const assembled = this.assemble(accum, product);
+    // Apply rules engine (override placeholders)
+    try {
+      const ruleRes = rulesEngine.resolve(product);
+      if (ruleRes.tags.length) assembled.identity.rule_tags = ruleRes.tags;
+      if (ruleRes.bundles.length) assembled.identity.bundle_candidates = ruleRes.bundles;
+      if (ruleRes.qualityBonus) accum.meta.rules_quality_bonus = ruleRes.qualityBonus;
+    } catch (e){ logger.warn('[enrich] rulesEngine resolve failed', e.message); }
     // Arabic / bilingual synonyms (optional)
     try {
       const synRes = await generateArabicSynonyms({
@@ -48,13 +56,18 @@ export class EnrichmentPipeline {
         category: product.classification || product.Category || ''
       });
       if (synRes.synonyms?.length){
-        assembled.identity.synonyms = synRes.synonyms;
+        const uniq = [...new Set(synRes.synonyms.map(s=>s.trim()).filter(Boolean))];
+        assembled.identity.synonyms = uniq.slice(0,20);
       }
     } catch(e){ logger.warn('[enrich] arabic synonyms generation failed', e.message); }
   const hash = productHash(product);
     const durationMs = Date.now()-started;
     // Derive quality score (light heuristic across sections)
     const qs = this.computeQualityScore(assembled);
+    if (accum.meta.rules_quality_bonus){
+      qs.score += accum.meta.rules_quality_bonus;
+      qs.bucket = qs.score >=80 ? 'high' : qs.score >=50 ? 'medium' : 'low';
+    }
     if (!(assembled.identity?.features?.length) && !(assembled.specs?.features?.length)){
       accum.warnings.push('no_features_extracted');
     }
@@ -63,8 +76,9 @@ export class EnrichmentPipeline {
       version: process.env.ENRICH_VERSION || String(this.version),
       hash,
       sections: assembled,
-      quality_score: qs.score,
-      quality_bucket: qs.bucket,
+  quality_score: qs.score,
+  quality_bucket: qs.bucket,
+  rules_applied_bonus: accum.meta.rules_quality_bonus||0,
       warnings: accum.warnings,
       errors: accum.errors,
       timings: stageTimings,

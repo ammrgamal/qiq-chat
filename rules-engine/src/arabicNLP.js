@@ -83,6 +83,18 @@ class ArabicNLP {
     if (!text || typeof text !== 'string') {
       return { original: text, translated: text, transliterated: text, cached: false };
     }
+
+    // Fast path: disable translation completely for tests or offline runs
+    if (process.env.ARABIC_TRANSLATION_DISABLED === '1') {
+      const normalizedFast = this.normalizeArabic(text);
+      return {
+        original: text,
+        translated: normalizedFast,
+        transliterated: normalizedFast,
+        cached: false,
+        provider: 'disabled'
+      };
+    }
     
     // Check cache first
     const cacheKey = `${context}:${text.toLowerCase()}`;
@@ -333,7 +345,7 @@ Return ONLY a JSON object:
     const normalized = this.normalizeArabic(query);
     
     // Translate to English
-    const translation = await this.translateToEnglish(normalized, 'query');
+  const translation = await this.translateToEnglish(normalized, 'query');
     
     return {
       original: query,

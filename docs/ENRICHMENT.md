@@ -164,6 +164,16 @@ Process: detect → normalize (remove tashkeel, unify letters, digits) → trans
 Mapped to Algolia `search_synonyms` via sync script `scripts/sync-enriched-sqlite-algolia.mjs`.
 Quality score now weights presence (>=4 synonyms adds bonus). Future phases: weighting, adaptive learning, multi-language expansion.
 
+### Synonym Cap
+Hard limit: we now cap to the first 20 unique normalized tokens to prevent Algolia attribute bloat and excessive indexing cost. If >20 generated, we retain order of appearance (English/Arabic mix) then truncate.
+
+### New Utility Scripts
+Script | Purpose
+-------|--------
+`npm run enrich:arabic-demo` | Inserts fabricated Arabic product for demo + prints enriched JSON.
+`npm run algolia:apply-enriched` | Applies enriched index settings (adds `search_synonyms`, `quality_score`, `quality_bucket`).
+`npm run sync:algolia:enriched` | Uploads enriched SQLite records (uses improved error hints for rights issues).
+
 ## 15. Maintenance Checklist
 Action | Frequency
 -------|----------

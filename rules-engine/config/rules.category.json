@@ -1,0 +1,5 @@
+[
+  {"id":"net.switch.base","match":{"includes":["switch"]},"tagsAdd":["network","switch"],"bundlesAdd":["rack_mount_kit"],"priority":10},
+  {"id":"sec.firewall.base","match":{"includes":["firewall","فايروال","جدار حماية"]},"tagsAdd":["security","firewall"],"bundlesAdd":["support_subscription"],"priority":20},
+  {"id":"compute.server.base","match":{"includes":["server"]},"tagsAdd":["compute","server"],"bundlesAdd":["rack_rails"],"priority":30}
+]

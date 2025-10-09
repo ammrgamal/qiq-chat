@@ -61,8 +61,24 @@ async function main(){
   console.log(`[sync] Prepared ${mapped.length} records for index '${indexName}'`);
   const client = algoliasearch(appId, apiKey);
   const index = client.initIndex(indexName);
-  const { objectIDs } = await index.saveObjects(mapped, { autoGenerateObjectIDIfNotExist:false });
-  console.log('[sync] Uploaded objectIDs count=', objectIDs.length);
+  try {
+    const res = await index.saveObjects(mapped, { autoGenerateObjectIDIfNotExist:false });
+    console.log('[sync] Uploaded objectIDs count=', res.objectIDs?.length || 0);
+  } catch (err){
+    const msg = err?.message || '';
+    console.error('[sync] upload failed:', msg);
+    if (/not enough rights|invalid api key|unauthorized/i.test(msg)){
+      console.error('[sync] HINT: Use an Admin API key (ALGOLIA_ADMIN_API_KEY) that has addObject & editSettings rights.');
+      console.error('[sync]       Current env key var used:', process.env.ALGOLIA_ADMIN_API_KEY? 'ALGOLIA_ADMIN_API_KEY' : 'ALGOLIA_API_KEY');
+    }
+    if (/index .* does not exist/i.test(msg)){
+      console.error('[sync] HINT: Create the index first or run the settings script (npm run algolia:apply-enriched-settings)');
+    }
+    if (err?.status === 400 && err?.name === 'ApiError'){
+      console.error('[sync] Raw error JSON:', JSON.stringify(err, null, 2));
+    }
+    process.exit(5);
+  }
 }
 
 main().catch(e=>{ console.error('[sync] fatal', e); process.exit(1); });

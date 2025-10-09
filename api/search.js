@@ -64,14 +64,23 @@ export default async function handler(req, res) {
       console.log('[search.debug] incoming', { q, page, hitsPerPage, facetFilters, numericFilters, indexName, method: req.method });
     }
 
-    // Preprocess Arabic query
-    let searchQuery = q;
-    let preprocessed = null;
+  // Preprocess Arabic query & optional expansion
+  let searchQuery = q;
+  let preprocessed = null;
+  let expansionSynonyms = [];
     await ensureDeps();
     if (arabicNLP && arabicNLP.containsArabic && arabicNLP.containsArabic(q)) {
       try {
         preprocessed = await arabicNLP.preprocessQuery(q);
         searchQuery = preprocessed.processed; // Use translated/normalized version
+        if (/^(1|true|yes)$/i.test(process.env.ARABIC_QUERY_EXPANSION||'')) {
+          try {
+            const syn = await arabicNLP.generateSynonyms(q, 'query');
+            expansionSynonyms = (syn?.merged||[])
+              .filter(t=> t && t.length>2 && !t.includes(' '))
+              .slice(0, 8); // limit to avoid query bloat
+          } catch (synErr){ if (process.env.SEARCH_DEBUG==='1') console.warn('[search.expand] synonym gen failed', synErr.message); }
+        }
       } catch (prepErr) {
         if (process.env.SEARCH_DEBUG==='1') console.warn('[search.preprocess] failed', prepErr.message);
       }
@@ -86,6 +95,10 @@ export default async function handler(req, res) {
       page: Number(page) || 0,
       facets: ['brand', 'manufacturer', 'categories', 'category']
     };
+    if (expansionSynonyms.length){
+      opts.optionalWords = expansionSynonyms;
+      if (debug || process.env.SEARCH_DEBUG==='1') console.log('[search.expand] optionalWords', expansionSynonyms);
+    }
     if (Array.isArray(facetFilters) && facetFilters.length) opts.facetFilters = facetFilters;
     if (Array.isArray(numericFilters) && numericFilters.length) opts.numericFilters = numericFilters;
 

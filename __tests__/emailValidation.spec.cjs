@@ -1,8 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { validateBusinessEmail } = require('../api/_lib/email-validation.cjs');
 
-describe('validateBusinessEmail', () => {
-
+describe('validateBusinessEmail (CJS)', () => {
   it('rejects personal gmail domain', () => {
     const r = validateBusinessEmail('user@gmail.com');
     expect(r.valid).toBe(false);
@@ -11,7 +9,7 @@ describe('validateBusinessEmail', () => {
     const r = validateBusinessEmail('employee@company-example.com');
     expect(r.valid).toBe(true);
   });
-  it('accepts allow list domain even if blocked', () => {
+  it('allow list domain overrides', () => {
     process.env.ALLOW_EMAIL_DOMAINS = 'gmail.com';
     const r = validateBusinessEmail('someone@gmail.com');
     expect(r.valid).toBe(true);
