@@ -13,17 +13,27 @@ function getFromAddress() {
     || DEFAULT_FROM_EMAIL;
 }
 
-async function sendWithResend({ to, subject, html, from }){
+async function sendWithResend({ to, subject, html, from, attachments }){
   const key = process.env.RESEND_API_KEY;
   if (!key) return { ok:false, disabled:true };
   try {
+    // Resend attachments API expects: [{ filename, content, path, type }]
+    let resendAttachments = undefined;
+    if (attachments && Array.isArray(attachments) && attachments.length){
+      resendAttachments = attachments.map(a=>({
+        filename: a.filename,
+        content: a.contentBase64 ? a.contentBase64 : undefined,
+        path: a.path,
+        type: a.mimeType || 'application/octet-stream'
+      }));
+    }
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         authorization: `Bearer ${key}`,
         'content-type': 'application/json'
       },
-      body: JSON.stringify({ from: from || getFromAddress(), to, subject, html })
+      body: JSON.stringify({ from: from || getFromAddress(), to, subject, html, attachments: resendAttachments })
     });
     if (!res.ok){
       const t = await res.text();
@@ -37,10 +47,19 @@ async function sendWithResend({ to, subject, html, from }){
   }
 }
 
-async function sendWithSendGrid({ to, subject, html, from }){
+async function sendWithSendGrid({ to, subject, html, from, attachments }){
   const key = process.env.SENDGRID_API_KEY;
   if (!key) return { ok:false, disabled:true };
   try{
+    let sgAttachments = undefined;
+    if (attachments && Array.isArray(attachments) && attachments.length){
+      sgAttachments = attachments.map(a=>({
+        content: a.contentBase64,
+        filename: a.filename,
+        type: a.mimeType || 'application/octet-stream',
+        disposition: 'attachment'
+      }));
+    }
     const res = await fetch('https://api.sendgrid.com/v3/mail/send',{
       method:'POST',
       headers:{ 'authorization': `Bearer ${key}`, 'content-type':'application/json' },
@@ -48,7 +67,8 @@ async function sendWithSendGrid({ to, subject, html, from }){
         personalizations:[{ to:[{ email: Array.isArray(to) ? to[0] : to }] }],
         from:{ email: from || getFromAddress() },
         subject,
-        content:[{ type:'text/html', value: html }]
+        content:[{ type:'text/html', value: html }],
+        attachments: sgAttachments
       })
     });
     if (!res.ok){
@@ -63,7 +83,7 @@ async function sendWithSendGrid({ to, subject, html, from }){
   }
 }
 
-export async function sendEmail({ to, subject, html, from }){
+export async function sendEmail({ to, subject, html, from, attachments }){
   // Normalize recipient to a string or first element
   const recipient = Array.isArray(to) ? to[0] : to;
   if (!recipient) return { ok:false, error:'Missing recipient' };
@@ -71,17 +91,17 @@ export async function sendEmail({ to, subject, html, from }){
   // Prefer Resend if key present (env or default), else fallback to SendGrid if configured
   const hasResend = Boolean(process.env.RESEND_API_KEY);
   if (hasResend) {
-    const r = await sendWithResend({ to: recipient, subject, html, from });
+    const r = await sendWithResend({ to: recipient, subject, html, from, attachments });
     if (r.ok) return r;
     // If Resend fails but SendGrid is configured, try fallback silently
     if (process.env.SENDGRID_API_KEY) {
-      return await sendWithSendGrid({ to: recipient, subject, html, from });
+      return await sendWithSendGrid({ to: recipient, subject, html, from, attachments });
     }
     return r;
   }
 
   if (process.env.SENDGRID_API_KEY) {
-    return await sendWithSendGrid({ to: recipient, subject, html, from });
+    return await sendWithSendGrid({ to: recipient, subject, html, from, attachments });
   }
 
   console.warn('Email disabled: no provider keys configured.');
