@@ -21,6 +21,7 @@ const ARGS = Object.fromEntries(process.argv.slice(2).map(a=>{
   const [k,...rest] = a.replace(/^--/,'').split('=');
   return [k, rest.join('=') || true];
 }));
+const PN = ARGS.pn ? String(ARGS.pn) : null;
 
 // Directories
 const backupsDir = path.join(process.cwd(), 'local_backups', 'algolia_sync');
@@ -48,6 +49,9 @@ if (process.env.SQL_SERVER) dbConfig.server = process.env.SQL_SERVER;
 if (process.env.SQL_DB) dbConfig.database = process.env.SQL_DB;
 if (process.env.SQL_USER) dbConfig.user = process.env.SQL_USER;
 if (process.env.SQL_PASSWORD) dbConfig.password = process.env.SQL_PASSWORD;
+// Bump timeouts to avoid ETIMEOUT on large catalogs
+dbConfig.connectionTimeout = parseInt(process.env.SQL_CONNECTION_TIMEOUT || '60000', 10);
+dbConfig.requestTimeout = parseInt(process.env.SQL_REQUEST_TIMEOUT || '60000', 10);
 
 // Algolia env
 const ALG_APP = process.env.ALGOLIA_APP_ID;
@@ -63,6 +67,18 @@ const GOOGLE_CSE_ID = process.env.GOOGLE_CSE_ID || process.env.GOOGLE_CX;
 
 function isUrl(v){ return typeof v === 'string' && /^https?:\/\//i.test(v); }
 function appendRaw(u){ if (!u) return u; return u.includes('?') ? `${u}&raw=1` : `${u}?raw=1`; }
+function filenameOnly(p){
+  const s = String(p||'');
+  const norm = s.replace(/\\/g,'/');
+  const parts = norm.split('/');
+  return parts[parts.length-1] || s;
+}
+function removeSpacesKeepExt(name){
+  const m = String(name).match(/^(.*?)(\.[^.]+)?$/);
+  const base = (m?.[1]||'').replace(/\s+/g,'');
+  const ext = m?.[2] || '';
+  return base + ext;
+}
 function fallbackImage(manufacturer){
   const m = encodeURIComponent(String(manufacturer||'product'));
   return appendRaw(`https://pub-02eff5b467804c8ebe56285681eba9a0.r2.dev/${m}.jpg`);
@@ -169,6 +185,11 @@ async function selectSampleProducts(pool, limit=20){
     const priceCol = has('Price')? 'Price' : (has('List')? 'List' : 'Cost');
     const pnCol = has('ManufacturerPartNumber')? 'ManufacturerPartNumber' : (has('InternalPartNumber')? 'InternalPartNumber' : null);
     const imgCol = has('CustomText05')? 'CustomText05' : (has('PictureFileName')? 'PictureFileName' : (has('ItemURL')? 'ItemURL': null));
+    // Prefer unprocessed rows when available
+    const whereProcessed = has('QIQ_Processed')
+      ? `(QIQ_Processed IS NULL OR QIQ_Processed = 0)`
+      : (has('CustomText11') ? `(CustomText11 IS NULL OR CustomText11 <> 'TRUE')` : '1=1');
+    const pnFilter = PN && pnCol ? ` AND ${pnCol}=N'${PN.replace(/'/g,"''")}'` : '';
     const q = `SELECT TOP (100) '${t}' AS __table, ${pnCol || 'NULL'} AS __pn,
       Description, Manufacturer, ${priceCol} AS UnitPrice,
       ${imgCol || 'NULL'} AS ImageField,
@@ -181,6 +202,8 @@ async function selectSampleProducts(pool, limit=20){
       AND ${priceCol} > 0
       AND Description NOT LIKE '%Localization%'
       AND Description NOT LIKE '%N/A%'
+      ${pnFilter}
+      AND ${whereProcessed}
     ORDER BY NEWID()`;
     const rs = await pool.request().query(q);
     candidates.push(...rs.recordset.map(r=> ({ ...r, __pnCol: pnCol, __priceCol: priceCol, __imgCol: imgCol })));
@@ -337,11 +360,30 @@ async function main(){
   const items = await selectSampleProducts(pool, 20);
   logLine(`[select] Picked ${items.length} items across manufacturers`);
 
-  // Backup
-  const ts = new Date().toISOString().replace(/[:.]/g,'-');
-  const backupFile = path.join(backupsDir, `backup_${ts}.json`);
-  fs.writeFileSync(backupFile, JSON.stringify(items, null, 2));
-  logLine(`[backup] Wrote ${backupFile}`);
+  // Backup policy: once per day; keep only last two backups
+  const dayKey = new Date().toISOString().slice(0,10);
+  const dailyName = `backup_${dayKey}.json`;
+  const backupFile = path.join(backupsDir, dailyName);
+  if (!fs.existsSync(backupFile)){
+    fs.writeFileSync(backupFile, JSON.stringify(items, null, 2));
+    logLine(`[backup] Wrote ${backupFile}`);
+  } else {
+    logLine(`[backup] Skipped (exists for today): ${backupFile}`);
+  }
+  // Prune older backups, keep last 2
+  try{
+    const files = fs.readdirSync(backupsDir)
+      .filter(f=> /^backup_.*\.json$/i.test(f))
+      .map(f=> ({ f, time: fs.statSync(path.join(backupsDir,f)).mtimeMs }))
+      .sort((a,b)=> b.time - a.time);
+    if (files.length > 2){
+      const toDelete = files.slice(2);
+      for (const d of toDelete){
+        fs.unlinkSync(path.join(backupsDir, d.f));
+      }
+      logLine(`[backup] Pruned ${toDelete.length} old backup(s), kept latest 2.`);
+    }
+  }catch(e){ logLine(`[backup] prune failed: ${e.message}`); }
 
   // Ensure columns on each table
   const tables = Array.from(new Set(items.map(i=> i.__table)));

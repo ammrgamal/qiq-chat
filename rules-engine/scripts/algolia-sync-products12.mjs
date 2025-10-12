@@ -16,6 +16,7 @@ const ARGS = Object.fromEntries(process.argv.slice(2).map(a=>{
 
 const BRAND = (ARGS.brand || 'Kaspersky').toString();
 const LIST = (ARGS.list || '12').toString();
+const PN = ARGS.pn ? String(ARGS.pn) : null;
 const LIMIT = ARGS.limit ? parseInt(ARGS.limit,10) : null; // optional cap
 
 // Ensure Algolia env alias compatibility for enrichment-engine service
@@ -45,10 +46,25 @@ function encodePathSegment(seg){
   try { return encodeURIComponent(String(seg)).replace(/%2F/g,'/'); } catch { return String(seg); }
 }
 function safeBase(base){ return String(base).replace(/\s/g, '%20').replace(/\/+$/,''); }
+function filenameOnly(p){
+  const s = String(p||'');
+  const norm = s.replace(/\\/g,'/');
+  const parts = norm.split('/');
+  return parts[parts.length-1] || s;
+}
+function removeSpacesKeepExt(name){
+  const m = String(name).match(/^(.*?)(\.[^.]+)?$/);
+  const base = (m?.[1]||'').replace(/\s+/g,'');
+  const ext = m?.[2] || '';
+  return base + ext;
+}
 function joinUrl(base, part){
   if (!base || !part) return null;
   const b = safeBase(base);
-  const p = encodePathSegment(String(part).replace(/^\/+/, ''));
+  let raw = String(part).replace(/^\/+/, '');
+  // Canonicalize common folder "Picture file/" to filename only and collapse spaces in filename
+  const name = removeSpacesKeepExt(filenameOnly(raw));
+  const p = encodePathSegment(name);
   return `${b}/${p}`;
 }
 
@@ -67,15 +83,18 @@ function mapRecordToAlgolia(r){
   const specsBase = process.env.R2_SPECS_BASE || null;
 
   // Image resolution priority:
-  // 1) R2_BASE + PictureFileName (if both present)
-  // 2) CustomText05 if it is a full URL (legacy)
+  // 1) If QIQ_ImagePath or CustomText05 is relative, join with R2 base and canonicalize file; else use as URL if absolute
+  // 2) R2_BASE + PictureFileName (relative)
   // 3) PictureFileName as-is if it is already a URL
   // 4) ItemURL as fallback
   let imageUrl = null;
-  if (imgBase && r.PictureFileName) imageUrl = joinUrl(imgBase, r.PictureFileName);
-  if (!imageUrl && isUrl(r.QIQ_ImagePath || r.CustomText05)) imageUrl = r.QIQ_ImagePath || r.CustomText05;
+  const preferred = r.QIQ_ImagePath || r.CustomText05;
+  if (!imageUrl && imgBase && preferred && !isUrl(preferred)) imageUrl = joinUrl(imgBase, preferred);
+  if (!imageUrl && isUrl(preferred)) imageUrl = preferred;
+  if (!imageUrl && imgBase && r.PictureFileName && !isUrl(r.PictureFileName)) imageUrl = joinUrl(imgBase, r.PictureFileName);
   if (!imageUrl && isUrl(r.PictureFileName)) imageUrl = r.PictureFileName;
   if (!imageUrl && r.ItemURL) imageUrl = r.ItemURL;
+  if (imageUrl) imageUrl = imageUrl.includes('?') ? `${imageUrl}&raw=1` : `${imageUrl}?raw=1`;
 
   // Datasheet/specs resolution priority:
   // 1) R2_SPECS_BASE + CustomText06 when CustomText06 looks like a file path (no http)
@@ -108,14 +127,14 @@ function mapRecordToAlgolia(r){
       list,
       margin: marginPct
     },
-    short_description: asString(r.QIQ_ShortDescription || r.CustomMemo01),
+  short_description: asString(r.QIQ_ShortDescription || r.CustomMemo01 || `${r.Manufacturer||''} ${r.Description||''}`.trim()),
     features: parseMaybeJSON(r.QIQ_FeaturesJSON || r.CustomMemo02),
     specs: parseMaybeJSON(r.QIQ_SpecsJSON || r.CustomMemo03),
     faq: parseMaybeJSON(r.QIQ_FAQJSON || r.CustomMemo04),
     why_buy: asString(r.QIQ_ValueStatement || r.CustomMemo05),
     // nested content
     content: {
-      short_description: asString(r.QIQ_ShortDescription || r.CustomMemo01),
+  short_description: asString(r.QIQ_ShortDescription || r.CustomMemo01 || `${r.Manufacturer||''} ${r.Description||''}`.trim()),
       features: parseMaybeJSON(r.QIQ_FeaturesJSON || r.CustomMemo02),
       specs: parseMaybeJSON(r.QIQ_SpecsJSON || r.CustomMemo03),
       faq: parseMaybeJSON(r.QIQ_FAQJSON || r.CustomMemo04),
@@ -208,10 +227,11 @@ async function main(){
       pick('QIQ_AIConfidence') ? 'QIQ_AIConfidence' : (pick('CustomNumber03') ? 'CustomNumber03' : null)
     ].filter(Boolean).filter(c=> cols.has(c));
 
-    const whereBrand = `Manufacturer IS NOT NULL AND Manufacturer LIKE '${BRAND.replace(/'/g, "''")}%'`;
+  const whereBrand = PN ? '1=1' : `Manufacturer IS NOT NULL AND Manufacturer LIKE '${BRAND.replace(/'/g, "''")}%'`;
   const whereProcessed = pick('QIQ_Processed') ? `(QIQ_Processed = 1 OR CustomText11 = 'TRUE')` : `(CustomText11 = 'TRUE')`;
     const limitClause = LIMIT ? `TOP (${LIMIT})` : '';
-    const q = `SELECT ${limitClause} ${selectCols.join(', ')} FROM ${table} WHERE ${whereBrand} AND ${whereProcessed}`;
+  const pnClause = PN ? ` AND (${pick('ManufacturerPartNumber')? 'ManufacturerPartNumber':'InternalPartNumber'} = N'${PN.replace(/'/g,"''")}')` : '';
+  const q = `SELECT ${limitClause} ${selectCols.join(', ')} FROM ${table} WHERE ${whereBrand} AND ${whereProcessed}${pnClause}`;
     const rs = await pool.request().query(q);
     const rows = rs.recordset;
     if (!rows.length){
