@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 import logger from './logger.js';
 
-// Load environment variables from root .env
-dotenv.config({ path: '../.env' });
+// Load environment variables
+dotenv.config();
 
 class ImageService {
   constructor() {

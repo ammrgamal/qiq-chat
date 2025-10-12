@@ -1,134 +1,932 @@
+ℹ OpenAI client initialized
+ℹ Gemini API key configured
+⚠ Google Custom Search API not configured - image fetching disabled
+ℹ Algolia client initialized (index: woocommerce_products)
+ℹ Connecting to SQL Server database...
+✓ Database connected successfully
+[select] brand=Kaspersky lists=1,12 totalSelected=100
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Enrichment Engine Initialization
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Enrichment engine initialized successfully
+✓ Enriched KL4054IAWRS using openai (8925ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IASFS using openai (9290ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1UDS using openai (9596ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAXDS using openai (4989ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAXDS using openai (9172ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAXFS using openai (7799ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IAWTS using openai (10765ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1UXS using openai (9646ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4056IAUFS using openai (9893ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IAXRS using openai (8790ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1XRS using openai (9982ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAVDS using openai (9170ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched Foundations1 using openai (7103ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1XFS using openai (10631ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IARRS using openai (10328ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IATXS using openai (10789ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAYFS using openai (8827ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAWTS using openai (9805ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IAUDS using openai (10065ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4056IAUTS using openai (7799ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1XDS using openai (10284ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1VXS using openai (7870ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAQDS using openai (9801ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1WRS using openai (12027ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IATTS using openai (10643ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1YTS using openai (8297ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IAVDS using openai (8240ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IARTS using openai (6508ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IASDS using openai (14615ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAUTS using openai (13358ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4056IAVTS using openai (13816ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IATTS using openai (13979ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IAYFS using openai (8675ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4056IAYFS using openai (9873ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IAUTS using openai (10896ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4056IAWTS using openai (15093ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAQXS using openai (10975ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAXTS using openai (9813ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAQTS using openai (12000ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAVTS using openai (12008ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAUDB using openai (8492ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAQXS using openai (11159ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAUTS using openai (10952ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IASTS using openai (12790ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAYTS using openai (10999ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IATFS using openai (9997ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1UTS using openai (9306ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1VDS using openai (11523ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAUDB using openai (11575ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4056IATTS using openai (11253ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IAWFS using openai (10085ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IASTS using openai (8393ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAWFS using openai (10871ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAWDS using openai (11050ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1TDS using openai (10535ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IASRS using openai (10734ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched Plus using openai (6063ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAURS using openai (6539ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4056IAYDS using openai (10295ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAYXS using openai (8002ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAURS using openai (11223ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAUFS using openai (11481ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IAYRS using openai (11812ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IASDS using openai (8068ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAXFS using openai (5609ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAYTS using openai (7530ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAXXS using openai (12318ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4056IAVFS using openai (10929ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4056IAUDS using openai (10627ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IARDS using openai (16134ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IAUFS using openai (11870ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1YDS using openai (10597ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAVRS using openai (13690ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAYFS using openai (12131ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAVXS using openai (13650ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IATDS using openai (13478ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IARXS using openai (10802ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1WXS using openai (9949ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAVRS using openai (8990ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1WTS using openai (12080ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IAWDS using openai (12155ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAVFS using openai (9330ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IAXFS using openai (12594ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IARXS using openai (10001ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1XXS using openai (6595ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1XTS using openai (12386ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAWFS using openai (6843ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAQTS using openai (12369ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4056IAXDS using openai (11296ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IASRS using openai (14933ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4054IATFS using openai (13616ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4056IAWFS using openai (18716ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1VTS using openai (14117ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAQDB using openai (12223ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4069IA1YXS using openai (11121ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAVDS using openai (13394ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IASXS using openai (12424ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4065IAYDS using openai (14834ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched KL4066IAWXS using openai (13848ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+✓ Enriched Premium using openai (19043ms)
+✗ Failed to log enrichment
+   Invalid object name 'Enrichment_Log'.
+ℹ Shutting down enrichment engine...
+ℹ Database disconnected
+✓ Engine shut down successfully
+ℹ Database disconnected
 {
-  "summary": {
-    "table": "dbo.Products_12_Products",
-    "manufacturer": "kaspersky",
-    "total": 20,
-    "enriched": 20,
-    "skipped": 0,
-    "failed": 0
-  },
-  "preview": [
-    {
-      "part": "KL4065IAURS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next XDR Foundations 500-999 User 4 year"
-    },
-    {
-      "part": "KL4069IA1XDS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next EDR Expert Middle East Edition. 250"
-    },
-    {
-      "part": "KL4069IA1URS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next EDR Expert Middle East Edition. 500"
-    },
-    {
-      "part": "KL4065IAQDS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next XDR Foundations 50-99 User 2 year B"
-    },
-    {
-      "part": "KL4066IAUFS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next EDR Optimum 500-999 User 1 year Bas"
-    },
-    {
-      "part": "KL4056IAXFS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next XDR Core 2500-4999 User 1 year Base"
-    },
-    {
-      "part": "KL4069IA1XFS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next EDR Expert Middle East Edition. 250"
-    },
-    {
-      "part": "KL4054IAWFS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next XDR Expert 1500-2499 User 1 year Ba"
-    },
-    {
-      "part": "KL4069IA1XTS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next EDR Expert Middle East Edition. 250"
-    },
-    {
-      "part": "KL4056IAWDS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next XDR Core 1500-2499 User 2 year Base"
-    },
-    {
-      "part": "KL4065IAWXS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next XDR Foundations 1500-2499 User 5 ye"
-    },
-    {
-      "part": "KL4066IAQTS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next EDR Optimum 50-99 User 3 year Base "
-    },
-    {
-      "part": "KL4066IAWRS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next EDR Optimum 1500-2499 User 4 year B"
-    },
-    {
-      "part": "KL4069IA1YXS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next EDR Expert Middle East Edition. 500"
-    },
-    {
-      "part": "KL4069IA1TXS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next EDR Expert Middle East Edition. 250"
-    },
-    {
-      "part": "KL4065IASFS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next XDR Foundations 150-249 User 1 year"
-    },
-    {
-      "part": "KL4054IAYRS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next XDR Expert 5000+ User 4 year Base L"
-    },
-    {
-      "part": "KL4066IAXRS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next EDR Optimum 2500-4999 User 4 year B"
-    },
-    {
-      "part": "KL4065IAYDS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next XDR Foundations 5000+ User 2 year B"
-    },
-    {
-      "part": "KL4069IA1WFS",
-      "manu": "Kaspersky",
-      "name": "Kaspersky Next EDR Expert Middle East Edition. 150"
-    }
+  "ok": true,
+  "brand": "Kaspersky",
+  "lists": [
+    "1",
+    "12"
   ],
-  "selected": [
-    "KL4065IAURS",
-    "KL4069IA1XDS",
-    "KL4069IA1URS",
-    "KL4065IAQDS",
-    "KL4066IAUFS",
-    "KL4056IAXFS",
-    "KL4069IA1XFS",
-    "KL4054IAWFS",
-    "KL4069IA1XTS",
-    "KL4056IAWDS",
-    "KL4065IAWXS",
-    "KL4066IAQTS",
-    "KL4066IAWRS",
-    "KL4069IA1YXS",
-    "KL4069IA1TXS",
-    "KL4065IASFS",
-    "KL4054IAYRS",
-    "KL4066IAXRS",
-    "KL4065IAYDS",
-    "KL4069IA1WFS"
+  "total": 100,
+  "enriched": 100,
+  "failed": 0,
+  "skipped": 0,
+  "durationMs": 1078763,
+  "results": [
+    {
+      "id": "KL4054IAWRS",
+      "pn": "KL4054IAWRS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IASFS",
+      "pn": "KL4066IASFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1UDS",
+      "pn": "KL4069IA1UDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAXDS",
+      "pn": "KL4066IAXDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAXDS",
+      "pn": "KL4065IAXDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAXFS",
+      "pn": "KL4065IAXFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IAWTS",
+      "pn": "KL4054IAWTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1UXS",
+      "pn": "KL4069IA1UXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4056IAUFS",
+      "pn": "KL4056IAUFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IAXRS",
+      "pn": "KL4054IAXRS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1XRS",
+      "pn": "KL4069IA1XRS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAVDS",
+      "pn": "KL4065IAVDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "Foundations1",
+      "pn": "Foundations1",
+      "status": "enriched",
+      "q": 90
+    },
+    {
+      "id": "KL4069IA1XFS",
+      "pn": "KL4069IA1XFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IARRS",
+      "pn": "KL4066IARRS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IATXS",
+      "pn": "KL4066IATXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAYFS",
+      "pn": "KL4065IAYFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAWTS",
+      "pn": "KL4065IAWTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IAUDS",
+      "pn": "KL4054IAUDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4056IAUTS",
+      "pn": "KL4056IAUTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1XDS",
+      "pn": "KL4069IA1XDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1VXS",
+      "pn": "KL4069IA1VXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAQDS",
+      "pn": "KL4065IAQDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1WRS",
+      "pn": "KL4069IA1WRS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IATTS",
+      "pn": "KL4066IATTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1YTS",
+      "pn": "KL4069IA1YTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IAVDS",
+      "pn": "KL4054IAVDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IARTS",
+      "pn": "KL4066IARTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IASDS",
+      "pn": "KL4065IASDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAUTS",
+      "pn": "KL4065IAUTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4056IAVTS",
+      "pn": "KL4056IAVTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IATTS",
+      "pn": "KL4054IATTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IAYFS",
+      "pn": "KL4054IAYFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4056IAYFS",
+      "pn": "KL4056IAYFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IAUTS",
+      "pn": "KL4054IAUTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4056IAWTS",
+      "pn": "KL4056IAWTS",
+      "status": "enriched",
+      "q": 90
+    },
+    {
+      "id": "KL4066IAQXS",
+      "pn": "KL4066IAQXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAXTS",
+      "pn": "KL4066IAXTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAQTS",
+      "pn": "KL4065IAQTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAVTS",
+      "pn": "KL4065IAVTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAUDB",
+      "pn": "KL4066IAUDB",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAQXS",
+      "pn": "KL4065IAQXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAUTS",
+      "pn": "KL4066IAUTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IASTS",
+      "pn": "KL4066IASTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAYTS",
+      "pn": "KL4065IAYTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IATFS",
+      "pn": "KL4065IATFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1UTS",
+      "pn": "KL4069IA1UTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1VDS",
+      "pn": "KL4069IA1VDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAUDB",
+      "pn": "KL4065IAUDB",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4056IATTS",
+      "pn": "KL4056IATTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IAWFS",
+      "pn": "KL4054IAWFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IASTS",
+      "pn": "KL4065IASTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAWFS",
+      "pn": "KL4065IAWFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAWDS",
+      "pn": "KL4065IAWDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1TDS",
+      "pn": "KL4069IA1TDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IASRS",
+      "pn": "KL4065IASRS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "Plus",
+      "pn": "Plus",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAURS",
+      "pn": "KL4065IAURS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4056IAYDS",
+      "pn": "KL4056IAYDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAYXS",
+      "pn": "KL4066IAYXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAURS",
+      "pn": "KL4066IAURS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAUFS",
+      "pn": "KL4066IAUFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IAYRS",
+      "pn": "KL4054IAYRS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IASDS",
+      "pn": "KL4066IASDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAXFS",
+      "pn": "KL4066IAXFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAYTS",
+      "pn": "KL4066IAYTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAXXS",
+      "pn": "KL4066IAXXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4056IAVFS",
+      "pn": "KL4056IAVFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4056IAUDS",
+      "pn": "KL4056IAUDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IARDS",
+      "pn": "KL4066IARDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IAUFS",
+      "pn": "KL4054IAUFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1YDS",
+      "pn": "KL4069IA1YDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAVRS",
+      "pn": "KL4065IAVRS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAYFS",
+      "pn": "KL4066IAYFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAVXS",
+      "pn": "KL4066IAVXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IATDS",
+      "pn": "KL4065IATDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IARXS",
+      "pn": "KL4065IARXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1WXS",
+      "pn": "KL4069IA1WXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAVRS",
+      "pn": "KL4066IAVRS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1WTS",
+      "pn": "KL4069IA1WTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IAWDS",
+      "pn": "KL4054IAWDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAVFS",
+      "pn": "KL4066IAVFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IAXFS",
+      "pn": "KL4054IAXFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IARXS",
+      "pn": "KL4066IARXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1XXS",
+      "pn": "KL4069IA1XXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1XTS",
+      "pn": "KL4069IA1XTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAWFS",
+      "pn": "KL4066IAWFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAQTS",
+      "pn": "KL4066IAQTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4056IAXDS",
+      "pn": "KL4056IAXDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IASRS",
+      "pn": "KL4066IASRS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4054IATFS",
+      "pn": "KL4054IATFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4056IAWFS",
+      "pn": "KL4056IAWFS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1VTS",
+      "pn": "KL4069IA1VTS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAQDB",
+      "pn": "KL4066IAQDB",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4069IA1YXS",
+      "pn": "KL4069IA1YXS",
+      "status": "enriched",
+      "q": 90
+    },
+    {
+      "id": "KL4066IAVDS",
+      "pn": "KL4066IAVDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IASXS",
+      "pn": "KL4066IASXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4065IAYDS",
+      "pn": "KL4065IAYDS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "KL4066IAWXS",
+      "pn": "KL4066IAWXS",
+      "status": "enriched",
+      "q": 95
+    },
+    {
+      "id": "Premium",
+      "pn": "Premium",
+      "status": "enriched",
+      "q": 95
+    }
   ]
 }

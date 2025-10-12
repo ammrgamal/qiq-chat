@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 import OpenAI from 'openai';
 import logger from './logger.js';
 
-// Load environment variables from root .env
-dotenv.config({ path: '../.env' });
+// Load environment variables from .env at current working directory
+dotenv.config();
 
 class EnrichmentService {
   constructor() {

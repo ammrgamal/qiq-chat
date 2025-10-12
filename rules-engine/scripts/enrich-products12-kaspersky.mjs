@@ -3,9 +3,12 @@
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 const nodeExe = process.argv[0];
-const script = new URL('./run-enrichment-db.mjs', import.meta.url).pathname;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const script = path.join(__dirname, 'run-enrichment-db.mjs');
 const outFile = path.join(process.cwd(), 'enrichment-products12-kaspersky.json');
 
 const child = spawn(nodeExe, [script, '--brand=Kaspersky', '--lists=1,12', '--limit=100'], { stdio: ['ignore','pipe','inherit'] });

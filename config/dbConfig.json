@@ -1,0 +1,11 @@
+{
+  "server": "AMRLEGION\\SQLEXPRESS",
+  "port": 1433,
+  "database": "QuoteWerks",
+  "user": "sa",
+  "password": "Ecom4meAbcd1234",
+  "options": {
+    "encrypt": false,
+    "trustServerCertificate": true
+  }
+}
