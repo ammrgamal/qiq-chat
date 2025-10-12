@@ -1,0 +1,11 @@
+{
+  "server": "localhost",
+  "port": 1433,
+  "database": "QuoteWerks",
+  "user": "sa",
+  "password": "YourPassword123",
+  "options": {
+    "encrypt": false,
+    "trustServerCertificate": true
+  }
+}
