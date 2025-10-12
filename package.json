@@ -25,14 +25,14 @@
     "apply:algolia-settings": "ts-node src/search/applySettings.ts",
     "test": "npm run test:search",
   "algolia:diagnose": "node scripts/algolia-diagnose.mjs",
-  "algolia:configure": "node enrichment-engine/src/index.js --configure-index || node -e \"(async()=>{const s=(await import('./enrichment-engine/src/algoliaService.js')).default; await s.configureIndex();})()\"",
+  "algolia:configure": "node scripts/algolia-configure.mjs",
   "test:search": "jest __tests__/algoliaMapper.spec.ts __tests__/emailValidation.spec.ts -u",
     "enrich:run": "node rules-engine/scripts/run-enrichment.mjs",
     "enrich:kaspersky12": "node rules-engine/scripts/enrich-products12-kaspersky.mjs",
     "report:enrichment": "node rules-engine/scripts/report-enrichment.mjs --brand=Kaspersky --list=12",
     "algolia:sync:kaspersky12": "node rules-engine/scripts/algolia-sync-products12.mjs --brand=Kaspersky --list=12",
     "email:report:kaspersky12": "node scripts/email-enrichment-report.mjs --brand=Kaspersky --list=12",
-    "algolia:browse:nested": "node scripts/algolia-browse-nested.mjs"
+    "algolia:browse:nested": "node scripts/algolia-browse-nested.mjs",
     "db:schema:extend": "node rules-engine/scripts/extend-products-schema.mjs"
   },
   "devDependencies": {

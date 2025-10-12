@@ -1,0 +1,7 @@
+
+> algolia:browse:nested
+> node scripts/algolia-browse-nested.mjs brand:Kaspersky AND prices.gross
+
+[browse] Filters: brand:Kaspersky AND prices.gross
+[browse] Count: 0
+[]

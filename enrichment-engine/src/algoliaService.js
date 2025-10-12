@@ -235,11 +235,11 @@ class AlgoliaService {
           'searchable(category)',
           'searchable(_tags)',
           // filterable numeric nested attributes
-          'filterOnly(price.net)',
-          'filterOnly(price.gross)',
-          'filterOnly(price.cost)',
-          'filterOnly(price.list)',
-          'filterOnly(price.margin)'
+          'filterOnly(prices.net)',
+          'filterOnly(prices.gross)',
+          'filterOnly(prices.cost)',
+          'filterOnly(prices.list)',
+          'filterOnly(prices.margin)'
         ],
         customRanking: [
           'desc(ai_confidence)',

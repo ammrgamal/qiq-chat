@@ -17,7 +17,7 @@ const client = algoliasearch(appId, apiKey);
 const index = client.initIndex(indexName);
 
 async function main(){
-  const filters = process.argv.slice(2).join(' ') || 'brand:Kaspersky AND price.gross > 0';
+  const filters = process.argv.slice(2).join(' ') || 'brand:Kaspersky AND prices.gross > 0';
   const res = await index.search('', { filters, hitsPerPage: 5, attributesToRetrieve: ['objectID','name','brand','price','media','ai'] });
   console.log('[browse] Filters:', filters);
   console.log('[browse] Count:', res.nbHits);

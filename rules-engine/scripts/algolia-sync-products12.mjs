@@ -98,10 +98,10 @@ function mapRecordToAlgolia(r){
     name: r.Description || '',
     brand: r.Manufacturer || BRAND,
     category: r.CustomText02 || null,
-    // legacy top-level price
+    // legacy top-level price (kept numeric for compatibility)
     price: sell,
-    // nested price for numeric filtering: price.net, price.gross, price.cost, price.list, price.margin
-    price: {
+    // nested prices for numeric filtering: prices.net, prices.gross, prices.cost, prices.list, prices.margin
+    prices: {
       net,
       gross,
       cost,
