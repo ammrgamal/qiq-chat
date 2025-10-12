@@ -18,7 +18,7 @@ const index = client.initIndex(indexName);
 
 async function main(){
   const filters = process.argv.slice(2).join(' ') || 'brand:Kaspersky AND prices.gross > 0';
-  const res = await index.search('', { filters, hitsPerPage: 5, attributesToRetrieve: ['objectID','name','brand','price','media','ai'] });
+  const res = await index.search('', { filters, hitsPerPage: 5, attributesToRetrieve: ['objectID','name','brand','price','prices','media','ai'] });
   console.log('[browse] Filters:', filters);
   console.log('[browse] Count:', res.nbHits);
   console.log(JSON.stringify(res.hits, null, 2));
