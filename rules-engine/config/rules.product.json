@@ -1,4 +1,0 @@
-[
-  {"id":"sec.firewall.poe","match":{"includes":["firewall"],"regex":["poe"],"manufacturer":["fortinet","cisco"]},"tagsAdd":["poe"],"bundlesAdd":["support_subscription"],"qualityScoreBonus":5,"priority":90,"stop":true},
-  {"id":"switch.layer3.advanced","match":{"regex":["layer ?3"],"includes":["switch"]},"tagsAdd":["layer3"],"bundlesAdd":["enterprise_support"],"qualityScoreBonus":3,"priority":95}
-]

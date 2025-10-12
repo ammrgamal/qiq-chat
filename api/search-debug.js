@@ -10,11 +10,6 @@ export default async function handler(req, res){
     const hasAnyKey = !!(process.env.ALGOLIA_API_KEY || process.env.ALGOLIA_ADMIN_API_KEY || process.env.ALGOLIA_SEARCH_KEY || process.env.ALGOLIA_PUBLIC_API_KEY);
     const indexName = process.env.ALGOLIA_INDEX || process.env.ALGOLIA_INDEX_NAME || 'woocommerce_products';
     const debugMode = process.env.SEARCH_DEBUG === '1';
-    const lastErr = global.__LAST_SEARCH_ERROR ? {
-      ageMs: Date.now() - global.__LAST_SEARCH_ERROR.ts,
-      message: global.__LAST_SEARCH_ERROR.message,
-      stack: debugMode ? global.__LAST_SEARCH_ERROR.stack : undefined
-    } : null;
     return res.status(200).json({
       ok: true,
       algolia: {
@@ -25,7 +20,6 @@ export default async function handler(req, res){
       env: {
         debugMode
       },
-      lastError: lastErr,
       note: 'No secret values are exposed. Set SEARCH_DEBUG=1 for verbose server logging.'
     });
   } catch (e){

@@ -1,0 +1,134 @@
+{
+  "summary": {
+    "table": "dbo.Products_12_Products",
+    "manufacturer": "kaspersky",
+    "total": 20,
+    "enriched": 20,
+    "skipped": 0,
+    "failed": 0
+  },
+  "preview": [
+    {
+      "part": "KL4065IAURS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next XDR Foundations 500-999 User 4 year"
+    },
+    {
+      "part": "KL4069IA1XDS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 250"
+    },
+    {
+      "part": "KL4069IA1URS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 500"
+    },
+    {
+      "part": "KL4065IAQDS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next XDR Foundations 50-99 User 2 year B"
+    },
+    {
+      "part": "KL4066IAUFS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next EDR Optimum 500-999 User 1 year Bas"
+    },
+    {
+      "part": "KL4056IAXFS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next XDR Core 2500-4999 User 1 year Base"
+    },
+    {
+      "part": "KL4069IA1XFS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 250"
+    },
+    {
+      "part": "KL4054IAWFS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next XDR Expert 1500-2499 User 1 year Ba"
+    },
+    {
+      "part": "KL4069IA1XTS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 250"
+    },
+    {
+      "part": "KL4056IAWDS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next XDR Core 1500-2499 User 2 year Base"
+    },
+    {
+      "part": "KL4065IAWXS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next XDR Foundations 1500-2499 User 5 ye"
+    },
+    {
+      "part": "KL4066IAQTS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next EDR Optimum 50-99 User 3 year Base "
+    },
+    {
+      "part": "KL4066IAWRS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next EDR Optimum 1500-2499 User 4 year B"
+    },
+    {
+      "part": "KL4069IA1YXS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 500"
+    },
+    {
+      "part": "KL4069IA1TXS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 250"
+    },
+    {
+      "part": "KL4065IASFS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next XDR Foundations 150-249 User 1 year"
+    },
+    {
+      "part": "KL4054IAYRS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next XDR Expert 5000+ User 4 year Base L"
+    },
+    {
+      "part": "KL4066IAXRS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next EDR Optimum 2500-4999 User 4 year B"
+    },
+    {
+      "part": "KL4065IAYDS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next XDR Foundations 5000+ User 2 year B"
+    },
+    {
+      "part": "KL4069IA1WFS",
+      "manu": "Kaspersky",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 150"
+    }
+  ],
+  "selected": [
+    "KL4065IAURS",
+    "KL4069IA1XDS",
+    "KL4069IA1URS",
+    "KL4065IAQDS",
+    "KL4066IAUFS",
+    "KL4056IAXFS",
+    "KL4069IA1XFS",
+    "KL4054IAWFS",
+    "KL4069IA1XTS",
+    "KL4056IAWDS",
+    "KL4065IAWXS",
+    "KL4066IAQTS",
+    "KL4066IAWRS",
+    "KL4069IA1YXS",
+    "KL4069IA1TXS",
+    "KL4065IASFS",
+    "KL4054IAYRS",
+    "KL4066IAXRS",
+    "KL4065IAYDS",
+    "KL4069IA1WFS"
+  ]
+}

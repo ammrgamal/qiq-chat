@@ -7,42 +7,27 @@
   },
   "dependencies": {
     "algoliasearch": "^4.24.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "express-rate-limit": "^7.4.0",
+    "dotenv": "^16.4.5",
+    "cors": "^2.8.5",
     "helmet": "^7.1.0",
+    "express-rate-limit": "^7.4.0",
+    "xlsx": "^0.18.5",
     "joi": "^17.12.0",
-    "mssql": "^10.0.1",
-    "sqlite3": "^5.1.7",
-    "xlsx": "^0.18.5"
+    "sqlite3": "^5.1.7"
   },
   "scripts": {
     "start": "node server.js",
     "apply:algolia-settings": "ts-node src/search/applySettings.ts",
-  "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test": "npm run test:search",
     "algolia:diagnose": "node scripts/algolia-diagnose.mjs",
-    "test:search": "jest __tests__/algoliaMapper.spec.ts __tests__/emailValidation.spec.ts -u",
-    "enrich:run": "node rules-engine/scripts/run-enrichment.mjs",
-    "backup": "node scripts/backup-db.mjs",
-    "enrich:sample": "node scripts/enrich-sample.mjs",
-    "preenrich:sample": "node scripts/preenrich-sample.mjs",
-    "enrich:brands": "node rules-engine/scripts/run-enrichment-db.mjs",
-    "test:sql": "node scripts/test-sql-connection.mjs",
-    "sync:algolia:enriched": "node scripts/sync-enriched-sqlite-algolia.mjs",
-    "print:enriched": "node scripts/print-enriched.mjs --limit=1 --pretty=2",
-    "enrich:arabic-demo": "node scripts/enrich-arabic-sample.mjs && node scripts/print-enriched.mjs --part=ARABIC-DEMO-001 --pretty=2",
-    "algolia:apply-enriched": "node scripts/apply-algolia-enriched-settings.mjs"
+  "test:search": "jest __tests__/algoliaMapper.spec.ts __tests__/emailValidation.spec.ts -u",
+    "enrich:run": "node rules-engine/scripts/run-enrichment.mjs"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.4",
-    "@babel/preset-env": "^7.28.3",
-    "@babel/preset-typescript": "^7.27.1",
     "@types/jest": "^29.5.12",
     "@types/node": "^24.5.2",
     "jest": "^29.7.0",
-    "node-fetch": "^3.3.2",
-    "supertest": "^7.1.4",
     "ts-jest": "^29.4.4",
     "ts-node": "^10.9.2"
   }

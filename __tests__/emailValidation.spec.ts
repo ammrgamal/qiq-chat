@@ -1,3 +1,4 @@
+// Import CommonJS wrapper to keep ts-jest simple
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { validateBusinessEmail } = require('../api/_lib/email-validation.cjs');
 

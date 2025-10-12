@@ -176,26 +176,3 @@ node rules-engine/scripts/orchestrate.mjs --samples --count=5 --offline
 - أثناء التعطيل يتم تخطي المحاولات والانتقال للمزود التالي أو fallback.
 
 يمكن تعديل العتبات لاحقاً (threshold / cooldown) عند الحاجة.
-
-## 7) Test Environment Flags (New)
-
-هذه الأعلام (environment flags) تساعد في التحكم بسلوك الاختبارات دون تعديل الشيفرة الأساسية:
-
-- `ARABIC_TRANSLATION_DISABLED=1`
-  - يعطّل أي محاولات ترجمة أو استدعاء مزودي AI داخل وحدة Arabic NLP أثناء الاختبارات.
-  - يسمح بالتركيز على التطبيع (normalization) واكتشاف العربية دون ضجيج أخطاء شبكة.
-  - في حال التفعيل، سيُعاد كائن نتيجة يحتوي `provider: 'disabled'` أو قد يكون `provider` غير معرّف (مقبول في الاختبارات الحالية).
-
-- `RUN_ALGOLIA_TESTS=1`
-  - يُمكّن حزمة اختبارات Algolia (health / config / mapper). عند عدم التحديد تبقى هذه الاختبارات متخطّاة (skip) افتراضياً لتسريع CI.
-  - يُستحسن تعيينه فقط حين تكون مفاتيح Algolia متوفرة (`ALGOLIA_APP_ID`, `ALGOLIA_API_KEY` أو `ALGOLIA_ADMIN_API_KEY`).
-  - مثال تشغيل (PowerShell):
-    ```powershell
-    $env:RUN_ALGOLIA_TESTS='1'; npm test
-    ```
-
-### توصيات CI
-- اجعل التشغيل الافتراضي بدون هذه الأعلام للحصول على دورة سريعة.
-- شغّل مرحلة (job) إضافية لتهيئة تغطية أعمق تضبط `RUN_ALGOLIA_TESTS=1` (وتمرير مفاتيح سرية آمنة) حسب الحاجة.
-- استخدم `ARABIC_TRANSLATION_DISABLED=1` دائماً في CI ما لم تكن تختبر مسارات الترجمة الفعلية مع مزود حقيقي.
-

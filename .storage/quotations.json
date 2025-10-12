@@ -2,7 +2,7 @@
   "quotations": [
     {
       "id": "QT-2025-001",
-      "date": "2025-09-23",
+      "date": "2025-10-11",
       "status": "مسودة",
       "currency": "USD",
       "total": 1234,
@@ -15,11 +15,13 @@
         "project": {}
       },
       "projectId": "QT-2025-001",
-      "projectName": "Project 2025-09-23",
-      "userToken": "qiq_eyJpZCI6MTIzNDUsImVtYWlsIjoidXNlckBkZW1vLmxvY2FsIiwiY29tcGFueSI6IkRlbW8gQ29tcGFueSIsImV4cCI6MTc1ODY5Mzk0MTA3MH0=",
+      "projectName": "Project 2025-10-11",
+      "userToken": "qiq_eyJpZCI6MTIzNDUsImVtYWlsIjoidXNlckBkZW1vLmxvY2FsIiwiY29tcGFueSI6IkRlbW8gQ29tcGFueSIsImV4cCI6MTc2MDI3ODUyNzc2Nn0=",
       "userEmail": "user@demo.local",
-      "savedAt": "2025-09-23T06:05:41.079Z",
-      "lastModified": "2025-09-23T06:05:41.079Z"
+      "savedAt": "2025-10-11T14:15:27.777Z",
+      "lastModified": "2025-10-11T14:15:27.777Z",
+      "history": [],
+      "revision": 1
     }
   ]
 }

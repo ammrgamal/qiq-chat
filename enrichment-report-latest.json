@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-09T08:35:56.041Z",
+  "generatedAt": "2025-10-09T17:56:53.686Z",
   "summary": {
     "total_listed": 25,
     "avg_quality": 68,
@@ -19,7 +19,8 @@
       "syns": 0,
       "tags": 1,
       "bundles": 1,
-      "bullets": 0
+      "bullets": 0,
+      "coverage": 70
     },
     {
       "part": "MON-NMS",
@@ -31,7 +32,8 @@
       "syns": 0,
       "tags": 0,
       "bundles": 0,
-      "bullets": 0
+      "bullets": 0,
+      "coverage": 40
     },
     {
       "part": "BCK-SW-ENT",
@@ -43,7 +45,8 @@
       "syns": 0,
       "tags": 0,
       "bundles": 0,
-      "bullets": 0
+      "bullets": 0,
+      "coverage": 40
     },
     {
       "part": "BCK-APPL",
@@ -55,7 +58,8 @@
       "syns": 0,
       "tags": 0,
       "bundles": 0,
-      "bullets": 0
+      "bullets": 0,
+      "coverage": 40
     },
     {
       "part": "LIC-FW-ADV",
@@ -67,7 +71,8 @@
       "syns": 0,
       "tags": 2,
       "bundles": 1,
-      "bullets": 0
+      "bullets": 0,
+      "coverage": 70
     },
     {
       "part": "LIC-SW-MGMT",
@@ -79,7 +84,8 @@
       "syns": 0,
       "tags": 2,
       "bundles": 1,
-      "bullets": 1
+      "bullets": 1,
+      "coverage": 80
     },
     {
       "part": "ROUT-CORE",
@@ -91,7 +97,8 @@
       "syns": 0,
       "tags": 0,
       "bundles": 0,
-      "bullets": 1
+      "bullets": 1,
+      "coverage": 60
     },
     {
       "part": "ROUT-EDGE",
@@ -103,7 +110,8 @@
       "syns": 0,
       "tags": 0,
       "bundles": 0,
-      "bullets": 1
+      "bullets": 1,
+      "coverage": 60
     },
     {
       "part": "WIFI-AP6-OUT",
@@ -115,7 +123,8 @@
       "syns": 0,
       "tags": 0,
       "bundles": 0,
-      "bullets": 0
+      "bullets": 0,
+      "coverage": 40
     },
     {
       "part": "WIFI-AP6",
@@ -127,7 +136,8 @@
       "syns": 0,
       "tags": 0,
       "bundles": 0,
-      "bullets": 0
+      "bullets": 0,
+      "coverage": 40
     }
   ]
 }

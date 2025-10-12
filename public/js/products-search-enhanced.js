@@ -113,7 +113,14 @@
     }
     if (!r.ok) {
       // Non-200 but backend should normally return 200; try parse anyway
-      try { return await r.json(); } catch { return { hits: [], nbHits:0, facets:{}, error: 'Search backend HTTP '+r.status }; }
+      try { return await r.json(); } catch {}
+      // Fallback to GET (querystring) in case some proxies/backends mishandle POST
+      try {
+        const params = new URLSearchParams({ q: query || '', page: String(page||0), hitsPerPage: String(hitsPerPage||24) });
+        const alt = await fetch(`/api/search?${params.toString()}`, { method:'GET' });
+        if (alt.ok) { try { return await alt.json(); } catch { /* ignore */ } }
+      } catch {}
+      return { hits: [], nbHits:0, facets:{}, error: 'Search backend HTTP '+r.status };
     }
     try { return await r.json(); } catch { return { hits: [], nbHits:0, facets:{}, error: 'Invalid JSON' }; }
   }

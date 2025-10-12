@@ -120,23 +120,8 @@ function route(method, routePath, relFile) {
       if (relFile === 'search-debug.js') {
         console.log('[load] search-debug handler wired', routePath);
       }
-      // Ensure async errors are trapped here even if handler forgets internal try/catch
-      const maybePromise = handler(req, res);
-      if (maybePromise && typeof maybePromise.then === 'function') {
-        maybePromise.catch(e => {
-          if (relFile === 'search.js') {
-            global.__LAST_SEARCH_ERROR = { ts: Date.now(), message: e.message, stack: e.stack };
-            console.error('[search.async-error]', e);
-            if (!res.headersSent) {
-              return res.status(200).json({ hits: [], facets: {}, nbHits: 0, page: 0, nbPages: 0, error: 'Async search failure', detail: process.env.SEARCH_DEBUG==='1'? e.message : undefined });
-            }
-          } else {
-            console.error('[route.async-error]', routePath, e);
-            if (!res.headersSent) res.status(500).json({ error: 'Server async error' });
-          }
-        });
-      }
-      return maybePromise;
+      await handler(req, res);
+      return; // ensure we don't fall-through
     } catch (e) {
       console.error('Handler error for', routePath, e);
       // Special graceful fallback for search endpoint to prevent frontend hard failure
@@ -162,10 +147,10 @@ function route(method, routePath, relFile) {
 route('post', '/api/search', 'search.js');
 route('get',  '/api/search', 'search.js');
 route('get',  '/api/search/health', 'search-health.js');
+route('get',  '/api/search/debug', 'search-debug.js');
 route('post', '/api/chat', 'chat.js');
 route('post', '/api/special-quote', 'special-quote.js');
 route('post', '/api/quote', 'quote.js');
-route('get',  '/api/algolia/mirror-check', 'algolia-mirror-check.js');
 route('post', '/api/agent', 'agent.js');
 route('post', '/api/compare', 'compare.js');
 route('post', '/api/maintenance', 'maintenance.js');
@@ -208,6 +193,29 @@ route('get',  '/api/users/verify', 'users/verify.js');
 // Fallback to index.html for root
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Final error-handling middleware to convert unexpected errors into JSON
+app.use((err, req, res, next) => {
+  try {
+    const debug = process.env.SEARCH_DEBUG === '1';
+    console.error('[express.error]', err?.stack || err?.message || err);
+    if (req.path === '/api/search') {
+      return res.status(200).json({
+        hits: [],
+        facets: {},
+        nbHits: 0,
+        page: 0,
+        nbPages: 0,
+        error: 'Search endpoint error',
+        detail: debug ? (err?.stack || err?.message) : undefined
+      });
+    }
+    res.status(500).json({ error: 'Server error' });
+  } catch (e) {
+    // As a last resort, avoid crashing the process
+    try { res.status(500).json({ error: 'Server error' }); } catch {}
+  }
 });
 
 // Simple health endpoint

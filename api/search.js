@@ -1,24 +1,7 @@
 // Clean Algolia search endpoint (ESM)
 import algoliasearch from 'algoliasearch';
-// Dynamic (lazy) modules so that a transient build/ESM resolution issue doesn't crash route load
-let arabicNLP = null;
-let aiLearningLog = null;
-async function ensureDeps(){
-  try {
-    if (!arabicNLP) {
-      arabicNLP = (await import('../rules-engine/src/arabicNLP.js')).default;
-    }
-  } catch (e) {
-    if (process.env.SEARCH_DEBUG==='1') console.warn('[search.deps] arabicNLP load failed', e.message);
-  }
-  try {
-    if (!aiLearningLog) {
-      aiLearningLog = (await import('../rules-engine/src/aiLearningLog.js')).default;
-    }
-  } catch (e) {
-    if (process.env.SEARCH_DEBUG==='1') console.warn('[search.deps] aiLearningLog load failed', e.message);
-  }
-}
+import arabicNLP from '../rules-engine/src/arabicNLP.js';
+import aiLearningLog from '../rules-engine/src/aiLearningLog.js';
 
 export default async function handler(req, res) {
   // Support POST (JSON body) and GET (?q=)
@@ -64,26 +47,12 @@ export default async function handler(req, res) {
       console.log('[search.debug] incoming', { q, page, hitsPerPage, facetFilters, numericFilters, indexName, method: req.method });
     }
 
-  // Preprocess Arabic query & optional expansion
-  let searchQuery = q;
-  let preprocessed = null;
-  let expansionSynonyms = [];
-    await ensureDeps();
-    if (arabicNLP && arabicNLP.containsArabic && arabicNLP.containsArabic(q)) {
-      try {
-        preprocessed = await arabicNLP.preprocessQuery(q);
-        searchQuery = preprocessed.processed; // Use translated/normalized version
-        if (/^(1|true|yes)$/i.test(process.env.ARABIC_QUERY_EXPANSION||'')) {
-          try {
-            const syn = await arabicNLP.generateSynonyms(q, 'query');
-            expansionSynonyms = (syn?.merged||[])
-              .filter(t=> t && t.length>2 && !t.includes(' '))
-              .slice(0, 8); // limit to avoid query bloat
-          } catch (synErr){ if (process.env.SEARCH_DEBUG==='1') console.warn('[search.expand] synonym gen failed', synErr.message); }
-        }
-      } catch (prepErr) {
-        if (process.env.SEARCH_DEBUG==='1') console.warn('[search.preprocess] failed', prepErr.message);
-      }
+    // Preprocess Arabic query
+    let searchQuery = q;
+    let preprocessed = null;
+    if (arabicNLP.containsArabic(q)) {
+      preprocessed = await arabicNLP.preprocessQuery(q);
+      searchQuery = preprocessed.processed; // Use translated/normalized version
     }
 
     const client = algoliasearch(appId, apiKey);
@@ -95,10 +64,6 @@ export default async function handler(req, res) {
       page: Number(page) || 0,
       facets: ['brand', 'manufacturer', 'categories', 'category']
     };
-    if (expansionSynonyms.length){
-      opts.optionalWords = expansionSynonyms;
-      if (debug || process.env.SEARCH_DEBUG==='1') console.log('[search.expand] optionalWords', expansionSynonyms);
-    }
     if (Array.isArray(facetFilters) && facetFilters.length) opts.facetFilters = facetFilters;
     if (Array.isArray(numericFilters) && numericFilters.length) opts.numericFilters = numericFilters;
 
@@ -123,7 +88,7 @@ export default async function handler(req, res) {
     }
     
     // Log failed Arabic queries for self-learning
-    if (preprocessed && (!result?.hits || result.hits.length === 0) && aiLearningLog?.logFailedQuery) {
+    if (preprocessed && (!result?.hits || result.hits.length === 0)) {
       try {
         await aiLearningLog.logFailedQuery({
           query: q,
@@ -136,7 +101,7 @@ export default async function handler(req, res) {
           }
         });
       } catch (logError) {
-        if (process.env.SEARCH_DEBUG==='1') console.warn('Failed to log learning data:', logError.message);
+        console.warn('Failed to log learning data:', logError.message);
       }
     }
 
