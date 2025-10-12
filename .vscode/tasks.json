@@ -118,6 +118,20 @@
 			],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "Run schema extension",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"db:schema:extend"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
 		}
 	]
 }

@@ -223,13 +223,23 @@ class AlgoliaService {
           'category',
           'short_description',
           'features',
-          '_tags'
+          '_tags',
+          // nested content for better recall
+          'content.short_description',
+          'content.features',
+          'content.faq',
+          'content.why_buy'
         ],
         attributesForFaceting: [
           'searchable(brand)',
           'searchable(category)',
-          'price',
-          'ai_confidence'
+          'searchable(_tags)',
+          // filterable numeric nested attributes
+          'filterOnly(price.net)',
+          'filterOnly(price.gross)',
+          'filterOnly(price.cost)',
+          'filterOnly(price.list)',
+          'filterOnly(price.margin)'
         ],
         customRanking: [
           'desc(ai_confidence)',
