@@ -1,0 +1,507 @@
+{
+  "brand": "Kaspersky",
+  "list": "12",
+  "count": 100,
+  "items": [
+    {
+      "partNumber": "KL4069IA1XFS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 2500-4999 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAQTS",
+      "name": "Kaspersky Next EDR Optimum 50-99 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAVFS",
+      "name": "Kaspersky Next EDR Optimum 1000-1499 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAQXS",
+      "name": "Kaspersky Next XDR Foundations 50-99 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1UXS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 500-999 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1WRS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 1500-2499 User 4 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1YXS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 5000+ User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4056IAWTS",
+      "name": "Kaspersky Next XDR Core 1500-2499 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IATTS",
+      "name": "Kaspersky Next XDR Expert 250-499 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IAWRS",
+      "name": "Kaspersky Next XDR Expert 1500-2499 User 4 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4056IAWFS",
+      "name": "Kaspersky Next XDR Core 1500-2499 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4056IAXDS",
+      "name": "Kaspersky Next XDR Core 2500-4999 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1XTS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 2500-4999 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IARDS",
+      "name": "Kaspersky Next EDR Optimum 100-149 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IATTS",
+      "name": "Kaspersky Next EDR Optimum 250-499 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IATFS",
+      "name": "Kaspersky Next XDR Expert 250-499 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IAWDS",
+      "name": "Kaspersky Next XDR Expert 1500-2499 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAVDS",
+      "name": "Kaspersky Next XDR Foundations 1000-1499 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAXXS",
+      "name": "Kaspersky Next EDR Optimum 2500-4999 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IAWFS",
+      "name": "Kaspersky Next XDR Expert 1500-2499 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAXDS",
+      "name": "Kaspersky Next XDR Foundations 2500-4999 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IAXRS",
+      "name": "Kaspersky Next XDR Expert 2500-4999 User 4 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IAUTS",
+      "name": "Kaspersky Next XDR Expert 500-999 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IASRS",
+      "name": "Kaspersky Next XDR Foundations 150-249 User 4 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IASTS",
+      "name": "Kaspersky Next XDR Foundations 150-249 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IAXFS",
+      "name": "Kaspersky Next XDR Expert 2500-4999 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4056IAYFS",
+      "name": "Kaspersky Next XDR Core 5000+ User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1VTS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 1000-1499 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1VXS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 1000-1499 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IARTS",
+      "name": "Kaspersky Next EDR Optimum 100-149 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IARXS",
+      "name": "Kaspersky Next EDR Optimum 100-149 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IASDS",
+      "name": "Kaspersky Next EDR Optimum 150-249 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4056IAUFS",
+      "name": "Kaspersky Next XDR Core 500-999 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAURS",
+      "name": "Kaspersky Next XDR Foundations 500-999 User 4 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAUTS",
+      "name": "Kaspersky Next XDR Foundations 500-999 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IAYRS",
+      "name": "Kaspersky Next XDR Expert 5000+ User 4 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAWTS",
+      "name": "Kaspersky Next XDR Foundations 1500-2499 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAWDS",
+      "name": "Kaspersky Next XDR Foundations 1500-2499 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IAVDS",
+      "name": "Kaspersky Next XDR Expert 1000-1499 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4056IAYDS",
+      "name": "Kaspersky Next XDR Core 5000+ User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IASXS",
+      "name": "Kaspersky Next EDR Optimum 150-249 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IASDS",
+      "name": "Kaspersky Next XDR Foundations 150-249 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAYTS",
+      "name": "Kaspersky Next XDR Foundations 5000+ User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4056IAVFS",
+      "name": "Kaspersky Next XDR Core 1000-1499 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4056IATTS",
+      "name": "Kaspersky Next XDR Core 250-499 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAVDS",
+      "name": "Kaspersky Next EDR Optimum 1000-1499 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAXDS",
+      "name": "Kaspersky Next EDR Optimum 2500-4999 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAVXS",
+      "name": "Kaspersky Next EDR Optimum 1000-1499 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1WXS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 1500-2499 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAUDB",
+      "name": "Kaspersky Next XDR Foundations 500-999 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAXFS",
+      "name": "Kaspersky Next EDR Optimum 2500-4999 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAWFS",
+      "name": "Kaspersky Next EDR Optimum 1500-2499 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4056IAUTS",
+      "name": "Kaspersky Next XDR Core 500-999 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAUFS",
+      "name": "Kaspersky Next EDR Optimum 500-999 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1TDS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 250-499 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1UDS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 500-999 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IAUFS",
+      "name": "Kaspersky Next XDR Expert 500-999 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1XDS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 2500-4999 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAQTS",
+      "name": "Kaspersky Next XDR Foundations 50-99 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAYFS",
+      "name": "Kaspersky Next EDR Optimum 5000+ User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAVRS",
+      "name": "Kaspersky Next XDR Foundations 1000-1499 User 4 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1VDS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 1000-1499 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IARXS",
+      "name": "Kaspersky Next XDR Foundations 100-149 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1XXS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 2500-4999 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IARRS",
+      "name": "Kaspersky Next EDR Optimum 100-149 User 4 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAVTS",
+      "name": "Kaspersky Next XDR Foundations 1000-1499 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1YTS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 5000+ User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IASFS",
+      "name": "Kaspersky Next EDR Optimum 150-249 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IATXS",
+      "name": "Kaspersky Next EDR Optimum 250-499 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAURS",
+      "name": "Kaspersky Next EDR Optimum 500-999 User 4 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1WTS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 1500-2499 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAQDB",
+      "name": "Kaspersky Next EDR Optimum 50-99 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IASTS",
+      "name": "Kaspersky Next EDR Optimum 150-249 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAUTS",
+      "name": "Kaspersky Next EDR Optimum 500-999 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAWXS",
+      "name": "Kaspersky Next EDR Optimum 1500-2499 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAUDB",
+      "name": "Kaspersky Next EDR Optimum 500-999 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAWFS",
+      "name": "Kaspersky Next XDR Foundations 1500-2499 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAYFS",
+      "name": "Kaspersky Next XDR Foundations 5000+ User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4056IAVTS",
+      "name": "Kaspersky Next XDR Core 1000-1499 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAVRS",
+      "name": "Kaspersky Next EDR Optimum 1000-1499 User 4 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IAYFS",
+      "name": "Kaspersky Next XDR Expert 5000+ User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IAUDS",
+      "name": "Kaspersky Next XDR Expert 500-999 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IASRS",
+      "name": "Kaspersky Next EDR Optimum 150-249 User 4 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1UTS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 500-999 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAYDS",
+      "name": "Kaspersky Next XDR Foundations 5000+ User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IATDS",
+      "name": "Kaspersky Next XDR Foundations 250-499 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1YDS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 5000+ User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4056IAUDS",
+      "name": "Kaspersky Next XDR Core 500-999 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4069IA1XRS",
+      "name": "Kaspersky Next EDR Expert Middle East Edition. 2500-4999 User 4 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAQXS",
+      "name": "Kaspersky Next EDR Optimum 50-99 User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAYTS",
+      "name": "Kaspersky Next EDR Optimum 5000+ User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAYXS",
+      "name": "Kaspersky Next EDR Optimum 5000+ User 5 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAQDS",
+      "name": "Kaspersky Next XDR Foundations 50-99 User 2 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4054IAWTS",
+      "name": "Kaspersky Next XDR Expert 1500-2499 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4066IAXTS",
+      "name": "Kaspersky Next EDR Optimum 2500-4999 User 3 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IATFS",
+      "name": "Kaspersky Next XDR Foundations 250-499 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "KL4065IAXFS",
+      "name": "Kaspersky Next XDR Foundations 2500-4999 User 1 year Base License",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "Premium",
+      "name": "Kaspersky Home Premium (Windows, macOS,Android & iOS)-1 year\r\nReal-time Antivirus\r\nOnline Payment Protection\r\nPerformance Optimisation\r\nUnlimited Superfast VPN\r\nData Leak Checker\r\nIdentity Protection\r\nExpert Virus Check & Removal",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "Plus",
+      "name": "Kaspersky Home Plus (Windows, macOS,Android & iOS)-1 year\r\nReal-time Antivirus\r\nOnline Payment Protection\r\nPerformance Optimisation\r\nUnlimited Superfast VPN\r\nData Leak Checker",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    },
+    {
+      "partNumber": "Foundations1",
+      "name": "Kaspersky Next EDR Foundations Middle East Edition-1 year",
+      "enrichedFields": "shortDescription, features, specs, faq, whyBuy, category, tags, seoKeywords, prerequisites, related, productRule/scope, categoryRule"
+    }
+  ]
+}

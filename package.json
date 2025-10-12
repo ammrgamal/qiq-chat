@@ -27,7 +27,8 @@
     "algolia:diagnose": "node scripts/algolia-diagnose.mjs",
   "test:search": "jest __tests__/algoliaMapper.spec.ts __tests__/emailValidation.spec.ts -u",
     "enrich:run": "node rules-engine/scripts/run-enrichment.mjs",
-    "enrich:kaspersky12": "node rules-engine/scripts/enrich-products12-kaspersky.mjs"
+    "enrich:kaspersky12": "node rules-engine/scripts/enrich-products12-kaspersky.mjs",
+    "report:enrichment": "node rules-engine/scripts/report-enrichment.mjs --brand=Kaspersky --list=12"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
