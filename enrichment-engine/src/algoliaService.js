@@ -38,7 +38,7 @@ class AlgoliaService {
    * @returns {Object} Algolia object
    */
   transformProduct(product) {
-    return {
+    const obj = {
       objectID: product.objectID || product.ManufacturerPartNo,
       name: product.name || product.Description,
       brand: product.brand || product.Manufacturer,
@@ -60,6 +60,14 @@ class AlgoliaService {
       ai_confidence: parseFloat(product.ai_confidence) || 0,
       _tags: product.tags ? product.tags.split(',').map(t => t.trim()) : []
     };
+    // Pass-through nested attributes if provided by caller
+    if (product.prices) obj.prices = product.prices;
+    if (product.media) obj.media = product.media;
+    if (product.rules) obj.rules = product.rules;
+    if (product.ai) obj.ai = product.ai;
+    if (product.content) obj.content = product.content;
+    if (product.seo_keywords) obj.seo_keywords = product.seo_keywords;
+    return obj;
   }
 
   /**

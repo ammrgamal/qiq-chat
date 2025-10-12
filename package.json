@@ -33,6 +33,7 @@
     "algolia:sync:kaspersky12": "node rules-engine/scripts/algolia-sync-products12.mjs --brand=Kaspersky --list=12",
     "email:report:kaspersky12": "node scripts/email-enrichment-report.mjs --brand=Kaspersky --list=12",
     "algolia:browse:nested": "node scripts/algolia-browse-nested.mjs",
+    "algolia:browse:numeric": "node scripts/algolia-browse-numeric.mjs",
     "db:schema:extend": "node rules-engine/scripts/extend-products-schema.mjs"
   },
   "devDependencies": {
