@@ -529,3 +529,10 @@
 [2025-10-13T12:41:42.023Z] Sync start for index woocommerce_products
 [2025-10-13T12:41:42.315Z] Optimum1 → updated (5 rows)
 [2025-10-13T12:41:42.316Z] ✅ Sync Complete | 1 items processed | 1 updated, 0 inserted, 0 skipped, 0 errors
+[2025-10-13T12:57:08.501Z] Sync start for index woocommerce_products
+[2025-10-13T12:57:08.898Z] KL4069IA1XFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:57:08.906Z] Optimum1 → updated (5 rows)
+[2025-10-13T12:57:08.907Z] ✅ Sync Complete | 2 items processed | 1 updated, 0 inserted, 1 skipped, 0 errors
+[2025-10-13T13:05:20.896Z] Sync start for index woocommerce_products
+[2025-10-13T13:05:21.139Z] KL4069IA1XFS → updated (1 rows)
+[2025-10-13T13:05:21.140Z] ✅ Sync Complete | 1 items processed | 1 updated, 0 inserted, 0 skipped, 0 errors

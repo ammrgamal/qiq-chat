@@ -1,0 +1,5 @@
+QuoteWerks Sync Sample Report
+Run: 2025-10-13T13:05:20.896Z
+Processed: 1, Updated: 1, Inserted: 0, Skipped: 0, Errors: 0
+Details:
+[2025-10-13T13:05:21.139Z] KL4069IA1XFS → updated (1 rows)

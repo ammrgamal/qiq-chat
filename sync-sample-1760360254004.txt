@@ -1,0 +1,6 @@
+QuoteWerks Sync Sample Report
+Run: 2025-10-13T12:57:08.501Z
+Processed: 2, Updated: 1, Inserted: 0, Skipped: 1, Errors: 0
+Details:
+[2025-10-13T12:57:08.898Z] KL4069IA1XFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:57:08.906Z] Optimum1 → updated (5 rows)
