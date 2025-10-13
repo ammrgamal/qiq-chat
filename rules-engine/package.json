@@ -10,6 +10,7 @@
     "algolia:sync": "node src/algoliaSync.js",
     "algolia:sync:full": "node src/algoliaSync.js --full",
     "algolia:settings": "node src/algoliaSync.js --apply-settings",
+    "enrich:kaspersky": "node scripts/enrich-and-email-kaspersky.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
