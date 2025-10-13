@@ -20,12 +20,17 @@ async function sendWithResend({ to, subject, html, from, attachments }){
     // Resend attachments API expects: [{ filename, content, path, type }]
     let resendAttachments = undefined;
     if (attachments && Array.isArray(attachments) && attachments.length){
-      resendAttachments = attachments.map(a=>({
-        filename: a.filename,
-        content: a.contentBase64 ? a.contentBase64 : undefined,
-        path: a.path,
-        type: a.mimeType || 'application/octet-stream'
-      }));
+      resendAttachments = attachments.map(a=>{
+        let content = a.contentBase64;
+        if (!content && a.path && fs.existsSync(a.path)){
+          try { content = fs.readFileSync(a.path).toString('base64'); } catch {}
+        }
+        return {
+          filename: a.filename,
+          content,
+          type: a.mimeType || 'application/octet-stream'
+        };
+      }).filter(att=> !!att.content);
     }
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -47,18 +52,26 @@ async function sendWithResend({ to, subject, html, from, attachments }){
   }
 }
 
+import fs from 'fs';
+
 async function sendWithSendGrid({ to, subject, html, from, attachments }){
   const key = process.env.SENDGRID_API_KEY;
   if (!key) return { ok:false, disabled:true };
   try{
     let sgAttachments = undefined;
     if (attachments && Array.isArray(attachments) && attachments.length){
-      sgAttachments = attachments.map(a=>({
-        content: a.contentBase64,
-        filename: a.filename,
-        type: a.mimeType || 'application/octet-stream',
-        disposition: 'attachment'
-      }));
+      sgAttachments = attachments.map(a=>{
+        let content = a.contentBase64;
+        if (!content && a.path && fs.existsSync(a.path)){
+          try { content = fs.readFileSync(a.path).toString('base64'); } catch {}
+        }
+        return {
+          content,
+          filename: a.filename,
+          type: a.mimeType || 'application/octet-stream',
+          disposition: 'attachment'
+        };
+      }).filter(att=> !!att.content);
     }
     const res = await fetch('https://api.sendgrid.com/v3/mail/send',{
       method:'POST',
