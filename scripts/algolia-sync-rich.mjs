@@ -66,7 +66,7 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.Gemini_API;
 const GOOGLE_CSE_ID = process.env.GOOGLE_CSE_ID || process.env.GOOGLE_CX;
 
 function isUrl(v){ return typeof v === 'string' && /^https?:\/\//i.test(v); }
-function appendRaw(u){ if (!u) return u; return u.includes('?') ? `${u}&raw=1` : `${u}?raw=1`; }
+function appendRaw(u){ return u; }
 function filenameOnly(p){
   const s = String(p||'');
   const norm = s.replace(/\\/g,'/');

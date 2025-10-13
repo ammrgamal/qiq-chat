@@ -94,7 +94,7 @@ function mapRecordToAlgolia(r){
   if (!imageUrl && imgBase && r.PictureFileName && !isUrl(r.PictureFileName)) imageUrl = joinUrl(imgBase, r.PictureFileName);
   if (!imageUrl && isUrl(r.PictureFileName)) imageUrl = r.PictureFileName;
   if (!imageUrl && r.ItemURL) imageUrl = r.ItemURL;
-  if (imageUrl) imageUrl = imageUrl.includes('?') ? `${imageUrl}&raw=1` : `${imageUrl}?raw=1`;
+  // Keep canonical image URL without query params as requested
 
   // Datasheet/specs resolution priority:
   // 1) R2_SPECS_BASE + CustomText06 when CustomText06 looks like a file path (no http)
