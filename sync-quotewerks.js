@@ -67,6 +67,17 @@ function canonicalizeDatasheet(input){
   return u;
 }
 
+function basenameFromUrl(u){
+  try {
+    const url = new URL(u);
+    const parts = url.pathname.split('/').filter(Boolean);
+    return parts[parts.length-1] || null;
+  } catch {
+    const parts = String(u||'').split('/').filter(Boolean);
+    return parts[parts.length-1] || null;
+  }
+}
+
 const REQUIRED_FIELDS = {
   // Algolia → DocumentItems
   name: 'Description',
@@ -185,9 +196,9 @@ function mapAlgoliaToDocItems(record){
     ManufacturerPartNumber: record.part_number || record.objectID,
     CustomText01: record.category || get(record, 'category') || null,
     PictureFileName: image || null,
-    CustomText03: spec || null,
+    CustomText03: spec || null, // will remap to SpecSheetFile if column exists
     CustomMemo01: record.short_description || get(record,'content.short_description') || null,
-    Notes: record.long_description || null,
+    CustomMemo02: record.long_description || null,
     CustomText04: Array.isArray(record.tags) ? record.tags.join(',') : (record.tags || null),
     CustomText05: get(record,'attributes.Manufacturer') || null,
     CustomText06: get(record,'attributes.Type') || null,
@@ -197,7 +208,7 @@ function mapAlgoliaToDocItems(record){
     CustomNumber03: typeof record.published === 'boolean' ? (record.published?1:0) : null,
     CustomText08: record.visibility || null,
     CustomNumber04: get(record,'fx.usd_to_egp_rate') ?? null,
-    CustomMemo02: record.datasheet_text || null,
+    CustomMemo06: record.datasheet_text || null,
     CustomMemo03: record.ai_description || null,
     CustomMemo04: record.ai_marketing || null,
     CustomMemo05: record.ai_specs_table || null
@@ -272,7 +283,18 @@ async function updateDocumentItemsByPart(pool, pn, values, cols){
                : cols.has('PictureFile') ? 'PictureFile'
                : null;
   if (imgCol && values.PictureFileName && imgCol !== 'PictureFileName'){
-    values[imgCol] = values.PictureFileName; delete values.PictureFileName;
+    // If we are writing to PictureFile/PictureFileName, store only the file name (not full URL)
+    const fileNameOnly = basenameFromUrl(values.PictureFileName) || values.PictureFileName;
+    values[imgCol] = fileNameOnly; delete values.PictureFileName;
+  }
+  // Spec sheet column mapping (CustomText03 fallback)
+  const specCol = cols.has('SpecSheetFile') ? 'SpecSheetFile'
+                : cols.has('CustomText03') ? 'CustomText03'
+                : null;
+  if (specCol && values.CustomText03 && specCol !== 'CustomText03'){
+    // If SpecSheetFile exists, store only file name (front-end will prefix /specs/)
+    const fileNameOnly = basenameFromUrl(values.CustomText03) || values.CustomText03;
+    values[specCol] = fileNameOnly; delete values.CustomText03;
   }
   const sets = [];
   const req = pool.request();

@@ -1,0 +1,5 @@
+QuoteWerks Sync Sample Report
+Run: 2025-10-13T12:41:42.023Z
+Processed: 1, Updated: 1, Inserted: 0, Skipped: 0, Errors: 0
+Details:
+[2025-10-13T12:41:42.315Z] Optimum1 → updated (5 rows)
