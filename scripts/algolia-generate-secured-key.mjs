@@ -21,13 +21,5 @@ const securedApiKey = algoliasearch.generateSecuredApiKey(searchKey, {
   validUntil
 });
 
-const sampleCurl = [
-  'curl -X POST \\\',
-  `  https://${appId}-dsn.algolia.net/1/indexes/${indexName}/query \\\\`,
-  `  -H "X-Algolia-Application-Id: ${appId}" \\\\`,
-  `  -H "X-Algolia-API-Key: ${securedApiKey}" \\\\`,
-  '  -H "Content-Type: application/json" \\\\',
-  '  --data "{\"query\":\"\",\"hitsPerPage\":10}"'
-].join('\n');
-
-console.log(JSON.stringify({ ok:true, appId, indexName, validUntil, securedApiKey, sampleCurl }, null, 2));
+const endpoint = `https://${appId}-dsn.algolia.net/1/indexes/${indexName}/query`;
+console.log(JSON.stringify({ ok:true, appId, indexName, validUntil, endpoint, securedApiKey }, null, 2));
