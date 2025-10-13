@@ -3,11 +3,13 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
+import { loadLocalEnvFallback } from './_env-fallback.mjs';
 
 dotenv.config({ path: path.join(process.cwd(), '.env') });
+loadLocalEnvFallback();
 
 const { sendEmail } = await import('../../api/_lib/email.js');
-const to = process.env.ENRICH_NOTIFY_TO || process.env.EMAIL_TO || process.env.ADMIN_EMAIL;
+const to = process.env.ENRICH_NOTIFY_TO || process.env.EMAIL_TO || process.env.ADMIN_EMAIL || process.env.EMAIL_FROM;
 if (!to){
   console.error('Missing ENRICH_NOTIFY_TO (or EMAIL_TO/ADMIN_EMAIL)');
   process.exit(2);

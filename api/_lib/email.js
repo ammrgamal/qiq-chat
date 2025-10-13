@@ -43,12 +43,12 @@ async function sendWithResend({ to, subject, html, from, attachments }){
     if (!res.ok){
       const t = await res.text();
       console.warn('resend error', res.status, t);
-      return { ok:false, provider:'resend' };
+      return { ok:false, provider:'resend', status: res.status, body: t };
     }
     return { ok:true, provider:'resend' };
   } catch (e) {
     console.warn('resend sendEmail failed', e);
-    return { ok:false, provider:'resend' };
+    return { ok:false, provider:'resend', error: String(e && e.message || e) };
   }
 }
 
@@ -87,12 +87,12 @@ async function sendWithSendGrid({ to, subject, html, from, attachments }){
     if (!res.ok){
       const t = await res.text();
       console.warn('sendgrid error', res.status, t);
-      return { ok:false, provider:'sendgrid' };
+      return { ok:false, provider:'sendgrid', status: res.status, body: t };
     }
     return { ok:true, provider:'sendgrid' };
   }catch(e){
     console.warn('sendgrid sendEmail failed', e);
-    return { ok:false, provider:'sendgrid' };
+    return { ok:false, provider:'sendgrid', error: String(e && e.message || e) };
   }
 }
 

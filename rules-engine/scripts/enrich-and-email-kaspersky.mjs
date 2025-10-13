@@ -5,8 +5,10 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { loadLocalEnvFallback } from './_env-fallback.mjs';
 
 dotenv.config({ path: path.join(process.cwd(), '.env') });
+loadLocalEnvFallback();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
