@@ -1,0 +1,31 @@
+ℹ OpenAI client initialized
+ℹ Gemini API key configured
+⚠ Google Custom Search API not configured - image fetching disabled
+ℹ Algolia client initialized (index: woocommerce_products)
+ℹ Connecting to SQL Server database...
+✓ Database connected successfully
+[select] brand=Kaspersky lists=1,12 totalSelected=0
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Enrichment Engine Initialization
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Enrichment engine initialized successfully
+ℹ Shutting down enrichment engine...
+ℹ Database disconnected
+✓ Engine shut down successfully
+ℹ Database disconnected
+{
+  "ok": true,
+  "brand": "Kaspersky",
+  "lists": [
+    "1",
+    "12"
+  ],
+  "total": 0,
+  "enriched": 0,
+  "failed": 0,
+  "skipped": 0,
+  "durationMs": 44,
+  "results": []
+}

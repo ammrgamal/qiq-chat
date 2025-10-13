@@ -1,0 +1,353 @@
+[2025-10-13T12:00:38.449Z] created table DocumentItems_Extension
+[2025-10-13T12:00:38.449Z] Sync start for index woocommerce_products
+[2025-10-13T12:00:39.220Z] Sync failed: Method not allowed with this API key
+[2025-10-13T12:01:58.326Z] Sync start for index woocommerce_products
+[2025-10-13T12:01:58.736Z] KL4054IAWRS → error Cannot read properties of undefined (reading 'on')
+[2025-10-13T12:06:35.581Z] Sync start for index woocommerce_products
+[2025-10-13T12:06:35.984Z] KL4054IAWRS → error Cannot read properties of undefined (reading 'on')
+[2025-10-13T12:08:20.369Z] Sync start for index woocommerce_products
+[2025-10-13T12:08:20.766Z] KL4054IAWRS → error Cannot read properties of undefined (reading 'on')
+[2025-10-13T12:09:18.249Z] Sync start for index woocommerce_products
+[2025-10-13T12:09:18.660Z] KL4054IAWRS → error Connection not yet open.
+[2025-10-13T12:09:18.661Z] ✅ Sync Complete | 0 items processed | 0 updated, 0 inserted, 0 skipped, 1 errors
+[2025-10-13T12:09:18.662Z] KL4054IAXRS → error Connection is closed.
+[2025-10-13T12:09:18.662Z] KL4054IAYRS → error Connection is closed.
+[2025-10-13T12:09:18.663Z] KL4054IATTS → error Connection is closed.
+[2025-10-13T12:09:18.663Z] KL4069IA1UXS → error Connection is closed.
+[2025-10-13T12:09:18.664Z] KL4054IAUTS → error Connection is closed.
+[2025-10-13T12:09:18.665Z] KL4069IA1VXS → error Connection is closed.
+[2025-10-13T12:09:18.666Z] KL4069IA1WXS → error Connection is closed.
+[2025-10-13T12:09:18.666Z] KL4069IA1XXS → error Connection is closed.
+[2025-10-13T12:09:18.667Z] KL4069IA1YXS → error Connection is closed.
+[2025-10-13T12:09:18.667Z] KL4054IAWTS → error Connection is closed.
+[2025-10-13T12:09:18.667Z] KL4069IA1UTS → error Connection is closed.
+[2025-10-13T12:09:18.668Z] KL4069IA1WRS → error Connection is closed.
+[2025-10-13T12:09:18.668Z] KL4054IAUDS → error Connection is closed.
+[2025-10-13T12:09:18.669Z] KL4069IA1XRS → error Connection is closed.
+[2025-10-13T12:09:18.669Z] KL4069IA1TDS → error Connection is closed.
+[2025-10-13T12:09:18.670Z] KL4066IAQXS → error Connection is closed.
+[2025-10-13T12:09:18.670Z] KL4069IA1VTS → error Connection is closed.
+[2025-10-13T12:09:18.670Z] KL4054IAVDS → error Connection is closed.
+[2025-10-13T12:09:18.671Z] KL4069IA1WTS → error Connection is closed.
+[2025-10-13T12:09:18.671Z] KL4066IARXS → error Connection is closed.
+[2025-10-13T12:09:18.671Z] KL4054IAWDS → error Connection is closed.
+[2025-10-13T12:09:18.672Z] KL4054IATFS → error Connection is closed.
+[2025-10-13T12:09:18.672Z] KL4069IA1XTS → error Connection is closed.
+[2025-10-13T12:09:18.673Z] KL4056IATTS → error Connection is closed.
+[2025-10-13T12:09:18.673Z] KL4066IASXS → error Connection is closed.
+[2025-10-13T12:09:18.673Z] KL4069IA1UDS → error Connection is closed.
+[2025-10-13T12:09:18.673Z] KL4069IA1YTS → error Connection is closed.
+[2025-10-13T12:09:18.674Z] KL4066IARRS → error Connection is closed.
+[2025-10-13T12:09:18.674Z] KL4066IATXS → error Connection is closed.
+[2025-10-13T12:09:18.675Z] KL4066IASRS → error Connection is closed.
+[2025-10-13T12:09:18.675Z] KL4066IAQTS → error Connection is closed.
+[2025-10-13T12:09:18.675Z] KL4069IA1VDS → error Connection is closed.
+[2025-10-13T12:09:18.675Z] KL4066IAVXS → error Connection is closed.
+[2025-10-13T12:09:18.676Z] KL4054IAUFS → error Connection is closed.
+[2025-10-13T12:09:18.676Z] KL4066IARTS → error Connection is closed.
+[2025-10-13T12:09:18.676Z] KL4056IAUTS → error Connection is closed.
+[2025-10-13T12:09:18.677Z] KL4065IAQXS → error Connection is closed.
+[2025-10-13T12:09:18.677Z] KL4066IAURS → error Connection is closed.
+[2025-10-13T12:09:18.677Z] KL4066IAWXS → error Connection is closed.
+[2025-10-13T12:09:18.678Z] KL4056IAVTS → error Connection is closed.
+[2025-10-13T12:09:18.678Z] KL4066IASTS → error Connection is closed.
+[2025-10-13T12:09:18.678Z] KL4069IA1XDS → error Connection is closed.
+[2025-10-13T12:09:18.679Z] KL4066IAXXS → error Connection is closed.
+[2025-10-13T12:09:18.679Z] KL4066IAVRS → error Connection is closed.
+[2025-10-13T12:09:18.679Z] KL4056IAWTS → error Connection is closed.
+[2025-10-13T12:09:18.680Z] KL4065IARXS → error Connection is closed.
+[2025-10-13T12:09:18.680Z] KL4054IAWFS → error Connection is closed.
+[2025-10-13T12:09:18.680Z] KL4066IATTS → error Connection is closed.
+[2025-10-13T12:09:18.681Z] KL4066IAYXS → error Connection is closed.
+[2025-10-13T12:09:18.681Z] KL4066IAQDB → error Connection is closed.
+[2025-10-13T12:09:18.681Z] KL4069IA1YDS → error Connection is closed.
+[2025-10-13T12:09:18.682Z] KL4066IAUTS → error Connection is closed.
+[2025-10-13T12:09:18.682Z] KL4054IAXFS → error Connection is closed.
+[2025-10-13T12:09:18.682Z] KL4066IARDS → error Connection is closed.
+[2025-10-13T12:09:18.683Z] KL4054IAYFS → error Connection is closed.
+[2025-10-13T12:09:18.683Z] KL4065IAQTS → error Connection is closed.
+[2025-10-13T12:09:18.683Z] KL4065IASRS → error Connection is closed.
+[2025-10-13T12:09:18.684Z] KL4056IAUDS → error Connection is closed.
+[2025-10-13T12:09:18.684Z] KL4066IASDS → error Connection is closed.
+[2025-10-13T12:09:18.684Z] KL4066IAXTS → error Connection is closed.
+[2025-10-13T12:09:18.685Z] KL4066IAUDB → error Connection is closed.
+[2025-10-13T12:09:18.685Z] KL4065IAURS → error Connection is closed.
+[2025-10-13T12:09:18.685Z] KL4069IA1XFS → error Connection is closed.
+[2025-10-13T12:09:18.686Z] KL4066IAYTS → error Connection is closed.
+[2025-10-13T12:09:18.686Z] KL4056IAXDS → error Connection is closed.
+[2025-10-13T12:09:18.686Z] KL4065IASTS → error Connection is closed.
+[2025-10-13T12:09:18.687Z] KL4056IAYDS → error Connection is closed.
+[2025-10-13T12:09:18.687Z] KL4066IAVDS → error Connection is closed.
+[2025-10-13T12:09:18.688Z] KL4065IAVRS → error Connection is closed.
+[2025-10-13T12:09:18.688Z] KL4065IAQDS → error Connection is closed.
+[2025-10-13T12:09:18.688Z] Premium → error Connection is closed.
+[2025-10-13T12:09:18.688Z] Plus → error Connection is closed.
+[2025-10-13T12:09:18.689Z] KL4065IAUTS → error Connection is closed.
+[2025-10-13T12:09:18.689Z] KL4066IAXDS → error Connection is closed.
+[2025-10-13T12:09:18.689Z] KL4065IAVTS → error Connection is closed.
+[2025-10-13T12:09:18.690Z] KL4056IAUFS → error Connection is closed.
+[2025-10-13T12:09:18.690Z] KL4065IASDS → error Connection is closed.
+[2025-10-13T12:09:18.690Z] KL4065IAWTS → error Connection is closed.
+[2025-10-13T12:09:18.691Z] KL4066IASFS → error Connection is closed.
+[2025-10-13T12:09:18.691Z] KL4056IAVFS → error Connection is closed.
+[2025-10-13T12:09:18.691Z] KL4065IATDS → error Connection is closed.
+[2025-10-13T12:09:18.692Z] KL4056IAWFS → error Connection is closed.
+[2025-10-13T12:09:18.692Z] KL4065IAUDB → error Connection is closed.
+[2025-10-13T12:09:18.692Z] KL4065IAYTS → error Connection is closed.
+[2025-10-13T12:09:18.692Z] KL4066IAUFS → error Connection is closed.
+[2025-10-13T12:09:18.693Z] KL4056IAYFS → error Connection is closed.
+[2025-10-13T12:09:18.693Z] KL4065IAVDS → error Connection is closed.
+[2025-10-13T12:09:18.693Z] KL4066IAVFS → error Connection is closed.
+[2025-10-13T12:09:18.694Z] KL4065IAWDS → error Connection is closed.
+[2025-10-13T12:09:18.694Z] KL4066IAWFS → error Connection is closed.
+[2025-10-13T12:09:18.694Z] KL4065IAXDS → error Connection is closed.
+[2025-10-13T12:09:18.695Z] Foundations1 → error Connection is closed.
+[2025-10-13T12:09:18.695Z] KL4066IAXFS → error Connection is closed.
+[2025-10-13T12:09:18.695Z] KL4065IAYDS → error Connection is closed.
+[2025-10-13T12:09:18.696Z] KL4066IAYFS → error Connection is closed.
+[2025-10-13T12:09:18.696Z] KL4065IATFS → error Connection is closed.
+[2025-10-13T12:09:18.696Z] KL4065IAWFS → error Connection is closed.
+[2025-10-13T12:09:18.697Z] KL4065IAXFS → error Connection is closed.
+[2025-10-13T12:09:18.697Z] KL4065IAYFS → error Connection is closed.
+[2025-10-13T12:09:18.697Z] Advanced-120 → error Connection is closed.
+[2025-10-13T12:09:18.698Z] KL4054IATRS → error Connection is closed.
+[2025-10-13T12:09:18.698Z] KL4069IA1TXS → error Connection is closed.
+[2025-10-13T12:09:18.699Z] KL4069IA1TRS → error Connection is closed.
+[2025-10-13T12:09:18.699Z] KL4069IA1TTS → error Connection is closed.
+[2025-10-13T12:09:18.699Z] KL4069IA1URS → error Connection is closed.
+[2025-10-13T12:09:18.700Z] KL4054IATDS → error Connection is closed.
+[2025-10-13T12:09:18.700Z] KL4054IAVTS → error Connection is closed.
+[2025-10-13T12:09:18.700Z] KL4069IA1VRS → error Connection is closed.
+[2025-10-13T12:09:18.701Z] KL4054IAXTS → error Connection is closed.
+[2025-10-13T12:09:18.701Z] KL4054IAYTS → error Connection is closed.
+[2025-10-13T12:09:18.701Z] KL4069IA1YRS → error Connection is closed.
+[2025-10-13T12:09:18.702Z] KL4066IAQRS → error Connection is closed.
+[2025-10-13T12:09:18.702Z] KL4054IAXDS → error Connection is closed.
+[2025-10-13T12:09:18.702Z] KL4054IAYDS → error Connection is closed.
+[2025-10-13T12:09:18.703Z] KL4066IAUXS → error Connection is closed.
+[2025-10-13T12:09:18.703Z] KL4066IATRS → error Connection is closed.
+[2025-10-13T12:09:18.704Z] Optimum3 → error Connection is closed.
+[2025-10-13T12:09:18.704Z] KL4069IA1WDS → error Connection is closed.
+[2025-10-13T12:09:18.705Z] KL4069IA1TFS → error Connection is closed.
+[2025-10-13T12:09:18.705Z] KL4056IATDS → error Connection is closed.
+[2025-10-13T12:09:18.705Z] KL4054IAVFS → error Connection is closed.
+[2025-10-13T12:09:18.706Z] KL4065IAQRS → error Connection is closed.
+[2025-10-13T12:09:18.706Z] KL4066IAWRS → error Connection is closed.
+[2025-10-13T12:09:18.706Z] KL4056IAXTS → error Connection is closed.
+[2025-10-13T12:09:18.707Z] KL4065IASXS → error Connection is closed.
+[2025-10-13T12:09:18.707Z] KL4065IARRS → error Connection is closed.
+[2025-10-13T12:09:18.707Z] KL4056IAYTS → error Connection is closed.
+[2025-10-13T12:09:18.708Z] KL4069IA1UFS → error Connection is closed.
+[2025-10-13T12:09:18.708Z] KL4066IAXRS → error Connection is closed.
+[2025-10-13T12:09:18.709Z] Optimum2 → error Connection is closed.
+[2025-10-13T12:09:18.710Z] KL4065IATXS → error Connection is closed.
+[2025-10-13T12:09:18.710Z] KL4066IAYRS → error Connection is closed.
+[2025-10-13T12:09:18.711Z] KL4066IAVTS → error Connection is closed.
+[2025-10-13T12:09:18.711Z] KL4069IA1VFS → error Connection is closed.
+[2025-10-13T12:09:18.712Z] KL4066IAWTS → error Connection is closed.
+[2025-10-13T12:09:18.712Z] KL4065IAUXS → error Connection is closed.
+[2025-10-13T12:09:18.712Z] KL4056IAVDS → error Connection is closed.
+[2025-10-13T12:09:18.712Z] Foundations3 → error Connection is closed.
+[2025-10-13T12:09:18.713Z] KL4065IATRS → error Connection is closed.
+[2025-10-13T12:09:18.713Z] KL4065IARTS → error Connection is closed.
+[2025-10-13T12:09:18.714Z] KL4066IATDS → error Connection is closed.
+[2025-10-13T12:09:18.714Z] KL4069IA1WFS → error Connection is closed.
+[2025-10-13T12:09:18.714Z] KL4065IAVXS → error Connection is closed.
+[2025-10-13T12:09:18.715Z] KL4056IAWDS → error Connection is closed.
+[2025-10-13T12:09:18.715Z] KL4065IAWXS → error Connection is closed.
+[2025-10-13T12:09:18.715Z] KL4056IATFS → error Connection is closed.
+[2025-10-13T12:09:18.716Z] KL4065IAXXS → error Connection is closed.
+[2025-10-13T12:09:18.716Z] KL4065IATTS → error Connection is closed.
+[2025-10-13T12:09:18.717Z] KL4069IA1YFS → error Connection is closed.
+[2025-10-13T12:09:18.717Z] KL4065IAWRS → error Connection is closed.
+[2025-10-13T12:09:18.718Z] KL4066IAWDS → error Connection is closed.
+[2025-10-13T12:09:18.718Z] KL4065IAYXS → error Connection is closed.
+[2025-10-13T12:09:18.719Z] KL4066IAQFS → error Connection is closed.
+[2025-10-13T12:09:18.719Z] KL4065IAXRS → error Connection is closed.
+[2025-10-13T12:09:18.719Z] Foundations2 → error Connection is closed.
+[2025-10-13T12:09:18.720Z] KL4065IARDS → error Connection is closed.
+[2025-10-13T12:09:18.720Z] KL4065IAYRS → error Connection is closed.
+[2025-10-13T12:09:18.720Z] Optimum1 → error Connection is closed.
+[2025-10-13T12:09:18.721Z] KL4066IARFS → error Connection is closed.
+[2025-10-13T12:09:18.721Z] KL4066IAYDS → error Connection is closed.
+[2025-10-13T12:09:18.721Z] KL4065IAXTS → error Connection is closed.
+[2025-10-13T12:09:18.722Z] KL4066IATFS → error Connection is closed.
+[2025-10-13T12:09:18.722Z] KL4056IAXFS → error Connection is closed.
+[2025-10-13T12:09:18.722Z] Standard → error Connection is closed.
+[2025-10-13T12:09:18.723Z] KL4065IAQFS → error Connection is closed.
+[2025-10-13T12:09:18.723Z] KL4065IARFS → error Connection is closed.
+[2025-10-13T12:09:18.723Z] KL4065IASFS → error Connection is closed.
+[2025-10-13T12:09:18.724Z] KL4065IAUFS → error Connection is closed.
+[2025-10-13T12:09:18.724Z] KL4065IAVFS → error Connection is closed.
+[2025-10-13T12:10:51.584Z] Sync start for index woocommerce_products
+[2025-10-13T12:10:52.093Z] KL4054IAWRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.096Z] KL4054IAXRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.099Z] KL4054IAYRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.100Z] KL4054IATTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.103Z] KL4069IA1UXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.105Z] KL4054IAUTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.107Z] KL4069IA1VXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.108Z] KL4069IA1WXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.110Z] KL4069IA1XXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.111Z] KL4069IA1YXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.113Z] KL4054IAWTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.115Z] KL4069IA1UTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.116Z] KL4069IA1WRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.118Z] KL4054IAUDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.119Z] KL4069IA1XRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.121Z] KL4069IA1TDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.122Z] KL4066IAQXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.124Z] KL4069IA1VTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.125Z] KL4054IAVDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.127Z] KL4069IA1WTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.128Z] KL4066IARXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.130Z] KL4054IAWDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.131Z] KL4054IATFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.132Z] KL4069IA1XTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.134Z] KL4056IATTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.136Z] KL4066IASXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.137Z] KL4069IA1UDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.139Z] KL4069IA1YTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.140Z] KL4066IARRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.141Z] KL4066IATXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.143Z] KL4066IASRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.145Z] KL4066IAQTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.146Z] KL4069IA1VDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.148Z] KL4066IAVXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.149Z] KL4054IAUFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.150Z] KL4066IARTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.152Z] KL4056IAUTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.153Z] KL4065IAQXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.154Z] KL4066IAURS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.156Z] KL4066IAWXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.157Z] KL4056IAVTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.158Z] KL4066IASTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.160Z] KL4069IA1XDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.161Z] KL4066IAXXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.163Z] KL4066IAVRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.165Z] KL4056IAWTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.166Z] KL4065IARXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.168Z] KL4054IAWFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.169Z] KL4066IATTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.171Z] KL4066IAYXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.172Z] KL4066IAQDB → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.173Z] KL4069IA1YDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.175Z] KL4066IAUTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.176Z] KL4054IAXFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.177Z] KL4066IARDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.179Z] KL4054IAYFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.180Z] KL4065IAQTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.182Z] KL4065IASRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.183Z] KL4056IAUDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.185Z] KL4066IASDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.186Z] KL4066IAXTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.187Z] KL4066IAUDB → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.190Z] KL4065IAURS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.191Z] KL4069IA1XFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.193Z] KL4066IAYTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.195Z] KL4056IAXDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.196Z] KL4065IASTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.197Z] KL4056IAYDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.199Z] KL4066IAVDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.200Z] KL4065IAVRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.201Z] KL4065IAQDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.204Z] Premium → updated (6 rows)
+[2025-10-13T12:10:52.205Z] Plus → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.206Z] KL4065IAUTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.207Z] KL4066IAXDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.209Z] KL4065IAVTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.210Z] KL4056IAUFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.211Z] KL4065IASDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.212Z] KL4065IAWTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.214Z] KL4066IASFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.215Z] KL4056IAVFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.217Z] KL4065IATDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.218Z] KL4056IAWFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.219Z] KL4065IAUDB → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.221Z] KL4065IAYTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.222Z] KL4066IAUFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.223Z] KL4056IAYFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.225Z] KL4065IAVDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.226Z] KL4066IAVFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.228Z] KL4065IAWDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.229Z] KL4066IAWFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.230Z] KL4065IAXDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.232Z] Foundations1 → updated (1 rows)
+[2025-10-13T12:10:52.233Z] KL4066IAXFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.235Z] KL4065IAYDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.236Z] KL4066IAYFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.238Z] KL4065IATFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.240Z] KL4065IAWFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.242Z] KL4065IAXFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.243Z] KL4065IAYFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.250Z] Advanced-120 → updated (4 rows)
+[2025-10-13T12:10:52.258Z] KL4054IATRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.261Z] KL4069IA1TXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.263Z] KL4069IA1TRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.265Z] KL4069IA1TTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.267Z] KL4069IA1URS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.269Z] KL4054IATDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.270Z] KL4054IAVTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.272Z] KL4069IA1VRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.274Z] KL4054IAXTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.275Z] KL4054IAYTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.277Z] KL4069IA1YRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.279Z] KL4066IAQRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.282Z] KL4054IAXDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.284Z] KL4054IAYDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.286Z] KL4066IAUXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.288Z] KL4066IATRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.290Z] Optimum3 → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.292Z] KL4069IA1WDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.293Z] KL4069IA1TFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.295Z] KL4056IATDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.296Z] KL4054IAVFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.299Z] KL4065IAQRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.301Z] KL4066IAWRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.303Z] KL4056IAXTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.305Z] KL4065IASXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.306Z] KL4065IARRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.308Z] KL4056IAYTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.310Z] KL4069IA1UFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.311Z] KL4066IAXRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.313Z] Optimum2 → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.315Z] KL4065IATXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.316Z] KL4066IAYRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.318Z] KL4066IAVTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.320Z] KL4069IA1VFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.322Z] KL4066IAWTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.323Z] KL4065IAUXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.325Z] KL4056IAVDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.327Z] Foundations3 → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.329Z] KL4065IATRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.330Z] KL4065IARTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.332Z] KL4066IATDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.333Z] KL4069IA1WFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.334Z] KL4065IAVXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.335Z] KL4056IAWDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.337Z] KL4065IAWXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.338Z] KL4056IATFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.340Z] KL4065IAXXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.341Z] KL4065IATTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.342Z] KL4069IA1YFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.344Z] KL4065IAWRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.345Z] KL4066IAWDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.347Z] KL4065IAYXS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.348Z] KL4066IAQFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.349Z] KL4065IAXRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.351Z] Foundations2 → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.352Z] KL4065IARDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.353Z] KL4065IAYRS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.356Z] Optimum1 → updated (5 rows)
+[2025-10-13T12:10:52.358Z] KL4066IARFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.359Z] KL4066IAYDS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.361Z] KL4065IAXTS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.362Z] KL4066IATFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.363Z] KL4056IAXFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.365Z] Standard → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.366Z] KL4065IAQFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.367Z] KL4065IARFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.369Z] KL4065IASFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.370Z] KL4065IAUFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.371Z] KL4065IAVFS → skipped (no updatable columns or no matching rows)
+[2025-10-13T12:10:52.372Z] ✅ Sync Complete | 170 items processed | 4 updated, 0 inserted, 166 skipped, 0 errors

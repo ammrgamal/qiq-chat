@@ -20,11 +20,19 @@ class DatabaseService {
     }
 
     try {
-      const configPath = path.join(process.cwd(), 'config', 'dbConfig.json');
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  const configPath = path.join(process.cwd(), 'config', 'dbConfig.json');
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  // Apply environment overrides if provided
+  if (process.env.SQL_SERVER) config.server = process.env.SQL_SERVER;
+  if (process.env.SQL_DB) config.database = process.env.SQL_DB;
+  if (process.env.SQL_USER) config.user = process.env.SQL_USER;
+  if (process.env.SQL_PASSWORD) config.password = process.env.SQL_PASSWORD;
+  if (!config.options) config.options = {};
+  if (process.env.SQL_ENCRYPT) config.options.encrypt = /^(1|true|yes)$/i.test(process.env.SQL_ENCRYPT);
+  if (process.env.SQL_TRUST_CERT) config.options.trustServerCertificate = /^(1|true|yes)$/i.test(process.env.SQL_TRUST_CERT);
       
       logger.info('Connecting to SQL Server database...');
-      this.pool = await sql.connect(config);
+  this.pool = await sql.connect(config);
       this.connected = true;
       logger.success('Database connected successfully');
     } catch (error) {

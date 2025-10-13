@@ -35,17 +35,30 @@ async function main(){
   const pool = await sql.connect(config);
   const table = `dbo.Products_${LIST}_Products`;
   const esc = (t)=> t.replace(/'/g,"''");
-  const q = `SELECT TOP (${LIMIT})
-    ManufacturerPartNumber, Description,
-    CustomMemo01, CustomMemo02, CustomMemo03, CustomMemo04, CustomMemo05,
-    CustomText01, CustomText02, CustomText03, CustomText04, CustomText05,
-    CustomText06, CustomText07, CustomText08, CustomText09, CustomText10,
-    CustomText11, CustomText12, CustomText13
-  FROM ${table}
-  WHERE Manufacturer LIKE '${esc(BRAND)}%'
-    AND CustomText11 = 'TRUE'
-  ORDER BY LastModified DESC`;
-  const rs = await pool.request().query(q);
+  // Check table existence first
+  const tExists = await pool.request().query(`SELECT 1 AS ok FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='Products_${LIST}_Products'`);
+  let rs = { recordset: [] };
+  if (tExists.recordset.length){
+    const q = `SELECT TOP (${LIMIT})
+      ManufacturerPartNumber, Description,
+      CustomMemo01, CustomMemo02, CustomMemo03, CustomMemo04, CustomMemo05,
+      CustomText01, CustomText02, CustomText03, CustomText04, CustomText05,
+      CustomText06, CustomText07, CustomText08, CustomText09, CustomText10,
+      CustomText11, CustomText12, CustomText13
+    FROM ${table}
+    WHERE Manufacturer LIKE '${esc(BRAND)}%'
+      AND CustomText11 = 'TRUE'
+    ORDER BY LastModified DESC`;
+    try {
+      rs = await pool.request().query(q);
+    } catch (e){
+      // If query fails (missing columns), fallback to a minimal column set
+      const q2 = `SELECT TOP (${LIMIT}) ManufacturerPartNumber, Description, CustomText11 FROM ${table} WHERE Manufacturer LIKE '${esc(BRAND)}%' AND CustomText11 = 'TRUE'`;
+      try { rs = await pool.request().query(q2); } catch { rs = { recordset: [] }; }
+    }
+  } else {
+    console.warn(`[report] table not found: ${table}. Writing empty report.`);
+  }
   await pool.close();
 
   const rows = rs.recordset.map(r=>{
