@@ -132,6 +132,51 @@
 				"$tsc"
 			],
 			"group": "build"
+		},
+		{
+			"label": "qiq-chat kaspersky media-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"node ./scripts/qw-batch-fix-kaspersky-media.mjs --limit=500 --healAi=true"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"group": "build"
+		},
+		{
+			"label": "qiq-chat kaspersky brand-batch",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"node ./scripts/sync-qw-to-algolia.mjs --brand=Kaspersky --limit=20 --withMediaOnly=true"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "qiq-chat email algolia report",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"node ./scripts/email-algolia-sync-report.mjs"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

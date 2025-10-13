@@ -280,7 +280,8 @@ async function main(){
   // Fetch back to verify key fields
   const verify = await index.getObjects(out.map(o=>o.objectID));
   const view = (verify.results||[]).map(r => ({ objectID: r?.objectID, image: r?.image, spec_sheet: r?.spec_sheet, name: r?.name, brand: r?.brand }));
-  console.log(JSON.stringify({ ok:true, updated: out.length, verify: view }, null, 2));
+  const report = { ok:true, updated: out.length, verify: view };
+  console.log(JSON.stringify(report, null, 2));
 
   // Self-healing diagnostics
   const keys = { openai: !!process.env.OPENAI_API_KEY, gemini: !!(process.env.Gemini_API || process.env.GOOGLE_API_KEY) };
@@ -307,6 +308,14 @@ async function main(){
   if (hints.length){
     for (const h of hints) console.log(h);
   }
+
+  // Persist report for email
+  try {
+    const outPath = path.join(process.cwd(), 'algolia-sync-report.json');
+    const payload = { index: indexName, updated: out.length, verify: view, missing: ctx.missing, autoFixed: autoFixed, hints };
+    fs.writeFileSync(outPath, JSON.stringify(payload, null, 2), 'utf8');
+    console.log(`Report written: ${outPath}`);
+  } catch {}
 }
 
 main().catch(e=>{ console.error('sync-qw-to-algolia failed', e); process.exit(1); });
