@@ -23,6 +23,15 @@ function parseArgs(){
   return args;
 }
 
+function toBooleanArg(val, defaultValue){
+  if (val === undefined) return !!defaultValue;
+  if (typeof val === 'boolean') return val;
+  const s = String(val).trim().toLowerCase();
+  if (['1','true','yes','on','y','t'].includes(s)) return true;
+  if (['0','false','no','off','n','f','fales','fale','fal'].includes(s)) return false; // tolerate common typos
+  return !!defaultValue;
+}
+
 function joinUrl(base, file){
   if (!file) return null;
   const b = (base || '').replace(/\/$/, '');
@@ -98,8 +107,10 @@ function mapToAlgolia(doc, ext, ctx){
   let datasheetUrl = specFile ? joinUrl(R2_SPECS_BASE, specFile) : null;
   const beforeImage = imageUrl;
   const beforeSpec = datasheetUrl;
-  imageUrl = sanitizeMediaUrl(imageUrl);
-  datasheetUrl = sanitizeMediaUrl(datasheetUrl);
+  if (ctx.heal) {
+    imageUrl = sanitizeMediaUrl(imageUrl);
+    datasheetUrl = sanitizeMediaUrl(datasheetUrl);
+  }
   if (beforeImage && beforeImage !== imageUrl){ ctx.correctedPaths++; ctx.events.push(`Auto-corrected image URL path for ${pn}`); }
   if (beforeSpec && beforeSpec !== datasheetUrl){ ctx.correctedPaths++; ctx.events.push(`Auto-corrected spec_sheet URL path for ${pn}`); }
 
@@ -158,9 +169,14 @@ async function main(){
   const BRAND = (ARGS.brand || '').toString().trim();
   const LIMIT = Math.max(1, parseInt(ARGS.limit || '20', 10) || 20);
   const WITH_MEDIA_ONLY = String(ARGS.withMediaOnly || 'false').toLowerCase() === 'true';
+  const FULL = toBooleanArg(ARGS.full, false);
+  const BATCH_SIZE = Math.max(1, parseInt(ARGS.batchSize || '500', 10) || 500);
+  const HEAL = toBooleanArg(ARGS.heal, true);
+  const AUTO_EMAIL = toBooleanArg(ARGS.email, FULL);
+  const SOURCE = ((ARGS.source || 'products') + '').toLowerCase(); // products | documentitems
   if (!PN_LIST.length){
-    if (!BRAND){
-      console.error('Usage: node scripts/sync-qw-to-algolia.mjs --pn=PN1,PN2 | --brand=Kaspersky [--limit=20] [--withMediaOnly=true]');
+    if (!BRAND && !FULL){
+      console.error('Usage: node scripts/sync-qw-to-algolia.mjs --pn=PN1,PN2 | --brand=Kaspersky [--limit=20] [--withMediaOnly=true] | --full [--batchSize=1000] [--heal=true] [--source=products|documentitems]');
       process.exit(1);
     }
   }
@@ -175,7 +191,7 @@ async function main(){
   // Detect enrichment (QIQ_*) columns dynamically
   const allDocCols = await pool.request().query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='DocumentItems'");
   const QIQ_COLS = allDocCols.recordset.map(r=>r.COLUMN_NAME).filter(n=> /^QIQ_/i.test(n));
-  const ctx = { correctedPaths: 0, simplifiedPrice: 0, mappingApplied: 0, missing: [], events: [] };
+  const ctx = { correctedPaths: 0, simplifiedPrice: 0, mappingApplied: 0, missing: [], events: [], heal: HEAL };
   const out = [];
   if (PN_LIST.length){
     for (const pn of PN_LIST){
@@ -232,17 +248,123 @@ async function main(){
       if (!doc.SpecSheetFile && !doc.CustomText03){ ctx.missing.push({ pn: doc[pnCol], field: 'SpecSheetFile', cause: 'Missing media filename' }); }
       out.push(mapToAlgolia(doc, ext, ctx));
     }
+  } else if (FULL) {
+    // Full sync for selected source table
+    let totalPushed = 0;
+    const { index, indexName } = await connectAlgolia();
+    const verifyView = [];
+
+    if (SOURCE === 'products'){
+      // Discover columns and PN for Products_12_Products
+      const prodCols = await tableColumns(pool, 'Products_12_Products');
+      const pnColSrc = prodCols.has('ManufacturerPartNumber') ? 'ManufacturerPartNumber' : (prodCols.has('ManufacturerPartNo') ? 'ManufacturerPartNo' : null);
+      const hasID = prodCols.has('ID');
+      if (!pnColSrc && !hasID){ console.error('Products_12_Products missing ID and PN columns'); process.exit(2); }
+      let lastKey = hasID ? 0 : '';
+      while (true){
+        const req = pool.request();
+        let q;
+        if (hasID){
+          q = `SELECT TOP (${BATCH_SIZE}) * FROM dbo.Products_12_Products WHERE ID > @key ORDER BY ID ASC`;
+          req.input('key', sql.Int, lastKey);
+        } else {
+          q = `SELECT TOP (${BATCH_SIZE}) * FROM dbo.Products_12_Products WHERE ${pnColSrc} > @key ORDER BY ${pnColSrc} ASC`;
+          req.input('key', sql.NVarChar(255), lastKey);
+        }
+        const rs = await req.query(q);
+        if (!rs.recordset.length) break;
+        const batch = [];
+        for (const doc of rs.recordset){
+          // QIQ missing scan if present
+          for (const qcol of ['QIQ_ShortDescription','QIQ_FeaturesJSON','QIQ_SpecsJSON','QIQ_ValueStatement','QIQ_UseCasesJSON','QIQ_ComplianceTagsJSON']){
+            if (doc.hasOwnProperty(qcol)){
+              const val = doc[qcol];
+              if (val == null || String(val).trim() === '') ctx.missing.push({ pn: (pnColSrc ? doc[pnColSrc] : doc.ID), field: qcol, cause: 'AI enrichment not completed' });
+            }
+          }
+          batch.push(mapToAlgolia(doc, null, ctx));
+        }
+        await index.partialUpdateObjects(batch.map(o => ({ ...o, objectID: o.objectID })), { createIfNotExists: true });
+        totalPushed += batch.length;
+        const ids = batch.slice(0, 5).map(o=>o.objectID);
+        if (ids.length){
+          const v = await index.getObjects(ids);
+          const view = (v.results||[]).map(r => ({ objectID: r?.objectID, image: r?.image, spec_sheet: r?.spec_sheet, name: r?.name, brand: r?.brand }));
+          verifyView.push(...view);
+        }
+        if (hasID){ lastKey = rs.recordset[rs.recordset.length-1].ID; }
+        else { lastKey = rs.recordset[rs.recordset.length-1][pnColSrc]; }
+        console.log(chalk.gray(`Synced products batch up to ${hasID ? 'ID' : pnColSrc} ${lastKey} — total pushed: ${totalPushed}`));
+      }
+    } else {
+      // DocumentItems (legacy)
+      let lastID = 0;
+      while (true){
+        const q = `SELECT TOP (${BATCH_SIZE}) * FROM dbo.DocumentItems WHERE ID > @lastID ORDER BY ID ASC`;
+        const rs = await pool.request().input('lastID', sql.Int, lastID).query(q);
+        if (!rs.recordset.length) break;
+        const batch = [];
+        for (const doc of rs.recordset){
+          let ext = null;
+          if (hasExt && doc.ID != null){
+            const extRs = await pool.request().input('id', sql.Int, doc.ID).query('SELECT TOP 1 * FROM dbo.DocumentItems_Extension WHERE ItemID=@id');
+            ext = extRs.recordset[0] || null;
+          }
+          for (const qcol of QIQ_COLS){
+            const val = doc[qcol];
+            if (val === null || val === undefined || String(val).trim() === ''){
+              ctx.missing.push({ pn: doc[pnCol], field: qcol, cause: 'AI enrichment not completed' });
+            }
+          }
+          batch.push(mapToAlgolia(doc, ext, ctx));
+        }
+        await index.partialUpdateObjects(batch.map(o => ({ ...o, objectID: o.objectID })), { createIfNotExists: true });
+        const ids = batch.slice(0, 5).map(o=>o.objectID);
+        if (ids.length){
+          const v = await index.getObjects(ids);
+          const view = (v.results||[]).map(r => ({ objectID: r?.objectID, image: r?.image, spec_sheet: r?.spec_sheet, name: r?.name, brand: r?.brand }));
+          verifyView.push(...view);
+        }
+        lastID = rs.recordset[rs.recordset.length-1].ID;
+        console.log(chalk.gray(`Synced documentitems batch up to ID ${lastID}`));
+      }
+    }
+
+    await pool.close();
+    const missingCount = ctx.missing.length;
+    const report = {
+      ok: true,
+      mode: 'full',
+      source: SOURCE,
+      verify: verifyView,
+      missing: ctx.missing,
+      correctedPaths: ctx.correctedPaths,
+      simplifiedPrice: ctx.simplifiedPrice,
+      mappingApplied: ctx.mappingApplied
+    };
+    const outPath = path.join(process.cwd(), 'algolia-sync-report.json');
+    fs.writeFileSync(outPath, JSON.stringify(report, null, 2), 'utf8');
+    console.log('\n✅ Algolia Sync Completed (Full)');
+    console.log(`Source: ${SOURCE}`);
+    console.log(`Corrected Image/Spec Paths: ${ctx.correctedPaths}`);
+    console.log(`Simplified Price Fields Applied: ${ctx.simplifiedPrice}`);
+    console.log(`Mapping Reference Applied Count: ${ctx.mappingApplied}`);
+    console.log(`Missing Fields: ${missingCount}`);
+    if (AUTO_EMAIL){
+      try{ 
+        const { sendEmail } = await import('../api/_lib/email.js');
+        const to = process.env.ENRICH_NOTIFY_TO || process.env.EMAIL_TO || process.env.ADMIN_EMAIL || process.env.QUOTE_NOTIFY_EMAIL || process.env.EMAIL_FROM;
+        const subject = `Algolia Sync Report — Full (${SOURCE})`;
+        const html = [
+          `<h2>${subject}</h2>`,
+          `<p><b>Corrected Paths:</b> ${ctx.correctedPaths} | <b>Simplified Price:</b> ${ctx.simplifiedPrice} | <b>Mapping Applied:</b> ${ctx.mappingApplied} | <b>Missing:</b> ${missingCount}</p>`,
+          `<p>Report attached.</p>`
+        ].join('\n');
+        if (to){ await sendEmail({ to, subject, html, attachments: [{ filename: 'algolia-sync-report.json', path: outPath, mimeType: 'application/json' }] }); }
+      }catch(e){ console.error('Auto-email failed', e?.message||e); }
+    }
+    return; // end FULL
   }
-  await pool.close();
-
-  if (!out.length){ console.log('No records to update'); return; }
-
-  const { index, indexName } = await connectAlgolia();
-  // Write to Algolia using partial updates to avoid overwriting unrelated fields
-  const res = await index.partialUpdateObjects(out.map(o => ({ ...o, objectID: o.objectID })), { createIfNotExists: true });
-  console.log(chalk.green(`Pushed ${out.length} records to Algolia index ${indexName}`));
-
-  // Fetch back to verify key fields
   const verify = await index.getObjects(out.map(o=>o.objectID));
   const view = (verify.results||[]).map(r => ({ objectID: r?.objectID, image: r?.image, spec_sheet: r?.spec_sheet, name: r?.name, brand: r?.brand }));
   const report = { ok:true, updated: out.length, verify: view };
@@ -282,6 +404,19 @@ async function main(){
     const payload = { index: indexName, updated: out.length, verify: view, missing: ctx.missing, correctedPaths, simplifiedPrice, mappingApplied: ctx.mappingApplied, hints };
     fs.writeFileSync(outPath, JSON.stringify(payload, null, 2), 'utf8');
     console.log(`Report written: ${outPath}`);
+    if (AUTO_EMAIL){
+      try{ 
+        const { sendEmail } = await import('../api/_lib/email.js');
+        const to = process.env.ENRICH_NOTIFY_TO || process.env.EMAIL_TO || process.env.ADMIN_EMAIL || process.env.QUOTE_NOTIFY_EMAIL || process.env.EMAIL_FROM;
+        const subject = `Algolia Sync Report — ${indexName}`;
+        const html = [
+          `<h2>${subject}</h2>`,
+          `<p><b>Updated:</b> ${out.length} | <b>Corrected Paths:</b> ${correctedPaths} | <b>Simplified Price:</b> ${simplifiedPrice} | <b>Mapping Applied:</b> ${ctx.mappingApplied}</p>`,
+          `<p>Report attached.</p>`
+        ].join('\n');
+        if (to){ await sendEmail({ to, subject, html, attachments: [{ filename: 'algolia-sync-report.json', path: outPath, mimeType: 'application/json' }] }); }
+      }catch(e){ console.error('Auto-email failed', e?.message||e); }
+    }
   } catch {}
 }
 

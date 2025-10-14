@@ -247,6 +247,34 @@
 			],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "qiq-chat full sync 1000 no-heal",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"node ./scripts/sync-qw-to-algolia.mjs --full=true --batchSize=1000 --heal=false --email=true"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "qiq-chat full sync products 1000 no-heal email",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"node ./scripts/sync-qw-to-algolia.mjs --full --batchSize=1000 --heal=fales --source=products --email=true"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }
