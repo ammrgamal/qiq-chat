@@ -205,6 +205,48 @@
 			],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "qiq-chat run brand-batch mapping+pricing",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"node ./scripts/sync-qw-to-algolia.mjs --brand=Kaspersky --limit=20 --withMediaOnly=true"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "qiq-chat run heal-ai Kaspersky",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"node ./scripts/heal-ai-enrich.mjs --brand=Kaspersky --limit=50 --commit=true"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "qiq-chat email heal-ai report",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"node ./scripts/email-algolia-sync-report.mjs --file=./heal-ai-report.json --subject='Heal-AI Report'"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

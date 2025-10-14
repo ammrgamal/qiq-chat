@@ -38,7 +38,7 @@ async function main(){
   await tryLoadEnvFallback();
   const ARGS = parseArgs();
 
-  const fp = path.join(process.cwd(), 'algolia-sync-report.json');
+  const fp = ARGS.file ? path.resolve(process.cwd(), ARGS.file) : path.join(process.cwd(), 'algolia-sync-report.json');
   if (!fs.existsSync(fp)){
     console.error('algolia-sync-report.json not found');
     process.exit(2);
@@ -46,7 +46,7 @@ async function main(){
   const json = JSON.parse(fs.readFileSync(fp, 'utf8'));
   const sum = summarize(json);
 
-  const title = `Algolia Sync Report — ${sum.index || ''}`.trim();
+  const title = (ARGS.subject || `Algolia Sync Report — ${sum.index || ''}`).trim();
   const to = ARGS.to
     || process.env.ENRICH_NOTIFY_TO
     || process.env.EMAIL_TO
@@ -74,7 +74,7 @@ async function main(){
         to,
         subject: `${title} — ${sum.updated ?? sum.okCount} updated` ,
         html,
-        attachments: [{ filename: 'algolia-sync-report.json', path: fp, mimeType: 'application/json' }]
+        attachments: [{ filename: path.basename(fp), path: fp, mimeType: 'application/json' }]
       });
     }
   }catch(e){

@@ -74,6 +74,16 @@ async function tableColumns(pool, table){
   return new Set(rs.recordset.map(r=> r.COLUMN_NAME));
 }
 
+// Load mapping once
+let FIELD_MAPPING = null;
+function loadMapping(){
+  if (!FIELD_MAPPING){
+    const fp = path.join(process.cwd(), 'docs', 'qw_sql_algolia_mapping.json');
+    FIELD_MAPPING = JSON.parse(fs.readFileSync(fp, 'utf8'));
+  }
+  return FIELD_MAPPING;
+}
+
 function mapToAlgolia(doc, ext, ctx){
   const base = (s)=> (s||'').replace(/\/$/, '');
   // Explicit bases per instructions
@@ -81,114 +91,65 @@ function mapToAlgolia(doc, ext, ctx){
   const R2_SPECS_BASE  = base(process.env.R2_SPECS_BASE  || (process.env.R2_PUBLIC_BASE ? base(process.env.R2_PUBLIC_BASE) + '/Specs' : (process.env.R2_BASE ? base(process.env.R2_BASE) + '/Specs' : '')));
   const pn = doc.ManufacturerPartNumber || doc.ManufacturerPartNo || doc.objectID;
 
-  // Build media URLs strictly from SQL filenames; do not alter filenames during sync
+  // Build media URLs strictly from SQL filenames
   const imgFile = doc.PictureFile ?? doc.PictureFileName ?? null;
   const specFile = doc.SpecSheetFile ?? doc.CustomText03 ?? null;
   let imageUrl = imgFile ? joinUrl(R2_IMAGES_BASE, imgFile) : null;
   let datasheetUrl = specFile ? joinUrl(R2_SPECS_BASE, specFile) : null;
-
-  // Validation (a): remove placeholder folders if present
   const beforeImage = imageUrl;
   const beforeSpec = datasheetUrl;
   imageUrl = sanitizeMediaUrl(imageUrl);
   datasheetUrl = sanitizeMediaUrl(datasheetUrl);
-  if (beforeImage && beforeImage !== imageUrl){
-    ctx.correctedPaths++;
-    ctx.events.push(`Auto-corrected image URL path for ${pn}`);
-  }
-  if (beforeSpec && beforeSpec !== datasheetUrl){
-    ctx.correctedPaths++;
-    ctx.events.push(`Auto-corrected spec_sheet URL path for ${pn}`);
+  if (beforeImage && beforeImage !== imageUrl){ ctx.correctedPaths++; ctx.events.push(`Auto-corrected image URL path for ${pn}`); }
+  if (beforeSpec && beforeSpec !== datasheetUrl){ ctx.correctedPaths++; ctx.events.push(`Auto-corrected spec_sheet URL path for ${pn}`); }
+
+  // Mapping-based payload build
+  const mapping = loadMapping();
+  const payload = {};
+  for (const m of mapping){
+    const key = m.algolia;
+    if (!key) continue;
+    let val = null;
+    if (m.extField){
+      // If ext has the field, prefer it; else fall back to QW field when appropriate per reference
+      if (ext && Object.prototype.hasOwnProperty.call(ext, m.extField)){
+        val = ext[m.extField];
+      } else if (m.qwField && Object.prototype.hasOwnProperty.call(doc, m.qwField)){
+        val = doc[m.qwField];
+      }
+    } else if (m.qwField && Object.prototype.hasOwnProperty.call(doc, m.qwField)){
+      val = doc[m.qwField];
+    }
+    // Normalize empty to null
+    if (val === undefined) val = null;
+    if (typeof val === 'string' && val.trim() === '') val = null;
+    // Special cases: tags and synonyms are CSV strings in QW fields
+    if (key === 'tags' && typeof val === 'string') val = val.split(',').map(s=>s.trim()).filter(Boolean);
+    if (key === 'synonyms' && typeof val === 'string') val = val.split(',').map(s=>s.trim()).filter(Boolean);
+    payload[key] = val;
   }
 
-  // Build prices per instructions
-  const priceVal = doc.Price;
-  const costVal = (typeof doc.Cost === 'number') ? doc.Cost : 0;
-  const listVal = (typeof doc.UnitPrice === 'number') ? doc.UnitPrice : ((typeof doc.List === 'number') ? doc.List : 0);
-  const marginVal = (typeof doc.Margin === 'number') ? doc.Margin : 0;
-  const prices = {};
-  let fixedPrice = false;
-  if (typeof priceVal === 'number'){
-    prices.net = priceVal;
-    prices.gross = priceVal;
-  } else {
-    fixedPrice = true; // missing price → consider as fixed per rule set
-  }
-  prices.cost = costVal;
-  prices.list = listVal;
-  prices.margin = marginVal;
-  if (fixedPrice){
-    ctx.fixedPriceObjects++;
-    ctx.events.push(`Rebuilt malformed price object for ${pn}`);
-  }
+  // Force pricing simplification per instructions
+  const unitPrice = (typeof doc.UnitPrice === 'number') ? doc.UnitPrice : null;
+  const unitList = (typeof doc.UnitList === 'number') ? doc.UnitList : ((typeof doc.List === 'number') ? doc.List : null);
+  payload.price = unitPrice;
+  payload.list_price = unitList;
+  payload.currency = 'USD';
+  // Track simplification
+  ctx.simplifiedPrice++;
+  ctx.events.push(`Simplified pricing structure for ${pn} (UnitPrice / UnitList only)`);
 
-  const record = {
-    objectID: pn,
-    part_number: pn,
-    name: doc.Description ?? null,
-    brand: doc.Manufacturer ?? null,
-    category: doc.ItemType ?? doc.CustomText01 ?? null,
-    prices,
-    currency: doc.BaseCurrency ?? doc.Currency ?? null,
-    // Tagging/text fields: preserve NULLs
-    tags: doc.CustomMemo04 ? String(doc.CustomMemo04).split(',').map(s=>s.trim()).filter(Boolean) : null,
-    synonyms: doc.CustomText09 ? String(doc.CustomText09).split(',').map(s=>s.trim()).filter(Boolean) : null,
-    seo_title: doc.CustomText12 ?? null,
-    seo_description: doc.CustomText13 ?? null,
-    image: imageUrl,
-    spec_sheet: datasheetUrl,
-    short_description: doc.CustomMemo01 ?? null,
-    long_description: doc.CustomMemo02 ?? null,
-    // specs_table prioritizes extension.SpecsTable (if present); keep NULL else
-    specs_table: (ext && 'SpecsTable' in ext) ? (ext.SpecsTable ?? null) : null,
-    datasheet_text: doc.CustomMemo06 ?? null,
-    // Rules Engine / metadata
-    rule_tag: doc.CustomMemo05 ?? null,
-    required_questions: doc.CustomText14 ?? null,
-    bundle_options: doc.CustomText04 ?? null,
-    boq_template_id: doc.CustomText05 ?? null,
-    preferred_display: doc.CustomText06 ?? null,
-    // AI/Rich content (keep extension values if present, else NULL)
-    ai_description: (ext && 'AIDescription' in ext) ? (ext.AIDescription ?? null) : null,
-    ai_marketing: (ext && 'MarketingDescription' in ext) ? (ext.MarketingDescription ?? null) : null,
-    ai_specs_table: (ext && 'AISpecs' in ext) ? (ext.AISpecs ?? null) : null,
-    visibility: (ext && 'Visibility' in ext) ? (ext.Visibility ?? null) : null,
-    // Relations
-    related_products: doc.CustomText08 ?? null,
-    upsell_products: (ext && 'UpsellProducts' in ext) ? (ext.UpsellProducts ?? null) : (doc.CustomText15 ?? null),
-    cross_sell_products: (ext && 'CrossSellProducts' in ext) ? (ext.CrossSellProducts ?? null) : (doc.CustomText16 ?? null),
-    options: doc.CustomText17 ?? null,
-    service_attachments: doc.CustomText18 ?? null,
-    // Business Value
-    purchase_pitch: doc.Notes ?? null,
-    value_proposition: doc.CustomText19 ?? null,
-    benefits: (ext && 'Benefits' in ext) ? (ext.Benefits ?? null) : (doc.CustomText20 ?? null),
-    target_audience: (typeof doc.CustomNumber01 === 'number') ? doc.CustomNumber01 : null,
-    competitive_advantage: (ext && 'CompetitiveAdvantage' in ext) ? (ext.CompetitiveAdvantage ?? null) : null,
-    deployment_scenarios: (ext && 'DeploymentScenarios' in ext) ? (ext.DeploymentScenarios ?? null) : ((typeof doc.CustomNumber02 === 'number') ? doc.CustomNumber02 : null),
-    integration: (ext && 'Integration' in ext) ? (ext.Integration ?? null) : ((typeof doc.CustomNumber3 === 'number') ? doc.CustomNumber3 : ((typeof doc.CustomNumber03 === 'number') ? doc.CustomNumber03 : null)),
-    roi_statement: (ext && 'ROIStatement' in ext) ? (ext.ROIStatement ?? null) : null,
-    prerequisites: (ext && 'Prerequisites' in ext) ? (ext.Prerequisites ?? null) : null,
-    // Operational
-    lifecycle_status: (typeof doc.CustomNumber05 === 'number') ? doc.CustomNumber05 : null,
-    compliance: (ext && 'Compliance' in ext) ? (ext.Compliance ?? null) : (doc.CustomDate01 ?? null),
-    warranty: (ext && 'Warranty' in ext) ? (ext.Warranty ?? null) : (doc.CustomDate02 ?? null),
-    lead_time: doc.CustomText02 ?? null,
-    // Diagrams
-    ascii_hld: (ext && 'AsciiHLD' in ext) ? (ext.AsciiHLD ?? null) : null,
-    ascii_lld: (ext && 'AsciiLLD' in ext) ? (ext.AsciiLLD ?? null) : null,
-    diagram_params: (ext && 'DiagramParams' in ext) ? (ext.DiagramParams ?? null) : null,
-    diagram_policy: (ext && 'DiagramPolicy' in ext) ? (ext.DiagramPolicy ?? null) : null,
-    // Meta
-    source: doc.Vendor ?? null,
-    updated_at: doc.OrderDate ?? null,
-    revision: doc.SONumber ?? null,
-    quality_score: (typeof doc.CloseProbability === 'number') ? doc.CloseProbability : null,
-    in_stock: (typeof ext?.StockStatus === 'number') ? Boolean(ext.StockStatus) : null,
-    backorders_allowed: (typeof ext?.BackorderStatus === 'number') ? Boolean(ext.BackorderStatus) : null,
-    fx: { usd_to_egp_rate: (typeof ext?.FXRate === 'number') ? ext.FXRate : (doc.CustomNumber04 ?? null) }
-  };
-  return record;
+  // Mandatory identity fields
+  payload.objectID = pn;
+  payload.part_number = pn;
+  // Media fields
+  payload.image = imageUrl;
+  payload.spec_sheet = datasheetUrl;
+
+  // Leave NULLs as null (not strings). This payload is now fully mapping-driven plus pricing/media rules.
+  ctx.mappingApplied++;
+  ctx.events.push(`Mapped SQL→Algolia fields from reference for ${pn}`);
+  return payload;
 }
 
 async function main(){
@@ -214,7 +175,7 @@ async function main(){
   // Detect enrichment (QIQ_*) columns dynamically
   const allDocCols = await pool.request().query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='DocumentItems'");
   const QIQ_COLS = allDocCols.recordset.map(r=>r.COLUMN_NAME).filter(n=> /^QIQ_/i.test(n));
-  const ctx = { correctedPaths: 0, fixedPriceObjects: 0, missing: [], events: [] };
+  const ctx = { correctedPaths: 0, simplifiedPrice: 0, mappingApplied: 0, missing: [], events: [] };
   const out = [];
   if (PN_LIST.length){
     for (const pn of PN_LIST){
@@ -291,7 +252,7 @@ async function main(){
   const keys = { openai: !!process.env.OPENAI_API_KEY, gemini: !!(process.env.Gemini_API || process.env.GOOGLE_API_KEY) };
   const missingCount = ctx.missing.length;
   const correctedPaths = ctx.correctedPaths;
-  const fixedPrice = ctx.fixedPriceObjects;
+  const simplifiedPrice = ctx.simplifiedPrice;
   let pending = missingCount;
   const hints = [];
   if (!keys.openai && !keys.gemini){ hints.push('Missing OpenAI/Gemini API key — please provide in .env'); }
@@ -307,7 +268,8 @@ async function main(){
   // Final summary
   console.log('\n✅ Algolia Sync Completed');
   console.log(`Corrected Image/Spec Paths: ${correctedPaths}`);
-  console.log(`Fixed Price Objects: ${fixedPrice}`);
+  console.log(`Simplified Price Fields Applied: ${simplifiedPrice}`);
+  console.log(`Mapping Reference Applied Count: ${ctx.mappingApplied}`);
   console.log(`Missing Fields: ${missingCount}`);
   console.log(`Total Items Pushed: ${out.length}`);
   if (hints.length){
@@ -317,7 +279,7 @@ async function main(){
   // Persist report for email
   try {
     const outPath = path.join(process.cwd(), 'algolia-sync-report.json');
-    const payload = { index: indexName, updated: out.length, verify: view, missing: ctx.missing, correctedPaths, fixedPrice, hints };
+    const payload = { index: indexName, updated: out.length, verify: view, missing: ctx.missing, correctedPaths, simplifiedPrice, mappingApplied: ctx.mappingApplied, hints };
     fs.writeFileSync(outPath, JSON.stringify(payload, null, 2), 'utf8');
     console.log(`Report written: ${outPath}`);
   } catch {}
