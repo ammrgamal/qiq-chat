@@ -27,8 +27,16 @@ function joinUrl(base, file){
   if (!file) return null;
   const b = (base || '').replace(/\/$/, '');
   const f = String(file).replace(/^\//,'');
-  // Avoid double-encoding spaces; assume base already encodes folders
   return `${b}/${encodeURIComponent(f).replace(/%2F/g,'/')}`;
+}
+
+function sanitizeMediaUrl(url){
+  if (!url) return url;
+  // Remove placeholder segments like /PictureFile/ or /SpecSheetFile/
+  let u = url.replace(/\/PictureFile\//gi, '/').replace(/\/SpecSheetFile\//gi, '/');
+  // Collapse accidental multiple slashes (but keep protocol)
+  u = u.replace(/([^:])\/+\//g, '$1/');
+  return u;
 }
 
 function isFilenameOnly(v){
@@ -37,22 +45,7 @@ function isFilenameOnly(v){
   return !/^https?:\/\//i.test(s) && !s.includes('://');
 }
 
-function kaspImageFromDescription(desc){
-  const d = (desc||'').toLowerCase();
-  if (d.includes('optimum')) return 'KasperskyNextEDROptimum.jpg';
-  if (d.includes('foundations')) return 'KasperskyNextEDRFoundations.jpg';
-  if (d.includes('expert')) return 'KasperskyNextEDRExpert.jpg';
-  if (d.includes('core')) return 'KasperskyNextEDRCore.jpg';
-  if (d.includes('edr')) return 'KasperskyNextEDROptimum.jpg';
-  return 'KasperskyNextEDRFoundations.jpg';
-}
-
-function kaspSpecFromDescription(desc){
-  const d = (desc||'').toLowerCase();
-  if (d.includes('next edr')) return 'kaspersky-next-datasheet-0224-en.pdf';
-  if (d.includes('endpoint security')) return 'kaspersky-endpoint-security-for-business-datasheet.pdf';
-  return 'kaspersky-next EDR-datasheet.pdf';
-}
+// removed brand-specific auto-corrections; SQL is source of truth during sync
 
 async function connectSQL(){
   const config = {
@@ -83,106 +76,117 @@ async function tableColumns(pool, table){
 
 function mapToAlgolia(doc, ext, ctx){
   const base = (s)=> (s||'').replace(/\/$/, '');
-  // Support both legacy and new var names
-  const R2_PUBLIC_BASE = base(process.env.R2_PUBLIC_BASE || process.env.R2_IMAGES_BASE || process.env.R2_BASE || '');
-  const R2_SPECS_BASE  = base(process.env.R2_SPECS_BASE  || (process.env.R2_BASE ? base(process.env.R2_BASE) + '/Specs/SpecSheetFile' : ''));
+  // Explicit bases per instructions
+  const R2_IMAGES_BASE = base(process.env.R2_IMAGES_BASE || process.env.R2_PUBLIC_BASE || process.env.R2_BASE || '');
+  const R2_SPECS_BASE  = base(process.env.R2_SPECS_BASE  || (process.env.R2_PUBLIC_BASE ? base(process.env.R2_PUBLIC_BASE) + '/Specs' : (process.env.R2_BASE ? base(process.env.R2_BASE) + '/Specs' : '')));
   const pn = doc.ManufacturerPartNumber || doc.ManufacturerPartNo || doc.objectID;
-  // Clone + apply Kaspersky corrections (export payload only)
-  const isKaspersky = String(doc.Manufacturer||'').toLowerCase() === 'kaspersky';
-  const corrected = { ...doc };
-  if (isKaspersky){
-    const desc = corrected.Description || '';
-    // PictureFile correction: if empty or contains URL → set heuristic filename
-    const pf = corrected.PictureFile || corrected.PictureFileName || '';
-    if (!pf || !isFilenameOnly(pf)){
-      corrected.PictureFile = kaspImageFromDescription(desc);
-      if (ctx) ctx.autoFixedImages++;
-      if (ctx) ctx.events.push(`Auto-corrected Kaspersky PictureFile to ${corrected.PictureFile} for ${pn}`);
-    }
-    // SpecSheetFile correction: if empty → set heuristic filename
-    const sf = corrected.SpecSheetFile || corrected.CustomText03 || '';
-    if (!sf || !isFilenameOnly(sf)){
-      corrected.SpecSheetFile = kaspSpecFromDescription(desc);
-      if (ctx) ctx.autoFixedSpecs++;
-      if (ctx) ctx.events.push(`Auto-corrected Kaspersky SpecSheetFile to ${corrected.SpecSheetFile} for ${pn}`);
-    }
+
+  // Build media URLs strictly from SQL filenames; do not alter filenames during sync
+  const imgFile = doc.PictureFile ?? doc.PictureFileName ?? null;
+  const specFile = doc.SpecSheetFile ?? doc.CustomText03 ?? null;
+  let imageUrl = imgFile ? joinUrl(R2_IMAGES_BASE, imgFile) : null;
+  let datasheetUrl = specFile ? joinUrl(R2_SPECS_BASE, specFile) : null;
+
+  // Validation (a): remove placeholder folders if present
+  const beforeImage = imageUrl;
+  const beforeSpec = datasheetUrl;
+  imageUrl = sanitizeMediaUrl(imageUrl);
+  datasheetUrl = sanitizeMediaUrl(datasheetUrl);
+  if (beforeImage && beforeImage !== imageUrl){
+    ctx.correctedPaths++;
+    ctx.events.push(`Auto-corrected image URL path for ${pn}`);
+  }
+  if (beforeSpec && beforeSpec !== datasheetUrl){
+    ctx.correctedPaths++;
+    ctx.events.push(`Auto-corrected spec_sheet URL path for ${pn}`);
   }
 
-  // Prefer PictureFile (per mapping), fallback to PictureFileName
-  const imgFile = corrected.PictureFile || corrected.PictureFileName || null;
-  const specFile = corrected.SpecSheetFile || corrected.CustomText03 || null;
-  const imageUrl = (imgFile ? joinUrl(R2_PUBLIC_BASE, imgFile) : null) || ext?.ImageURL || null;
-  const datasheetUrl = (specFile ? joinUrl(R2_SPECS_BASE, specFile) : null) || ext?.DatasheetURL || null;
+  // Build prices per instructions
+  const priceVal = doc.Price;
+  const costVal = (typeof doc.Cost === 'number') ? doc.Cost : 0;
+  const listVal = (typeof doc.UnitPrice === 'number') ? doc.UnitPrice : ((typeof doc.List === 'number') ? doc.List : 0);
+  const marginVal = (typeof doc.Margin === 'number') ? doc.Margin : 0;
+  const prices = {};
+  let fixedPrice = false;
+  if (typeof priceVal === 'number'){
+    prices.net = priceVal;
+    prices.gross = priceVal;
+  } else {
+    fixedPrice = true; // missing price → consider as fixed per rule set
+  }
+  prices.cost = costVal;
+  prices.list = listVal;
+  prices.margin = marginVal;
+  if (fixedPrice){
+    ctx.fixedPriceObjects++;
+    ctx.events.push(`Rebuilt malformed price object for ${pn}`);
+  }
 
   const record = {
     objectID: pn,
     part_number: pn,
-    name: doc.Description || null,
-    brand: doc.Manufacturer || null,
-  category: corrected.ItemType || corrected.CustomText01 || null,
-  price: (typeof corrected.UnitPrice === 'number' ? corrected.UnitPrice : undefined),
-  currency: corrected.BaseCurrency || corrected.Currency || undefined,
-    // Tags per master mapping: CustomMemo04
-  tags: (corrected.CustomMemo04 && String(corrected.CustomMemo04).split(',').map(s=>s.trim()).filter(Boolean)) || undefined,
-  synonyms: (corrected.CustomText09 && String(corrected.CustomText09).split(',').map(s=>s.trim()).filter(Boolean)) || undefined,
-  seo_title: corrected.CustomText12 || undefined,
-  seo_description: corrected.CustomText13 || undefined,
-    image: imageUrl || null,
-    spec_sheet: datasheetUrl || null,
-    media: {
-      image: imageUrl || null,
-      datasheet: datasheetUrl || null
-    },
-  short_description: corrected.CustomMemo01 || null,
-  long_description: corrected.CustomMemo02 || null,
-    // specs_table prioritizes extension.SpecsTable; fallback to CustomMemo03 if holds JSON
-    specs_table: ext?.SpecsTable || undefined,
-  datasheet_text: corrected.CustomMemo06 || null,
-    // Rules Engine per master mapping
-  rule_tag: corrected.CustomMemo05 || undefined,
-  required_questions: corrected.CustomText14 || undefined,
-  bundle_options: corrected.CustomText04 || undefined,
-  boq_template_id: corrected.CustomText05 || undefined,
-  preferred_display: corrected.CustomText06 || undefined,
-    // AI/Rich content (keep existing extension fields if available)
-    ai_description: ext?.AIDescription || undefined,
-    ai_marketing: ext?.MarketingDescription || undefined,
-    ai_specs_table: ext?.AISpecs || undefined,
-    visibility: ext?.Visibility || undefined,
+    name: doc.Description ?? null,
+    brand: doc.Manufacturer ?? null,
+    category: doc.ItemType ?? doc.CustomText01 ?? null,
+    prices,
+    currency: doc.BaseCurrency ?? doc.Currency ?? null,
+    // Tagging/text fields: preserve NULLs
+    tags: doc.CustomMemo04 ? String(doc.CustomMemo04).split(',').map(s=>s.trim()).filter(Boolean) : null,
+    synonyms: doc.CustomText09 ? String(doc.CustomText09).split(',').map(s=>s.trim()).filter(Boolean) : null,
+    seo_title: doc.CustomText12 ?? null,
+    seo_description: doc.CustomText13 ?? null,
+    image: imageUrl,
+    spec_sheet: datasheetUrl,
+    short_description: doc.CustomMemo01 ?? null,
+    long_description: doc.CustomMemo02 ?? null,
+    // specs_table prioritizes extension.SpecsTable (if present); keep NULL else
+    specs_table: (ext && 'SpecsTable' in ext) ? (ext.SpecsTable ?? null) : null,
+    datasheet_text: doc.CustomMemo06 ?? null,
+    // Rules Engine / metadata
+    rule_tag: doc.CustomMemo05 ?? null,
+    required_questions: doc.CustomText14 ?? null,
+    bundle_options: doc.CustomText04 ?? null,
+    boq_template_id: doc.CustomText05 ?? null,
+    preferred_display: doc.CustomText06 ?? null,
+    // AI/Rich content (keep extension values if present, else NULL)
+    ai_description: (ext && 'AIDescription' in ext) ? (ext.AIDescription ?? null) : null,
+    ai_marketing: (ext && 'MarketingDescription' in ext) ? (ext.MarketingDescription ?? null) : null,
+    ai_specs_table: (ext && 'AISpecs' in ext) ? (ext.AISpecs ?? null) : null,
+    visibility: (ext && 'Visibility' in ext) ? (ext.Visibility ?? null) : null,
     // Relations
-  related_products: corrected.CustomText08 || undefined,
-  upsell_products: ext?.UpsellProducts || corrected.CustomText15 || undefined,
-  cross_sell_products: ext?.CrossSellProducts || corrected.CustomText16 || undefined,
-  options: corrected.CustomText17 || undefined,
-  service_attachments: corrected.CustomText18 || undefined,
+    related_products: doc.CustomText08 ?? null,
+    upsell_products: (ext && 'UpsellProducts' in ext) ? (ext.UpsellProducts ?? null) : (doc.CustomText15 ?? null),
+    cross_sell_products: (ext && 'CrossSellProducts' in ext) ? (ext.CrossSellProducts ?? null) : (doc.CustomText16 ?? null),
+    options: doc.CustomText17 ?? null,
+    service_attachments: doc.CustomText18 ?? null,
     // Business Value
-  purchase_pitch: corrected.Notes || undefined,
-  value_proposition: corrected.CustomText19 || undefined,
-  benefits: ext?.Benefits || corrected.CustomText20 || undefined,
-  target_audience: (typeof corrected.CustomNumber01 === 'number' ? corrected.CustomNumber01 : undefined),
-    competitive_advantage: ext?.CompetitiveAdvantage || undefined,
-  deployment_scenarios: ext?.DeploymentScenarios || (typeof corrected.CustomNumber02 === 'number' ? corrected.CustomNumber02 : undefined),
-  integration: ext?.Integration || (typeof corrected.CustomNumber3 === 'number' ? corrected.CustomNumber3 : (typeof corrected.CustomNumber03 === 'number' ? corrected.CustomNumber03 : undefined)),
-    roi_statement: ext?.ROIStatement || undefined,
-    prerequisites: ext?.Prerequisites || undefined,
+    purchase_pitch: doc.Notes ?? null,
+    value_proposition: doc.CustomText19 ?? null,
+    benefits: (ext && 'Benefits' in ext) ? (ext.Benefits ?? null) : (doc.CustomText20 ?? null),
+    target_audience: (typeof doc.CustomNumber01 === 'number') ? doc.CustomNumber01 : null,
+    competitive_advantage: (ext && 'CompetitiveAdvantage' in ext) ? (ext.CompetitiveAdvantage ?? null) : null,
+    deployment_scenarios: (ext && 'DeploymentScenarios' in ext) ? (ext.DeploymentScenarios ?? null) : ((typeof doc.CustomNumber02 === 'number') ? doc.CustomNumber02 : null),
+    integration: (ext && 'Integration' in ext) ? (ext.Integration ?? null) : ((typeof doc.CustomNumber3 === 'number') ? doc.CustomNumber3 : ((typeof doc.CustomNumber03 === 'number') ? doc.CustomNumber03 : null)),
+    roi_statement: (ext && 'ROIStatement' in ext) ? (ext.ROIStatement ?? null) : null,
+    prerequisites: (ext && 'Prerequisites' in ext) ? (ext.Prerequisites ?? null) : null,
     // Operational
-  lifecycle_status: (typeof corrected.CustomNumber05 === 'number' ? corrected.CustomNumber05 : undefined),
-  compliance: ext?.Compliance || corrected.CustomDate01 || undefined,
-  warranty: ext?.Warranty || corrected.CustomDate02 || undefined,
-  lead_time: ext?.LeadTime || corrected.CustomText02 || undefined,
-    // Diagrams (prefer extension to avoid conflicts with CustomMemo03 used by specs_table)
-    ascii_hld: ext?.AsciiHLD || undefined,
-    ascii_lld: ext?.AsciiLLD || undefined,
-    diagram_params: ext?.DiagramParams || undefined,
-    diagram_policy: ext?.DiagramPolicy || undefined,
+    lifecycle_status: (typeof doc.CustomNumber05 === 'number') ? doc.CustomNumber05 : null,
+    compliance: (ext && 'Compliance' in ext) ? (ext.Compliance ?? null) : (doc.CustomDate01 ?? null),
+    warranty: (ext && 'Warranty' in ext) ? (ext.Warranty ?? null) : (doc.CustomDate02 ?? null),
+    lead_time: doc.CustomText02 ?? null,
+    // Diagrams
+    ascii_hld: (ext && 'AsciiHLD' in ext) ? (ext.AsciiHLD ?? null) : null,
+    ascii_lld: (ext && 'AsciiLLD' in ext) ? (ext.AsciiLLD ?? null) : null,
+    diagram_params: (ext && 'DiagramParams' in ext) ? (ext.DiagramParams ?? null) : null,
+    diagram_policy: (ext && 'DiagramPolicy' in ext) ? (ext.DiagramPolicy ?? null) : null,
     // Meta
-    source: corrected.Vendor || undefined,
-    updated_at: corrected.OrderDate || undefined,
-    revision: corrected.SONumber || undefined,
-    quality_score: (typeof corrected.CloseProbability === 'number' ? corrected.CloseProbability : undefined),
-    in_stock: typeof ext?.StockStatus === 'number' ? Boolean(ext.StockStatus) : undefined,
-    backorders_allowed: typeof ext?.BackorderStatus === 'number' ? Boolean(ext.BackorderStatus) : undefined,
-    fx: { usd_to_egp_rate: (typeof ext?.FXRate === 'number' ? ext.FXRate : (corrected.CustomNumber04 ?? undefined)) }
+    source: doc.Vendor ?? null,
+    updated_at: doc.OrderDate ?? null,
+    revision: doc.SONumber ?? null,
+    quality_score: (typeof doc.CloseProbability === 'number') ? doc.CloseProbability : null,
+    in_stock: (typeof ext?.StockStatus === 'number') ? Boolean(ext.StockStatus) : null,
+    backorders_allowed: (typeof ext?.BackorderStatus === 'number') ? Boolean(ext.BackorderStatus) : null,
+    fx: { usd_to_egp_rate: (typeof ext?.FXRate === 'number') ? ext.FXRate : (doc.CustomNumber04 ?? null) }
   };
   return record;
 }
@@ -210,7 +214,7 @@ async function main(){
   // Detect enrichment (QIQ_*) columns dynamically
   const allDocCols = await pool.request().query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='DocumentItems'");
   const QIQ_COLS = allDocCols.recordset.map(r=>r.COLUMN_NAME).filter(n=> /^QIQ_/i.test(n));
-  const ctx = { autoFixedImages: 0, autoFixedSpecs: 0, missing: [], events: [] };
+  const ctx = { correctedPaths: 0, fixedPriceObjects: 0, missing: [], events: [] };
   const out = [];
   if (PN_LIST.length){
     for (const pn of PN_LIST){
@@ -232,7 +236,7 @@ async function main(){
           ctx.missing.push({ pn: doc[pnCol], field: qcol, cause: 'AI enrichment not completed' });
         }
       }
-      // Media presence
+  // Media presence
       if (!doc.PictureFile && !doc.PictureFileName){ ctx.missing.push({ pn: doc[pnCol], field: 'PictureFile', cause: 'Missing media filename' }); }
       if (!doc.SpecSheetFile && !doc.CustomText03){ ctx.missing.push({ pn: doc[pnCol], field: 'SpecSheetFile', cause: 'Missing media filename' }); }
       out.push(mapToAlgolia(doc, ext, ctx));
@@ -286,8 +290,9 @@ async function main(){
   // Self-healing diagnostics
   const keys = { openai: !!process.env.OPENAI_API_KEY, gemini: !!(process.env.Gemini_API || process.env.GOOGLE_API_KEY) };
   const missingCount = ctx.missing.length;
-  const autoFixed = ctx.autoFixedImages + ctx.autoFixedSpecs;
-  let pending = missingCount; // We didn't call external AI here, so pending equals missing
+  const correctedPaths = ctx.correctedPaths;
+  const fixedPrice = ctx.fixedPriceObjects;
+  let pending = missingCount;
   const hints = [];
   if (!keys.openai && !keys.gemini){ hints.push('Missing OpenAI/Gemini API key — please provide in .env'); }
 
@@ -301,10 +306,10 @@ async function main(){
 
   // Final summary
   console.log('\n✅ Algolia Sync Completed');
-  console.log(`Total Products Checked: ${out.length}`);
-  console.log(`NULL Enrichment Fields: ${missingCount}`);
-  console.log(`Auto-Fixed Kaspersky Images/Specs: ${autoFixed}`);
-  console.log(`Pending Manual Review: ${pending}`);
+  console.log(`Corrected Image/Spec Paths: ${correctedPaths}`);
+  console.log(`Fixed Price Objects: ${fixedPrice}`);
+  console.log(`Missing Fields: ${missingCount}`);
+  console.log(`Total Items Pushed: ${out.length}`);
   if (hints.length){
     for (const h of hints) console.log(h);
   }
@@ -312,7 +317,7 @@ async function main(){
   // Persist report for email
   try {
     const outPath = path.join(process.cwd(), 'algolia-sync-report.json');
-    const payload = { index: indexName, updated: out.length, verify: view, missing: ctx.missing, autoFixed: autoFixed, hints };
+    const payload = { index: indexName, updated: out.length, verify: view, missing: ctx.missing, correctedPaths, fixedPrice, hints };
     fs.writeFileSync(outPath, JSON.stringify(payload, null, 2), 'utf8');
     console.log(`Report written: ${outPath}`);
   } catch {}

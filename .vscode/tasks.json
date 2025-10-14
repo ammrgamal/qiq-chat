@@ -177,6 +177,34 @@
 			],
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "qiq-chat run brand-batch corrected",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"node ./scripts/sync-qw-to-algolia.mjs --brand=Kaspersky --limit=20 --withMediaOnly=true"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "qiq-chat email algolia report (corrected)",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-Command",
+				"node ./scripts/email-algolia-sync-report.mjs"
+			],
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

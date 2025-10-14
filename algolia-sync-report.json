@@ -144,6 +144,7 @@
     }
   ],
   "missing": [],
-  "autoFixed": 0,
+  "correctedPaths": 40,
+  "fixedPrice": 20,
   "hints": []
 }
