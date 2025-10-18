@@ -1,134 +1,83 @@
 "use client"
 
 import { useState } from "react"
-import { ChatSidebar } from "./chat-sidebar"
-import { ChatWindow } from "./chat-window"
-import { ChatInput } from "./chat-input"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Send } from "lucide-react"
 
-export interface Message {
+interface Message {
   id: string
   content: string
-  sender: "user" | "other"
+  role: "user" | "assistant"
   timestamp: Date
-  status?: "sent" | "delivered" | "read"
 }
-
-export interface Conversation {
-  id: string
-  name: string
-  avatar: string
-  lastMessage: string
-  timestamp: string
-  unread?: number
-  online?: boolean
-}
-
-const mockConversations: Conversation[] = [
-  {
-    id: "1",
-    name: "Sarah Chen",
-    avatar: "/professional-woman-diverse.png",
-    lastMessage: "Perfect! See you at the meeting",
-    timestamp: "2m ago",
-    unread: 2,
-    online: true,
-  },
-  {
-    id: "2",
-    name: "Marcus Johnson",
-    avatar: "/professional-man.jpg",
-    lastMessage: "Thanks for the update",
-    timestamp: "1h ago",
-    online: true,
-  },
-  {
-    id: "3",
-    name: "Design Team",
-    avatar: "/generic-team-icon.png",
-    lastMessage: "New mockups are ready",
-    timestamp: "3h ago",
-    unread: 5,
-  },
-  {
-    id: "4",
-    name: "Elena Rodriguez",
-    avatar: "/professional-woman-smiling.png",
-    lastMessage: "Great work on the presentation!",
-    timestamp: "Yesterday",
-  },
-  {
-    id: "5",
-    name: "Project Alpha",
-    avatar: "/project-icon.png",
-    lastMessage: "Deadline extended to Friday",
-    timestamp: "2d ago",
-  },
-]
-
-const mockMessages: Message[] = [
-  {
-    id: "1",
-    content: "Hey! How are you doing?",
-    sender: "other",
-    timestamp: new Date(Date.now() - 3600000),
-    status: "read",
-  },
-  {
-    id: "2",
-    content: "I'm doing great! Just finished the design mockups for the new project.",
-    sender: "user",
-    timestamp: new Date(Date.now() - 3500000),
-    status: "read",
-  },
-  {
-    id: "3",
-    content: "That sounds amazing! Can you share them with me?",
-    sender: "other",
-    timestamp: new Date(Date.now() - 3400000),
-    status: "read",
-  },
-  {
-    id: "4",
-    content: "Of course! I'll send them over in a few minutes. I think you'll really like the direction we took.",
-    sender: "user",
-    timestamp: new Date(Date.now() - 3300000),
-    status: "read",
-  },
-  {
-    id: "5",
-    content: "Perfect! See you at the meeting",
-    sender: "other",
-    timestamp: new Date(Date.now() - 120000),
-    status: "delivered",
-  },
-]
 
 export function ChatInterface() {
-  const [conversations] = useState<Conversation[]>(mockConversations)
-  const [selectedConversation, setSelectedConversation] = useState<Conversation>(mockConversations[0])
-  const [messages, setMessages] = useState<Message[]>(mockMessages)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState("")
 
-  const handleSendMessage = (content: string) => {
+  const handleSend = () => {
+    if (!input.trim()) return
+
     const newMessage: Message = {
       id: Date.now().toString(),
-      content,
-      sender: "user",
+      content: input,
+      role: "user",
       timestamp: new Date(),
-      status: "sent",
     }
+
     setMessages([...messages, newMessage])
+    setInput("")
+
+    // Simulate assistant response
+    setTimeout(() => {
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "This is a placeholder response. Connect your AI service to enable real chat functionality.",
+        role: "assistant",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, assistantMessage])
+    }, 500)
   }
 
   return (
-    <div className="flex h-full w-full bg-background">
-      <ChatSidebar
-        conversations={conversations}
-        selectedId={selectedConversation.id}
-        onSelectConversation={setSelectedConversation}
-      />
-      <div className="flex flex-1 flex-col">
-        <ChatWindow conversation={selectedConversation} messages={messages} />
-        <ChatInput onSendMessage={handleSendMessage} />
+    <div className="container mx-auto flex h-[calc(100vh-80px)] max-w-4xl flex-col gap-4 p-4">
+      <ScrollArea className="flex-1 rounded-lg border bg-card p-4">
+        {messages.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-muted-foreground">Start a conversation...</div>
+        ) : (
+          <div className="space-y-4">
+            {messages.map((message) => (
+              <Card
+                key={message.id}
+                className={`p-4 ${
+                  message.role === "user"
+                    ? "ml-auto max-w-[80%] bg-primary text-primary-foreground"
+                    : "mr-auto max-w-[80%]"
+                }`}
+              >
+                <p className="text-sm">{message.content}</p>
+                <p className="mt-2 text-xs opacity-70">{message.timestamp.toLocaleTimeString()}</p>
+              </Card>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+
+      <div className="flex gap-2">
+        <Input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          placeholder="Type your message..."
+          className="flex-1"
+        />
+        <Button onClick={handleSend} size="icon">
+          <Send className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   )
