@@ -1,12 +1,27 @@
-node_modules/
-package-lock.json
-.env
-.DS_Store
-dist/
-build/
-*.log
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Rules Engine module
-rules-engine/node_modules/
-rules-engine/package-lock.json
-rules-engine/.env
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts

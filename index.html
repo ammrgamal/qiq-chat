@@ -1,186 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>QuickITQuote Chat</title>
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="/public/css/styles.css" />
-
-  <!-- Vendor (XLSX فقط للـ BOQ) -->
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
-</head>
-<body>
-  <!-- ======== Chat ======== -->
-  <section id="qiq-chat" class="qiq">
-    <div class="qiq-window" id="qiq-window" aria-live="polite"></div>
-
-    <form id="qiq-form" class="qiq-form" autocomplete="off">
-      <input id="qiq-input" class="qiq-input" type="text"
-             placeholder="اكتب سؤالك أو ابدأ.. مثلا: عايز Kaspersky EDR لـ 120 مستخدم لمدة سنتين" required />
-      <div class="qiq-actions">
-        <button class="qiq-btn qiq-primary" type="button" id="qiq-import-btn" title="استيراد BOQ (Excel)">Import BOQ (Excel)</button>
-        <button class="qiq-send" type="submit">إرسال</button>
-        <input type="file" id="qiq-file" accept=".xlsx,.xls,.csv" hidden />
-      </div>
-    </form>
-  </section>
-
-  <!-- ======== Product Results ======== -->
-  <div id="qiq-products-list" class="qiq-products-list"></div>
-
-  <!-- ======== BOQ / Staging ======== -->
-  <section id="qiq-boq-wrap" class="qiq-boq">
-    <div class="qiq-boq-top">
-      <button id="qiq-add-all" class="qiq-btn qiq-success" type="button" disabled>إضافة الكل للعرض</button>
-      <div class="qiq-right">
-        <button id="qiq-save-draft" class="qiq-btn qiq-primary" type="button">حفظ كمسودة</button>
-        <button id="qiq-load-draft" class="qiq-btn" type="button">تحميل مسودة</button>
-        <button id="qiq-show-log" class="qiq-btn" type="button">إظهار السجل</button>
-        <button id="qiq-clear-all" class="qiq-btn" type="button" style="background:#dc2626">مسح الكل</button>
-        <button id="qiq-export-csv"  class="qiq-btn" type="button">تصدير CSV</button>
-        <button id="qiq-export-xlsx" class="qiq-btn" type="button">تصدير XLSX</button>
-        <span id="qiq-status" class="qiq-status"></span>
-      </div>
-    </div>
-    
-    <!-- Search/Filter for products -->
-    <div class="qiq-search">
-      <span class="qiq-search-icon">🔍</span>
-      <input 
-        id="qiq-search-input" 
-        class="qiq-search-input" 
-        type="text" 
-        placeholder="البحث في المنتجات (الاسم أو الكود)..." 
-        autocomplete="off"
-      />
-      <span id="qiq-search-count" class="qiq-status"></span>
-    </div>
-    
-    <div class="qiq-table-wrap">
-      <table class="qiq-table" aria-label="Staged items">
-        <thead>
-          <tr>
-<th style="width:40%">الوصف / رقم المنتج / SKU</th>
-<th style="width:10%">السعر للوحدة</th>
-<th style="width:10%">الإجمالي</th>
-<th style="width:10%">الإجراءات</th>
-<th style="width:10%">صورة</th>
-          </tr>
-        </thead>
-        <tbody id="qiq-body"></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="5" style="text-align:left"><strong>الإجمالي الكلي:</strong></td>
-            <td id="qiq-grand" colspan="2"><strong>-</strong></td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-
-    <!-- Operations Log -->
-    <div class="qiq-log-section" id="qiq-log-section" style="margin-top: 16px; display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <h3 style="margin: 0; font-size: 14px; color: #374151;">سجل العمليات</h3>
-        <div>
-          <button id="qiq-toggle-log" class="qiq-btn" type="button" style="font-size: 12px; padding: 4px 8px;">إخفاء</button>
-          <button id="qiq-clear-log" class="qiq-btn" type="button" style="font-size: 12px; padding: 4px 8px; background: #dc2626;">مسح السجل</button>
-        </div>
-      </div>
-      <div id="qiq-log-content" class="qiq-log-content" style="max-height: 150px; overflow-y: auto; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; font-size: 12px;">
-        <!-- Log entries will be added here -->
-      </div>
-    </div>
-  </section>
-
-  <!-- ======== Custom Quotation (طلب عرض سعر مخصوص) ======== -->
-  <section id="qiq-quote" class="qiq-card" aria-labelledby="quote-title">
-    <h2 id="quote-title">طلب عرض سعر مخصوص</h2>
-    <form id="quote-form" class="qiq-form-vertical" autocomplete="off">
-      <div class="row">
-        <label>اسم الشركة</label>
-        <input type="text" name="company" required />
-      </div>
-      <div class="row">
-        <label>مجال النشاط</label>
-        <input type="text" name="industry" />
-      </div>
-      <div class="row">
-        <label>عدد المستخدمين</label>
-        <input type="number" name="users" min="1" required />
-      </div>
-      <div class="row">
-        <label>الأولوية</label>
-        <select name="priority">
-          <option value="Security">Security</option>
-          <option value="Cloud">Cloud</option>
-          <option value="Collaboration">Collaboration</option>
-          <option value="Network">Network</option>
-        </select>
-      </div>
-      <div class="row">
-        <label>الميزانية التقريبية (USD)</label>
-        <input type="number" name="budget_usd" min="0" />
-      </div>
-      <div class="row">
-        <label>البريد الإلكتروني</label>
-        <input type="email" name="email" required />
-      </div>
-      <div class="row">
-        <label>رقم الموبايل</label>
-        <input type="tel" name="phone" required />
-      </div>
-      <div class="row">
-        <label>تفاصيل إضافية</label>
-        <textarea name="notes" rows="3" placeholder="اذكر المنتجات أو المواصفات المطلوبة…"></textarea>
-      </div>
-
-      <div class="row actions">
-        <button type="submit" class="qiq-btn qiq-primary">إرسال الطلب</button>
-        <span id="quote-status" class="qiq-status"></span>
-      </div>
-    </form>
-  </section>
-
-  <!-- ======== حساب المستخدم (تسجيل/دخول) ======== -->
-  <section id="qiq-account" class="qiq-card">
-    <h2>الحساب</h2>
-    <div class="account-actions">
-      <button id="btn-login" class="qiq-btn">تسجيل الدخول</button>
-      <button id="btn-register" class="qiq-btn qiq-primary">إنشاء حساب</button>
-      <button id="btn-logout" class="qiq-btn qiq-danger" hidden>تسجيل الخروج</button>
-      <span id="account-status" class="qiq-status"></span>
-    </div>
-  </section>
-
-  <!-- ======== Modal تفاصيل منتج ======== -->
-  <div id="qiq-modal" class="qiq-modal" aria-hidden="true" role="dialog" aria-label="تفاصيل المنتج">
-    <div class="qiq-modal__backdrop"></div>
-    <div class="qiq-modal__dialog">
-      <button class="qiq-modal__close" aria-label="إغلاق" type="button">×</button>
-      <iframe id="qiq-modal-frame" src="" loading="lazy"></iframe>
-    </div>
-  </div>
-
-  <!-- ======== Toast Notifications Container ======== -->
-  <div id="qiq-toast-container" class="qiq-toast" aria-live="polite"></div>
-
-  <!-- ======== Bundles (Front-end) ======== -->
-  <!-- toast.js: نظام الإشعارات المحسن -->
-  <script src="/public/js/toast.js"></script>
-  <!-- api.js: دوال الفetch للباك إند (/api/search, /api/chat, /api/quote, /api/users/...) -->
-  <script src="/public/js/api.js"></script>
-  <!-- quote-actions.js: BOQ table functionality and AddToQuote function -->
-  <script src="/public/js/quote-actions.js"></script>
-  <!-- ui-chat.js: واجهة الشات + الBOQ + المنطق الذكي للبحث عبر /api/search -->
-  <script src="/public/js/ui-chat.js"></script>
-  <!-- quote-form.js: إرسال فورم العرض المخصص إلى /api/quote -->
-  <script src="/public/js/quote-form.js"></script>
-  <!-- account.js: تسجيل/دخول/خروج (JWT) عبر /api/users/... -->
-  <script src="/public/js/account.js"></script>
-
-  <!-- ملاحظة: طالما بنستخدم /api/search على السيرفر، مش محتاجين Algolia keys في الفرونت إطلاقًا -->
-</body>
-</html>

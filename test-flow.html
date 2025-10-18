@@ -1,116 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>اختبار سير العمل - QIQ Chat</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .step { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 8px; }
-        .step h3 { color: #2563eb; margin-top: 0; }
-        .success { background: #dcfce7; border-left: 4px solid #16a34a; }
-        .info { background: #dbeafe; border-left: 4px solid #2563eb; }
-        code { background: #e5e7eb; padding: 2px 6px; border-radius: 4px; }
-        .test-btn { background: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; margin: 5px; }
-        .test-btn:hover { background: #1d4ed8; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>اختبار سير العمل - QIQ Chat</h1>
-        
-        <div class="step success">
-            <h3>✅ التعديلات المكتملة:</h3>
-            <ul>
-                <li>تم تغيير جميع النصوص من "السلة" إلى "العرض"</li>
-                <li>تم إضافة دالة <code>saveProductToQuote</code> لحفظ المنتجات في localStorage</li>
-                <li>تم إضافة دالة <code>loadPendingProducts</code> لتحميل المنتجات في صفحة العرض</li>
-                <li>تم إصلاح مسار الانتقال إلى <code>/public/quote.html</code></li>
-                <li>تم تحديث آلية العرض لإظهار البطاقات مع أزرار الإضافة</li>
-            </ul>
-        </div>
-
-        <div class="step info">
-            <h3>📋 كيفية اختبار السير الجديد:</h3>
-            <ol>
-                <li>افتح صفحة الدردشة الرئيسية <code>/index.html</code></li>
-                <li>اكتب اسم منتج (مثل: "Kaspersky" أو "Microsoft Office")</li>
-                <li>ستظهر بطاقات المنتجات مع أزرار "إضافة للعرض"</li>
-                <li>اضغط على زر "إضافة للعرض" لأي منتج</li>
-                <li>ستظهر رسالة تأكيد وسيتم حفظ المنتج</li>
-                <li>سيتم الانتقال تلقائياً لصفحة العرض <code>/public/quote.html</code></li>
-                <li>ستجد المنتج المختار مضافاً للجدول في صفحة العرض</li>
-            </ol>
-        </div>
-
-        <div class="step">
-            <h3>🔧 اختبار localStorage:</h3>
-            <button class="test-btn" onclick="testLocalStorage()">اختبار حفظ منتج وهمي</button>
-            <button class="test-btn" onclick="viewLocalStorage()">عرض المنتجات المحفوظة</button>
-            <button class="test-btn" onclick="clearLocalStorage()">مسح localStorage</button>
-            <div id="test-result" style="margin-top: 10px; padding: 10px; background: #f9f9f9; border-radius: 4px; display: none;"></div>
-        </div>
-
-        <div class="step info">
-            <h3>🎯 النتائج المتوقعة:</h3>
-            <ul>
-                <li><strong>في صفحة الدردشة:</strong> أزرار "إضافة للعرض" بدلاً من "إضافة للسلة"</li>
-                <li><strong>عند الضغط على الزر:</strong> حفظ المنتج في localStorage وانتقال لصفحة العرض</li>
-                <li><strong>في صفحة العرض:</strong> ظهور المنتجات المحفوظة في الجدول تلقائياً</li>
-                <li><strong>بعد التحميل:</strong> مسح المنتجات من localStorage لتجنب التكرار</li>
-            </ul>
-        </div>
-    </div>
-
-    <script>
-        function testLocalStorage() {
-            const testProduct = {
-                name: "منتج اختبار",
-                sku: "TEST-001",
-                price: "100",
-                manufacturer: "شركة اختبار",
-                source: "Test",
-                qty: 1,
-                timestamp: new Date().toISOString()
-            };
-
-            let products = [];
-            const existingData = localStorage.getItem('qiq-pending-products');
-            if (existingData) {
-                products = JSON.parse(existingData);
-            }
-            
-            products.push(testProduct);
-            localStorage.setItem('qiq-pending-products', JSON.stringify(products));
-            
-            showResult(`تم حفظ منتج اختبار. العدد الكلي: ${products.length}`, 'success');
-        }
-
-        function viewLocalStorage() {
-            const data = localStorage.getItem('qiq-pending-products');
-            if (data) {
-                const products = JSON.parse(data);
-                showResult(`المنتجات المحفوظة: ${products.length}<br><pre>${JSON.stringify(products, null, 2)}</pre>`, 'info');
-            } else {
-                showResult('لا توجد منتجات محفوظة', 'warning');
-            }
-        }
-
-        function clearLocalStorage() {
-            localStorage.removeItem('qiq-pending-products');
-            showResult('تم مسح localStorage', 'success');
-        }
-
-        function showResult(message, type) {
-            const resultDiv = document.getElementById('test-result');
-            resultDiv.innerHTML = message;
-            resultDiv.style.display = 'block';
-            resultDiv.style.background = type === 'success' ? '#dcfce7' : 
-                                      type === 'warning' ? '#fef3c7' : '#dbeafe';
-            resultDiv.style.border = `1px solid ${type === 'success' ? '#16a34a' : 
-                                               type === 'warning' ? '#f59e0b' : '#2563eb'}`;
-        }
-    </script>
-</body>
-</html>
